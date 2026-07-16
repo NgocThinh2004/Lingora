@@ -1,0 +1,252 @@
+Enum user_status {
+  active
+  inactive
+  banned
+}
+
+Enum post_status {
+  draft
+  pending_review
+  approved
+  rejected
+  published
+  archived
+}
+
+Enum translation_status {
+  not_started
+  queued
+  processing
+  completed
+  failed
+}
+
+Enum translation_attempt_status {
+  success
+  failed
+  rate_limited
+  timeout
+}
+
+Enum comment_status {
+  pending
+  approved
+  rejected
+  hidden
+}
+
+Table roles {
+  id integer [primary key, increment]
+  name varchar(50) [not null, unique]
+}
+
+Table languages {
+  id integer [primary key, increment]
+  code varchar(10) [not null, unique]
+  name varchar(100) [not null]
+  native_name varchar(100) [not null]
+  flag_code varchar(5)
+  is_default boolean [not null, default: false]
+  is_active boolean [not null, default: true]
+}
+
+Table users {
+  id bigint [primary key, increment]
+  username varchar(150) [not null, unique]
+  display_name varchar(150)
+  email varchar(150) [not null, unique]
+  password varchar(255) [not null, note: 'Chỉ lưu mật khẩu đã hash']
+  avatar varchar(255)
+  bio text
+  role_id integer [not null]
+  status user_status [not null, default: 'active']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  deleted_at timestamp
+}
+
+Table categories {
+  id integer [primary key, increment]
+  slug varchar(150) [not null, unique]
+  status varchar(20) [not null, default: 'active', note: 'active, inactive']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table category_translations {
+  id bigint [primary key, increment]
+  category_id integer [not null]
+  language_id integer [not null]
+  name varchar(150) [not null]
+  slug varchar(150) [not null]
+
+  indexes {
+    (category_id, language_id) [unique]
+  }
+}
+
+Table posts {
+  id bigint [primary key, increment]
+  author_id bigint [not null, note: 'Mỗi bài viết chỉ thuộc một tác giả']
+  category_id integer
+  original_language_id integer [not null]
+  view_count integer [not null, default: 0]
+  status post_status [not null, default: 'draft']
+  review_note text
+  published_at timestamp
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  deleted_at timestamp
+
+  indexes {
+    author_id
+    category_id
+    status
+    published_at
+  }
+}
+
+Table post_translations {
+  id bigint [primary key, increment]
+  post_id bigint [not null]
+  language_id integer [not null]
+  title varchar(255)
+  slug varchar(200)
+  summary text
+  content longtext
+  translation_status translation_status [not null, default: 'not_started']
+  translation_provider varchar(50)
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (post_id, language_id) [unique]
+    (slug, language_id) [unique]
+  }
+}
+
+Table translation_attempts {
+  id bigint [primary key, increment]
+  post_translation_id bigint [not null]
+  provider varchar(50) [not null]
+  attempt_order integer [not null, default: 1]
+  status translation_attempt_status [not null]
+  error_message text
+  char_count integer
+  started_at timestamp [not null]
+  finished_at timestamp
+
+  indexes {
+    post_translation_id
+    provider
+    status
+  }
+}
+
+Table comments {
+  id bigint [primary key, increment]
+  post_id bigint [not null]
+  user_id bigint [not null]
+  parent_id bigint
+  reply_to_comment_id bigint
+  reply_to_user_id bigint
+  reply_to_username varchar(150)
+  content text [not null]
+  status comment_status [not null, default: 'approved']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (post_id, parent_id)
+    reply_to_comment_id
+  }
+}
+
+Table post_likes {
+  id bigint [primary key, increment]
+  post_id bigint [not null]
+  user_id bigint [not null]
+  created_at timestamp [not null]
+
+  indexes {
+    (post_id, user_id) [unique]
+  }
+}
+
+Table comment_likes {
+  id bigint [primary key, increment]
+  comment_id bigint [not null]
+  user_id bigint [not null]
+  created_at timestamp [not null]
+
+  indexes {
+    (comment_id, user_id) [unique]
+  }
+}
+
+Table subscriptions {
+  id bigint [primary key, increment]
+  subscriber_id bigint [not null]
+  author_id bigint [not null]
+  last_viewed_at timestamp
+  created_at timestamp [not null]
+
+  indexes {
+    (subscriber_id, author_id) [unique]
+    author_id
+  }
+}
+
+Table password_reset_tokens {
+  id bigint [primary key, increment]
+  user_id bigint [not null]
+  token varchar(255) [not null, unique, note: 'Chỉ lưu token đã hash']
+  expires_at timestamp [not null]
+  used_at timestamp
+  created_at timestamp [not null]
+
+  indexes {
+    user_id
+  }
+}
+
+Table refresh_tokens {
+  id bigint [primary key, increment]
+  user_id bigint [not null]
+  token_hash varchar(255) [not null, unique]
+  device_info varchar(255)
+  ip_address varchar(45)
+  expires_at timestamp [not null]
+  last_used_at timestamp
+  revoked_at timestamp
+  created_at timestamp [not null]
+
+  indexes {
+    user_id
+    expires_at
+    (user_id, revoked_at)
+  }
+}
+
+Ref: users.role_id > roles.id
+Ref: category_translations.category_id > categories.id [delete: cascade]
+Ref: category_translations.language_id > languages.id [delete: cascade]
+Ref: posts.author_id > users.id [delete: cascade]
+Ref: posts.category_id > categories.id [delete: set null]
+Ref: posts.original_language_id > languages.id
+Ref: post_translations.post_id > posts.id [delete: cascade]
+Ref: post_translations.language_id > languages.id [delete: cascade]
+Ref: translation_attempts.post_translation_id > post_translations.id [delete: cascade]
+Ref: comments.post_id > posts.id [delete: cascade]
+Ref: comments.user_id > users.id [delete: cascade]
+Ref: comments.parent_id > comments.id [delete: cascade]
+Ref: comments.reply_to_comment_id > comments.id [delete: set null]
+Ref: comments.reply_to_user_id > users.id [delete: set null]
+Ref: post_likes.post_id > posts.id [delete: cascade]
+Ref: post_likes.user_id > users.id [delete: cascade]
+Ref: comment_likes.comment_id > comments.id [delete: cascade]
+Ref: comment_likes.user_id > users.id [delete: cascade]
+Ref: subscriptions.subscriber_id > users.id [delete: cascade]
+Ref: subscriptions.author_id > users.id [delete: cascade]
+Ref: password_reset_tokens.user_id > users.id [delete: cascade]
+Ref: refresh_tokens.user_id > users.id [delete: cascade]

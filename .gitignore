@@ -1,0 +1,24 @@
+# Dependencies and build outputs
+node_modules/
+frontend/.angular/
+frontend/dist/
+backend/dist/
+coverage/
+
+# Local configuration and runtime data
+.env
+.env.*
+!.env.example
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
+*.log
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated documents
+*.docx
+*.doc

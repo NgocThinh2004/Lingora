@@ -1,0 +1,31 @@
+{
+  "name": "lingora-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo",
+    "db:migrate:reset": "sequelize-cli db:migrate:undo:all",
+    "db:seed": "sequelize-cli db:seed:all",
+    "db:seed:undo": "sequelize-cli db:seed:undo:all"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/sequelize": "^11.0.0",
+    "dotenv": "^16.4.7",
+    "mysql2": "^3.14.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "sequelize": "^6.37.7",
+    "sequelize-typescript": "^2.1.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "sequelize-cli": "^6.6.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.0"
+  }
+}
