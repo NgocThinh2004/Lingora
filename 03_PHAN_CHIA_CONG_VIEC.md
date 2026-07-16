@@ -1,403 +1,408 @@
-# LINGORA — PHÂN CHIA CÔNG VIỆC CHI TIẾT
+# LINGORA — PHÂN CHIA CÔNG VIỆC THEO CHỨC NĂNG
 
-## 1. Phạm vi và nhân sự
+## 1. Nguyên tắc phân chia
 
-Kế hoạch dành cho nhóm 3 thành viên trong 8 tuần:
+Kế hoạch dành cho nhóm 3 thành viên trong 8 tuần. Công việc được chia theo **chức năng hoàn chỉnh**, không chia theo frontend/backend.
 
-| Thành viên | Vai trò chính | Phân hệ sở hữu |
+Người sở hữu một chức năng phải làm xuyên suốt:
+
+1. Phân tích hành vi từ HTML prototype.
+2. Giao diện Angular và các trạng thái loading/empty/error.
+3. API NestJS, DTO validation, auth/role/ownership.
+4. Sequelize model/query/migration liên quan.
+5. Unit test, integration/e2e test và tài liệu API.
+
+Ví dụ: Developer B sở hữu bình luận thì B làm component Angular, API NestJS, query bảng `comments`, kiểm tra quyền và test bình luận. Không giao phần giao diện bình luận cho B rồi giao API đó cho người khác.
+
+## 2. Phạm vi chính thức sau khi cập nhật prototype
+
+- Angular + TypeScript + SCSS + Bootstrap.
+- NestJS + Sequelize + MySQL 8+.
+- JWT access token, refresh token và reset password token.
+- Một bài viết chỉ có một tác giả.
+- Không có ảnh bìa người dùng hoặc thumbnail bài viết.
+- Chỉ upload avatar và ảnh nằm trong nội dung bài.
+- Nội dung đa ngôn ngữ lưu ở `post_translations`.
+- Dịch AI có nhiều provider và lưu từng lần thử ở `translation_attempts`.
+- Bình luận tối đa hai cấp; reply vẫn ghi nhận comment/người được trả lời.
+
+Các thay đổi so với kế hoạch cũ:
+
+| Cũ | Chính thức mới |
+|---|---|
+| ExpressJS | NestJS |
+| `post_languages` | `post_translations` |
+| JWT cơ bản | Access + refresh token, logout/revoke phiên |
+| Chỉ đổi mật khẩu | Thêm quên và đặt lại mật khẩu |
+| Hai homepage | Một feed thay đổi theo trạng thái đăng nhập |
+| About và trang lỗi dịch riêng | Không bắt buộc; lỗi dịch hiển thị ngay trong post detail |
+| Comment cây nhiều tầng | Comment phẳng tối đa hai cấp |
+| Chưa có follow/explore/settings | Có subscriptions, explore, profile/settings |
+| Admin cơ bản | Thêm dashboard và kiểm duyệt bài |
+| Hai trường status/review status | Một `posts.status` duy nhất |
+| Chưa lưu fallback dịch | Có provider, thứ tự lần thử và lỗi |
+
+## 3. Bảng sở hữu chức năng
+
+| Thành viên | Chức năng sở hữu trọn vẹn | Bảng chính |
 |---|---|---|
-| Developer A | Tech Lead, Backend/Auth/Admin | Hạ tầng NestJS, database, auth, users, languages, categories, admin |
-| Developer B | Frontend/Public/Social | Angular foundation, feed, explore, profile, comments, likes, subscriptions |
-| Developer C | Author/Translation/Upload | Posts, workspace tác giả, upload ảnh nội dung, worker dịch và translation attempts |
+| Developer A — Platform, Identity & Admin Master Data | Nền tảng, auth, phiên đăng nhập, tài khoản/settings, admin users, roles, languages, categories, dashboard shell | `roles`, `users`, `refresh_tokens`, `password_reset_tokens`, `languages`, `categories`, `category_translations` |
+| Developer B — Reader & Social | Public layout, feed, explore, đọc bài, public profile, comments, likes, subscriptions | `comments`, `post_likes`, `comment_likes`, `subscriptions`; đọc dữ liệu bài/user |
+| Developer C — Author, Moderation & Translation | Tạo/quản lý bài, admin duyệt bài, upload ảnh nội dung, dịch AI và lịch sử provider | `posts`, `post_translations`, `translation_attempts` |
 
-Mỗi người sở hữu một lát cắt đầy đủ gồm API, UI liên quan, validation và test. “Sở hữu” không có nghĩa chỉ người đó được sửa; thay đổi vào phân hệ của người khác phải báo và được review.
-
-## 2. Nguyên tắc chung
+## 4. Developer A — Platform, Identity và Admin Master Data
 
-- Backend dùng NestJS, Sequelize và MySQL; không quay lại ExpressJS thuần.
-- Frontend sản phẩm dùng Angular; HTML tĩnh chỉ làm tài liệu tham chiếu.
-- Database có đúng 14 bảng theo `backend/database-schema.dbml`.
-- Không có ảnh bìa người dùng và không có thumbnail bài viết.
-- Một bài viết chỉ thuộc một tác giả.
-- Không dùng `localStorage` làm database; chỉ dùng tạm cho token/theme nếu cần.
-- Mỗi Pull Request phải có ít nhất một người khác review.
-- Người tạo feature chịu trách nhiệm cả luồng thành công, lỗi, quyền truy cập và test.
+### A-01. Nền tảng dự án
 
-## 3. Phân công Developer A — Tech Lead, Auth và Admin
+Thực hiện cả cấu hình backend và frontend dùng chung:
 
-### A1. Khởi tạo backend
+- Hoàn thiện NestJS bootstrap, `main.ts`, `app.module.ts`, ConfigModule và DatabaseModule.
+- Global prefix `/api/v1`, ValidationPipe, CORS, exception filter và response `{data, meta}`.
+- Pagination DTO, current-user decorator, roles decorator và guards dùng chung.
+- Khởi tạo Angular workspace, router, HttpClient, environments và error interceptor.
+- Tạo model/contract chung cho user summary, language, category, pagination và API error.
+- Bảo đảm production dùng migration, không bật `sequelize.sync()`.
 
-- Hoàn thiện `main.ts`, `app.module.ts`, `nest-cli.json`, `tsconfig.build.json`.
-- Import `DatabaseModule`, cấu hình `ConfigModule`, ValidationPipe và prefix `/api/v1`.
-- Cấu hình CORS theo `FRONTEND_URL`.
-- Tạo response format và exception filter dùng chung.
-- Bảo đảm production giữ `synchronize: false` và chỉ dùng migration.
+Nghiệm thu: backend/frontend khởi động, health check kết nối DB, migration/seeder chạy được và B/C có module mẫu để phát triển.
 
-Kết quả bàn giao:
+### A-02. Register, login và tài khoản hiện tại
 
-- Backend khởi động được.
-- Endpoint health check trả 200.
-- Kết nối được `lingora_dev` và `lingora_test`.
-- Migration up/down và seeder chạy thành công.
+Angular:
 
-### A2. Database và dữ liệu nền
+- Trang register/login, validation, hiện/ẩn password và điều hướng theo role.
+- AuthService lưu trạng thái đăng nhập; không lưu password/token hash.
 
-- Chịu trách nhiệm cuối cùng với migration, foreign key và index.
-- Review mọi thay đổi database của B/C.
-- Tạo quy trình thêm migration mới; không sửa migration đã chạy trên môi trường chung.
-- Seed role, language và tài khoản admin development đọc mật khẩu từ env.
-- Viết test xác nhận unique like/follow/translation và quan hệ một tác giả.
+NestJS/API:
 
-### A3. Auth và bảo mật
+- `POST /auth/register`, `POST /auth/login`, `GET /auth/me`.
+- Lowercase email, unique username/email, bcrypt password.
+- Chặn user `banned/inactive`; response không bao giờ chứa password.
 
-Backend:
+Test: dữ liệu sai, email/username trùng, password sai, tài khoản bị khóa và phân quyền role.
 
-- `POST /auth/register`.
-- `POST /auth/login` cấp access token và refresh token.
-- `POST /auth/refresh` xoay token và từ chối token hết hạn/revoke.
-- `POST /auth/logout` revoke phiên hiện tại.
-- `POST /auth/logout-all` revoke toàn bộ phiên của user.
-- `POST /auth/change-password` và revoke token cũ.
-- `POST /auth/forgot-password` luôn trả thông báo chung.
-- `POST /auth/reset-password` kiểm tra token hash, hạn và `used_at`.
-- `GET /auth/me` trả user DTO thống nhất.
-- Hash password bằng bcrypt; không trả password/token hash trong response.
+### A-03. JWT, refresh token và logout
 
-Frontend:
+Angular:
 
-- Login, register, forgot password, reset password, change password.
-- Auth service và auth interceptor.
-- Auth guard và admin guard.
-- Refresh access token tối đa một lần khi gặp 401, tránh vòng lặp.
+- Interceptor gắn access token.
+- Khi 401 chỉ refresh một lần; thất bại thì xóa phiên và về login.
+- Logout phiên hiện tại và logout mọi thiết bị.
 
-Test bắt buộc:
+NestJS/API:
 
-- Email/username trùng.
-- Mật khẩu sai.
-- User bị banned.
-- Refresh token hết hạn hoặc revoked.
-- Reset token hết hạn, dùng lại hoặc không hợp lệ.
+- `POST /auth/refresh`, `/auth/logout`, `/auth/logout-all`.
+- Chỉ lưu hash refresh token; quản lý device, IP, hạn, lần dùng cuối và revoke.
+- Rotation token: refresh thành công phải revoke token cũ.
 
-### A4. Users và Admin
+Database: `refresh_tokens`.
 
-- API admin tìm kiếm/phân trang/lọc user.
-- Xem chi tiết user, ban/unban và đổi role theo luật dự án.
-- Không cho admin tự khóa tài khoản đang đăng nhập.
-- Dashboard: số user, bài theo trạng thái và hàng đợi dịch.
-- Angular admin layout, users table và dashboard.
-- Kiểm tra quyền admin ở backend, không chỉ ẩn menu frontend.
+Test: token hết hạn/revoke/sai hash, logout một thiết bị, logout-all và hai request refresh đồng thời.
 
-### A5. Languages và Categories
+### A-04. Đổi, quên và reset password
 
-- CRUD ngôn ngữ; chỉ cho phép một ngôn ngữ mặc định.
-- Không tắt ngôn ngữ mặc định nếu chưa chọn ngôn ngữ thay thế.
-- CRUD category và `category_translations`.
-- Sinh slug, kiểm tra unique và xử lý category đang được bài sử dụng.
-- Angular manage languages/categories và validation form.
+Angular: change password, forgot password, reset password nhận token từ URL.
 
-### A6. Việc review bắt buộc
+NestJS/API:
 
-- Review migration và query phức tạp của B/C.
-- Review auth guard, role guard và endpoint admin.
-- Chốt API conventions, pagination và error response trước tuần 3.
+- `POST /auth/change-password`, `/auth/forgot-password`, `/auth/reset-password`.
+- Forgot luôn trả thông báo chung để không lộ email.
+- Gửi token gốc qua email nhưng DB chỉ lưu hash.
+- Reset thành công đặt `used_at` và revoke refresh token cũ.
 
-## 4. Phân công Developer B — Public Frontend và Social
+Database: `password_reset_tokens`, `refresh_tokens`, `users`.
 
-### B1. Angular foundation và UI dùng chung
+Test: token sai/hết hạn/đã dùng, một token không dùng lại và password cũ hết hiệu lực.
 
-- Khởi tạo Angular workspace trong `frontend/`.
-- Tạo `app.config.ts`, routes và environments.
-- Chuyển token màu/layout cần thiết từ prototype sang SCSS.
-- Xây public layout, auth layout, admin layout shell.
-- Xây header, sidebar, post card, pagination, loading, empty state, toast và confirm dialog.
-- Bảo đảm responsive và keyboard focus.
+### A-05. Hồ sơ cá nhân và settings
 
-Kết quả bàn giao:
+- Xem/sửa display name, username theo luật, avatar và bio; không có ảnh bìa.
+- Theme, ngôn ngữ UI và tùy chọn giao diện có thể lưu local nếu DB không có trường.
+- A làm form Angular, API `GET/PATCH /users/me` và quyền chỉ sửa chính mình.
+- Avatar dùng upload service của C nhưng A chịu trách nhiệm tích hợp end-to-end.
 
-- Angular chạy tại cổng 4200.
-- Route lazy-load được.
-- Component dùng chung không phụ thuộc dữ liệu giả trong `core.js`.
-
-### B2. Quản lý UI prototype
-
-- Là người duy nhất thực hiện `git subtree pull` định kỳ từ repository `ui-prototype`.
-- Ghi changelog những thay đổi UI cần chuyển sang Angular.
-- Không copy nguyên `core.js` vào Angular; chỉ chuyển hành vi cần thiết thành service/component.
-- Đồng bộ UI tối đa hai lần mỗi tuần để tránh xung đột liên tục.
-
-### B3. Feed và Explore
-
-Backend:
-
-- API feed bài `published`, phân trang và sắp xếp mới nhất/phổ biến.
-- Lọc theo category, language và author.
-- Search title/summary đã dịch; chỉ trả bản ngôn ngữ phù hợp.
-- API chi tiết bài và bài liên quan.
-- Tăng view có kiểm soát, tránh tăng nhiều lần trong cùng request.
-
-Frontend:
-
-- Homepage/feed.
-- Explore và search results.
-- Bộ lọc category/language/sort.
-- Post detail và đổi ngôn ngữ nội dung.
-- Trạng thái loading, empty và API error.
-
-### B4. Profile
-
-- Public profile theo username.
-- Chỉnh `display_name`, `avatar` và `bio`.
-- Không làm ảnh bìa.
-- Danh sách bài đã xuất bản của tác giả.
-- Hiển thị follower/following theo API.
-- Phối hợp C cho upload avatar, dùng chung upload validation.
-
-### B5. Comments
-
-Backend:
-
-- Tạo, sửa và xóa bình luận theo quyền sở hữu.
-- Bình luận chỉ hiển thị tối đa hai cấp.
-- `parent_id` luôn trỏ comment gốc; `reply_to_comment_id` ghi comment cụ thể được trả lời.
-- Kiểm tra parent/reply thuộc cùng bài.
-- Admin có thể ẩn/reject comment.
-
-Frontend:
-
-- Danh sách comment theo thread.
-- Reply comment gốc hoặc reply khác nhưng giao diện vẫn phẳng hai cấp.
-- Hiển thị `reply_to_username`.
-- Form validation và optimistic UI chỉ khi có rollback lỗi.
-
-### B6. Likes và Subscriptions
-
-- API toggle post like và comment like, xử lý unique conflict an toàn.
-- API follow/unfollow, chặn tự follow.
-- API following feed và cập nhật `last_viewed_at`.
-- Nút like/follow trên Angular phản ánh đúng trạng thái từ server.
-- Trang subscriptions, lọc theo tác giả và trạng thái không có dữ liệu.
-
-### B7. Test bắt buộc
-
-- Không like hai lần.
-- Không tự follow.
-- Không sửa/xóa comment của người khác.
-- Reply khác bài bị từ chối.
-- Feed không trả draft/rejected/archived.
-- UI responsive ở desktop, tablet và mobile.
-
-## 5. Phân công Developer C — Author Workspace, Upload và AI Translation
-
-### C1. Posts backend
-
-- API tạo draft với `author_id` lấy từ JWT, không nhận tùy ý từ request.
-- API cập nhật bài chỉ cho tác giả sở hữu.
-- API danh sách bài của tôi theo trạng thái.
-- API gửi duyệt: `draft/rejected → pending_review`.
-- API admin approve/reject; reject phải có `review_note`.
-- API publish chỉ cho bài `approved`.
-- API archive và xóa mềm/khôi phục theo quy ước nhóm.
-- Dùng transaction khi cập nhật `posts` và `post_translations`.
-
-### C2. Author Workspace Angular
-
-- Create/edit post với title, summary, content, category và ngôn ngữ gốc.
-- Editor hỗ trợ ảnh bên trong nội dung.
-- Preview nội dung đã sanitize.
-- My posts: draft, pending, approved, rejected, published, archived.
-- Hiển thị `review_note` khi bị từ chối.
-- Ma trận trạng thái dịch theo ngôn ngữ.
-- Không có trường chọn thumbnail và không cho chọn nhiều tác giả.
-
-### C3. Upload
-
-- Endpoint upload avatar và ảnh editor.
-- Kiểm tra MIME thực, extension, kích thước và tên file ngẫu nhiên.
-- Không tin tên file/path do client gửi.
-- Chỉ trả URL sau khi upload thành công.
-- Ảnh editor được chèn dưới dạng URL trong `post_translations.content`.
-- Dọn file rác theo chính sách được nhóm thống nhất.
-
-### C4. Translation worker
-
-- Tạo target `post_translations` theo ngôn ngữ được chọn.
-- Worker lấy bản `queued`, khóa công việc và chuyển sang `processing`.
-- Mỗi lần gọi provider tạo một `translation_attempts`.
-- Ghi `provider`, `attempt_order`, status, lỗi, `char_count`, thời gian bắt đầu/kết thúc.
-- Fallback provider khi `failed`, `rate_limited` hoặc `timeout`.
-- Thành công cập nhật content và `translation_status = completed`.
-- Thất bại toàn bộ cập nhật `translation_status = failed`.
-- Không dịch lại bản completed nếu nội dung nguồn chưa đổi.
-
-### C5. Translation UI/Admin integration
-
-- Hiển thị trạng thái `not_started`, `queued`, `processing`, `completed`, `failed`.
-- Cho phép retry bản failed theo quyền.
-- Admin dashboard xem hàng đợi và lỗi gần nhất.
-- Không hiển thị error message chứa secret/provider credential.
-
-### C6. Test bắt buộc
-
-- User không sửa bài người khác.
-- Không publish bài chưa approved.
-- Unique `(post_id, language_id)` được giữ.
-- Provider đầu lỗi thì provider sau được gọi đúng thứ tự.
-- Một job không bị hai worker xử lý đồng thời.
-- File sai MIME/quá dung lượng bị từ chối.
-
-## 6. Kế hoạch 8 tuần
-
-| Tuần | Developer A | Developer B | Developer C | Mốc tích hợp |
-|---:|---|---|---|---|
-| 1 | Nest bootstrap, DB/env/migration | Angular bootstrap, layout và shared UI | Chốt posts/translation contract, chọn editor/provider mock | Backend/frontend chạy độc lập |
-| 2 | Register/login/JWT/guards | Feed/explore UI với API mock | Draft CRUD và post translations | Chốt DTO auth và post |
-| 3 | Refresh/logout/forgot/reset password | Feed/search/detail API + UI | Create/edit workspace + upload ảnh editor | Đăng nhập và tạo draft end-to-end |
-| 4 | Users admin, ban/unban | Comments backend + UI | Submit/review/publish workflow | Draft → review → publish chạy được |
-| 5 | Languages/categories API + admin UI | Likes, profile và subscriptions | Worker dịch + translation attempts | Bài published hiển thị/dịch được |
-| 6 | Admin dashboard, hardening auth | Hoàn thiện public/social responsive | Translation matrix, retry/fallback | Feature freeze |
-| 7 | Unit/e2e auth/admin/DB | Unit/e2e public/social | Unit/e2e post/upload/translation | Test chéo và sửa tích hợp |
-| 8 | Build/deploy backend, tài liệu API | Build frontend, accessibility/UI QA | Worker deployment, dữ liệu demo | Release candidate và demo |
-
-## 7. Quan hệ phụ thuộc và bàn giao
-
-| Bên tạo | Bên sử dụng | Nội dung phải bàn giao |
-|---|---|---|
-| A | B, C | Auth DTO, JWT guard, current-user decorator, error format |
-| A | B | Language/category endpoints và role rules |
-| C | B | Post detail/feed DTO, status mapping và translation DTO |
-| B | C | Shared form/editor shell, toast, confirm dialog và public post card |
-| C | A | Translation queue metrics cho admin dashboard |
-| B | A | User/profile UI requirements và admin table components dùng chung |
-
-Mọi API bàn giao phải kèm:
-
-- Method và URL.
-- Request DTO mẫu.
-- Success response mẫu.
-- Các mã lỗi có thể xảy ra.
-- Quyền truy cập.
-- Test hoặc Postman/Swagger minh họa.
-
-## 8. Git workflow
-
-### Branch
-
-- `main`: bản ổn định để demo/deploy.
-- `develop`: nhánh tích hợp.
-- `feature/<ten>`: tính năng mới.
-- `fix/<ten>`: sửa lỗi.
-- `docs/<ten>`: chỉ sửa tài liệu.
-
-Ví dụ:
+### A-06. Admin users và roles
+
+- Angular admin users: search, role/status filter, pagination, detail, ban/unban.
+- API `GET /admin/users`, `GET /admin/users/:id`, cập nhật status/role.
+- Chỉ admin; không cho admin tự ban mình; ban user phải revoke phiên.
+- Test 403, filter/pagination và user bị ban không login/refresh được.
+
+### A-07. Admin languages
+
+A làm toàn bộ UI/API/query:
+
+- List/create/update/enable/disable language.
+- Chọn đúng một ngôn ngữ mặc định.
+- Không tắt default nếu chưa chọn ngôn ngữ thay thế.
+- Unique language code; hiển thị native name và flag code.
+- Độ phủ dịch lấy metric do C export, không tự query lại nghiệp vụ dịch.
+
+### A-08. Admin categories và bản dịch danh mục
+
+- Angular table/modal tạo sửa, search/filter, status và số bài.
+- CRUD `categories` cùng `category_translations` trong transaction.
+- Sinh slug, cho admin chỉnh và giữ unique `(category_id, language_id)`.
+- Xóa category không xóa bài; bài nhận `category_id = null`.
+
+### A-09. Admin dashboard shell
+
+A sở hữu trang và endpoint tổng hợp:
+
+- Thống kê user/role/status từ module A.
+- Thống kê comment/like/follow gọi service B export.
+- Thống kê bài chờ duyệt/dịch lỗi gọi service C export.
+- Không viết lại query trực tiếp vào bảng B/C sở hữu.
+
+## 5. Developer B — Reader Experience và Social
+
+### B-01. Public layout và UI đọc chung
+
+- Chuyển header/sidebar/mobile navigation/footer từ prototype sang Angular.
+- Header có search, auth/user menu và chọn ngôn ngữ.
+- Post card dùng chung cho feed, explore, profile và subscriptions.
+- Category/language/sort filter, pagination, loading/empty/error.
+- Responsive và keyboard focus; không chuyển dữ liệu giả từ `core.js` sang app thật.
+
+### B-02. Feed trang chủ
+
+Angular:
+
+- Một feed duy nhất, thay action theo trạng thái đăng nhập.
+- Hiển thị author, category, language, view/like/comment count.
+- Lọc category/language, sắp xếp mới nhất/phổ biến và phân trang.
+
+NestJS/API:
+
+- `GET /posts` cho luồng public.
+- Chỉ trả `published`, chưa xóa và có bản dịch phù hợp.
+- Trả liked/followed khi request có user.
+
+B sở hữu read query; C sở hữu create/update/status. Hai người chốt `PublicPostDto` trước khi làm.
+
+### B-03. Explore và search
+
+- Angular search bài, tác giả, danh mục; debounce và đồng bộ query lên URL.
+- API search title/summary đúng ngôn ngữ, username/display name và category translation.
+- Không trả bài chưa publish hoặc user bị banned/deleted.
+- Test query rỗng, hoa/thường và pagination.
+
+### B-04. Post detail và bài liên quan
+
+- Render title/summary/content HTML, author, category, thời gian publish.
+- Chuyển ngôn ngữ; nếu thiếu bản dịch hiển thị trạng thái ngay tại trang.
+- API chi tiết chỉ trả published; preview draft dùng API C.
+- Tăng view có kiểm soát và trả bài liên quan.
+- Sanitize trước render; C sanitize ở lúc lưu.
+
+### B-05. Public profile tác giả
+
+- Avatar, display name, username, bio, follower/following và bài published.
+- Không có ảnh bìa, không trả email/dữ liệu phiên.
+- B sở hữu trang/query public; A sở hữu form sửa hồ sơ cá nhân.
+
+### B-06. Post likes và comment likes
+
+- Angular like/unlike có pending state, count và rollback khi lỗi.
+- API like/unlike post/comment.
+- Dùng unique `(post_id,user_id)` và `(comment_id,user_id)`.
+- Test double click/request đồng thời không tạo bản ghi trùng.
+
+### B-07. Comments hai cấp
+
+Angular:
+
+- Comment gốc và reply thụt đúng một cấp.
+- Reply một reply vẫn ở cấp hai và hiển thị “trả lời @username”.
+- Tạo/sửa/xóa, confirm và trạng thái hidden/rejected.
+
+NestJS:
+
+- CRUD comments và quyền sở hữu.
+- `parent_id` của reply luôn trỏ comment gốc.
+- `reply_to_comment_id` trỏ comment cụ thể; kiểm tra cùng post.
+- Không tạo tầng thứ ba hoặc reply chéo bài.
+
+Database: `comments`, `comment_likes`.
+
+### B-08. Follow và subscriptions
+
+- Follow/unfollow ở post detail và public profile.
+- Trang subscriptions, lọc feed theo author và gợi ý tác giả.
+- API follow/unfollow/list/following-feed/update `last_viewed_at`.
+- Chặn tự follow và duplicate follow.
+- Feed chỉ chứa bài published của author đang theo dõi.
+
+### B-09. UI language và theme
+
+- Service i18n cho label/menu, tách biệt với ngôn ngữ nội dung bài.
+- Theme light/dark/system và compact view nếu giữ.
+- B sở hữu service toàn app; A tích hợp điều khiển tại Settings.
+
+## 6. Developer C — Author, Moderation và AI Translation
+
+### C-01. State machine bài viết
 
 ```text
-feature/auth-refresh-token
-feature/public-comments
-feature/translation-worker
-fix/post-status-transition
+draft → pending_review → approved → published → archived
+   ↑          ↓
+   └────── rejected
 ```
 
-### Quy trình mỗi task
+- Tạo bài là `draft`; `author_id` lấy từ JWT.
+- Chỉ tác giả sở hữu được sửa.
+- Draft/rejected mới gửi duyệt; admin mới approve/reject.
+- Reject bắt buộc `review_note`; approved mới publish và ghi `published_at`.
+- Archive/xóa mềm/khôi phục phải có transition và test rõ ràng.
 
-```powershell
-git switch develop
-git pull origin develop
-git switch -c feature/ten-task
-```
+### C-02. Create/Edit Post
 
-Sau khi hoàn thành:
+Angular:
 
-```powershell
-git add <cac-file-dung-pham-vi>
-git commit -m "feat: mo ta ngan gon"
-git push -u origin feature/ten-task
-```
+- Title, summary, category, source/target languages, WYSIWYG content.
+- Lưu draft, preview, gửi duyệt và cảnh báo rời trang chưa lưu.
+- Chèn ảnh trong content; không có thumbnail hoặc chọn nhiều tác giả.
 
-Tạo Pull Request vào `develop`, không vào thẳng `main`.
+NestJS/API:
 
-### Quy tắc commit
+- Create/get/update/submit author post.
+- Cập nhật `posts` và bản nguồn `post_translations` trong transaction.
+- Sinh slug theo ngôn ngữ, unique `(slug,language_id)` và sanitize HTML.
 
-- `feat:` tính năng mới.
-- `fix:` sửa lỗi.
-- `refactor:` đổi cấu trúc không đổi hành vi.
-- `test:` thêm/sửa test.
-- `docs:` tài liệu.
-- `chore:` dependency, config hoặc đồng bộ prototype.
+### C-03. My Posts, archive và thùng rác
 
-Không gộp database migration, UI lớn và refactor không liên quan trong cùng một commit.
+- Angular list/search/filter theo toàn bộ status và hiển thị `review_note`.
+- Sửa, archive, xóa mềm/khôi phục theo quyền/trạng thái.
+- Ma trận translation status từng ngôn ngữ.
+- API luôn giới hạn `author_id = currentUser.id`.
 
-## 9. Quy tắc tránh xung đột
+### C-04. Preview
 
-- B thông báo trước khi đồng bộ `ui-prototype` bằng subtree.
-- A duyệt mọi migration; migration đã chạy chung không được sửa nội dung.
-- C không thay đổi auth DTO nếu chưa trao đổi với A.
-- B không tự đổi post response DTO nếu chưa trao đổi với C.
-- File dùng chung như routes, app config và variables SCSS cần chia commit nhỏ.
-- Rebase/merge `develop` vào branch trước khi mở PR lớn.
+- Draft preview chỉ author sở hữu/admin xem được, không lộ qua public route.
+- Tái sử dụng component render của B.
+- C cung cấp Preview DTO tương thích PublicPostDto nhưng thêm status/review note.
 
-## 10. Definition of Done
+### C-05. Admin kiểm duyệt bài
 
-Một task chỉ hoàn thành khi đáp ứng tất cả mục liên quan:
+Chức năng đặt trong admin layout A nhưng thuộc C vì nằm trong vòng đời bài:
 
-- Code build không lỗi.
-- Không còn dữ liệu giả trong luồng đã nối API.
-- DTO validate đủ trường bắt buộc.
-- Backend kiểm tra auth, role và quyền sở hữu.
-- Có xử lý loading, empty và error ở frontend.
-- Migration có `up` và `down` nếu thay database.
-- Unit test cho nghiệp vụ chính; e2e cho luồng quan trọng.
-- Không commit `.env`, secret, `node_modules`, `dist` hoặc file upload.
-- Đã tự review diff và xóa log/debug code.
-- Có ít nhất một thành viên khác approve Pull Request.
-- Tài liệu API hoặc hướng dẫn được cập nhật nếu hành vi thay đổi.
+- Angular manage posts: filter author/category/language/status/date, preview, approve/reject.
+- API list/detail/approve/reject/publish cho admin.
+- Reject bắt buộc note; kiểm tra state trong transaction.
+- Test role, trạng thái sai và hai admin thao tác đồng thời.
+- Không có `review_status`; chỉ dùng `posts.status` và `review_note`.
 
-## 11. Review chéo
+### C-06. Upload
 
-| PR của | Reviewer chính | Reviewer phụ |
+- Service Multer dùng chung cho avatar và ảnh editor.
+- Kiểm MIME thật, dung lượng, tên ngẫu nhiên và path traversal.
+- Không có endpoint cover/thumbnail.
+- Ảnh editor trả URL để lưu trong `post_translations.content`.
+- A tích hợp avatar nhưng C sở hữu service/validation upload.
+
+### C-07. Translation targets và status matrix
+
+- Một target cho mỗi `(post_id,language_id)`, không tạo trùng.
+- Bản nguồn là nội dung author; bản đích bắt đầu `not_started/queued`.
+- API ma trận status dùng chung cho My Posts và Admin Posts.
+
+### C-08. Translation worker và fallback provider
+
+1. Lấy target `queued`, khóa job và chuyển `processing`.
+2. Gọi provider theo thứ tự cấu hình.
+3. Mỗi lần gọi insert `translation_attempts` với provider, order, status, error, char count và thời gian.
+4. Failed/rate-limited/timeout thì thử provider tiếp theo.
+5. Thành công cập nhật content/provider/status `completed`; hết provider thì `failed`.
+
+Test bắt buộc: provider fallback đúng thứ tự, thành công không gọi tiếp, hai worker không xử lý trùng, restart không mất job và không ghi API key vào log/DB.
+
+### C-09. Retry và thay đổi nội dung nguồn
+
+- Retry thủ công target failed theo quyền.
+- Khi nguồn thay đổi phải đánh dấu bản dịch cần cập nhật theo quy tắc đã chốt.
+- Không ghi đè bản dịch human-edited nếu chưa xác nhận.
+- Export metrics bài/dịch cho dashboard A.
+
+## 7. Hợp đồng phối hợp
+
+| Hạng mục | Owner | Người phối hợp |
 |---|---|---|
-| Developer A | Developer C | Developer B |
-| Developer B | Developer A | Developer C |
-| Developer C | Developer B | Developer A |
+| Nest structure, env, error format, auth guards | A | B, C |
+| Angular config/interceptors | A | B, C |
+| Public layout, PublicPostDto, i18n/theme | B | A, C |
+| Post state machine, preview/translation DTO | C | A, B |
+| Migration convention và schema review | A | B, C |
+| Upload service | C | A |
+| Admin layout shell | A | C |
 
-PR liên quan auth/database cần A tham gia review dù A không phải tác giả. PR liên quan UI shared cần B tham gia. PR liên quan trạng thái bài/dịch cần C tham gia.
+Mọi API bàn giao phải có method/URL, quyền, request/response mẫu, lỗi có thể xảy ra, Swagger và test tối thiểu.
 
-## 12. Họp và báo cáo
+## 8. Lịch 8 tuần
 
-### Daily 10–15 phút
+Mỗi tuần mọi người đều làm cả Angular và NestJS của chức năng mình.
 
-Mỗi người trả lời:
+| Tuần | A | B | C | Mốc tích hợp |
+|---:|---|---|---|---|
+| 1 | Bootstrap Nest/Angular, DB/env, contract chung | Public layout/post card, phân tích feed | State machine, Post DTO, editor/provider spike | Frontend/backend/DB chạy |
+| 2 | Register/login/me + UI | Feed API + UI | Create draft API + UI | Login và tạo/xem draft |
+| 3 | Refresh/logout/change password | Explore/search/detail | Edit/preview/submit + upload content | Draft gửi duyệt, detail dùng DTO chung |
+| 4 | Forgot/reset + profile/settings | Comments + likes | My Posts + admin moderation | Review/publish/social chạy end-to-end |
+| 5 | Admin users/roles | Public profile + subscriptions | Translation worker/fallback | Published post vào following feed và dịch |
+| 6 | Languages/categories/dashboard | Social responsive + i18n/theme | Matrix/retry + metrics | Feature freeze |
+| 7 | Test auth/admin/migration/security | Test reader/social/accessibility | Test post/upload/worker concurrency | Test chéo DB sạch |
+| 8 | Build/deploy backend, API docs | Build frontend, UI QA/demo | Deploy worker, demo content | Release candidate |
 
-1. Hôm qua đã hoàn thành gì?
-2. Hôm nay làm task nào?
-3. Đang bị chặn bởi ai hoặc điều gì?
+## 9. Git workflow
 
-### Cuối tuần
+Nhánh theo chức năng, không tạo `frontend-all` hoặc `backend-all`:
 
-- Demo trên nhánh `develop`.
-- Chạy migration trên database test sạch.
-- Chạy test backend và build frontend.
-- Kiểm tra tiến độ bảng tuần.
-- Chốt API/DB thay đổi cho tuần tiếp theo.
+```text
+feature/auth-refresh-session
+feature/public-comments
+feature/admin-categories
+feature/author-post-moderation
+feature/translation-provider-fallback
+```
 
-### Bảng theo dõi task
+Một branch chức năng có thể chứa các commit riêng:
 
-Mỗi task có tối thiểu:
+```text
+feat(comments): add comments API
+feat(comments): add Angular comment threads
+test(comments): reject cross-post replies
+```
 
-- Người phụ trách.
-- Reviewer.
-- Deadline.
-- Dependency.
-- Tiêu chí nghiệm thu.
-- Trạng thái: Todo, In Progress, Review, Testing, Done.
+PR vào `develop`, ít nhất một reviewer phải chạy cả UI và API của chức năng.
 
-## 13. Tiêu chí hoàn thành dự án
+## 10. Database và review
 
-- Đăng ký, login, refresh, logout và quên/reset mật khẩu hoạt động.
-- Admin quản lý user, language, category và duyệt bài.
-- Tác giả tạo draft, gửi duyệt, sửa bài bị từ chối và xuất bản bài được duyệt.
-- Độc giả đọc đúng ngôn ngữ, tìm/lọc bài, bình luận, like và follow.
-- Worker dịch có provider fallback và lưu lịch sử lần thử.
-- Không có ảnh bìa người dùng hoặc thumbnail bài viết trong DB/UI/API.
-- Database tạo được hoàn toàn bằng migration và rollback được.
-- Frontend/backend build thành công; luồng chính có e2e test.
-- Không có secret hoặc dữ liệu production trong Git.
+- Owner đề xuất migration cho bảng chức năng mình; A review index/FK/type.
+- Migration đã chạy chung không được sửa; tạo migration mới.
+- PR database phải cập nhật migration, model, DBML và test.
+- PR A: C review chính; B thêm review nếu thay shared Angular.
+- PR B: A review chính; C thêm review nếu thay Post DTO/query.
+- PR C: B review chính; A thêm review nếu thay migration/auth/admin guard.
+
+## 11. Definition of Done
+
+Một chức năng chỉ Done khi:
+
+- Angular có loading/success/empty/error và responsive cần thiết.
+- API có DTO validation, auth/role/ownership.
+- Query/transaction/index phù hợp.
+- Không còn dữ liệu giả trong luồng đã nối API.
+- Có unit test nghiệp vụ và integration/e2e test luồng chính/lỗi.
+- Build frontend/backend thành công.
+- Swagger/tài liệu được cập nhật.
+- Không commit `.env`, secret, API key, `node_modules`, `dist`, uploads.
+- Owner đã chạy từ trình duyệt tới database và PR được approve.
+
+## 12. Tiêu chí hoàn thành dự án
+
+- Register/login/refresh/logout/change/forgot/reset password hoạt động.
+- Admin quản lý user/language/category và kiểm duyệt bài.
+- Author tạo draft, gửi duyệt, sửa bài rejected và publish bài approved.
+- Reader đọc đúng bản dịch, search/filter, comment, like và follow.
+- Worker có provider fallback và lịch sử từng lần thử.
+- Không có ảnh bìa, thumbnail hoặc nhiều tác giả trong UI/API/DB.
+- Database tạo/rollback bằng migration.
+- Mỗi cụm có một owner chịu trách nhiệm Angular → NestJS → MySQL → test.
