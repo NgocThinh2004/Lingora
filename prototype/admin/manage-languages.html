@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+
+<head>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/lingora-mark.svg">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Languages - Lingora</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Flag Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
+
+  <!-- Custom CSS (Standard Shared Assets) -->
+<link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1784286400">
+  <link rel="stylesheet" href="../assets/css/layouts.css">
+  <link rel="stylesheet" href="../assets/css/components.css?v=1784286400">
+
+  <style>
+    .admin-container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+      width: 100%;
+    }
+
+    .admin-header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.25rem;
+    }
+
+    .admin-card {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: all 0.2s ease;
+    }
+
+    [data-bs-theme="dark"] .admin-card {
+      background-color: var(--bg-panel);
+      border-color: var(--border-color);
+    }
+
+    .admin-card:hover {
+      border-color: var(--primary-color) !important;
+      transform: translateY(-2px);
+    }
+
+    .admin-card-clean {
+      background-color: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin-bottom: 1.5rem;
+    }
+
+    .languages-table th {
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom-width: 1px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .languages-table td {
+      vertical-align: middle;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      border-bottom-color: var(--border-color);
+      padding: 1rem 0.75rem;
+    }
+
+    .form-switch .form-check-input {
+      cursor: pointer;
+    }
+
+    .form-switch .form-check-input:checked {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+
+    .progress {
+      background-color: var(--border-color);
+      border-radius: 99px;
+      height: 8px;
+    }
+
+    .progress-bar {
+      border-radius: 99px;
+    }
+
+    /* Override center-feed defaults for admin pages to allow wider view */
+    .center-feed {
+      align-items: stretch !important;
+    }
+
+    .center-feed>* {
+      max-width: 100% !important;
+    }
+
+    .admin-container { max-width: 1280px; }
+    .language-table-wrap { overflow: hidden; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-panel); }
+    .language-directory { width: 100%; table-layout: fixed; margin: 0; }
+    .language-directory th:nth-child(1) { width: 24%; }
+    .language-directory th:nth-child(2) { width: 9%; }
+    .language-directory th:nth-child(3) { width: 27%; }
+    .language-directory th:nth-child(4) { width: 14%; }
+    .language-directory th:nth-child(5) { width: 16%; }
+    .language-directory th:nth-child(6) { width: 10%; }
+    .language-directory thead th { padding: .85rem 1rem; color: var(--text-muted); background: var(--border-light); border-bottom: 1px solid var(--border-color); font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+    .language-directory tbody td { padding: 1rem; color: var(--text-main); border-bottom-color: var(--border-color); vertical-align: middle; }
+    .language-directory tbody tr { transition: background-color .15s ease; }
+    .language-directory tbody tr:hover { background: var(--border-light); cursor: pointer; }
+    .language-directory tbody tr:focus-visible { outline: 2px solid var(--primary-color); outline-offset: -2px; }
+    .language-cell { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+    .language-cell > div { min-width: 0; }
+    .language-flag { width: 34px; height: 25px; object-fit: cover; border: 1px solid var(--border-color); border-radius: 4px; }
+    .language-name { overflow: hidden; font-weight: 650; color: var(--text-main); text-overflow: ellipsis; white-space: nowrap; }
+    .language-native { color: var(--text-muted); font-size: .78rem; }
+    .language-code { display: inline-flex; padding: .25rem .55rem; color: #344054; background: #f2f4f7; border: 1px solid #eaecf0; border-radius: 999px; font-family: ui-monospace, monospace; font-size: .78rem; font-weight: 600; }
+    [data-bs-theme="dark"] .language-code { color: #d0d5dd; background: #252525; border-color: #3b3b3b; }
+    .coverage-cell { min-width: 0; }
+    .coverage-track { height: 7px; background: var(--border-color); border-radius: 999px; overflow: hidden; }
+    .coverage-fill { height: 100%; background: var(--primary-color); border-radius: inherit; }
+    .language-status-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .65rem; border-radius: 999px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+    .language-status-pill.active { color: #067647; background: #ecfdf3; }
+    .language-status-pill.inactive { color: #b42318; background: #fef3f2; }
+    [data-bs-theme="dark"] .language-status-pill.active { color: #75e0a7; background: #123525; }
+    [data-bs-theme="dark"] .language-status-pill.inactive { color: #fda29b; background: #3b1717; }
+    .language-status-control { padding: 0; border: 0; color: inherit; background: transparent; }
+    .language-status-control:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 3px; border-radius: 999px; }
+    .language-status-control:disabled { cursor: not-allowed; opacity: .78; }
+    .primary-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .65rem; color: #b54708; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 999px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+    [data-bs-theme="dark"] .primary-pill { color: #fdba74; background: #431407; border-color: #7c2d12; }
+    .language-actions { display: flex; justify-content: center; gap: .25rem; }
+    .language-action-btn { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
+    .modal .form-control, .modal .form-select { background: var(--bg-body); border-color: var(--border-color); color: var(--text-main); }
+    .btn-primary { background-color: var(--primary-color); border-color: var(--primary-color); }
+    .btn-primary:hover { background-color: var(--primary-hover); border-color: var(--primary-hover); }
+
+    @media (max-width: 767px) {
+      .admin-container { padding: 1rem .75rem 2rem; }
+      .admin-header { padding-inline: 0; margin-bottom: 1.25rem; }
+      .admin-header > .btn { width: 100%; justify-content: center; min-height: 44px; }
+      .language-table-wrap { overflow: visible; border: 0; background: transparent; }
+      .language-directory, .language-directory tbody, .language-directory tr, .language-directory td { display: block; width: 100%; }
+      .language-directory { table-layout: auto; }
+      .language-directory thead { display: none; }
+      .language-directory tbody { display: grid; gap: .85rem; }
+      .language-directory tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; padding: .85rem; border: 1px solid var(--border-color); border-radius: 16px; background: var(--bg-panel); box-shadow: 0 4px 14px rgba(16, 24, 40, .04); }
+      .language-directory tbody td { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: .35rem; padding: .7rem; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-body); }
+      .language-directory tbody td:not(:first-child):not(:last-child) { padding: .45rem .25rem; border: 0; border-radius: 0; background: transparent; }
+      .language-directory tbody td::before { content: attr(data-label); color: var(--text-muted); font-size: .66rem; font-weight: 750; letter-spacing: .045em; text-transform: uppercase; }
+      .language-directory tbody td:first-child { display: block; grid-column: 1 / -1; padding: .15rem .1rem .9rem; margin-bottom: .05rem; border: 0; border-bottom: 1px solid var(--border-color); border-radius: 0; background: transparent; }
+      .language-directory tbody td:first-child::before { display: none; }
+      .language-directory tbody td:nth-child(3) { grid-column: 1 / -1; }
+      .language-directory tbody td:last-child { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; padding: .7rem .15rem .05rem; border: 0; border-top: 1px solid var(--border-color); border-radius: 0; background: transparent; }
+      .language-cell, .coverage-cell { min-width: 0; }
+      .language-actions { justify-content: flex-end; }
+      .language-action-btn { width: 40px; height: 40px; }
+      .coverage-cell { width: 100%; }
+      .admin-pagination { flex-wrap: wrap; margin-top: .85rem; }
+    }
+    @media (max-width: 420px) {
+      .language-directory tbody tr { grid-template-columns: 1fr; }
+      .language-directory tbody td { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-wrapper">
+
+    <!-- HEADER (Visible on Mobile Only - Hidden on Desktop) -->
+    <header class="app-header">
+      <div class="header-container">
+        <!-- Mobile Sidebar Trigger -->
+        <button class="btn btn-link d-lg-none me-2 text-reset p-0" type="button" data-bs-toggle="offcanvas"
+          data-bs-target="#mobileSidebar" aria-controls="mobileSidebar">
+          <i class="bi bi-list fs-3"></i>
+        </button>
+
+        <!-- Brand Logo for mobile -->
+        <a href="../index.html" class="d-flex align-items-center text-decoration-none">
+          <i class="bi bi-bookmark-fill fs-4 text-primary me-2"></i>
+          <span class="fs-5 fw-bold text-main">Lingora</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- MAIN APP WRAPPER (2-Column Layout for Admin Panel) -->
+    <main class="app-main-content no-right-panel">
+
+      <!-- LEFT SIDEBAR -->
+      <aside class="left-sidebar">
+        <div>
+          <!-- Substack Logo -->
+          <div class="substack-logo-container">
+            <a href="../index.html" class="text-decoration-none d-flex flex-column align-items-start gap-1">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-bookmark-fill substack-logo"></i>
+                <span class="fs-5 fw-bold text-main" style="letter-spacing: -0.02em;">Lingora</span>
+              </div>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill"
+                style="font-size: 0.68rem !important; padding: 0.15rem 0.5rem !important; font-weight: 600; margin-left: 2px;"
+                data-i18n="admin_panel">Admin Panel</span>
+            </a>
+          </div>
+
+          <!-- Navigation menu -->
+          <nav class="sidebar-nav">
+            <a href="index.html" class="sidebar-nav-item">
+              <i class="bi bi-speedometer2"></i> <span data-i18n="admin_dashboard">Admin Dashboard</span>
+            </a>
+            <a href="manage-users.html" class="sidebar-nav-item">
+              <i class="bi bi-people"></i> <span data-i18n="manage_users">Manage Users</span>
+            </a>
+            <a href="manage-posts.html" class="sidebar-nav-item">
+              <i class="bi bi-file-earmark-check"></i> <span data-i18n="manage_posts">Manage Posts</span>
+            </a>
+            <a href="manage-categories.html" class="sidebar-nav-item">
+              <i class="bi bi-tags"></i> <span data-i18n="manage_categories">Manage Categories</span>
+            </a>
+            <a href="manage-languages.html" class="sidebar-nav-item active">
+              <i class="bi bi-translate"></i> <span data-i18n="manage_languages">Manage Languages</span>
+            </a>
+          </nav>
+        </div>
+
+        <!-- Bottom Section -->
+
+<div class="sidebar-footer-menu">
+
+                    <!-- Sidebar Controls (Theme & Language) -->
+          <div class="sidebar-controls mb-2">
+            <!-- Theme Switch and Language -->
+            <div class="d-flex align-items-center justify-content-start gap-2 ps-3 pe-2 mb-2">
+              <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 38px; height: 38px; border-radius: 8px; border-color: var(--border-color);">
+                  <img src="https://flagcdn.com/w20/gb.png" width="24" height="18" id="sidebarLangFlag" style="border-radius:2px; object-fit: cover;" alt="Language">
+                </button>
+                <ul class="dropdown-menu shadow border-light-subtle" style="min-width: 120px; border-radius: 12px; font-size: 14px;">
+                  <li><a class="dropdown-item py-1.5 fw-medium global-lang-select" href="#" data-lang="en"><img src="https://flagcdn.com/w20/gb.png" width="18" alt="English" class="me-2" style="border-radius:2px;"> English</a></li>
+                  <li><a class="dropdown-item py-1.5 fw-medium global-lang-select" href="#" data-lang="vi"><img src="https://flagcdn.com/w20/vn.png" width="18" alt="Tiếng Việt" class="me-2" style="border-radius:2px;"> Tiếng Việt</a></li>
+                  <li><a class="dropdown-item py-1.5 fw-medium global-lang-select" href="#" data-lang="zh"><img src="https://flagcdn.com/w20/cn.png" width="18" alt="中文" class="me-2" style="border-radius:2px;"> 中文</a></li>
+                </ul>
+              </div>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-0" id="sidebarThemeToggle" style="width: 38px; height: 38px; border-radius: 8px; border-color: var(--border-color); color: var(--text-main);" aria-label="Toggle theme">
+                <i class="bi bi-moon-fill" id="sidebarThemeIcon" style="font-size: 17px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="dropdown">
+            <button
+              class="btn btn-link text-decoration-none text-main d-flex align-items-center gap-2 p-1.5 w-100 border-0 text-start"
+              type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-list fs-5"></i>
+              <span class="fw-medium" data-i18n="more">More</span>
+            </button>
+            <ul class="dropdown-menu shadow border-light-subtle">
+              <li><a class="dropdown-item py-2" href="../index.html"><i class="bi bi-arrow-left me-2"></i> <span data-i18n="back_feed">Back to Feed</span></a></li>
+              <li><a class="dropdown-item py-2" href="../settings.html?from=admin"><i class="bi bi-gear me-2"></i>
+                  <span data-i18n="settings">Settings</span></a></li>
+              <li>
+                <hr class="dropdown-divider">
+              </li>
+              <li><a class="dropdown-item py-2 text-danger" href="#" id="signOutBtn"><i
+                    class="bi bi-box-arrow-right me-2"></i> <span data-i18n="sign_out">Sign Out</span></a></li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTER COLUMN: Admin Workspace -->
+      <div class="center-feed">
+        <div class="admin-container">
+
+          <div
+            class="admin-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
+            <div>
+              <h1 class="fw-bold text-main mb-1" style="letter-spacing: -0.03em;" data-i18n="language_management">
+                Language Management</h1>
+              <p class="text-muted mb-0" data-i18n="lang_desc_page">Configure system languages and monitor AI automatic
+                translation coverage.</p>
+            </div>
+            <button class="btn btn-primary rounded-pill px-4 d-flex align-items-center gap-2" data-bs-toggle="modal"
+              data-bs-target="#addLanguageModal">
+              <i class="bi bi-plus-lg"></i> <span data-i18n="add_language">Add Language</span>
+            </button>
+          </div>
+
+          <!-- LANGUAGES TABLE -->
+          <div class="language-table-wrap">
+            <table class="table language-directory align-middle" aria-label="Configured languages">
+              <thead>
+                <tr>
+                  <th scope="col" data-lang-key="language">Language</th>
+                  <th scope="col" data-i18n="col_code">Code</th>
+                  <th scope="col" data-lang-key="translated_posts">Translated posts</th>
+                  <th scope="col" data-i18n="status">Status</th>
+                  <th scope="col" data-lang-key="default_language">Default</th>
+                  <th scope="col" class="text-center" data-i18n="col_actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="languageTableBody"></tbody>
+            </table>
+          </div>
+          <nav class="admin-pagination" id="languagePagination" aria-label="Language pagination" hidden></nav>
+
+          <!-- Legacy list retained only as a static fallback -->
+          <div class="admin-card-clean d-none" aria-hidden="true">
+            <div class="substack-list" id="legacyLanguageList">
+              <!-- Item 1: English -->
+              <div class="substack-list-item">
+                <div class="item-title-block">
+                  <div class="item-main-title d-flex align-items-center gap-2">
+                    <span class="fi fi-us fs-4 border border-light-subtle rounded-1" style="width: 26px;"></span>
+                    <span>English</span>
+                    <span
+                      class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5 rounded-pill"
+                      style="font-size: 0.72rem;">en</span>
+                    <span
+                      class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5 rounded-pill"
+                      style="font-size: 0.72rem;" data-i18n="primary_language">Primary Language</span>
+                  </div>
+                  <div class="item-sub-info mt-1.5">
+                    <div class="d-flex align-items-center gap-2 w-100">
+                      <span class="small text-muted"><i class="bi bi-file-earmark-text me-1"></i> <span data-i18n="translated_articles">Bài viết đã dịch:</span> <strong class="text-main">500 / 500</strong></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="languages-right-actions">
+                  <label class="perfect-switch">
+  <input class="perfect-switch-input" type="checkbox" checked disabled>
+  <div class="perfect-switch-track">
+    <div class="perfect-switch-thumb"></div>
+    <span class="perfect-switch-text-on" data-i18n="default">Default</span>
+    <span class="perfect-switch-text-off" data-i18n="inactive">Inactive</span>
+  </div>
+</label>
+                  <div>
+                    <button class="btn btn-sm btn-link text-muted p-1" disabled><i class="bi bi-trash"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Item 2: Vietnamese -->
+              <div class="substack-list-item">
+                <div class="item-title-block">
+                  <div class="item-main-title d-flex align-items-center gap-2">
+                    <span class="fi fi-vn fs-4 border border-light-subtle rounded-1" style="width: 26px;"></span>
+                    <span>Tiếng Việt</span>
+                    <span
+                      class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5 rounded-pill"
+                      style="font-size: 0.72rem;">vi</span>
+                  </div>
+                  <div class="item-sub-info mt-1.5">
+                    <div class="d-flex align-items-center gap-2 w-100">
+                      <span class="small text-muted"><i class="bi bi-file-earmark-text me-1"></i> <span data-i18n="translated_articles">Bài viết đã dịch:</span> <strong class="text-main">450 / 500</strong></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="languages-right-actions">
+                  <label class="perfect-switch">
+  <input class="perfect-switch-input lang-status-switch" type="checkbox" checked
+                      data-lang="Tiếng Việt">
+  <div class="perfect-switch-track">
+    <div class="perfect-switch-thumb"></div>
+    <span class="perfect-switch-text-on" data-i18n="active">Active</span>
+    <span class="perfect-switch-text-off" data-i18n="inactive">Inactive</span>
+  </div>
+</label>
+                  <div class="d-flex align-items-center gap-1">
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1" onclick="setPrimaryLang('Tiếng Việt')"><span data-i18n="make_primary">Mặc định</span></button>
+                    <button class="btn btn-sm btn-link text-danger p-1 delete-lang-btn" onclick="confirmDeleteLanguage(this, 'Tiếng Việt', 450)"><i class="bi bi-trash"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Item 3: Chinese -->
+              <div class="substack-list-item">
+                <div class="item-title-block">
+                  <div class="item-main-title d-flex align-items-center gap-2">
+                    <span class="fi fi-cn fs-4 border border-light-subtle rounded-1" style="width: 26px;"></span>
+                    <span>中文 (Chinese)</span>
+                    <span
+                      class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5 rounded-pill"
+                      style="font-size: 0.72rem;">zh</span>
+                  </div>
+                  <div class="item-sub-info mt-1.5">
+                    <div class="d-flex align-items-center gap-2 w-100">
+                      <span class="small text-muted"><i class="bi bi-file-earmark-text me-1"></i> <span data-i18n="translated_articles">Bài viết đã dịch:</span> <strong class="text-main">325 / 500</strong></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="languages-right-actions">
+                  <label class="perfect-switch">
+  <input class="perfect-switch-input lang-status-switch" type="checkbox" checked data-lang="中文">
+  <div class="perfect-switch-track">
+    <div class="perfect-switch-thumb"></div>
+    <span class="perfect-switch-text-on" data-i18n="active">Active</span>
+    <span class="perfect-switch-text-off" data-i18n="inactive">Inactive</span>
+  </div>
+</label>
+                  <div class="d-flex align-items-center gap-1">
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1" onclick="setPrimaryLang('中文 (Chinese)')"><span data-i18n="make_primary">Mặc định</span></button>
+                    <button class="btn btn-sm btn-link text-danger p-1 delete-lang-btn" onclick="confirmDeleteLanguage(this, '中文', 325)"><i class="bi bi-trash"></i></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+  </div>
+  </main>
+  </div>
+
+  <!-- ADD LANGUAGE MODAL -->
+  <div class="modal fade side-panel-modal" id="addLanguageModal" tabindex="-1" aria-labelledby="addLanguageModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold text-main" id="addLanguageModalLabel" data-i18n="add_language">Add Language
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="addLanguageForm">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="selectLang" class="form-label fw-semibold text-main" data-i18n="select_language">Select
+                Language</label>
+              <select class="form-select" id="selectLang" required>
+                <option value="" disabled selected data-i18n="choose_lang_placeholder">Choose a language...</option>
+                <option value="zh" data-name="中文 (Chinese)" data-native-name="中文" data-flag="cn">中文 (Chinese)</option>
+                <option value="ja" data-name="日本語 (Japanese)" data-native-name="日本語" data-flag="jp">日本語 (Japanese)</option>
+                <option value="ko" data-name="한국어 (Korean)" data-native-name="한국어" data-flag="kr">한국어 (Korean)</option>
+                <option value="fr" data-name="Français (French)" data-native-name="Français" data-flag="fr">Français (French)</option>
+                <option value="es" data-name="Español (Spanish)" data-native-name="Español" data-flag="es">Español (Spanish)</option>
+                <option value="de" data-name="Deutsch (German)" data-native-name="Deutsch" data-flag="de">Deutsch (German)</option>
+              </select>
+            </div>
+            <div class="mb-1">
+              <label for="inputLangCode" class="form-label fw-semibold text-main" data-i18n="language_code">Language
+                Code</label>
+              <input type="text" class="form-control bg-body-secondary" id="inputLangCode" readonly
+                placeholder="Language code will be generated..." data-i18n="lang_code_placeholder">
+            </div>
+          </div>
+          <div class="modal-footer border-top">
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal"
+              data-i18n="cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary rounded-pill px-4" data-i18n="save_changes">Save
+              Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT LANGUAGE MODAL -->
+  <div class="modal fade side-panel-modal" id="editLanguageModal" tabindex="-1" aria-labelledby="editLanguageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold text-main" id="editLanguageModalLabel" data-lang-key="edit_language">Edit language</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="editLanguageForm" novalidate>
+          <div class="modal-body">
+            <div class="d-flex align-items-center gap-3 mb-4">
+              <img id="editLanguageFlagPreview" class="language-flag" alt="">
+              <div><div class="fw-bold text-main" id="editLanguageHeading"></div><div class="text-muted small" id="editLanguageCoverage"></div></div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="editLanguageName" data-lang-key="display_name">Display name</label>
+              <input class="form-control" id="editLanguageName" type="text" maxlength="100" required>
+              <div class="invalid-feedback" data-lang-key="name_required">Please enter a language name.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="editLanguageNativeName" data-lang-key="native_name">Native name</label>
+              <input class="form-control bg-body-secondary" id="editLanguageNativeName" type="text" readonly aria-readonly="true">
+              <div class="form-text" data-lang-key="native_name_help">The language's own name is kept for identification.</div>
+            </div>
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label class="form-label fw-semibold" for="editLanguageCode" data-i18n="language_code">Language code</label>
+                <input class="form-control bg-body-secondary" id="editLanguageCode" type="text" readonly aria-readonly="true">
+                <div class="form-text" data-lang-key="code_locked">The code is used by translations and cannot be changed.</div>
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label fw-semibold" for="editLanguageFlag" data-lang-key="flag_code">Flag code</label>
+                <input class="form-control" id="editLanguageFlag" type="text" maxlength="2" pattern="[A-Za-z]{2}" required>
+              </div>
+            </div>
+            <div class="mt-4 d-flex align-items-center justify-content-between rounded-3 border p-3">
+              <div><div class="fw-semibold text-main" data-lang-key="language_status">Language status</div><div class="small text-muted" id="editStatusHelp"></div></div>
+              <div class="form-check form-switch m-0"><input class="form-check-input" id="editLanguageStatus" type="checkbox" role="switch"></div>
+            </div>
+            <div class="mt-3 d-flex align-items-center justify-content-between rounded-3 border p-3">
+              <div><div class="fw-semibold text-main" data-lang-key="default_language">Default language</div><div class="small text-muted" data-lang-key="default_help">Use this language when no preference is selected.</div></div>
+              <div class="form-check form-switch m-0"><input class="form-check-input" id="editLanguageDefault" type="checkbox" role="switch"></div>
+            </div>
+          </div>
+          <div class="modal-footer border-top">
+            <button class="btn btn-outline-secondary rounded-pill px-3" type="button" data-bs-dismiss="modal" data-i18n="cancel">Cancel</button>
+            <button class="btn btn-primary rounded-pill px-4" type="submit" data-i18n="save_changes">Save changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE SIDEBAR / OFFCANVAS -->
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
+    <div class="offcanvas-header border-bottom">
+      <a href="../index.html" class="text-decoration-none d-flex align-items-center gap-2">
+        <i class="bi bi-bookmark-fill text-primary fs-4"></i>
+        <span class="fs-5 fw-bold text-main" style="letter-spacing: -0.02em;">Lingora</span>
+      </a>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column p-3">
+      <nav class="sidebar-nav mb-3">
+        <a href="index.html" class="sidebar-nav-item">
+          <i class="bi bi-speedometer2"></i> <span data-i18n="admin_dashboard">Admin Dashboard</span>
+        </a>
+        <a href="manage-users.html" class="sidebar-nav-item">
+          <i class="bi bi-people"></i> <span data-i18n="manage_users">Manage Users</span>
+        </a>
+        <a href="manage-posts.html" class="sidebar-nav-item">
+          <i class="bi bi-file-earmark-check"></i> <span data-i18n="manage_posts">Manage Posts</span>
+        </a>
+        <a href="manage-categories.html" class="sidebar-nav-item">
+          <i class="bi bi-tags"></i> <span data-i18n="manage_categories">Manage Categories</span>
+        </a>
+        <a href="manage-languages.html" class="sidebar-nav-item active">
+          <i class="bi bi-translate"></i> <span data-i18n="manage_languages">Manage Languages</span>
+        </a>
+      </nav>
+
+      <div class="mt-auto pt-3 border-top">
+        <div class="d-flex flex-column gap-1">
+          <a class="sidebar-nav-item" href="../index.html"><i class="bi bi-arrow-left"></i> <span
+              data-i18n="back_feed">Back to Feed</span></a>
+          <a class="sidebar-nav-item" href="../settings.html?from=admin"><i class="bi bi-gear"></i> <span
+              data-i18n="settings">Settings</span></a>
+          <a class="sidebar-nav-item text-danger" href="#" id="mobileSignOutBtn"><i class="bi bi-box-arrow-right"></i>
+            <span data-i18n="sign_out">Sign Out</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+    <div id="adminToast" class="toast align-items-center text-bg-dark border-0 shadow-lg rounded-4" role="alert"
+      aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body d-flex align-items-center gap-2 font-medium" id="toastMessage">
+          <i class="bi bi-check-circle-fill text-success fs-5"></i> Success message here.
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+          aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HARD DELETE MODAL -->
+  <div class="modal fade" id="deleteLanguageModal" tabindex="-1" aria-labelledby="deleteLanguageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden p-2">
+        <div class="modal-header border-0 pb-0">
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center pt-0 px-4 pb-4">
+          <div class="mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center bg-danger-subtle text-danger rounded-circle mb-3" style="width: 64px; height: 64px;">
+              <i class="bi bi-trash3-fill fs-2"></i>
+            </div>
+            <h4 class="fw-bold text-main mb-2" id="deleteLanguageModalLabel" data-i18n="danger_warning">Cảnh báo Hủy diệt Dữ liệu</h4>
+            <p class="text-muted"><span data-i18n="delete_lang_desc1">Bạn đang chuẩn bị xóa toàn bộ ngôn ngữ</span> <strong class="text-danger" id="delLangName">Tiếng Việt</strong></p>
+          </div>
+
+          <div class="alert bg-danger-subtle text-danger border-0 text-start small mb-4 rounded-3 d-flex gap-2">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+            <div>
+              <span data-i18n="delete_lang_desc2">Việc này sẽ xóa sạch</span> <strong><span id="delLangCount">450</span> <span data-i18n="delete_lang_desc3">bài viết đã được dịch. Hành động này không thể hoàn tác!</span></strong>
+            </div>
+          </div>
+
+          <div class="text-start">
+            <label class="form-label text-main fw-medium small mb-2" data-i18n="delete_lang_desc4">Để tiếp tục, vui lòng gõ chính xác tên ngôn ngữ vào ô bên dưới:</label>
+            <input type="text" class="form-control" id="confirmLangInput" placeholder="Gõ tên ngôn ngữ..." data-i18n="type_lang_name">
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0 px-4 pb-4 d-flex gap-2 justify-content-end">
+          <button type="button" class="btn btn-light rounded-pill px-4 fw-medium" data-bs-dismiss="modal" data-i18n="cancel_safe">Hủy bỏ an toàn</button>
+          <button type="button" class="btn btn-danger rounded-pill px-4 fw-medium" id="confirmDeleteBtn" disabled data-i18n="confirm_delete">Đồng ý Xóa vĩnh viễn</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Core Script -->
+  <script src="../assets/js/core.js?v=1784286400"></script>
+
+  <script type="text/plain" id="legacyLanguageManagementScript">
+    document.addEventListener('DOMContentLoaded', () => {
+      const toastEl = document.getElementById('adminToast');
+      const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+      const toastMessage = document.getElementById('toastMessage');
+
+      window.showToast = function (msg) {
+        toastMessage.innerHTML = `<i class="bi bi-check-circle-fill text-success fs-5"></i> ${msg}`;
+        toast.show();
+      };
+
+      // Switch language status toggling (using event delegation)
+      document.addEventListener('change', (e) => {
+        if (e.target && e.target.classList.contains('lang-status-switch')) {
+          const sw = e.target;
+          const langName = sw.getAttribute('data-lang');
+          const isChecked = sw.checked;
+
+          if (isChecked) {
+            const lang = localStorage.getItem('preferredLanguage') || 'en';
+            const msg = lang === 'vi' ? `Đã bật ngôn ngữ hiển thị: <b>${langName}</b>` :
+                        lang === 'zh' ? `已启用显示语言：<b>${langName}</b>` :
+                        `Activated display language: <b>${langName}</b>`;
+            showToast(msg);
+          } else {
+            const lang = localStorage.getItem('preferredLanguage') || 'en';
+            const msg = lang === 'vi' ? `Đã tắt ngôn ngữ hiển thị: <b>${langName}</b>` :
+                        lang === 'zh' ? `已停用显示语言：<b>${langName}</b>` :
+                        `Deactivated display language: <b>${langName}</b>`;
+            showToast(msg);
+          }
+        }
+      });
+
+      // Set Primary Language
+      window.setPrimaryLang = function(langName) {
+        const lang = localStorage.getItem('preferredLanguage') || 'en';
+        const msg = lang === 'vi' ? `Ngôn ngữ <b>${langName}</b> đã được đặt làm Mặc định!` :
+                    lang === 'zh' ? `语言 <b>${langName}</b> 已设为默认！` :
+                    `Language <b>${langName}</b> has been set as Default!`;
+        showToast(msg);
+      };
+
+      // Hard Delete language modal logic
+      let rowToDelete = null;
+      let targetLangName = '';
+      const deleteLangModalEl = document.getElementById('deleteLanguageModal');
+      const deleteLangModal = new bootstrap.Modal(deleteLangModalEl);
+      const confirmLangInput = document.getElementById('confirmLangInput');
+      const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+      window.confirmDeleteLanguage = function (btn, langName, count) {
+        rowToDelete = btn.closest('.substack-list-item');
+        targetLangName = langName;
+        document.getElementById('delLangName').textContent = langName;
+        document.getElementById('delLangCount').textContent = count;
+        confirmLangInput.value = '';
+        confirmDeleteBtn.disabled = true;
+        deleteLangModal.show();
+      };
+
+      confirmLangInput.addEventListener('input', (e) => {
+        if (e.target.value === targetLangName) {
+          confirmDeleteBtn.disabled = false;
+        } else {
+          confirmDeleteBtn.disabled = true;
+        }
+      });
+
+      confirmDeleteBtn.addEventListener('click', () => {
+        if (rowToDelete) {
+          rowToDelete.remove();
+          const lang = localStorage.getItem('preferredLanguage') || 'en';
+          const msg = lang === 'vi' ? `Đã xóa ngôn ngữ <b>${targetLangName}</b> và dữ liệu liên quan.` :
+                      lang === 'zh' ? `语言 <b>${targetLangName}</b> 及相关数据已永久删除。` :
+                      `Language <b>${targetLangName}</b> and related data deleted.`;
+          showToast(msg);
+          deleteLangModal.hide();
+        }
+      });
+
+      // Add Language Modal Logic
+      const langSelect = document.getElementById('selectLang');
+      const langCodeInput = document.getElementById('inputLangCode');
+      const addLangForm = document.getElementById('addLanguageForm');
+      const bootstrapLangModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('addLanguageModal'));
+      const languagesContainer = document.querySelector('.substack-list');
+
+      langSelect.addEventListener('change', () => {
+        langCodeInput.value = langSelect.value;
+      });
+
+      addLangForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const code = langSelect.value;
+        const name = langSelect.options[langSelect.selectedIndex].getAttribute('data-name');
+        const flag = langSelect.options[langSelect.selectedIndex].getAttribute('data-flag');
+
+        if (code && name) {
+          // Check if already exists
+          const existingCodes = Array.from(document.querySelectorAll('.substack-list-item .badge.bg-secondary-subtle')).map(el => el.textContent.trim().toLowerCase());
+          if (existingCodes.includes(code.toLowerCase())) {
+            alert('This language has already been configured!');
+            return;
+          }
+
+          // Create new language item
+          const newLangItem = document.createElement('div');
+          newLangItem.className = 'substack-list-item';
+          newLangItem.innerHTML = `
+            <div class="item-title-block">
+              <div class="item-main-title d-flex align-items-center gap-2">
+                <span class="fi fi-${flag} fs-4 border border-light-subtle rounded-1" style="width: 26px;"></span>
+                <span>${name}</span>
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5 rounded-pill" style="font-size: 0.72rem;">${code}</span>
+              </div>
+              <div class="item-sub-info mt-1.5">
+                <div class="d-flex align-items-center gap-2 w-100">
+                  <span class="small text-muted"><i class="bi bi-file-earmark-text me-1"></i> <span data-i18n="translated_articles">Bài viết đã dịch:</span> <strong class="text-main">0 / 500</strong></span>
+                </div>
+              </div>
+            </div>
+            <div class="languages-right-actions">
+              <label class="perfect-switch">
+  <input class="perfect-switch-input lang-status-switch" type="checkbox" checked data-lang="${name}">
+  <div class="perfect-switch-track">
+    <div class="perfect-switch-thumb"></div>
+    <span class="perfect-switch-text-on" data-i18n="active">Active</span>
+    <span class="perfect-switch-text-off" data-i18n="inactive">Inactive</span>
+  </div>
+</label>
+              <div class="d-flex align-items-center gap-1">
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1" onclick="setPrimaryLang('${name}')"><span data-i18n="make_primary">Mặc định</span></button>
+                <button class="btn btn-sm btn-link text-danger p-1 delete-lang-btn" onclick="confirmDeleteLanguage(this, '${name}', 0)"><i class="bi bi-trash"></i></button>
+              </div>
+            </div>
+          `;
+
+          languagesContainer.appendChild(newLangItem);
+          
+          if (window.applyUiTranslations) {
+            window.applyUiTranslations();
+          }
+
+          addLangForm.reset();
+          langCodeInput.value = '';
+          bootstrapLangModal.hide();
+          const lang = localStorage.getItem('preferredLanguage') || 'en';
+          const msg = lang === 'vi' ? `Đã thêm ngôn ngữ <b>${name}</b> thành công! Hệ thống đang dịch...` :
+                      lang === 'zh' ? `成功添加语言 <b>${name}</b>！系统正在自动翻译...` :
+                      `Language <b>${name}</b> added! System translating...`;
+          showToast(msg);
+        }
+      });
+
+      
+      document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('lang-status-switch')) {
+          const isChecked = e.target.checked;
+          const langName = e.target.getAttribute('data-lang');
+          const currentLang = localStorage.getItem('preferredLanguage') || 'en';
+          
+          if (isChecked) {
+            const msg = currentLang === 'vi' ? 'Ngôn ngữ <b>' + langName + '</b> đã được kích hoạt.' :
+                        currentLang === 'zh' ? '语言 <b>' + langName + '</b> 已激活。' :
+                        'Language <b>' + langName + '</b> is now active.';
+            showToast(msg);
+          } else {
+            const msg = currentLang === 'vi' ? 'Ngôn ngữ <b>' + langName + '</b> đã bị vô hiệu hóa.' :
+                        currentLang === 'zh' ? '语言 <b>' + langName + '</b> 已停用。' :
+                        'Language <b>' + langName + '</b> is now inactive.';
+            showToast(msg);
+          }
+        }
+      });
+      
+      // Sign out handler
+      const handleSignOut = (e) => {
+        e.preventDefault();
+        localStorage.removeItem('currentUser');
+        showToast('Signed out successfully! Redirecting...');
+        setTimeout(() => {
+          window.location.href = '../index.html';
+        }, 1000);
+      };
+
+      const signOutBtn = document.getElementById('signOutBtn');
+      if (signOutBtn) signOutBtn.addEventListener('click', handleSignOut);
+
+      const mobileSignOutBtn = document.getElementById('mobileSignOutBtn');
+      if (mobileSignOutBtn) mobileSignOutBtn.addEventListener('click', handleSignOut);
+    });
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const storageKey = 'admin_languages_v2';
+      const seedLanguages = [
+        { id: 'L1', code: 'en', name: 'English', nativeName: 'English', flag: 'us', active: true, isDefault: true, translated: 500, total: 500 },
+        { id: 'L2', code: 'vi', name: 'Tiếng Việt', nativeName: 'Tiếng Việt', flag: 'vn', active: true, isDefault: false, translated: 450, total: 500 },
+        { id: 'L3', code: 'zh', name: '中文', nativeName: '中文', flag: 'cn', active: true, isDefault: false, translated: 325, total: 500 }
+      ];
+      const text = {
+        en: { language: 'Language', translation_progress: 'Translation progress', translated_posts: 'Translated posts', default_language: 'Default', active: 'Active', inactive: 'Inactive', primary: 'Primary', set_default: 'Set default', edit: 'Edit', delete: 'Delete', edit_language: 'Edit language', display_name: 'Display name', name_required: 'Please enter a language name.', code_locked: 'The code is used by translations and cannot be changed.', flag_code: 'Flag code', language_status: 'Language status', default_help: 'Use this language when no preference is selected.', status_help: 'Allow this language to be selected.', default_status_help: 'The default language must remain active.', coverage: '{percent}% coverage', translated_value: '{translated} / {total}', open_edit: 'Open editor for {name}', added: 'Language <b>{name}</b> was added.', updated: 'Language <b>{name}</b> was updated.', deleted: 'Language <b>{name}</b> and its translation data were deleted.', status_changed: 'Language <b>{name}</b> is now {status}.', default_changed: '<b>{name}</b> is now the default language.', duplicate: 'This language has already been configured.' },
+        vi: { language: 'Ngôn ngữ', translation_progress: 'Tiến độ dịch', translated_posts: 'Bài viết đã dịch', default_language: 'Mặc định', active: 'Hoạt động', inactive: 'Đã tắt', primary: 'Ngôn ngữ chính', set_default: 'Đặt mặc định', edit: 'Chỉnh sửa', delete: 'Xóa', edit_language: 'Chỉnh sửa ngôn ngữ', display_name: 'Tên hiển thị', name_required: 'Vui lòng nhập tên ngôn ngữ.', code_locked: 'Mã này được dùng bởi các bản dịch nên không thể thay đổi.', flag_code: 'Mã quốc kỳ', language_status: 'Trạng thái ngôn ngữ', default_help: 'Dùng ngôn ngữ này khi người dùng chưa chọn tùy chọn.', status_help: 'Cho phép người dùng lựa chọn ngôn ngữ này.', default_status_help: 'Ngôn ngữ mặc định phải luôn hoạt động.', coverage: 'Hoàn thành {percent}%', translated_value: '{translated} / {total}', open_edit: 'Mở chỉnh sửa ngôn ngữ {name}', added: 'Đã thêm ngôn ngữ <b>{name}</b>.', updated: 'Đã cập nhật ngôn ngữ <b>{name}</b>.', deleted: 'Đã xóa ngôn ngữ <b>{name}</b> và dữ liệu bản dịch liên quan.', status_changed: 'Ngôn ngữ <b>{name}</b> hiện {status}.', default_changed: '<b>{name}</b> hiện là ngôn ngữ mặc định.', duplicate: 'Ngôn ngữ này đã được cấu hình.' },
+        zh: { language: '语言', translation_progress: '翻译进度', translated_posts: '已翻译文章', default_language: '默认', active: '启用', inactive: '已停用', primary: '主要语言', set_default: '设为默认', edit: '编辑', delete: '删除', edit_language: '编辑语言', display_name: '显示名称', name_required: '请输入语言名称。', code_locked: '该代码用于关联翻译，无法更改。', flag_code: '国旗代码', language_status: '语言状态', default_help: '用户未选择偏好时使用此语言。', status_help: '允许用户选择此语言。', default_status_help: '默认语言必须保持启用。', coverage: '完成 {percent}%', translated_value: '{translated} / {total}', open_edit: '打开 {name} 的编辑器', added: '已添加语言 <b>{name}</b>。', updated: '已更新语言 <b>{name}</b>。', deleted: '已删除语言 <b>{name}</b> 及相关翻译数据。', status_changed: '语言 <b>{name}</b> 当前为{status}。', default_changed: '<b>{name}</b> 现在是默认语言。', duplicate: '该语言已经配置。' }
+      };
+      Object.assign(text.en, { native_name: 'Native name', native_name_help: "The language's own name is kept for identification." });
+      Object.assign(text.vi, { native_name: 'Tên bản ngữ', native_name_help: 'Tên do chính người bản ngữ sử dụng, được giữ cố định để nhận diện ngôn ngữ.' });
+      Object.assign(text.zh, { native_name: '本族语名称', native_name_help: '保留该语言自身使用的名称，以便准确识别。' });
+      Object.assign(text.en, { translated_progress_value: 'Translated {translated}/{total}' });
+      Object.assign(text.vi, { translated_progress_value: 'Đã dịch {translated}/{total}' });
+      Object.assign(text.zh, { translated_progress_value: '已翻译 {translated}/{total}' });
+
+      let languages;
+      try { languages = JSON.parse(localStorage.getItem(storageKey)) || seedLanguages; } catch (_) { languages = seedLanguages; }
+      const canonicalNativeNames = {
+        en: 'English', vi: 'Tiếng Việt', zh: '中文', ja: '日本語', ko: '한국어',
+        fr: 'Français', es: 'Español', de: 'Deutsch'
+      };
+      languages.forEach(language => {
+        language.nativeName = canonicalNativeNames[String(language.code || '').toLowerCase()]
+          || language.nativeName
+          || language.name;
+      });
+      const publishedPosts = Object.values(window.globalPostsData || {}).filter(post => !post.status || ['published', 'approved'].includes(String(post.status).toLowerCase()));
+      languages.forEach(language => {
+        const code = String(language.code || '').toLowerCase();
+        language.total = publishedPosts.length;
+        language.translated = publishedPosts.filter(post => {
+          const supported = String(post.supported_langs || '').split(',').map(item => item.trim()).filter(Boolean);
+          return (!supported.length || supported.includes(code)) && Boolean(String(post[`title_${code}`] || '').trim() && String(post[`content_${code}`] || '').trim());
+        }).length;
+      });
+      if (!languages.some(language => language.isDefault) && languages.length) languages[0].isDefault = true;
+      languages.forEach(language => { if (language.isDefault) language.active = true; });
+      let currentLang = localStorage.getItem('preferredLanguage') || 'en';
+      let editingId = null;
+      let deletingId = null;
+      const t = (key, values = {}) => ((text[currentLang] || text.en)[key] || text.en[key] || key).replace(/\{(\w+)\}/g, (_, name) => values[name] ?? '');
+      const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+      const persist = () => localStorage.setItem(storageKey, JSON.stringify(languages));
+      const tableBody = document.getElementById('languageTableBody');
+      const pagination = document.getElementById('languagePagination');
+      const pageSize = 8;
+      let currentPage = 1;
+      const editForm = document.getElementById('editLanguageForm');
+      const editModalElement = document.getElementById('editLanguageModal');
+      const editModal = bootstrap.Modal.getOrCreateInstance(editModalElement);
+      const addModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('addLanguageModal'));
+      const deleteModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteLanguageModal'));
+      const toast = new bootstrap.Toast(document.getElementById('adminToast'), { delay: 2600 });
+
+      function showToast(message) {
+        document.getElementById('toastMessage').innerHTML = `<i class="bi bi-check-circle-fill text-success fs-5"></i><span>${message}</span>`;
+        toast.show();
+      }
+
+      function renderTable() {
+        const labels = [...document.querySelectorAll('.language-directory thead th')].map(header => header.textContent.trim());
+        currentPage = window.renderAdminPagination(pagination, currentPage, languages.length, pageSize);
+        const pageItems = languages.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+        tableBody.innerHTML = pageItems.map(language => {
+          const percent = language.total ? Math.round(language.translated / language.total * 100) : 0;
+          return `<tr class="language-table-row" tabindex="0" data-language-id="${escapeHtml(language.id)}" aria-label="${escapeHtml(t('open_edit', { name: language.name }))}">
+            <td data-label="${escapeHtml(labels[0])}"><div class="language-cell"><img class="language-flag" src="https://flagcdn.com/w40/${escapeHtml(language.flag)}.png" alt=""><div><div class="language-name">${escapeHtml(language.name)}</div><div class="language-native" title="${escapeHtml(t('native_name'))}">${escapeHtml(language.nativeName || '')}</div></div></div></td>
+            <td data-label="${escapeHtml(labels[1])}"><span class="language-code">${escapeHtml(language.code)}</span></td>
+            <td data-label="${escapeHtml(labels[2])}"><div class="coverage-cell"><div class="d-flex justify-content-between small mb-1"><span>${t('translated_progress_value', { translated: language.translated, total: language.total })}</span><strong>${percent}%</strong></div><div class="coverage-track"><div class="coverage-fill" style="width:${percent}%"></div></div></div></td>
+            <td data-label="${escapeHtml(labels[3])}"><button class="language-status-control d-inline-flex align-items-center" type="button" data-language-id="${escapeHtml(language.id)}" aria-label="${escapeHtml(t('open_edit', { name: language.name }))}"><span class="language-status-pill ${language.active ? 'active' : 'inactive'}"><i class="bi bi-circle-fill" style="font-size:.42rem"></i>${t(language.active ? 'active' : 'inactive')}</span></button></td>
+            <td data-label="${escapeHtml(labels[4])}">${language.isDefault ? `<span class="primary-pill"><i class="bi bi-star-fill"></i>${t('default_language')}</span>` : `<button class="btn btn-sm btn-outline-primary rounded-pill set-default-btn" type="button" data-language-id="${escapeHtml(language.id)}">${t('set_default')}</button>`}</td>
+            <td data-label="${escapeHtml(labels[5])}"><div class="language-actions"><button class="btn btn-sm btn-light border language-action-btn edit-language-btn" type="button" data-language-id="${escapeHtml(language.id)}" title="${t('edit')}"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger language-action-btn delete-language-btn" type="button" data-language-id="${escapeHtml(language.id)}" title="${t('delete')}" ${language.isDefault ? 'disabled' : ''}><i class="bi bi-trash"></i></button></div></td>
+          </tr>`;
+        }).join('');
+      }
+
+      function openEditor(id) {
+        const language = languages.find(item => item.id === id);
+        if (!language) return;
+        editingId = id;
+        const percent = language.total ? Math.round(language.translated / language.total * 100) : 0;
+        document.getElementById('editLanguageFlagPreview').src = `https://flagcdn.com/w40/${language.flag}.png`;
+        document.getElementById('editLanguageHeading').textContent = language.name;
+        document.getElementById('editLanguageCoverage').textContent = `${t('coverage', { percent })} · ${t('translated_value', { translated: language.translated, total: language.total })}`;
+        document.getElementById('editLanguageName').value = language.name;
+        document.getElementById('editLanguageNativeName').value = language.nativeName || '';
+        document.getElementById('editLanguageCode').value = language.code;
+        document.getElementById('editLanguageFlag').value = language.flag;
+        const status = document.getElementById('editLanguageStatus');
+        const defaultToggle = document.getElementById('editLanguageDefault');
+        status.checked = language.active;
+        status.disabled = language.isDefault;
+        defaultToggle.checked = language.isDefault;
+        defaultToggle.disabled = language.isDefault;
+        document.getElementById('editStatusHelp').textContent = t(language.isDefault ? 'default_status_help' : 'status_help');
+        editForm.classList.remove('was-validated');
+        editModal.show();
+      }
+
+      async function requestDelete(id) {
+        const language = languages.find(item => item.id === id);
+        if (!language || language.isDefault) return;
+        const message = currentLang === 'vi'
+          ? `Bạn sắp xóa ngôn ngữ ${language.name}.`
+          : currentLang === 'zh'
+            ? `您即将删除语言 ${language.name}。`
+            : `You are about to delete the ${language.name} language.`;
+        const warning = currentLang === 'vi'
+          ? `${language.translated} bản dịch liên quan sẽ bị xóa vĩnh viễn. Thao tác này không thể hoàn tác.`
+          : currentLang === 'zh'
+            ? `${language.translated} 个相关翻译将被永久删除。此操作无法撤销。`
+            : `${language.translated} related translations will be permanently deleted. This action cannot be undone.`;
+        const confirmed = await window.confirmDestructive({
+          message,
+          warning,
+          requireText: language.name,
+          confirmText: t('delete')
+        });
+        if (!confirmed) return;
+        languages = languages.filter(item => item.id !== language.id);
+        persist();
+        renderTable();
+        showToast(t('deleted', { name: escapeHtml(language.name) }));
+      }
+
+      function applyPageLanguage(lang) {
+        currentLang = text[lang] ? lang : 'en';
+        document.querySelectorAll('[data-lang-key]').forEach(element => { element.textContent = t(element.dataset.langKey); });
+        renderTable();
+        if (editingId && editModalElement.classList.contains('show')) openEditor(editingId);
+      }
+
+      tableBody.addEventListener('click', event => {
+        const editButton = event.target.closest('.edit-language-btn');
+        const deleteButton = event.target.closest('.delete-language-btn');
+        const defaultButton = event.target.closest('.set-default-btn');
+        const statusControl = event.target.closest('.language-status-control');
+        const actionArea = event.target.closest('.language-actions');
+        if (editButton) { event.stopPropagation(); openEditor(editButton.dataset.languageId); return; }
+        if (deleteButton) { event.stopPropagation(); requestDelete(deleteButton.dataset.languageId); return; }
+        if (defaultButton) { event.stopPropagation(); openEditor(defaultButton.dataset.languageId); return; }
+        if (statusControl) { event.stopPropagation(); openEditor(statusControl.dataset.languageId); return; }
+        if (actionArea) { event.stopPropagation(); return; }
+        const row = event.target.closest('.language-table-row');
+        if (row) openEditor(row.dataset.languageId);
+      });
+      tableBody.addEventListener('keydown', event => {
+        if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.language-table-row')) { event.preventDefault(); openEditor(event.target.dataset.languageId); }
+      });
+      pagination.addEventListener('click', event => { const button = event.target.closest('[data-page]'); if (!button || button.disabled) return; currentPage = Number(button.dataset.page); renderTable(); });
+
+      document.getElementById('editLanguageDefault').addEventListener('change', event => {
+        if (event.target.checked) { document.getElementById('editLanguageStatus').checked = true; document.getElementById('editLanguageStatus').disabled = true; document.getElementById('editStatusHelp').textContent = t('default_status_help'); }
+        else { document.getElementById('editLanguageStatus').disabled = false; document.getElementById('editStatusHelp').textContent = t('status_help'); }
+      });
+      editForm.addEventListener('submit', event => {
+        event.preventDefault();
+        const language = languages.find(item => item.id === editingId);
+        if (!language || !editForm.checkValidity()) { editForm.classList.add('was-validated'); return; }
+        language.name = document.getElementById('editLanguageName').value.trim();
+        language.flag = document.getElementById('editLanguageFlag').value.trim().toLowerCase();
+        const makeDefault = document.getElementById('editLanguageDefault').checked;
+        language.active = makeDefault ? true : document.getElementById('editLanguageStatus').checked;
+        if (makeDefault) languages.forEach(item => { item.isDefault = item.id === language.id; });
+        persist(); renderTable(); editModal.hide(); showToast(t('updated', { name: escapeHtml(language.name) }));
+      });
+
+      const select = document.getElementById('selectLang');
+      const codeInput = document.getElementById('inputLangCode');
+      const addForm = document.getElementById('addLanguageForm');
+      select.addEventListener('change', () => { codeInput.value = select.value; });
+      addForm.addEventListener('submit', event => {
+        event.preventDefault();
+        const option = select.options[select.selectedIndex];
+        const code = select.value.toLowerCase();
+        if (languages.some(language => language.code.toLowerCase() === code)) { alert(t('duplicate')); return; }
+        const translated = publishedPosts.filter(post => {
+          const supported = String(post.supported_langs || '').split(',').map(item => item.trim()).filter(Boolean);
+          return (!supported.length || supported.includes(code)) && Boolean(String(post[`title_${code}`] || '').trim() && String(post[`content_${code}`] || '').trim());
+        }).length;
+        const language = { id: `L${Date.now()}`, code, name: option.dataset.name || option.textContent.trim(), nativeName: option.dataset.nativeName || canonicalNativeNames[code] || option.textContent.trim(), flag: option.dataset.flag || code, active: true, isDefault: false, translated, total: publishedPosts.length };
+        languages.push(language); currentPage = Math.ceil(languages.length / pageSize); persist(); renderTable(); addForm.reset(); codeInput.value = ''; addModal.hide(); showToast(t('added', { name: escapeHtml(language.name) }));
+      });
+
+      const confirmationInput = document.getElementById('confirmLangInput');
+      confirmationInput.addEventListener('input', () => {
+        const language = languages.find(item => item.id === deletingId);
+        document.getElementById('confirmDeleteBtn').disabled = !language || confirmationInput.value !== language.name;
+      });
+      document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+        const language = languages.find(item => item.id === deletingId);
+        if (!language || language.isDefault || confirmationInput.value !== language.name) return;
+        languages = languages.filter(item => item.id !== language.id); persist(); renderTable(); deleteModal.hide(); showToast(t('deleted', { name: escapeHtml(language.name) })); deletingId = null;
+      });
+
+      document.addEventListener('click', event => { const option = event.target.closest('.global-lang-select'); if (option) applyPageLanguage(option.dataset.lang || 'en'); });
+      window.addEventListener('storage', event => { if (event.key === 'preferredLanguage') applyPageLanguage(event.newValue || 'en'); });
+      const signOut = event => { event.preventDefault(); localStorage.removeItem('currentUser'); window.location.href = '../index.html'; };
+      document.getElementById('signOutBtn')?.addEventListener('click', signOut);
+      document.getElementById('mobileSignOutBtn')?.addEventListener('click', signOut);
+      persist(); applyPageLanguage(currentLang);
+    });
+  </script>
+</body>
+
+</html>

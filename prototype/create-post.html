@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/images/lingora-mark.svg">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Create post | Lingora</title>
+<link href="assets/css/styles.css?v=1784286400" rel="stylesheet"/>
+<style>
+  /* Force black border on buttons when profile color is white/light */
+  html[data-accent-tone="light"] .btn-accent, 
+  html[data-accent-tone="light"] .fb-btn-primary {
+    border: 1px solid #000000 !important;
+    box-shadow: inset 0 0 0 1px #000000 !important;
+  }
+</style>
+</head>
+
+<body class="editor-page" data-page="create-post">
+  <header aria-label="Post actions" class="editor-topbar">
+    <a aria-label="Back to previous page" class="back-link" data-back-link="" href="index.html">
+      <span aria-hidden="true"></span>
+    </a>
+    <button aria-live="polite" class="save-state" id="saveButton" type="button">
+      <span data-save-label="" data-i18n="btn_save">Save</span>
+    </button>
+    <div class="editor-topbar-spacer"></div>
+    <button class="btn btn-light" data-preview-button="" type="button" data-i18n="btn_preview">Preview</button>
+    <button class="btn btn-accent" data-publish-button="" type="button" data-i18n="btn_continue">Continue</button>
+  </header>
+  <nav aria-label="Writing toolbar" class="editor-toolbar">
+    <input accept="image/*" class="hidden-file-input" id="editorImageInput" type="file" />
+    <input accept="audio/*" class="hidden-file-input" id="editorAudioInput" type="file" />
+    <input accept="video/*" class="hidden-file-input" id="editorVideoInput" type="file" />
+    <div aria-label="History" class="toolbar-group">
+      <button aria-label="Undo" class="tool-btn icon-tool" data-command="undo" type="button">
+        <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
+          <path d="M9 14 4 9l5-5"></path>
+          <path d="M4 9h10a6 6 0 0 1 0 12h-1"></path>
+        </svg>
+      </button>
+      <button aria-label="Redo" class="tool-btn icon-tool is-muted" data-command="redo" type="button">
+        <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
+          <path d="m15 14 5-5-5-5"></path>
+          <path d="M20 9H10a6 6 0 0 0 0 12h1"></path>
+        </svg>
+      </button>
+    </div>
+    <div aria-label="Text style" class="toolbar-group">
+      <div class="tool-menu">
+        <button aria-expanded="false" class="tool-btn tool-label-btn" data-menu-trigger="" type="button">
+          Style <span aria-hidden="true" class="tool-caret"></span>
+        </button>
+        <div class="tool-menu-panel style-menu">
+          <button class="tool-menu-item is-selected" data-format-block="p" type="button">
+            <span class="style-icon">P</span><span>Normal text</span><span aria-hidden="true" class="menu-check"></span>
+          </button>
+          <button class="tool-menu-item" data-format-block="h1" type="button">
+            <span class="style-icon">H1</span><span>Heading 1</span><span aria-hidden="true" class="menu-check"></span>
+          </button>
+          <button class="tool-menu-item" data-format-block="h2" type="button">
+            <span class="style-icon">H2</span><span>Heading 2</span><span aria-hidden="true" class="menu-check"></span>
+          </button>
+          <button class="tool-menu-item" data-format-block="h3" type="button">
+            <span class="style-icon">H3</span><span>Heading 3</span><span aria-hidden="true" class="menu-check"></span>
+          </button>
+          <button class="tool-menu-item" data-format-block="h4" type="button">
+            <span class="style-icon">H4</span><span>Heading 4</span><span aria-hidden="true" class="menu-check"></span>
+          </button>
+          <button class="tool-menu-item" data-format-block="h5" type="button">
+            <span class="style-icon">H5</span><span>Heading 5</span><span aria-hidden="true" class="menu-check"></span>
+          </button>
+          <button class="tool-menu-item" data-format-block="h6" type="button">
+            <span class="style-icon">H6</span><span>Heading 6</span><span aria-hidden="true" class="menu-check"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div aria-label="Inline formatting" class="toolbar-group">
+      <button aria-label="Bold" class="tool-btn" data-command="bold" type="button"><strong>B</strong></button>
+      <button aria-label="Italic" class="tool-btn" data-command="italic" type="button"><em>I</em></button>
+      <button aria-label="Strikethrough" class="tool-btn" data-command="strikeThrough" type="button"><s>S</s></button>
+      <button aria-label="Inline code" class="tool-btn icon-tool" data-inline-code="" type="button">
+        <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
+          <path d="m18 16 4-4-4-4"></path>
+          <path d="m6 8-4 4 4 4"></path>
+        </svg>
+      </button>
+      <div class="tool-menu">
+        <button aria-expanded="false" aria-label="Text color" class="tool-btn tool-underline-red" data-menu-trigger=""
+          type="button">
+          T
+        </button>
+        <div class="tool-menu-panel color-menu" data-color-menu="text">
+          <button class="color-none" data-apply-color="text" data-color="" type="button">
+            <span aria-hidden="true" class="slash"></span>
+            <span>None</span>
+          </button>
+          <div aria-label="Text colors" class="color-grid">
+            <button aria-label="Dark red" class="color-swatch" data-apply-color="text" data-color="#b80000"
+              style="--swatch:#b80000" type="button"></button>
+            <button aria-label="Red" class="color-swatch" data-apply-color="text" data-color="#ff1212"
+              style="--swatch:#ff1212" type="button"></button>
+            <button aria-label="Orange" class="color-swatch" data-apply-color="text" data-color="#ff9900"
+              style="--swatch:#ff9900" type="button"></button>
+            <button aria-label="Yellow" class="color-swatch" data-apply-color="text" data-color="#fff200"
+              style="--swatch:#fff200" type="button"></button>
+            <button aria-label="Green" class="color-swatch" data-apply-color="text" data-color="#00e62e"
+              style="--swatch:#00e62e" type="button"></button>
+            <button aria-label="Cyan" class="color-swatch" data-apply-color="text" data-color="#00c8c8"
+              style="--swatch:#00c8c8" type="button"></button>
+            <button aria-label="Blue" class="color-swatch" data-apply-color="text" data-color="#3d7be0"
+              style="--swatch:#3d7be0" type="button"></button>
+            <button aria-label="Deep blue" class="color-swatch" data-apply-color="text" data-color="#0014ff"
+              style="--swatch:#0014ff" type="button"></button>
+            <button aria-label="Purple" class="color-swatch" data-apply-color="text" data-color="#8a00ff"
+              style="--swatch:#8a00ff" type="button"></button>
+            <button aria-label="Magenta" class="color-swatch" data-apply-color="text" data-color="#ff00e5"
+              style="--swatch:#ff00e5" type="button"></button>
+            <button aria-label="Soft red" class="color-swatch" data-apply-color="text" data-color="#e8aaa0"
+              style="--swatch:#e8aaa0" type="button"></button>
+            <button aria-label="Soft pink" class="color-swatch" data-apply-color="text" data-color="#efc5ca"
+              style="--swatch:#efc5ca" type="button"></button>
+            <button aria-label="Soft orange" class="color-swatch" data-apply-color="text" data-color="#f6dcc0"
+              style="--swatch:#f6dcc0" type="button"></button>
+            <button aria-label="Soft yellow" class="color-swatch" data-apply-color="text" data-color="#ffedbe"
+              style="--swatch:#ffedbe" type="button"></button>
+            <button aria-label="Soft green" class="color-swatch" data-apply-color="text" data-color="#c9e2c8"
+              style="--swatch:#c9e2c8" type="button"></button>
+            <button aria-label="Soft cyan" class="color-swatch" data-apply-color="text" data-color="#c7e3e7"
+              style="--swatch:#c7e3e7" type="button"></button>
+            <button aria-label="Soft blue" class="color-swatch" data-apply-color="text" data-color="#bdd0ef"
+              style="--swatch:#bdd0ef" type="button"></button>
+            <button aria-label="Light blue" class="color-swatch" data-apply-color="text" data-color="#cdddf1"
+              style="--swatch:#cdddf1" type="button"></button>
+            <button aria-label="Soft purple" class="color-swatch" data-apply-color="text" data-color="#cbc1df"
+              style="--swatch:#cbc1df" type="button"></button>
+            <button aria-label="Soft magenta" class="color-swatch" data-apply-color="text" data-color="#ddbfd1"
+              style="--swatch:#ddbfd1" type="button"></button>
+            <button aria-label="Coral" class="color-swatch" data-apply-color="text" data-color="#e47762"
+              style="--swatch:#e47762" type="button"></button>
+            <button aria-label="Rose" class="color-swatch" data-apply-color="text" data-color="#e69295"
+              style="--swatch:#e69295" type="button"></button>
+            <button aria-label="Peach" class="color-swatch" data-apply-color="text" data-color="#f3bd7f"
+              style="--swatch:#f3bd7f" type="button"></button>
+            <button aria-label="Gold" class="color-swatch" data-apply-color="text" data-color="#f8d875"
+              style="--swatch:#f8d875" type="button"></button>
+            <button aria-label="Sage" class="color-swatch" data-apply-color="text" data-color="#a7cf9c"
+              style="--swatch:#a7cf9c" type="button"></button>
+            <button aria-label="Teal" class="color-swatch" data-apply-color="text" data-color="#8ec6bf"
+              style="--swatch:#8ec6bf" type="button"></button>
+            <button aria-label="Sky" class="color-swatch" data-apply-color="text" data-color="#8db8ed"
+              style="--swatch:#8db8ed" type="button"></button>
+            <button aria-label="Light sky" class="color-swatch" data-apply-color="text" data-color="#8ebcdd"
+              style="--swatch:#8ebcdd" type="button"></button>
+            <button aria-label="Lavender" class="color-swatch" data-apply-color="text" data-color="#a899cf"
+              style="--swatch:#a899cf" type="button"></button>
+            <button aria-label="Rust" class="color-swatch" data-apply-color="text" data-color="#cc4125"
+              style="--swatch:#cc4125" type="button"></button>
+            <button aria-label="Dark rose" class="color-swatch" data-apply-color="text" data-color="#e06666"
+              style="--swatch:#e06666" type="button"></button>
+            <button aria-label="Tan" class="color-swatch" data-apply-color="text" data-color="#f6b26b"
+              style="--swatch:#f6b26b" type="button"></button>
+            <button aria-label="Dark gold" class="color-swatch" data-apply-color="text" data-color="#ffd966"
+              style="--swatch:#ffd966" type="button"></button>
+            <button aria-label="Dark sage" class="color-swatch" data-apply-color="text" data-color="#93c47d"
+              style="--swatch:#93c47d" type="button"></button>
+            <button aria-label="Dark teal" class="color-swatch" data-apply-color="text" data-color="#76a5af"
+              style="--swatch:#76a5af" type="button"></button>
+            <button aria-label="Medium blue" class="color-swatch" data-apply-color="text" data-color="#6d9eeb"
+              style="--swatch:#6d9eeb" type="button"></button>
+            <button aria-label="Cornflower" class="color-swatch" data-apply-color="text" data-color="#6fa8dc"
+              style="--swatch:#6fa8dc" type="button"></button>
+            <button aria-label="Dark lavender" class="color-swatch" data-apply-color="text" data-color="#8e7cc3"
+              style="--swatch:#8e7cc3" type="button"></button>
+            <button aria-label="Plum" class="color-swatch" data-apply-color="text" data-color="#c27ba0"
+              style="--swatch:#c27ba0" type="button"></button>
+            <button aria-label="Maroon" class="color-swatch" data-apply-color="text" data-color="#a61c00"
+              style="--swatch:#a61c00" type="button"></button>
+            <button aria-label="Crimson" class="color-swatch" data-apply-color="text" data-color="#cc0000"
+              style="--swatch:#cc0000" type="button"></button>
+            <button aria-label="Brown" class="color-swatch" data-apply-color="text" data-color="#e69138"
+              style="--swatch:#e69138" type="button"></button>
+            <button aria-label="Olive" class="color-swatch" data-apply-color="text" data-color="#f1c232"
+              style="--swatch:#f1c232" type="button"></button>
+            <button aria-label="Dark green" class="color-swatch" data-apply-color="text" data-color="#38761d"
+              style="--swatch:#38761d" type="button"></button>
+            <button aria-label="Deep teal" class="color-swatch" data-apply-color="text" data-color="#134f5c"
+              style="--swatch:#134f5c" type="button"></button>
+            <button aria-label="Navy" class="color-swatch" data-apply-color="text" data-color="#1155cc"
+              style="--swatch:#1155cc" type="button"></button>
+            <button aria-label="Dark blue" class="color-swatch" data-apply-color="text" data-color="#0b5394"
+              style="--swatch:#0b5394" type="button"></button>
+            <button aria-label="Deep purple" class="color-swatch" data-apply-color="text" data-color="#351c75"
+              style="--swatch:#351c75" type="button"></button>
+            <button aria-label="Dark plum" class="color-swatch" data-apply-color="text" data-color="#741b47"
+              style="--swatch:#741b47" type="button"></button>
+          </div>
+          <span class="color-theme-label">THEME</span>
+          <div class="theme-row">
+            <button aria-label="Theme orange" class="color-swatch theme-swatch" data-apply-color="text"
+              data-color="#ff5c1a" style="--swatch:#ff5c1a" type="button"></button>
+            <button aria-label="Theme white" class="color-swatch theme-swatch" data-apply-color="text"
+              data-color="#ffffff" style="--swatch:#ffffff; border: 1px solid #ccc;" type="button"></button>
+            <button aria-label="Theme accent" class="color-swatch theme-swatch" data-apply-color="text"
+              data-color="#ff5c1a" style="--swatch:#ff5c1a" type="button"></button>
+          </div>
+        </div>
+      </div>
+      <div class="tool-menu">
+        <button aria-expanded="false" aria-label="Highlight color" class="tool-btn tool-underline-yellow"
+          data-menu-trigger="" type="button">
+          <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
+            <path d="m9 11-6 6v3h9l3-3"></path>
+            <path d="m22 12-7.5 7.5-8-8L14 4z"></path>
+          </svg>
+        </button>
+        <div class="tool-menu-panel color-menu" data-color-menu="highlight">
+          <button class="color-none" data-apply-color="highlight" data-color="" type="button">
+            <span aria-hidden="true" class="slash"></span>
+            <span>None</span>
+          </button>
+          <div aria-label="Highlight colors" class="color-grid">
+            <button aria-label="Dark red" class="color-swatch" data-apply-color="highlight" data-color="#b80000"
+              style="--swatch:#b80000" type="button"></button>
+            <button aria-label="Red" class="color-swatch" data-apply-color="highlight" data-color="#ff1212"
+              style="--swatch:#ff1212" type="button"></button>
+            <button aria-label="Orange" class="color-swatch" data-apply-color="highlight" data-color="#ff9900"
+              style="--swatch:#ff9900" type="button"></button>
+            <button aria-label="Yellow" class="color-swatch" data-apply-color="highlight" data-color="#fff200"
+              style="--swatch:#fff200" type="button"></button>
+            <button aria-label="Green" class="color-swatch" data-apply-color="highlight" data-color="#00e62e"
+              style="--swatch:#00e62e" type="button"></button>
+            <button aria-label="Cyan" class="color-swatch" data-apply-color="highlight" data-color="#00c8c8"
+              style="--swatch:#00c8c8" type="button"></button>
+            <button aria-label="Blue" class="color-swatch" data-apply-color="highlight" data-color="#3d7be0"
+              style="--swatch:#3d7be0" type="button"></button>
+            <button aria-label="Deep blue" class="color-swatch" data-apply-color="highlight" data-color="#0014ff"
+              style="--swatch:#0014ff" type="button"></button>
+            <button aria-label="Purple" class="color-swatch" data-apply-color="highlight" data-color="#8a00ff"
+              style="--swatch:#8a00ff" type="button"></button>
+            <button aria-label="Magenta" class="color-swatch" data-apply-color="highlight" data-color="#ff00e5"
+              style="--swatch:#ff00e5" type="button"></button>
+            <button aria-label="Soft red" class="color-swatch" data-apply-color="highlight" data-color="#e8aaa0"
+              style="--swatch:#e8aaa0" type="button"></button>
+            <button aria-label="Soft pink" class="color-swatch" data-apply-color="highlight" data-color="#efc5ca"
+              style="--swatch:#efc5ca" type="button"></button>
+            <button aria-label="Soft orange" class="color-swatch" data-apply-color="highlight" data-color="#f6dcc0"
+              style="--swatch:#f6dcc0" type="button"></button>
+            <button aria-label="Soft yellow" class="color-swatch" data-apply-color="highlight" data-color="#ffedbe"
+              style="--swatch:#ffedbe" type="button"></button>
+            <button aria-label="Soft green" class="color-swatch" data-apply-color="highlight" data-color="#c9e2c8"
+              style="--swatch:#c9e2c8" type="button"></button>
+            <button aria-label="Soft cyan" class="color-swatch" data-apply-color="highlight" data-color="#c7e3e7"
+              style="--swatch:#c7e3e7" type="button"></button>
+            <button aria-label="Soft blue" class="color-swatch" data-apply-color="highlight" data-color="#bdd0ef"
+              style="--swatch:#bdd0ef" type="button"></button>
+            <button aria-label="Light blue" class="color-swatch" data-apply-color="highlight" data-color="#cdddf1"
+              style="--swatch:#cdddf1" type="button"></button>
+            <button aria-label="Soft purple" class="color-swatch" data-apply-color="highlight" data-color="#cbc1df"
+              style="--swatch:#cbc1df" type="button"></button>
+            <button aria-label="Soft magenta" class="color-swatch" data-apply-color="highlight" data-color="#ddbfd1"
+              style="--swatch:#ddbfd1" type="button"></button>
+            <button aria-label="Coral" class="color-swatch" data-apply-color="highlight" data-color="#e47762"
+              style="--swatch:#e47762" type="button"></button>
+            <button aria-label="Rose" class="color-swatch" data-apply-color="highlight" data-color="#e69295"
+              style="--swatch:#e69295" type="button"></button>
+            <button aria-label="Peach" class="color-swatch" data-apply-color="highlight" data-color="#f3bd7f"
+              style="--swatch:#f3bd7f" type="button"></button>
+            <button aria-label="Gold" class="color-swatch" data-apply-color="highlight" data-color="#f8d875"
+              style="--swatch:#f8d875" type="button"></button>
+            <button aria-label="Sage" class="color-swatch" data-apply-color="highlight" data-color="#a7cf9c"
+              style="--swatch:#a7cf9c" type="button"></button>
+            <button aria-label="Teal" class="color-swatch" data-apply-color="highlight" data-color="#8ec6bf"
+              style="--swatch:#8ec6bf" type="button"></button>
+            <button aria-label="Sky" class="color-swatch" data-apply-color="highlight" data-color="#8db8ed"
+              style="--swatch:#8db8ed" type="button"></button>
+            <button aria-label="Light sky" class="color-swatch" data-apply-color="highlight" data-color="#8ebcdd"
+              style="--swatch:#8ebcdd" type="button"></button>
+            <button aria-label="Lavender" class="color-swatch" data-apply-color="highlight" data-color="#a899cf"
+              style="--swatch:#a899cf" type="button"></button>
+            <button aria-label="Rust" class="color-swatch" data-apply-color="highlight" data-color="#cc4125"
+              style="--swatch:#cc4125" type="button"></button>
+            <button aria-label="Dark rose" class="color-swatch" data-apply-color="highlight" data-color="#e06666"
+              style="--swatch:#e06666" type="button"></button>
+            <button aria-label="Tan" class="color-swatch" data-apply-color="highlight" data-color="#f6b26b"
+              style="--swatch:#f6b26b" type="button"></button>
+            <button aria-label="Dark gold" class="color-swatch" data-apply-color="highlight" data-color="#ffd966"
+              style="--swatch:#ffd966" type="button"></button>
+            <button aria-label="Dark sage" class="color-swatch" data-apply-color="highlight" data-color="#93c47d"
+              style="--swatch:#93c47d" type="button"></button>
+            <button aria-label="Dark teal" class="color-swatch" data-apply-color="highlight" data-color="#76a5af"
+              style="--swatch:#76a5af" type="button"></button>
+            <button aria-label="Medium blue" class="color-swatch" data-apply-color="highlight" data-color="#6d9eeb"
+              style="--swatch:#6d9eeb" type="button"></button>
+            <button aria-label="Cornflower" class="color-swatch" data-apply-color="highlight" data-color="#6fa8dc"
+              style="--swatch:#6fa8dc" type="button"></button>
+            <button aria-label="Dark lavender" class="color-swatch" data-apply-color="highlight" data-color="#8e7cc3"
+              style="--swatch:#8e7cc3" type="button"></button>
+            <button aria-label="Plum" class="color-swatch" data-apply-color="highlight" data-color="#c27ba0"
+              style="--swatch:#c27ba0" type="button"></button>
+            <button aria-label="Maroon" class="color-swatch" data-apply-color="highlight" data-color="#a61c00"
+              style="--swatch:#a61c00" type="button"></button>
+            <button aria-label="Crimson" class="color-swatch" data-apply-color="highlight" data-color="#cc0000"
+              style="--swatch:#cc0000" type="button"></button>
+            <button aria-label="Brown" class="color-swatch" data-apply-color="highlight" data-color="#e69138"
+              style="--swatch:#e69138" type="button"></button>
+            <button aria-label="Olive" class="color-swatch" data-apply-color="highlight" data-color="#f1c232"
+              style="--swatch:#f1c232" type="button"></button>
+            <button aria-label="Dark green" class="color-swatch" data-apply-color="highlight" data-color="#38761d"
+              style="--swatch:#38761d" type="button"></button>
+            <button aria-label="Deep teal" class="color-swatch" data-apply-color="highlight" data-color="#134f5c"
+              style="--swatch:#134f5c" type="button"></button>
+            <button aria-label="Navy" class="color-swatch" data-apply-color="highlight" data-color="#1155cc"
+              style="--swatch:#1155cc" type="button"></button>
+            <button aria-label="Dark blue" class="color-swatch" data-apply-color="highlight" data-color="#0b5394"
+              style="--swatch:#0b5394" type="button"></button>
+            <button aria-label="Deep purple" class="color-swatch" data-apply-color="highlight" data-color="#351c75"
+              style="--swatch:#351c75" type="button"></button>
+            <button aria-label="Dark plum" class="color-swatch" data-apply-color="highlight" data-color="#741b47"
+              style="--swatch:#741b47" type="button"></button>
+          </div>
+          <span class="color-theme-label">THEME</span>
+          <div class="theme-row">
+            <button aria-label="Theme orange" class="color-swatch theme-swatch" data-apply-color="highlight"
+              data-color="#ff5c1a" style="--swatch:#ff5c1a" type="button"></button>
+            <button aria-label="Theme white" class="color-swatch theme-swatch" data-apply-color="highlight"
+              data-color="#ffffff" style="--swatch:#ffffff; border: 1px solid #ccc;" type="button"></button>
+            <button aria-label="Theme accent" class="color-swatch theme-swatch" data-apply-color="highlight"
+              data-color="#ff5c1a" style="--swatch:#ff5c1a" type="button"></button>
+          </div>
+        </div>
+      </div>
+      <div class="tool-menu">
+        <button aria-expanded="false" aria-label="Baseline options" class="tool-btn baseline-trigger"
+          data-menu-trigger="" type="button">
+          <span class="baseline-mark" data-baseline-label="">A</span>
+          <span aria-hidden="true" class="tool-caret"></span>
+        </button>
+        <div class="tool-menu-panel text-menu">
+          <button class="tool-menu-item is-selected" data-inline-format="normal" type="button">
+            <span class="style-icon">A</span><span>Normal</span><span aria-hidden="true" class="menu-check"></span>
+          </button>
+          <button class="tool-menu-item" data-inline-format="superscript" type="button">
+            <span class="style-icon">x<sup>2</sup></span><span>Superscript</span><span aria-hidden="true"
+              class="menu-check"></span>
+          </button>
+          <button class="tool-menu-item" data-inline-format="subscript" type="button">
+            <span class="style-icon">x<sub>2</sub></span><span>Subscript</span><span aria-hidden="true"
+              class="menu-check"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div aria-label="Insert media" class="toolbar-group">
+      <button aria-label="Insert link" class="tool-btn icon-tool" data-command="createLink" type="button">
+        <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+        </svg>
+      </button>
+      <button aria-label="Insert image" class="tool-btn icon-tool" data-insert-media="image" type="button">
+        <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
+          <rect height="18" rx="2" width="18" x="3" y="3"></rect>
+          <circle cx="9" cy="9" r="2"></circle>
+          <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"></path>
+        </svg>
+      </button>
+      <button aria-label="Insert audio" class="tool-btn icon-tool" data-insert-media="audio" type="button">
+        <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
+          <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+          <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"></path>
+          <path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+        </svg>
+      </button>
+      <button aria-label="Insert video" class="tool-btn icon-tool" data-insert-media="video" type="button">
+        <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
+          <rect height="10" rx="2" width="13" x="3" y="7"></rect>
+          <path d="m16 11 5-3v8l-5-3z"></path>
+        </svg>
+      </button>
+
+    </div>
+    <div aria-label="Lists and alignment" class="toolbar-group">
+      <button aria-label="Bullet list" class="tool-btn icon-tool" data-command="insertUnorderedList" type="button">
+        <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
+          <path d="M8 6h13"></path>
+          <path d="M8 12h13"></path>
+          <path d="M8 18h13"></path>
+          <path d="M3 6h.01"></path>
+          <path d="M3 12h.01"></path>
+          <path d="M3 18h.01"></path>
+        </svg>
+      </button>
+      <button aria-label="Numbered list" class="tool-btn icon-tool" data-command="insertOrderedList" type="button">
+        <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
+          <path d="M10 6h11"></path>
+          <path d="M10 12h11"></path>
+          <path d="M10 18h11"></path>
+          <path d="M4 6h1v4"></path>
+          <path d="M4 10h2"></path>
+          <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path>
+        </svg>
+      </button>
+      <div class="tool-menu">
+        <button aria-expanded="false" aria-label="Alignment" class="tool-btn icon-tool has-caret" data-menu-trigger=""
+          type="button">
+          <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
+            <path d="M21 6H3"></path>
+            <path d="M15 12H3"></path>
+            <path d="M17 18H3"></path>
+          </svg>
+          <span aria-hidden="true" class="tool-caret"></span>
+        </button>
+        <div class="tool-menu-panel align-menu align-right">
+          <button class="tool-menu-item is-selected" data-align-command="justifyLeft" type="button">
+            <svg aria-hidden="true" class="menu-svg" viewbox="0 0 24 24">
+              <path d="M21 6H3"></path>
+              <path d="M15 12H3"></path>
+              <path d="M17 18H3"></path>
+            </svg>
+            <span>Left</span>
+            <span aria-hidden="true" class="menu-check"></span>
+          </button>
+          <button class="tool-menu-item" data-align-command="justifyCenter" type="button">
+            <svg aria-hidden="true" class="menu-svg" viewbox="0 0 24 24">
+              <path d="M21 6H3"></path>
+              <path d="M17 12H7"></path>
+              <path d="M19 18H5"></path>
+            </svg>
+            <span>Center</span>
+            <span aria-hidden="true" class="menu-check"></span>
+          </button>
+          <button class="tool-menu-item" data-align-command="justifyRight" type="button">
+            <svg aria-hidden="true" class="menu-svg" viewbox="0 0 24 24">
+              <path d="M21 6H3"></path>
+              <path d="M21 12H9"></path>
+              <path d="M21 18H7"></path>
+            </svg>
+            <span>Right</span>
+            <span aria-hidden="true" class="menu-check"></span>
+          </button>
+          <button class="tool-menu-item" data-align-command="justifyFull" type="button">
+            <svg aria-hidden="true" class="menu-svg" viewbox="0 0 24 24">
+              <path d="M21 6H3"></path>
+              <path d="M21 12H3"></path>
+              <path d="M21 18H3"></path>
+            </svg>
+            <span>Justify</span>
+            <span aria-hidden="true" class="menu-check"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div aria-label="Blocks" class="toolbar-group">
+
+
+      <div class="tool-menu">
+        <button aria-expanded="false" class="tool-btn tool-label-btn block-menu-trigger" data-menu-trigger=""
+          type="button">
+          More <span aria-hidden="true" class="tool-caret"></span>
+        </button>
+        <div class="tool-menu-panel more-menu align-right">
+          <button class="tool-menu-item more-menu-item" data-insert-more="code-block" type="button"><span
+              class="more-icon">{}</span><span>Code block</span></button>
+          <button class="tool-menu-item more-menu-item" data-insert-more="divider" type="button"><span
+              class="more-icon">-</span><span>Divider</span></button>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <main class="editor-main editor-main-full">
+    <section aria-label="Post editor" class="compose-pane">
+      <div class="compose-inner">
+        <label class="sr-only" for="postTitle">Title</label>
+        <textarea autocomplete="off" aria-describedby="postTitleLimit" class="title-input" id="postTitle"
+          placeholder="Title" rows="1"></textarea>
+        <div class="writing-limit" id="postTitleLimit" aria-live="polite"><span data-title-word-count>0</span></div>
+        <div aria-label="Authors" class="author-row" data-author-row="">
+          <span class="language-chip" data-author-chip="Alone" style="padding-right: 12px; cursor: default;">
+            <span>Alone</span>
+          </span>
+        </div>
+        <label class="sr-only" for="postBody">Post body</label>
+        <div aria-describedby="postBodyLimit" aria-label="Post body" class="rich-editor" contenteditable="true"
+          data-placeholder="Start writing..." id="postBody"></div>
+        <div class="writing-limit writing-limit-body" id="postBodyLimit" aria-live="polite"><span
+            data-body-word-count>0</span></div>
+      </div>
+    </section>
+  </main>
+  <div aria-label="Create a link" aria-modal="false" class="link-modal" data-link-modal="" hidden="" role="dialog">
+    <form class="link-modal-panel" data-link-form="">
+      <header class="link-modal-header">
+        <h2 data-i18n="link_create_title">Create a link</h2>
+      </header>
+      <main class="link-modal-body">
+        <label class="link-modal-field">
+          <span class="sr-only">Text</span>
+          <input autocomplete="off" data-i18n="link_text_placeholder" data-link-text-input=""
+            placeholder="Enter text..." type="text">
+        </label>
+        <label class="link-modal-field">
+          <span class="sr-only">URL</span>
+          <input autocomplete="off" data-i18n="link_url_placeholder" data-link-url-input=""
+            placeholder="Enter URL..." required type="text">
+        </label>
+      </main>
+      <footer class="link-modal-footer">
+        <button class="btn btn-accent" data-i18n="link_apply" type="submit">Link</button>
+        <button class="btn btn-light" data-i18n="cancel" data-link-close="" type="button">Cancel</button>
+      </footer>
+    </form>
+  </div>
+  <div aria-label="Link options" class="link-bubble" data-link-bubble="" hidden="" role="dialog">
+    <a data-link-bubble-url="" href="#" rel="noopener noreferrer" target="_blank"></a>
+    <span aria-hidden="true">-</span>
+    <button data-i18n="link_change" data-link-change="" type="button">Change</button>
+    <span aria-hidden="true">|</span>
+    <button data-i18n="link_remove" data-link-remove="" type="button">Remove</button>
+  </div>
+  <div aria-label="Post preview" aria-modal="true" class="preview-modal" data-preview-modal="" hidden="" role="dialog">
+    <div class="preview-modal-backdrop" data-preview-close=""></div>
+    <section class="preview-modal-panel">
+      <header aria-label="Preview controls" class="preview-topbar">
+        <div class="preview-topbar-controls">
+          <select data-preview-language hidden>
+            <option value="original">Original</option>
+            <option value="en" data-i18n="english">English</option>
+            <option value="vi" data-i18n="vietnamese">Vietnamese</option>
+            <option value="zh" data-i18n="chinese">Chinese</option>
+          </select>
+          <div aria-label="Preview size" class="preview-mode-toggle" role="tablist">
+            <button aria-selected="false" class="preview-mode-btn" data-preview-mode="mobile" role="tab"
+              type="button">Mobile</button>
+            <button aria-selected="true" class="preview-mode-btn is-active" data-preview-mode="desktop" role="tab"
+              type="button">Desktop</button>
+          </div>
+        </div>
+        <div class="preview-topbar-actions">
+          <button class="btn btn-light" data-share-preview="" type="button" data-i18n="btn_share">Share</button>
+          <button class="btn btn-white" data-preview-close="" type="button" data-i18n="btn_done">Done</button>
+        </div>
+      </header>
+      <main aria-label="Post preview" class="preview-stage">
+        <section class="preview-device is-desktop" data-preview-device="">
+          <div aria-hidden="true" class="preview-browser-bar">
+            <div class="preview-window-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="preview-address">
+              <span class="preview-lock"></span>
+              <span>lingora.local/preview</span>
+            </div>
+            <span class="preview-plus">+</span>
+          </div>
+          <div class="preview-site-shell">
+            <header class="preview-site-header">
+              <span aria-hidden="true" class="preview-brand-mark"></span>
+              <strong>Lingora</strong>
+              <nav aria-label="Preview actions" class="preview-site-actions">
+                <button aria-label="Search" data-unsupported-btn="" type="button">
+                  <svg aria-hidden="true" viewbox="0 0 24 24">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <path d="m16 16 4 4"></path>
+                  </svg>
+                </button>
+                <button aria-label="Comments" data-unsupported-btn="" type="button">
+                  <svg aria-hidden="true" viewbox="0 0 24 24">
+                    <path d="M21 15a4 4 0 0 1-4 4H8l-5 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+                  </svg>
+                </button>
+                <button aria-label="Notifications" data-unsupported-btn="" type="button">
+                  <svg aria-hidden="true" viewbox="0 0 24 24">
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+                    <path d="M10 21h4"></path>
+                  </svg>
+                </button>
+              </nav>
+            </header>
+            <article class="preview-article">
+              <h1 data-preview-title="">Untitled post</h1>
+              <div class="preview-author-row">
+                <span class="preview-avatar" data-preview-avatar="">A</span>
+                <div class="preview-author-meta">
+                  <strong data-preview-author="">Alone</strong>
+                  <time data-preview-date="">JUL 07, 2026</time>
+                </div>
+              </div>
+              <div class="preview-post-body" data-preview-body="">
+                <p>No content yet.</p>
+              </div>
+              <div aria-hidden="true" class="preview-engagement-row">
+                <button aria-label="Like" class="preview-action-btn" type="button">
+                  <svg viewbox="0 0 24 24">
+                    <path
+                      d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z">
+                    </path>
+                  </svg>
+                  <span>0</span>
+                </button>
+                <button aria-label="Comment" class="preview-action-btn" type="button">
+                  <svg viewbox="0 0 24 24">
+                    <path d="M21 15a4 4 0 0 1-4 4H8l-5 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+                  </svg>
+                  <span>0</span>
+                </button>
+                <button aria-label="Share" class="preview-action-btn ms-auto" type="button">
+                  <svg viewbox="0 0 24 24">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                    <polyline points="16 6 12 2 8 6"></polyline>
+                    <line x1="12" x2="12" y1="2" y2="15"></line>
+                  </svg>
+                </button>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </section>
+  </div>
+  <!-- Publish Modal -->
+  <div aria-label="Publish post" aria-modal="true" class="publish-modal" data-publish-modal="" hidden="" role="dialog">
+    <div class="publish-modal-backdrop" data-publish-close=""></div>
+    <section class="publish-modal-panel fb-style-modal">
+      <header class="publish-modal-header">
+        <h2 class="publish-modal-title" data-i18n="publish_options">Publish Options</h2>
+        <button aria-label="Close" class="publish-modal-close" data-publish-close="" type="button">
+          <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+            stroke-width="2.5" viewbox="0 0 24 24" width="20">
+            <line x1="18" x2="6" y1="6" y2="18"></line>
+            <line x1="6" x2="18" y1="6" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <main class="publish-modal-body">
+        <div class="publish-form-group mb-4">
+          <h3 class="fb-modal-heading" data-i18n="post_category">Post Category</h3>
+          <select class="form-select category-select" id="post_category" style="width: 100%;">
+            <option value="technology" data-i18n="cat_tech">Technology</option>
+            <option value="lifestyle" data-i18n="cat_life">Lifestyle</option>
+            <option value="education" data-i18n="cat_edu">Education</option>
+            <option value="entertainment" data-i18n="cat_ent">Entertainment</option>
+            <option value="travel" data-i18n="cat_travel">Travel</option>
+            <option value="food" data-i18n="cat_food">Food</option>
+            <option value="business" data-i18n="cat_biz">Business</option>
+            <option value="health" data-i18n="cat_health">Health</option>
+          </select>
+        </div>
+        <div class="publish-form-group mb-4">
+          <h3 class="fb-modal-heading" data-i18n="original_language">Original Language</h3>
+          <input id="original_language" type="hidden" value="en">
+          <div class="original-language-readonly" aria-live="polite">
+            <i class="bi bi-translate" aria-hidden="true"></i>
+            <span data-original-language-display>English</span>
+          </div>
+        </div>
+        <div class="publish-form-group">
+          <h3 class="fb-modal-heading" data-i18n="allowed_translations">Allowed Translations</h3>
+          <div class="publish-checkbox-group d-flex flex-column gap-2" style="max-height: 165px; overflow-y: auto; padding-right: 4px;">
+            <div class="d-flex align-items-center justify-content-between p-2 rounded-2 border"
+              style="background: var(--bg-body, #fff);">
+              <label class="publish-checkbox-label mb-0" style="cursor: pointer;"><input type="checkbox"
+                  name="allow_translate" value="en" checked> English</label>
+              <a href="#" class="btn btn-sm btn-outline-primary px-3 rounded-pill"
+                style="font-size: 0.8rem; font-weight: 500;"
+                onclick="document.querySelector('[data-publish-modal]').hidden = true; document.body.classList.remove('publish-modal-open'); document.querySelector('[data-preview-language]').value='en'; document.querySelector('[data-preview-language]').dispatchEvent(new Event('change')); document.querySelector('[data-preview-button]').click(); return false;"><i
+                  class="bi bi-eye me-1"></i> <span data-i18n="preview_translation">Preview translation</span></a>
+            </div>
+            <div class="d-flex align-items-center justify-content-between p-2 rounded-2 border"
+              style="background: var(--bg-body, #fff);">
+              <label class="publish-checkbox-label mb-0" style="cursor: pointer;"><input type="checkbox"
+                  name="allow_translate" value="vi" checked> Tiếng Việt</label>
+              <a href="#" class="btn btn-sm btn-outline-primary px-3 rounded-pill"
+                style="font-size: 0.8rem; font-weight: 500;"
+                onclick="document.querySelector('[data-publish-modal]').hidden = true; document.body.classList.remove('publish-modal-open'); document.querySelector('[data-preview-language]').value='vi'; document.querySelector('[data-preview-language]').dispatchEvent(new Event('change')); document.querySelector('[data-preview-button]').click(); return false;"><i
+                  class="bi bi-eye me-1"></i> <span data-i18n="preview_translation">Preview translation</span></a>
+            </div>
+            <div class="d-flex align-items-center justify-content-between p-2 rounded-2 border"
+              style="background: var(--bg-body, #fff);">
+              <label class="publish-checkbox-label mb-0" style="cursor: pointer;"><input type="checkbox"
+                  name="allow_translate" value="zh" checked> 中文 (Chinese)</label>
+              <a href="#" class="btn btn-sm btn-outline-primary px-3 rounded-pill"
+                style="font-size: 0.8rem; font-weight: 500;"
+                onclick="document.querySelector('[data-publish-modal]').hidden = true; document.body.classList.remove('publish-modal-open'); document.querySelector('[data-preview-language]').value='zh'; document.querySelector('[data-preview-language]').dispatchEvent(new Event('change')); document.querySelector('[data-preview-button]').click(); return false;"><i
+                  class="bi bi-eye me-1"></i> <span data-i18n="preview_translation">Preview translation</span></a>
+            </div>
+          </div>
+</main>
+<footer class="publish-modal-footer publish-modal-footer-centered">
+<button class="btn fb-btn-primary fb-btn-full" data-publish-action="publish" type="button" data-i18n="publish_btn">Publish</button>
+</footer>
+</section>
+</div>
+<!-- Draft Confirm Modal -->
+<div aria-label="Confirm draft" aria-modal="true" class="draft-confirm-modal" data-draft-modal="" hidden="" role="dialog">
+<div class="draft-confirm-backdrop" data-draft-close=""></div>
+<section class="draft-confirm-panel">
+<header class="draft-confirm-header">
+<h2 class="draft-confirm-title" data-i18n="draft_save_prompt">Save this post as a draft?</h2>
+<button aria-label="Close" class="draft-confirm-close" data-draft-close="" type="button">
+<svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20"><line x1="18" x2="6" y1="6" y2="18"></line><line x1="6" x2="18" y1="6" y2="18"></line></svg>
+</button>
+</header>
+<main class="draft-confirm-body">
+<p data-i18n="draft_discard_warn">If you discard now, you will lose this post.</p>
+</main>
+<footer class="draft-confirm-footer">
+<button class="btn fb-btn-text-light" data-draft-action="discard" type="button"><span data-i18n="delete_draft">Delete draft</span></button>
+<button class="btn fb-btn-primary" data-draft-action="save" type="button"><span data-i18n="save_as_draft">Save as draft</span></button>
+</footer>
+</section>
+</div>
+<script charset="UTF-8" src="assets/js/core.js?v=1784286400"></script>
+<script charset="UTF-8" src="assets/js/editor.js?v=1784286400"></script>
+</body>
+
+</html>
