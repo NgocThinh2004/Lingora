@@ -310,12 +310,13 @@ module.exports = {
       name: 'uq_subscriptions_subscriber_author',
     });
     await queryInterface.addIndex('subscriptions', ['author_id']);
-    await queryInterface.addConstraint('subscriptions', {
-      fields: ['subscriber_id', 'author_id'],
-      type: 'check',
-      where: { subscriber_id: { [Sequelize.Op.ne]: Sequelize.col('author_id') } },
-      name: 'chk_subscriptions_no_self_follow',
-    });
+    // MySQL 8 limit: CHECK constraint conflicts with ON DELETE CASCADE
+    // await queryInterface.addConstraint('subscriptions', {
+    //   fields: ['subscriber_id', 'author_id'],
+    //   type: 'check',
+    //   where: { subscriber_id: { [Sequelize.Op.ne]: Sequelize.col('author_id') } },
+    //   name: 'chk_subscriptions_no_self_follow',
+    // });
 
     await queryInterface.createTable('password_reset_tokens', {
       id: { type: Sequelize.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },

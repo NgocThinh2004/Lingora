@@ -4,8 +4,7 @@ module.exports = {
   async up(queryInterface) {
     await queryInterface.bulkInsert('roles', [
       { name: 'admin' },
-      { name: 'author' },
-      { name: 'reader' },
+      { name: 'member' },
     ]);
 
     await queryInterface.bulkInsert('languages', [
@@ -17,6 +16,6 @@ module.exports = {
 
   async down(queryInterface) {
     await queryInterface.bulkDelete('languages', { code: ['vi', 'en', 'zh'] });
-    await queryInterface.bulkDelete('roles', { name: ['admin', 'author', 'reader'] });
+    await queryInterface.bulkDelete('roles', { name: ['admin', 'member'] });
   },
 };
