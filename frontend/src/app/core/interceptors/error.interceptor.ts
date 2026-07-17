@@ -1,0 +1,28 @@
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
+export const errorInterceptor: HttpInterceptorFn = (req, next) => {
+  return next(req).pipe(
+    catchError((error: HttpErrorResponse) => {
+      let errorMessage = 'An unknown error occurred!';
+      
+      if (error.error instanceof ErrorEvent) {
+        // Client-side error
+        errorMessage = `Error: ${error.error.message}`;
+      } else {
+        // Server-side error
+        if (error.error && error.error.meta && error.error.meta.error) {
+          errorMessage = error.error.meta.error.message || errorMessage;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+      
+      // We can also use a toast service here to display the error globally
+      console.error('API Error:', errorMessage);
+      return throwError(() => error);
+    })
+  );
+};
