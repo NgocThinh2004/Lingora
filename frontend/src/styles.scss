@@ -1,1 +1,15 @@
-/* You can add global styles to this file, and also import other style files */
+@import "styles/variables.css";
+@import "styles/base.css";
+@import "styles/layouts.css";
+@import "styles/components.css";
+
+/* Angular specific global overrides if needed */
+app-root {
+  display: block;
+  width: 100%;
+}
+
+app-login, app-register {
+  display: block;
+  width: 100%;
+}

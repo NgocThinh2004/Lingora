@@ -1,0 +1,86 @@
+<div class="admin-container">
+  <header class="admin-header">
+    <h1>Admin Dashboard</h1>
+    <p>Overview of users, categories, translation metrics, and automated AI queues.</p>
+  </header>
+
+  <section class="stats-grid" aria-label="Platform statistics">
+    @for (stat of stats; track stat.label) {
+      <article class="admin-card stat-card">
+        <span class="stat-icon" aria-hidden="true"><i class="bi {{ stat.icon }}"></i></span>
+        <span>
+          <small>{{ stat.label }}</small>
+          <strong aria-label="Data not connected">—</strong>
+        </span>
+      </article>
+    }
+  </section>
+
+  <section class="dashboard-primary-row">
+    <article class="admin-card chart-card">
+      <h2>Views over time</h2>
+      <div class="chart-box" aria-label="Views chart awaiting API data">
+        @for (height of viewsChart; track $index) {
+          <span class="chart-bar" [style.height.%]="height"></span>
+        }
+      </div>
+      <div class="chart-labels">
+        @for (day of days; track day) {
+          <span>{{ day }}</span>
+        }
+      </div>
+    </article>
+
+    <article class="admin-card featured-card">
+      <header class="featured-header">
+        <span>
+          <h2>Featured Articles</h2>
+          <p>Top 10 ranked by total views</p>
+        </span>
+        <span class="featured-icon" aria-hidden="true"><i class="bi bi-stars"></i></span>
+      </header>
+      <div class="featured-empty">
+        <i class="bi bi-journal-text" aria-hidden="true"></i>
+        <strong>No article metrics yet</strong>
+        <span>Featured articles will appear after the dashboard API is connected.</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="dashboard-secondary-row">
+    <article class="admin-card categories-card">
+      <h2>Top Categories</h2>
+      <div class="category-list">
+        @for (category of categories; track category.name) {
+          <div class="category-item">
+            <div>
+              <span>{{ category.name }}</span>
+              <strong>{{ category.percentage }}%</strong>
+            </div>
+            <span class="progress-track">
+              <span
+                class="progress-value"
+                [style.width.%]="category.percentage"
+                [style.opacity]="category.opacity">
+              </span>
+            </span>
+          </div>
+        }
+      </div>
+    </article>
+
+    <article class="admin-card chart-card growth-card">
+      <h2>New Users Growth</h2>
+      <div class="chart-box chart-box--compact" aria-label="User growth chart awaiting API data">
+        @for (height of growthChart; track $index) {
+          <span class="chart-bar" [style.height.%]="height"></span>
+        }
+      </div>
+      <div class="chart-labels">
+        @for (day of days; track day) {
+          <span>{{ day }}</span>
+        }
+      </div>
+    </article>
+  </section>
+</div>
