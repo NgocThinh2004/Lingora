@@ -20,5 +20,6 @@ backend/storage/uploads/*
 Thumbs.db
 
 # Generated documents
+*.md
 *.docx
 *.doc

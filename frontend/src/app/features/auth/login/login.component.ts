@@ -53,10 +53,16 @@ export class LoginComponent implements OnInit {
     this.errorMessage = '';
 
     this.authService.login(this.loginForm.value).subscribe({
-      next: () => {
+      next: response => {
         this.isSubmitting = false;
         this.toastService.showSuccess('Logged in successfully!');
-        this.router.navigate(['/']);
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+        const destination = returnUrl
+          ? [returnUrl]
+          : response.data.user.role === 'admin'
+            ? ['/admin']
+            : ['/'];
+        void this.router.navigate(destination);
       },
       error: (err) => {
         this.isSubmitting = false;

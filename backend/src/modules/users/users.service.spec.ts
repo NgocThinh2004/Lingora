@@ -1,18 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Op } from 'sequelize';
 import { UsersService } from './users.service';
 
 describe('UsersService', () => {
-  let service: UsersService;
+  it('normalizes email when finding a user by email or username', async () => {
+    const userModel = { findOne: jest.fn().mockResolvedValue(null) };
+    const roleModel = {};
+    const service = new UsersService(userModel as never, roleModel as never);
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService],
-    }).compile();
+    await service.findByEmailOrUsername('Member@Example.COM');
 
-    service = module.get<UsersService>(UsersService);
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(userModel.findOne).toHaveBeenCalledWith({
+      where: {
+        [Op.or]: [
+          { email: 'member@example.com' },
+          { username: 'Member@Example.COM' },
+        ],
+      },
+    });
   });
 });
