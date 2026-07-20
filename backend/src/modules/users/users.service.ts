@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import { User, Role } from '../../database/models';
 
 @Injectable()
@@ -23,12 +23,16 @@ export class UsersService {
     });
   }
 
-  async findById(id: string): Promise<User | null> {
-    return this.userModel.findByPk(id);
+  async findById(id: string, transaction?: Transaction): Promise<User | null> {
+    return this.userModel.findByPk(id, { transaction });
   }
   
   async getRoleByName(name: string): Promise<Role | null> {
     return this.roleModel.findOne({ where: { name } });
+  }
+
+  async getRoleById(id: number, transaction?: Transaction): Promise<Role | null> {
+    return this.roleModel.findByPk(id, { transaction });
   }
 
   async create(userData: Partial<User>): Promise<User> {

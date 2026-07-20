@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -19,10 +20,14 @@ import { AuthService } from '../../core/services/auth.service';
   styles: ``
 })
 export class HomeComponent {
-  constructor(public authService: AuthService) {}
+  constructor(
+    public authService: AuthService,
+    private readonly router: Router,
+  ) {}
 
-  logout() {
-    this.authService.logout();
-    window.location.reload();
+  logout(): void {
+    this.authService.logout().subscribe({
+      complete: () => void this.router.navigate(['/auth/login']),
+    });
   }
 }
