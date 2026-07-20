@@ -82,7 +82,10 @@ Chỉ chứa thành phần dùng một lần cho toàn ứng dụng:
 
 - `guards/`: chặn route khi chưa đăng nhập hoặc không đủ role.
 - `interceptors/`: gắn access token, refresh khi nhận 401 và chuẩn hóa lỗi API.
-- `models/`: kiểu dữ liệu TypeScript như `User`, `Post`, `Comment`, `Language`.
+- `models/`: chỉ chứa contract thật sự xuyên suốt toàn ứng dụng như `ApiResponse`, pagination và `CurrentUser`.
+- Model chỉ phục vụ một nghiệp vụ phải đặt gần feature sở hữu nó, ví dụ
+  `features/admin/categories/models/admin-category.model.ts`; frontend model mô tả
+  request/response API chứ không sao chép nguyên bảng database.
 - `services/`: auth, API base, theme và ngôn ngữ giao diện.
 
 ### `shared/`

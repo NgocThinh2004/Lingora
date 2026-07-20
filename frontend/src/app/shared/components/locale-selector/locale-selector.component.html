@@ -1,0 +1,45 @@
+<div class="locale" [class.locale--compact]="compact">
+  <button
+    class="locale__trigger"
+    type="button"
+    aria-label="Interface language"
+    aria-haspopup="menu"
+    [attr.aria-expanded]="menuOpen()"
+    (click)="toggleMenu()">
+    <span class="locale__flag" aria-hidden="true">
+      <span class="locale__code">{{ selectedOption.code.toUpperCase() }}</span>
+      <img
+        [src]="selectedOption.flagUrl"
+        width="24"
+        height="18"
+        alt="">
+    </span>
+    @if (!compact) {
+      <span class="locale__label">{{ selectedOption.label }}</span>
+    }
+    <i class="bi bi-chevron-down locale__chevron" aria-hidden="true"></i>
+  </button>
+
+  @if (menuOpen()) {
+    <div class="locale__menu" role="menu" aria-label="Choose interface language">
+      @for (option of options; track option.code) {
+        <button
+          class="locale__option"
+          [class.locale__option--active]="option.code === value"
+          type="button"
+          role="menuitemradio"
+          [attr.aria-checked]="option.code === value"
+          (click)="selectLocale(option.code)">
+          <span class="locale__flag" aria-hidden="true">
+            <span class="locale__code">{{ option.code.toUpperCase() }}</span>
+            <img [src]="option.flagUrl" width="24" height="18" alt="">
+          </span>
+          <span>{{ option.label }}</span>
+          @if (option.code === value) {
+            <i class="bi bi-check2 ms-auto" aria-hidden="true"></i>
+          }
+        </button>
+      }
+    </div>
+  }
+</div>

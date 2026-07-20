@@ -1,0 +1,8 @@
+<button
+  class="theme-toggle"
+  type="button"
+  (click)="toggle()"
+  [attr.aria-label]="isDark() ? 'Use light theme' : 'Use dark theme'"
+  [attr.title]="isDark() ? 'Use light theme' : 'Use dark theme'">
+  <i class="bi" [class.bi-sun-fill]="isDark()" [class.bi-moon-stars-fill]="!isDark()" aria-hidden="true"></i>
+</button>

@@ -1,11 +1,10 @@
-export interface Category {
-  id: string; // usually UUID
+export interface AdminCategory {
+  id: string;
   slug: string;
   isActive: boolean;
   order: number;
-  translations?: CategoryTranslation[];
-  // Transient property often used in UI
-  name?: string; 
+  translations: CategoryTranslation[];
+  postCount?: number;
 }
 
 export interface CategoryTranslation {
