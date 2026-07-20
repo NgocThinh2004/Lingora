@@ -94,6 +94,12 @@
   padding: 0 0.75rem 0.75rem;
 }
 
+.admin-sidebar__controls app-theme-toggle {
+  --auth-control-size: 2.375rem;
+  --auth-control-radius: 0.5rem;
+  font-size: 1.0625rem;
+}
+
 .admin-content {
   min-height: 100dvh;
   margin-left: 16.25rem;

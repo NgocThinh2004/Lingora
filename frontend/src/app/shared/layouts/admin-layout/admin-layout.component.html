@@ -48,6 +48,7 @@
       <div class="admin-sidebar__controls">
         <app-locale-selector
           [compact]="true"
+          menuPosition="top-start"
           [value]="selectedLocale"
           (valueChange)="updateLocale($event)">
         </app-locale-selector>
