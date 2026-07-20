@@ -6,6 +6,8 @@ export interface LocaleOption {
   flagUrl: string;
 }
 
+export type LocaleMenuPosition = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
+
 @Component({
   selector: 'app-locale-selector',
   standalone: true,
@@ -17,6 +19,8 @@ export class LocaleSelectorComponent {
 
   @Input() value = 'en';
   @Input() compact = false;
+  @Input() small = false;
+  @Input() menuPosition: LocaleMenuPosition = 'bottom-start';
   @Output() valueChange = new EventEmitter<string>();
 
   readonly menuOpen = signal(false);

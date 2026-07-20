@@ -38,4 +38,16 @@ describe('LocaleSelectorComponent', () => {
     expect(component.menuOpen()).toBeFalse();
     expect(fixture.nativeElement.querySelector('.locale__menu')).toBeNull();
   });
+
+  it('supports the compact auth placement without changing the admin placement', () => {
+    component.compact = true;
+    component.small = true;
+    component.menuPosition = 'bottom-end';
+    fixture.detectChanges();
+
+    const locale = fixture.nativeElement.querySelector('.locale') as HTMLElement;
+    expect(locale.classList.contains('locale--compact')).toBeTrue();
+    expect(locale.classList.contains('locale--small')).toBeTrue();
+    expect(locale.classList.contains('locale--menu-bottom-end')).toBeTrue();
+  });
 });

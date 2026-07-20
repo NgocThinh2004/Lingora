@@ -5,6 +5,9 @@
   <section class="auth-shell__card" aria-labelledby="auth-page-title">
     <div class="auth-shell__toolbar">
       <app-locale-selector
+        [compact]="true"
+        [small]="true"
+        menuPosition="bottom-end"
         [value]="selectedLocale"
         (valueChange)="updateLocale($event)">
       </app-locale-selector>

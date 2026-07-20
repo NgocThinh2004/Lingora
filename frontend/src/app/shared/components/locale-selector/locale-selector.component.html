@@ -1,4 +1,11 @@
-<div class="locale" [class.locale--compact]="compact">
+<div
+  class="locale"
+  [class.locale--compact]="compact"
+  [class.locale--small]="small"
+  [class.locale--menu-bottom-start]="menuPosition === 'bottom-start'"
+  [class.locale--menu-bottom-end]="menuPosition === 'bottom-end'"
+  [class.locale--menu-top-start]="menuPosition === 'top-start'"
+  [class.locale--menu-top-end]="menuPosition === 'top-end'">
   <button
     class="locale__trigger"
     type="button"

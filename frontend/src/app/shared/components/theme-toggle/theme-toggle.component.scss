@@ -1,11 +1,16 @@
+:host {
+  display: inline-flex;
+  line-height: 1;
+}
+
 .theme-toggle {
   display: inline-grid;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--auth-control-size, 2.25rem);
+  height: var(--auth-control-size, 2.25rem);
   padding: 0;
   place-items: center;
   border: 1px solid var(--border-color);
-  border-radius: 0.7rem;
+  border-radius: var(--auth-control-radius, 0.7rem);
   background: var(--bg-panel);
   color: var(--text-main);
   transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
