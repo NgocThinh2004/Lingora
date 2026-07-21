@@ -26,6 +26,32 @@ export class UsersService {
   async findById(id: string, transaction?: Transaction): Promise<User | null> {
     return this.userModel.findByPk(id, { transaction });
   }
+
+  async findByEmailForUpdate(email: string, transaction: Transaction): Promise<User | null> {
+    return this.userModel.findOne({
+      where: { email: email.toLowerCase() },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+  }
+
+  async clearPasswordResetOtp(userId: string, expectedOtpHash: string): Promise<void> {
+    await this.userModel.update(
+      {
+        password_reset_otp_hash: null,
+        password_reset_expires_at: null,
+        password_reset_attempts: 0,
+        password_reset_sent_at: null,
+        updated_at: new Date(),
+      },
+      {
+        where: {
+          id: userId,
+          password_reset_otp_hash: expectedOtpHash,
+        },
+      },
+    );
+  }
   
   async getRoleByName(name: string): Promise<Role | null> {
     return this.roleModel.findOne({ where: { name } });

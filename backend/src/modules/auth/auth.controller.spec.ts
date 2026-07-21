@@ -1,6 +1,17 @@
 import { AuthController } from './auth.controller';
 
 describe('AuthController', () => {
+  it('passes the normalized forgot-password email to the service', async () => {
+    const authService = {
+      forgotPassword: jest.fn().mockResolvedValue({ message: 'Request accepted' }),
+    };
+    const controller = new AuthController(authService as never);
+
+    await controller.forgotPassword({ email: 'member@example.com' });
+
+    expect(authService.forgotPassword).toHaveBeenCalledWith('member@example.com');
+  });
+
   it('passes refresh token and request metadata to the service', async () => {
     const authService = {
       refresh: jest.fn().mockResolvedValue({ accessToken: 'new-access-token' }),
