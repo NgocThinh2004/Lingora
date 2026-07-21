@@ -40,6 +40,9 @@ export class LoginComponent implements OnInit {
       if (params['registered'] === 'true') {
         this.toastService.showSuccess('Registration successful! Please log in.');
       }
+      if (params['passwordReset'] === 'true') {
+        this.toastService.showSuccess('Password reset successfully. Sign in with your new password.');
+      }
     });
   }
 

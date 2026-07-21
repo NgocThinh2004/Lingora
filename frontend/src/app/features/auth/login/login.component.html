@@ -23,12 +23,14 @@
           class="form-control border-start-0 py-2"
           type="text"
           formControlName="emailOrUsername"
+          [class.is-invalid]="loginForm.get('emailOrUsername')?.touched && loginForm.get('emailOrUsername')?.invalid"
+          [attr.aria-invalid]="loginForm.get('emailOrUsername')?.touched && loginForm.get('emailOrUsername')?.invalid"
           placeholder="name@example.com"
           autocomplete="username"
           required>
       </div>
       @if (loginForm.get('emailOrUsername')?.touched && loginForm.get('emailOrUsername')?.invalid) {
-        <div class="auth-field-error text-danger small mt-1" aria-live="polite">Enter your email or username.</div>
+        <div class="text-danger small mt-1" aria-live="polite">Enter your email or username.</div>
       }
     </div>
 
@@ -46,6 +48,8 @@
           class="form-control border-start-0 border-end-0 py-2"
           [type]="showPassword ? 'text' : 'password'"
           formControlName="password"
+          [class.is-invalid]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
+          [attr.aria-invalid]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
           placeholder="••••••••"
           autocomplete="current-password"
           required>
@@ -58,7 +62,7 @@
         </button>
       </div>
       @if (loginForm.get('password')?.touched && loginForm.get('password')?.hasError('required')) {
-        <div class="auth-field-error text-danger small mt-1" aria-live="polite">Enter your password.</div>
+        <div class="text-danger small mt-1" aria-live="polite">Enter your password.</div>
       }
     </div>
 

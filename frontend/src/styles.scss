@@ -9,7 +9,14 @@ app-root {
   width: 100%;
 }
 
-app-login, app-register {
+app-login, app-register, app-forgot-password, app-reset-password {
   display: block;
   width: 100%;
+}
+
+/* Angular renders validation messages conditionally, so invalid input-group borders
+   are styled here instead of relying on the prototype's JS-controlled error class. */
+.auth-shell .input-group:has(.form-control.is-invalid) .input-group-text,
+.auth-shell .input-group:has(.form-control.is-invalid) .btn {
+  border-color: var(--bs-danger) !important;
 }

@@ -7,10 +7,12 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { RefreshToken } from '../../database/models';
 import { JwtStrategy } from './jwt.strategy';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
     UsersModule,
+    MailModule,
     SequelizeModule.forFeature([RefreshToken]),
     JwtModule.registerAsync({
       inject: [ConfigService],
