@@ -1,60 +1,37 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   {
     path: '',
-    pathMatch: 'full',
-    redirectTo: 'home',
-  },
-  {
-    path: 'home',
-    loadComponent: () => import('./features/feed/home.component').then((module) => module.HomeComponent),
-  },
-  {
-    path: 'explore',
-    loadComponent: () => import('./features/explore/explore.component').then((module) => module.ExploreComponent),
-  },
-  {
-    path: 'post-detail',
-    loadComponent: () => import('./features/posts/post-detail.component').then((module) => module.PostDetailComponent),
-  },
-  {
-    path: 'profile',
-    loadComponent: () => import('./features/profile/profile.component').then((module) => module.ProfileComponent),
-  },
-  {
-    path: 'settings',
-    loadComponent: () => import('./features/settings/settings.component').then((module) => module.SettingsComponent),
-  },
-  {
-    path: 'subscriptions',
-    loadComponent: () =>
-      import('./features/subscriptions/subscriptions.component').then((module) => module.SubscriptionsComponent),
+    loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent)
   },
   {
     path: 'auth/login',
-    loadComponent: () => import('./features/auth/login.component').then((module) => module.LoginComponent),
+    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
   },
   {
     path: 'auth/register',
-    loadComponent: () => import('./features/auth/register.component').then((module) => module.RegisterComponent),
+    loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent)
   },
   {
-    path: 'auth/change-password',
-    loadComponent: () =>
-      import('./features/auth/change-password.component').then((module) => module.ChangePasswordComponent),
+    path: 'auth/forgot-password',
+    loadComponent: () => import('./features/auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
   },
   {
-    path: 'workspace/create',
-    loadComponent: () =>
-      import('./features/workspace/post-editor.component').then((module) => module.PostEditorComponent),
+    path: 'auth/reset-password',
+    loadComponent: () => import('./features/auth/reset-password/reset-password.component').then(m => m.ResetPasswordComponent)
   },
   {
-    path: 'workspace/posts',
-    loadComponent: () => import('./features/workspace/my-posts.component').then((module) => module.MyPostsComponent),
+    path: 'admin',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./shared/layouts/admin-layout/admin-layout.component').then(m => m.AdminLayoutComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/admin/dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
+      }
+    ]
   },
-  {
-    path: '**',
-    redirectTo: '',
-  },
+  { path: '**', redirectTo: '' }
 ];
