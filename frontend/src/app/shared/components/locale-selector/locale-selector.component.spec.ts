@@ -12,6 +12,11 @@ describe('LocaleSelectorComponent', () => {
 
     fixture = TestBed.createComponent(LocaleSelectorComponent);
     component = fixture.componentInstance;
+    component.options = [
+      { code: 'en', label: 'English', flagUrl: 'https://flagcdn.com/w40/gb.png', isDefault: true },
+      { code: 'vi', label: 'Tiếng Việt', flagUrl: 'https://flagcdn.com/w40/vn.png', isDefault: false },
+      { code: 'zh', label: '中文', flagUrl: 'https://flagcdn.com/w40/cn.png', isDefault: false },
+    ];
     fixture.detectChanges();
   });
 

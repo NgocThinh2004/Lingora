@@ -49,7 +49,8 @@
         <app-locale-selector
           [compact]="true"
           menuPosition="top-start"
-          [value]="selectedLocale"
+          [options]="localeOptions()"
+          [value]="selectedLocale()"
           (valueChange)="updateLocale($event)">
         </app-locale-selector>
         <app-theme-toggle></app-theme-toggle>
