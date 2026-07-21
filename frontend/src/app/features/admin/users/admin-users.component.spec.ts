@@ -123,4 +123,19 @@ describe('AdminUsersComponent', () => {
     expect(component.selectedUser()).toBeNull();
     expect(fixture.nativeElement.querySelector('.user-offcanvas')).toBeNull();
   });
+
+  it('allows the details drawer to close while a save request is pending', () => {
+    adminUsersService.getUser.and.returnValue(of({ data: member }));
+    component.openUser(member);
+    component.saving.set(true);
+    fixture.detectChanges();
+
+    const closeButton = fixture.nativeElement.querySelector('.close-button') as HTMLButtonElement;
+    closeButton.click();
+    fixture.detectChanges();
+
+    expect(component.drawerOpen()).toBeFalse();
+    expect(component.selectedUser()).toBeNull();
+    expect(fixture.nativeElement.querySelector('.user-offcanvas')).toBeNull();
+  });
 });
