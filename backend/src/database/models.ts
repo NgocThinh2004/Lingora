@@ -32,6 +32,11 @@ export class User extends Model {
   @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false }) declare role_id: number;
   @Column({ type: DataType.ENUM('active', 'inactive', 'banned'), allowNull: false, defaultValue: 'active' })
   declare status: 'active' | 'inactive' | 'banned';
+  @Column(DataType.STRING(255)) declare password_reset_otp_hash: string | null;
+  @Column(DataType.DATE) declare password_reset_expires_at: Date | null;
+  @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false, defaultValue: 0 })
+  declare password_reset_attempts: number;
+  @Column(DataType.DATE) declare password_reset_sent_at: Date | null;
   @Column({ type: DataType.DATE, allowNull: false }) declare created_at: Date;
   @Column({ type: DataType.DATE, allowNull: false }) declare updated_at: Date;
   @Column(DataType.DATE) declare deleted_at: Date | null;
@@ -150,16 +155,6 @@ export class Subscription extends Model {
   @Column({ type: DataType.DATE, allowNull: false }) declare created_at: Date;
 }
 
-@table('password_reset_tokens')
-export class PasswordResetToken extends Model {
-  @Column({ type: DataType.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true }) declare id: string;
-  @Column({ type: DataType.BIGINT.UNSIGNED, allowNull: false }) declare user_id: string;
-  @Column({ type: DataType.STRING(255), allowNull: false, unique: true }) declare token: string;
-  @Column({ type: DataType.DATE, allowNull: false }) declare expires_at: Date;
-  @Column(DataType.DATE) declare used_at: Date | null;
-  @Column({ type: DataType.DATE, allowNull: false }) declare created_at: Date;
-}
-
 @table('refresh_tokens')
 export class RefreshToken extends Model {
   @Column({ type: DataType.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true }) declare id: string;
@@ -186,6 +181,5 @@ export const databaseModels = [
   PostLike,
   CommentLike,
   Subscription,
-  PasswordResetToken,
   RefreshToken,
 ];
