@@ -34,6 +34,10 @@ export const routes: Routes = [
       {
         path: 'users',
         loadComponent: () => import('./features/admin/users/admin-users.component').then(m => m.AdminUsersComponent)
+      },
+      {
+        path: 'languages',
+        loadComponent: () => import('./features/admin/languages/admin-languages.component').then(m => m.AdminLanguagesComponent)
       }
     ]
   },

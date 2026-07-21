@@ -8,7 +8,8 @@
         [compact]="true"
         [small]="true"
         menuPosition="bottom-end"
-        [value]="selectedLocale"
+        [options]="localeOptions()"
+        [value]="selectedLocale()"
         (valueChange)="updateLocale($event)">
       </app-locale-selector>
       <app-theme-toggle></app-theme-toggle>

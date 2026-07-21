@@ -1,10 +1,5 @@
 import { Component, ElementRef, EventEmitter, HostListener, Input, Output, inject, signal } from '@angular/core';
-
-export interface LocaleOption {
-  code: string;
-  label: string;
-  flagUrl: string;
-}
+import { LocaleOption } from '../../../core/models/locale.model';
 
 export type LocaleMenuPosition = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
 
@@ -21,17 +16,16 @@ export class LocaleSelectorComponent {
   @Input() compact = false;
   @Input() small = false;
   @Input() menuPosition: LocaleMenuPosition = 'bottom-start';
+  @Input({ required: true }) options: readonly LocaleOption[] = [];
   @Output() valueChange = new EventEmitter<string>();
 
   readonly menuOpen = signal(false);
-  readonly options: LocaleOption[] = [
-    { code: 'en', label: 'English', flagUrl: 'https://flagcdn.com/w40/gb.png' },
-    { code: 'vi', label: 'Tiếng Việt', flagUrl: 'https://flagcdn.com/w40/vn.png' },
-    { code: 'zh', label: '中文', flagUrl: 'https://flagcdn.com/w40/cn.png' }
-  ];
 
   get selectedOption(): LocaleOption {
-    return this.options.find(option => option.code === this.value) ?? this.options[0];
+    return this.options.find(option => option.code === this.value)
+      ?? this.options.find(option => option.isDefault)
+      ?? this.options[0]
+      ?? { code: this.value, label: this.value.toUpperCase(), flagUrl: 'assets/images/lingora-mark.svg', isDefault: false };
   }
 
   toggleMenu(): void {

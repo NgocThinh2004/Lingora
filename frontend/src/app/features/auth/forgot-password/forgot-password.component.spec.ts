@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
@@ -17,6 +19,8 @@ describe('ForgotPasswordComponent', () => {
     await TestBed.configureTestingModule({
       imports: [ForgotPasswordComponent],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         provideRouter([]),
         { provide: AuthService, useValue: authService },
       ],
