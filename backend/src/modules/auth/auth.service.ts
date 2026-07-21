@@ -7,7 +7,8 @@ import { createHash, randomBytes, randomInt } from 'crypto';
 import { Op, Transaction } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { UsersService } from '../users/users.service';
-import { RefreshToken, User } from '../../database/models';
+import { User } from '../users/models/user.model';
+import { RefreshToken } from './models/refresh-token.model';
 import { ChangePasswordDto, RegisterDto, LoginDto, ResetPasswordDto } from './dto/auth.dto';
 import { MailService } from '../mail/mail.service';
 

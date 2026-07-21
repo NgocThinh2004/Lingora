@@ -1,0 +1,240 @@
+<div class="admin-container">
+  <header class="admin-header">
+    <h1>User Management</h1>
+    <p>View user directory, filter by roles, and manage account statuses.</p>
+  </header>
+
+  <form class="filter-panel" [formGroup]="filterForm" aria-label="User filters">
+    <div class="search-field">
+      <label class="visually-hidden" for="directorySearch">Search users</label>
+      <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+      <input id="directorySearch" class="form-control" type="search" formControlName="search"
+        placeholder="Search by name, email or user ID..." autocomplete="off">
+    </div>
+    <label>
+      <span class="visually-hidden">Filter by role</span>
+      <select class="form-select" formControlName="role">
+        <option value="">All roles</option>
+        <option value="admin">Admin</option>
+        <option value="member">Member</option>
+      </select>
+    </label>
+    <label>
+      <span class="visually-hidden">Filter by status</span>
+      <select class="form-select" formControlName="status">
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </label>
+    <button class="btn btn-outline-secondary clear-filter" type="button" title="Clear filters"
+      aria-label="Clear all filters" (click)="clearFilters()">
+      <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+    </button>
+  </form>
+
+  <div class="results-bar" aria-live="polite">
+    {{ pagination().total }} / {{ directoryTotal() }} users
+  </div>
+
+  @if (loading()) {
+    <app-ui-state kind="loading" title="Loading users"></app-ui-state>
+  } @else if (errorMessage()) {
+    <app-ui-state kind="error" title="User directory unavailable" [description]="errorMessage()"
+      actionLabel="Try again" (action)="loadUsers()"></app-ui-state>
+  } @else {
+    <div class="users-table-wrap">
+      <table class="table users-table align-middle" aria-label="User directory">
+        <thead>
+          <tr>
+            <th scope="col">User</th>
+            <th scope="col">Email</th>
+            <th scope="col">Joined</th>
+            <th scope="col">Role</th>
+            <th scope="col">Status</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (!users().length) {
+            <tr>
+              <td colspan="6" class="empty-state">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <strong>No users found</strong>
+                <span>Try changing or clearing your current filters.</span>
+              </td>
+            </tr>
+          } @else {
+            @for (user of users(); track user.id) {
+              <tr class="directory-user-row" tabindex="0" (click)="openUser(user)"
+                (keydown)="openUserFromKeyboard($event, user)"
+                [attr.aria-label]="'Open details for ' + userName(user)">
+                <td data-label="User">
+                  <div class="user-cell">
+                    @if (user.avatarUrl) {
+                      <img class="user-avatar" [src]="user.avatarUrl" width="38" height="38" alt="">
+                    } @else {
+                      <span class="user-avatar user-avatar--fallback" aria-hidden="true">{{ initials(user) }}</span>
+                    }
+                    <div class="user-cell-meta">
+                      <div class="user-cell-name">
+                        {{ userName(user) }}
+                        @if (isCurrentUser(user)) {
+                          <span class="you-badge">You</span>
+                        }
+                      </div>
+                      <div class="user-cell-id">#{{ user.id }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td data-label="Email">{{ user.email }}</td>
+                <td data-label="Joined" class="joined-cell">{{ user.createdAt | date:'MMM dd, y' }}</td>
+                <td data-label="Role">
+                  <span class="role-badge role-badge-{{ user.role || 'member' }}">
+                    <i class="bi" [class.bi-shield-check]="user.role === 'admin'"
+                      [class.bi-person]="user.role !== 'admin'" aria-hidden="true"></i>
+                    {{ user.role === 'admin' ? 'Admin' : 'Member' }}
+                  </span>
+                </td>
+                <td data-label="Status">
+                  <span class="status-pill status-{{ user.status }}">
+                    <i class="bi bi-circle-fill" aria-hidden="true"></i>
+                    {{ user.status === 'active' ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td data-label="Action" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+                  <div class="users-action">
+                    @if (user.role === 'admin') {
+                      <span class="admin-lock" title="Admin accounts cannot be deactivated">
+                        <i class="bi bi-lock-fill" aria-hidden="true"></i>Protected
+                      </span>
+                    } @else {
+                      <label class="perfect-switch" [title]="(user.status === 'active' ? 'Deactivate ' : 'Activate ') + userName(user)">
+                        <input #statusToggle class="perfect-switch-input" type="checkbox"
+                          [checked]="user.status === 'active'" [disabled]="updatingUserIds().has(user.id)"
+                          (change)="toggleUserStatus(user, statusToggle)"
+                          [attr.aria-label]="'Account active for ' + userName(user)">
+                        <span class="perfect-switch-track"><span class="perfect-switch-thumb"></span></span>
+                      </label>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (pagination().totalPages > 1) {
+      <nav class="admin-pagination" aria-label="User pagination">
+        <button class="admin-page-btn" type="button" [disabled]="pagination().page <= 1" (click)="loadUsers(pagination().page - 1)"
+          aria-label="Previous page"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+        @for (page of pageNumbers(); track page) {
+          <button class="admin-page-btn" type="button" [class.is-active]="page === pagination().page"
+            [attr.aria-current]="page === pagination().page ? 'page' : null" (click)="loadUsers(page)">{{ page }}</button>
+        }
+        <button class="admin-page-btn" type="button" [disabled]="pagination().page >= pagination().totalPages"
+          (click)="loadUsers(pagination().page + 1)" aria-label="Next page">
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </button>
+      </nav>
+    }
+  }
+</div>
+
+@if (drawerOpen()) {
+  <button class="offcanvas-backdrop" type="button" aria-label="Close user details" (click)="closeDrawer($event)"></button>
+  <aside class="user-offcanvas" role="dialog" aria-modal="true" aria-labelledby="userDetailTitle">
+    <header class="offcanvas-header">
+      <h2 id="userDetailTitle">User Details</h2>
+      <button class="close-button" type="button" aria-label="Close" (click)="closeDrawer($event)">
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+      </button>
+    </header>
+
+    @if (detailLoading()) {
+      <app-ui-state kind="loading" title="Loading details"></app-ui-state>
+    } @else {
+      @if (selectedUser(); as user) {
+        <div class="offcanvas-body">
+        <form id="userEditForm" [formGroup]="editForm" (ngSubmit)="saveUser()">
+          <div class="detail-profile">
+            @if (user.avatarUrl) {
+              <img class="detail-avatar" [src]="user.avatarUrl" width="76" height="76" alt="">
+            } @else {
+              <span class="detail-avatar detail-avatar--fallback" aria-hidden="true">{{ initials(user) }}</span>
+            }
+            <div>
+              <strong>{{ userName(user) }}</strong>
+              <span>#{{ user.id }} · Joined {{ user.createdAt | date:'MMM dd, y' }}</span>
+              <span class="role-badge role-badge-{{ user.role || 'member' }}">{{ user.role === 'admin' ? 'Admin' : 'Member' }}</span>
+            </div>
+          </div>
+
+          <section class="detail-section">
+            <h3>Basic information</h3>
+            <label for="editUserName">Full name</label>
+            <input id="editUserName" class="form-control" type="text" maxlength="80" formControlName="displayName">
+            @if (editForm.controls.displayName.touched && editForm.controls.displayName.invalid) {
+              <div class="field-error">Please enter a name.</div>
+            }
+
+            <label for="editUserEmail">Email address</label>
+            <input id="editUserEmail" class="form-control" type="email" [value]="user.email" readonly aria-readonly="true">
+            <div class="form-text">Email is used to sign in and cannot be changed here.</div>
+
+            <label for="editUserBio">Short bio</label>
+            <textarea id="editUserBio" class="form-control" rows="3" maxlength="180" formControlName="bio"
+              placeholder="Add a short introduction..."></textarea>
+          </section>
+
+          <section class="detail-section">
+            <h3>Access &amp; account</h3>
+            <label for="editUserRole">Role</label>
+            <select id="editUserRole" class="form-select" formControlName="role">
+              <option value="member">Member</option>
+              <option value="admin">Admin</option>
+            </select>
+            <div class="form-text">
+              {{ selectedUserIsAdmin() ? 'Admin roles are protected and cannot be downgraded here.' : 'Select Admin to promote this member.' }}
+            </div>
+
+            <div class="account-status-card">
+              <div>
+                <strong>Account status</strong>
+                <span>
+                  {{ adminProtectionActive() ? 'Admin accounts are always active and cannot be deactivated.' : 'Allow this user to access Lingora.' }}
+                </span>
+              </div>
+              <label class="perfect-switch" [class.is-disabled]="editForm.controls.active.disabled">
+                <input class="perfect-switch-input" type="checkbox" formControlName="active">
+                <span class="perfect-switch-track"><span class="perfect-switch-thumb"></span></span>
+              </label>
+            </div>
+
+            @if (adminProtectionActive()) {
+              <div class="admin-protection-notice" role="note">
+                <i class="bi bi-shield-lock-fill" aria-hidden="true"></i>
+                Admin accounts cannot be deactivated.
+              </div>
+            }
+          </section>
+        </form>
+      </div>
+
+      <footer class="offcanvas-footer">
+        <button class="btn btn-outline-secondary" type="button" (click)="closeDrawer($event)">Cancel</button>
+        <button class="btn btn-primary" type="submit" form="userEditForm" [disabled]="saving()">
+          @if (saving()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          } @else {
+            <i class="bi bi-check2" aria-hidden="true"></i>
+          }
+          Save changes
+        </button>
+        </footer>
+      }
+    }
+  </aside>
+}
