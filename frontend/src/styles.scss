@@ -1,1 +1,100 @@
-/* You can add global styles to this file, and also import other style files */
+@import "bootstrap/dist/css/bootstrap.min.css";
+
+app-root {
+  display: block;
+  min-height: 100vh;
+}
+
+.angular-only {
+  display: contents;
+}
+
+.review-offcanvas.show {
+  display: block;
+}
+
+.offcanvas-backdrop-lite {
+  position: fixed;
+  inset: 0;
+  z-index: 1040;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+body.editor-page .rich-editor h6,
+body.editor-page .preview-post-body h6,
+body.editor-page .rich-editor code,
+body.editor-page .rich-editor .editor-inline-code-font,
+body.editor-page .preview-post-body code,
+body.editor-page .preview-post-body .editor-inline-code-font,
+body.editor-page .editor-code-block,
+body.editor-page .editor-code-body,
+body.editor-page .editor-code-body * {
+  text-transform: none;
+}
+
+body.editor-page .rich-editor h1,
+body.editor-page .rich-editor h2,
+body.editor-page .rich-editor h3,
+body.editor-page .rich-editor h4,
+body.editor-page .rich-editor h5,
+body.editor-page .rich-editor h6,
+body.editor-page .preview-post-body h1,
+body.editor-page .preview-post-body h2,
+body.editor-page .preview-post-body h3,
+body.editor-page .preview-post-body h4,
+body.editor-page .preview-post-body h5,
+body.editor-page .preview-post-body h6 {
+  font-weight: 400;
+}
+
+body.editor-page .rich-editor h1 b,
+body.editor-page .rich-editor h1 strong,
+body.editor-page .rich-editor h2 b,
+body.editor-page .rich-editor h2 strong,
+body.editor-page .rich-editor h3 b,
+body.editor-page .rich-editor h3 strong,
+body.editor-page .rich-editor h4 b,
+body.editor-page .rich-editor h4 strong,
+body.editor-page .rich-editor h5 b,
+body.editor-page .rich-editor h5 strong,
+body.editor-page .rich-editor h6 b,
+body.editor-page .rich-editor h6 strong,
+body.editor-page .preview-post-body h1 b,
+body.editor-page .preview-post-body h1 strong,
+body.editor-page .preview-post-body h2 b,
+body.editor-page .preview-post-body h2 strong,
+body.editor-page .preview-post-body h3 b,
+body.editor-page .preview-post-body h3 strong,
+body.editor-page .preview-post-body h4 b,
+body.editor-page .preview-post-body h4 strong,
+body.editor-page .preview-post-body h5 b,
+body.editor-page .preview-post-body h5 strong,
+body.editor-page .preview-post-body h6 b,
+body.editor-page .preview-post-body h6 strong {
+  font-weight: 700;
+}
+
+body.editor-page .editor-code-body b,
+body.editor-page .editor-code-body strong,
+body.editor-page .editor-code-body i,
+body.editor-page .editor-code-body em,
+body.editor-page .editor-code-body s,
+body.editor-page .editor-code-body strike,
+body.editor-page .editor-inline-code-font b,
+body.editor-page .editor-inline-code-font strong,
+body.editor-page .editor-inline-code-font i,
+body.editor-page .editor-inline-code-font em,
+body.editor-page .editor-inline-code-font s,
+body.editor-page .editor-inline-code-font strike {
+  font-weight: inherit !important;
+  font-style: normal !important;
+  text-decoration: none !important;
+}
+
+body.editor-page .editor-code-body font,
+body.editor-page .editor-code-body [style],
+body.editor-page .editor-inline-code-font font,
+body.editor-page .editor-inline-code-font [style] {
+  color: inherit !important;
+  background: transparent !important;
+}

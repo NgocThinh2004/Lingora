@@ -1,0 +1,119 @@
+/* Settings Page Specific Styles */
+    .settings-container {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+      width: 100%;
+    }
+
+    .settings-header {
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.5rem;
+    }
+
+    .settings-card {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+      transition: all 0.2s ease;
+    }
+
+    .settings-card:hover {
+      border-color: rgba(255, 90, 0, 0.2);
+    }
+
+    .settings-card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .settings-card-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Interactive Select Cards for Theme & Language */
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    .select-option-card {
+      border: 2px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background-color: var(--bg-body);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .select-option-card:hover {
+      border-color: var(--text-muted);
+      transform: translateY(-2px);
+    }
+
+    .select-option-card.active {
+      border-color: var(--primary-color);
+      background-color: var(--accent-button-bg);
+      box-shadow: 0 4px 12px var(--accent-button-bg);
+    }
+
+    [data-bs-theme="dark"] .select-option-card.active {
+      background-color: var(--accent-button-bg);
+    }
+
+    .select-option-card.active::after {
+      content: "\F26A";
+      font-family: bootstrap-icons !important;
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      color: var(--primary-color);
+      font-size: 1.1rem;
+    }
+
+    .option-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      display: inline-block;
+      color: var(--primary-color) !important;
+    }
+
+    .option-title {
+      font-weight: 700;
+      color: var(--text-main);
+      font-size: 1rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .option-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Form Switch Customization */
+    .form-check-input:checked {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 1055;
+    }

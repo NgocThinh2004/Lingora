@@ -1,0 +1,124 @@
+<div class="feature-page feature-page-post-detail">
+<div class="app-wrapper">
+
+    <!-- MOBILE HEADER -->
+    <header class="app-header">
+      <div class="header-container">
+        <button class="btn btn-link d-lg-none me-2 text-reset p-0" type="button" data-bs-toggle="offcanvas"
+          data-bs-target="#mobileSidebar" aria-controls="mobileSidebar">
+          <i class="bi bi-list fs-3"></i>
+        </button>
+        <a href="/home" class="d-flex align-items-center text-decoration-none">
+          <i class="bi bi-feather fs-4 text-primary me-2"></i>
+          <span class="fs-5 fw-bold text-main">Lingora</span>
+        </a>
+        <div class="d-flex align-items-center ms-auto gap-2">
+          <a href="/workspace/create" class="btn btn-primary btn-sm fw-medium px-2 px-sm-3 rounded-pill d-inline-flex align-items-center me-1"><i
+              class="bi bi-plus-lg me-1"></i> <span data-i18n="create">Create</span></a>
+
+          <a href="/profile" class="text-decoration-none">
+            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=32&h=32"
+              class="rounded-circle border" width="32" height="32" alt="Avatar">
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- 3-COLUMN LAYOUT -->
+    <main class="app-main-content">
+
+      <!-- COLUMN 1: LEFT SIDEBAR NAVIGATION -->
+      <app-sidebar />
+
+      <!-- COLUMN 2: CENTER WORKSPACE FEED (Post Details View) -->
+      <div class="center-feed">
+        <!-- Mobile Search Box (Visible only on screens where right sidebar is hidden) -->
+        <div class="d-lg-none w-100 mb-3">
+          <div class="right-search-box w-100">
+            <i class="bi bi-search"></i>
+            <input type="text" id="mobileFeedSearchInput" placeholder="Search Lingora..."
+              data-i18n="search_placeholder">
+          </div>
+        </div>
+
+        <a href="/home" class="text-decoration-none text-muted mb-4 d-inline-flex align-items-center fw-medium">
+          <i class="bi bi-arrow-left me-2"></i> <span data-i18n="back_feed">Back to Feed</span>
+        </a>
+
+        <!-- Article Details Container -->
+        <div id="postDetailContainer">
+          <article class="substack-post post-detail-article">
+            <div class="substack-post-header">
+              <a class="author-badge-group text-decoration-none" href="/profile">
+                <img [src]="post.avatar" [alt]="post.author" class="author-avatar">
+                <span class="author-meta-info"><strong class="author-name">{{ post.author }}</strong><span class="post-timestamp">{{ post.date }}</span></span>
+              </a>
+            </div>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 mt-3">{{ post.category }}</span>
+            <h1 class="fw-bold mt-3 mb-2">{{ post.title }}</h1>
+            <p class="lead text-muted">{{ post.summary }}</p>
+            <div class="post-content mt-4">
+              <p>Artificial intelligence is becoming part of everyday software development. The useful question is no longer whether teams should use it, but where it creates dependable value.</p>
+              <h2>Start with the workflow</h2>
+              <p>Strong teams use AI to accelerate research, drafts, tests, and repetitive implementation while keeping architecture and product judgment with people.</p>
+              <p>The result is a shorter feedback loop: ideas are tested sooner, reviews stay focused, and engineers spend more time on decisions that require context.</p>
+            </div>
+            <div class="substack-post-footer mt-4">
+              <button class="footer-action-item" type="button" (click)="toggleLike()"><i class="bi" [class.bi-heart]="!liked" [class.bi-heart-fill]="liked"></i> {{ likes }}</button>
+              <span class="footer-action-item"><i class="bi bi-chat"></i> {{ comments.length }}</span>
+              <span class="footer-action-item"><i class="bi bi-eye"></i> {{ post.views }}</span>
+            </div>
+          </article>
+        </div>
+
+        <!-- Comments Section (Multi-language Support) -->
+        <div class="mt-5 pt-3 border-top">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0"><span data-i18n="comments">Comments</span> (<span id="commentCountText">{{ comments.length }}</span>)
+            </h4>
+          </div>
+
+          <div class="mb-4">
+            <textarea id="newCommentInput" class="form-control mb-2" rows="3"
+              placeholder="Write a comment in any language..." data-i18n="comment_placeholder" [value]="commentDraft" (input)="updateComment($event)"></textarea>
+            <div class="d-flex justify-content-end">
+              <button id="submitCommentBtn" class="btn btn-primary px-4 rounded-pill fw-medium" [disabled]="!commentDraft.trim()" (click)="submitComment()"
+                data-i18n="post_comment">Post Comment</button>
+            </div>
+          </div>
+
+          <!-- Dynamic Comments Container -->
+          <div id="commentsListContainer" class="comments-list mt-4">
+            @for (comment of comments; track $index) {
+              <div class="d-flex gap-3 py-3 border-bottom">
+                <span class="profile-avatar" style="width:38px;height:38px"><span>{{ comment.author.charAt(0) }}</span></span>
+                <div><strong class="d-block">{{ comment.author }}</strong><span class="text-muted small">{{ comment.time }}</span><p class="mb-0 mt-1">{{ comment.text }}</p></div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Related Posts Section (Same Category) -->
+        <div class="mt-5 pt-4 border-top">
+          <h4 class="fw-bold mb-4" data-i18n="related_posts">Related Posts</h4>
+
+          <div id="relatedPostsContainer" class="d-flex flex-column gap-3">
+            <a href="/post-detail?id=2" class="text-decoration-none text-reset border-bottom pb-3"><strong>Designing services that stay simple as they scale</strong><span class="d-block text-muted small mt-1">Thái Dương · Backend Engineering</span></a>
+            <a href="/post-detail?id=3" class="text-decoration-none text-reset"><strong>Small interface decisions with a large impact</strong><span class="d-block text-muted small mt-1">Hoàng Anh · Design</span></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMN 3: RIGHT PANEL -->
+      <aside class="right-panel"></aside>
+
+    </main>
+  </div>
+
+  <!-- MOBILE SIDEBAR / OFFCANVAS -->
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel"></div>
+
+  <!-- Bootstrap 5 JS Bundle -->
+  
+  <!-- Core Script containing theme & language simulation -->
+</div>

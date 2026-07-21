@@ -1,0 +1,25 @@
+<aside class="left-sidebar">
+  <div>
+    <div class="substack-logo-container">
+      <a routerLink="/home" class="text-decoration-none d-flex align-items-center gap-2">
+        <i class="bi bi-bookmark-fill substack-logo"></i>
+        <span class="fs-5 fw-bold text-main">Lingora</span>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <a routerLink="/home" routerLinkActive="active" class="sidebar-nav-item"><i class="bi bi-house-door"></i><span>Home</span></a>
+      <a routerLink="/explore" routerLinkActive="active" class="sidebar-nav-item"><i class="bi bi-compass"></i><span>Explore</span></a>
+      <a routerLink="/subscriptions" routerLinkActive="active" class="sidebar-nav-item"><i class="bi bi-collection"></i><span>Subscriptions</span></a>
+      <a routerLink="/workspace/posts" routerLinkActive="active" class="sidebar-nav-item"><i class="bi bi-journal-text"></i><span>My Articles</span></a>
+      <a routerLink="/profile" routerLinkActive="active" class="sidebar-nav-item"><i class="bi bi-person"></i><span>Profile</span></a>
+    </nav>
+    <a routerLink="/workspace/create" class="sidebar-create-btn"><span>Create</span><i class="bi bi-plus-lg"></i></a>
+  </div>
+  <div class="sidebar-footer-menu">
+    <div class="d-flex align-items-center gap-2 ps-3 pe-2 mb-2">
+      <button class="btn btn-sm btn-outline-secondary p-0" id="sidebarThemeToggle" type="button" aria-label="Toggle theme" style="width:38px;height:38px"><i class="bi bi-moon-fill" id="sidebarThemeIcon"></i></button>
+    </div>
+    <a routerLink="/settings" routerLinkActive="active" class="sidebar-nav-item"><i class="bi bi-gear"></i><span>Settings</span></a>
+    <a href="#" id="signOutBtn" class="sidebar-nav-item text-danger"><i class="bi bi-box-arrow-right"></i><span>Sign Out</span></a>
+  </div>
+</aside>
