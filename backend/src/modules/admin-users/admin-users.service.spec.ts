@@ -6,7 +6,7 @@ describe('AdminUsersService', () => {
   const transaction = { LOCK: { UPDATE: 'UPDATE' } };
   let user: Record<string, any>;
   let sequelize: { transaction: jest.Mock };
-  let userModel: { findAndCountAll: jest.Mock; findByPk: jest.Mock };
+  let userModel: { findAndCountAll: jest.Mock; findByPk: jest.Mock; count: jest.Mock };
   let roleModel: { findOne: jest.Mock; findAll: jest.Mock; findByPk: jest.Mock };
   let refreshTokenModel: { update: jest.Mock };
   let service: AdminUsersService;
@@ -32,6 +32,7 @@ describe('AdminUsersService', () => {
     userModel = {
       findAndCountAll: jest.fn(),
       findByPk: jest.fn(),
+      count: jest.fn().mockResolvedValue(12),
     };
     roleModel = {
       findOne: jest.fn(),
@@ -74,6 +75,7 @@ describe('AdminUsersService', () => {
       limit: 10,
       totalPages: 1,
     });
+    expect(result.meta.directoryTotal).toBe(12);
     expect(result.data[0]).toEqual(expect.objectContaining({
       id: user.id,
       email: user.email,
@@ -81,6 +83,19 @@ describe('AdminUsersService', () => {
       status: 'active',
     }));
     expect(result.data[0]).not.toHaveProperty('password');
+  });
+
+  it('treats banned accounts as inactive for the prototype status filter', async () => {
+    userModel.findAndCountAll.mockResolvedValue({ rows: [], count: 0 });
+    roleModel.findAll.mockResolvedValue([]);
+
+    await service.findAll({ status: 'inactive', page: 1, limit: 8 });
+
+    expect(userModel.findAndCountAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        status: { [Op.in]: ['inactive', 'banned'] },
+      }),
+    }));
   });
 
   it('prevents an admin from banning their own account', async () => {
@@ -124,5 +139,37 @@ describe('AdminUsersService', () => {
     expect(result.role).toBe('admin');
     expect(result).not.toHaveProperty('password');
     expect(refreshTokenModel.update).not.toHaveBeenCalled();
+  });
+
+  it('updates profile fields used by the admin details panel', async () => {
+    userModel.findByPk.mockResolvedValue(user);
+    roleModel.findByPk.mockResolvedValue({ id: 2, name: 'member' });
+
+    const result = await service.update('1', user.id, {
+      displayName: 'Updated member',
+      bio: 'Updated bio',
+    });
+
+    expect(user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        display_name: 'Updated member',
+        bio: 'Updated bio',
+      }),
+      { transaction },
+    );
+    expect(result.displayName).toBe('Updated member');
+    expect(result.bio).toBe('Updated bio');
+  });
+
+  it('protects existing admin accounts from being downgraded', async () => {
+    user.role_id = 1;
+    userModel.findByPk.mockResolvedValue(user);
+    roleModel.findByPk.mockResolvedValue({ id: 1, name: 'admin' });
+    roleModel.findOne.mockResolvedValue({ id: 2, name: 'member' });
+
+    await expect(service.update('2', user.id, { role: 'member' }))
+      .rejects.toBeInstanceOf(BadRequestException);
+
+    expect(user.update).not.toHaveBeenCalled();
   });
 });

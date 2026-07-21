@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   IsIn,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Max,
@@ -44,6 +45,17 @@ export class AdminUsersQueryDto {
 }
 
 export class UpdateAdminUserDto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(80)
+  displayName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(180)
+  bio?: string;
+
   @IsOptional()
   @IsIn(ADMIN_USER_ROLES)
   role?: AdminUserRole;

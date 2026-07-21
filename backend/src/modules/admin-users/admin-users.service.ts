@@ -26,6 +26,7 @@ export class AdminUsersService {
       where = {
         ...where,
         [Op.or]: [
+          { id: { [Op.like]: `%${search}%` } },
           { email: { [Op.like]: `%${search}%` } },
           { username: { [Op.like]: `%${search}%` } },
           { display_name: { [Op.like]: `%${search}%` } },
@@ -34,7 +35,12 @@ export class AdminUsersService {
     }
 
     if (query.status) {
-      where = { ...where, status: query.status };
+      where = {
+        ...where,
+        status: query.status === 'inactive'
+          ? { [Op.in]: ['inactive', 'banned'] }
+          : query.status,
+      };
     }
 
     if (query.role) {
@@ -45,12 +51,15 @@ export class AdminUsersService {
       where = { ...where, role_id: role.id };
     }
 
-    const { rows, count } = await this.userModel.findAndCountAll({
+    const [{ rows, count }, directoryTotal] = await Promise.all([
+      this.userModel.findAndCountAll({
       where,
       order: [['created_at', 'DESC'], ['id', 'DESC']],
       limit: query.limit,
       offset: (query.page - 1) * query.limit,
-    });
+      }),
+      this.userModel.count(),
+    ]);
     const roles = await this.getRolesByIds(rows.map(user => user.role_id));
 
     return {
@@ -62,6 +71,7 @@ export class AdminUsersService {
           limit: query.limit,
           totalPages: Math.ceil(count / query.limit),
         },
+        directoryTotal,
       },
     };
   }
@@ -77,8 +87,8 @@ export class AdminUsersService {
   }
 
   async update(actorId: string, userId: string, dto: UpdateAdminUserDto) {
-    if (!dto.role && !dto.status) {
-      throw new BadRequestException('Provide a role or status to update');
+    if (dto.displayName === undefined && dto.bio === undefined && !dto.role && !dto.status) {
+      throw new BadRequestException('Provide profile or access fields to update');
     }
 
     return this.sequelize.transaction(async transaction => {
@@ -98,7 +108,14 @@ export class AdminUsersService {
         throw new BadRequestException('Role not found');
       }
 
-      const nextStatus = dto.status ?? user.status;
+      const requestedStatus = dto.status ?? user.status;
+      if (currentRole?.name === 'admin' && nextRole.name !== 'admin') {
+        throw new BadRequestException('Admin roles are protected and cannot be downgraded');
+      }
+      if (currentRole?.name === 'admin' && requestedStatus !== 'active') {
+        throw new BadRequestException('Admin accounts cannot be deactivated');
+      }
+      const nextStatus = nextRole.name === 'admin' ? 'active' : requestedStatus;
       if (actorId === user.id && nextStatus !== 'active') {
         throw new BadRequestException('You cannot deactivate or ban your own account');
       }
@@ -108,6 +125,8 @@ export class AdminUsersService {
 
       await user.update(
         {
+          display_name: dto.displayName?.trim() ?? user.display_name,
+          bio: dto.bio === undefined ? user.bio : dto.bio.trim() || null,
           role_id: nextRole.id,
           status: nextStatus,
           updated_at: new Date(),
@@ -162,6 +181,7 @@ export class AdminUsersService {
       data: [],
       meta: {
         pagination: { total: 0, page, limit, totalPages: 0 },
+        directoryTotal: 0,
       },
     };
   }
