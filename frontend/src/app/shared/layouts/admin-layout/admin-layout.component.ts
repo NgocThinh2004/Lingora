@@ -27,7 +27,7 @@ export class AdminLayoutComponent {
   selectedLocale = localStorage.getItem('lingora-locale') ?? 'en';
   readonly navItems: AdminNavItem[] = [
     { label: 'Admin Dashboard', icon: 'bi-speedometer2', route: '/admin' },
-    { label: 'Manage Users', icon: 'bi-people' },
+    { label: 'Manage Users', icon: 'bi-people', route: '/admin/users' },
     { label: 'Manage Posts', icon: 'bi-file-earmark-check' },
     { label: 'Manage Categories', icon: 'bi-tags' },
     { label: 'Manage Languages', icon: 'bi-translate' }

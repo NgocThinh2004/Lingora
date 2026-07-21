@@ -676,34 +676,59 @@ select.form-select-sm {
    PREMIUM HUMAN-DESIGNED BADGES & STATUS INDICATORS (Non-AI)
    ========================================================== */
 .role-badge {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  padding: 0.2rem 0.55rem;
-  border-radius: 6px;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
   display: inline-flex;
   align-items: center;
+  gap: .35rem;
   letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
 .role-badge-admin {
-  background-color: rgba(255, 108, 31, 0.08);
-  color: #ff6c1f;
-  border: 1px solid rgba(255, 108, 31, 0.2);
+  background-color: #fff3e8;
+  color: #b54708;
+  border: 1px solid #ffd6ae;
 }
 
 .role-badge-creator,
 .role-badge-member {
-  background-color: rgba(0, 102, 204, 0.08);
-  color: #0066cc;
-  border: 1px solid rgba(0, 102, 204, 0.2);
+  background-color: #eff8ff;
+  color: #175cd3;
+  border: 1px solid #b2ddff;
 }
 
 [data-bs-theme="dark"] .role-badge-creator,
 [data-bs-theme="dark"] .role-badge-member {
-  background-color: rgba(59, 130, 246, 0.08);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background-color: #102a43;
+  color: #84caff;
+  border: 1px solid #194f7a;
 }
+
+[data-bs-theme="dark"] .role-badge-admin {
+  background-color: #382417;
+  color: #ffb37a;
+  border-color: #6f3d1e;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .3rem .65rem;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status-pill i { font-size: .45rem; }
+.status-active { color: #067647; background: #ecfdf3; }
+.status-inactive, .status-banned { color: #b42318; background: #fef3f2; }
+[data-bs-theme="dark"] .status-active { color: #75e0a7; background: #123525; }
+[data-bs-theme="dark"] .status-inactive,
+[data-bs-theme="dark"] .status-banned { color: #fda29b; background: #3b1717; }
 
 .status-indicator {
   display: inline-flex;
@@ -1716,23 +1741,32 @@ select.form-select-sm {
 
 /* Perfect Fixed-Width Toggle */
 .perfect-switch {
-  display: inline-block;
+  display: inline-flex;
   margin: 0;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   user-select: none;
 }
 .perfect-switch-input {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
 .perfect-switch-track {
   position: relative;
-  width: 44px; /* Standard clean width */
-  height: 24px;
-  background-color: var(--border-color); /* Match theme */
+  box-sizing: border-box;
+  width: 46px;
+  height: 26px;
+  flex: 0 0 46px;
+  border: 1px solid #7d8998;
+  background-color: #98a2b3;
   border-radius: 99px;
   transition: background-color 0.3s ease;
 }
 .perfect-switch-input:checked + .perfect-switch-track {
+  border-color: var(--primary-color);
   background-color: var(--primary-color);
 }
 .perfect-switch-input:disabled + .perfect-switch-track {
@@ -1743,18 +1777,23 @@ select.form-select-sm {
 /* The Thumb */
 .perfect-switch-thumb {
   position: absolute;
-  top: 2px;
-  left: 2px;
+  top: 50%;
+  left: 3px;
   width: 20px;
   height: 20px;
   background-color: white;
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  transition: left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform: translateY(-50%);
+  transition: transform 0.2s ease;
   z-index: 2;
 }
 .perfect-switch-input:checked + .perfect-switch-track .perfect-switch-thumb {
-  left: calc(100% - 22px); /* Moves perfectly to the right edge */
+  transform: translate(20px, -50%);
+}
+.perfect-switch-input:focus-visible + .perfect-switch-track {
+  outline: 3px solid rgba(255, 103, 25, .22);
+  outline-offset: 2px;
 }
 
 /* The Text */
