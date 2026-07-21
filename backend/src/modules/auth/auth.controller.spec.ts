@@ -28,6 +28,22 @@ describe('AuthController', () => {
     expect(authService.resetPassword).toHaveBeenCalledWith(dto);
   });
 
+  it('passes the authenticated user and change-password input to the service', async () => {
+    const authService = {
+      changePassword: jest.fn().mockResolvedValue({ message: 'Password changed successfully' }),
+    };
+    const controller = new AuthController(authService as never);
+    const user = { id: '7' };
+    const dto = {
+      currentPassword: 'current-password',
+      newPassword: 'new-password-123',
+    };
+
+    await controller.changePassword(user as never, dto);
+
+    expect(authService.changePassword).toHaveBeenCalledWith(user.id, dto);
+  });
+
   it('passes refresh token and request metadata to the service', async () => {
     const authService = {
       refresh: jest.fn().mockResolvedValue({ accessToken: 'new-access-token' }),

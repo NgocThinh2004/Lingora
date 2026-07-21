@@ -27,6 +27,13 @@ export class UsersService {
     return this.userModel.findByPk(id, { transaction });
   }
 
+  async findByIdForUpdate(id: string, transaction: Transaction): Promise<User | null> {
+    return this.userModel.findByPk(id, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+  }
+
   async findByEmailForUpdate(email: string, transaction: Transaction): Promise<User | null> {
     return this.userModel.findOne({
       where: { email: email.toLowerCase() },

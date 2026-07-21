@@ -9,6 +9,7 @@ describe('AuthService session management', () => {
   let usersService: {
     findByEmailOrUsername: jest.Mock;
     findById: jest.Mock;
+    findByIdForUpdate: jest.Mock;
     findByEmailForUpdate: jest.Mock;
     clearPasswordResetOtp: jest.Mock;
     getRoleById: jest.Mock;
@@ -45,6 +46,7 @@ describe('AuthService session management', () => {
     usersService = {
       findByEmailOrUsername: jest.fn(),
       findById: jest.fn(),
+      findByIdForUpdate: jest.fn(),
       findByEmailForUpdate: jest.fn(),
       clearPasswordResetOtp: jest.fn().mockResolvedValue(undefined),
       getRoleById: jest.fn().mockResolvedValue({ name: 'member' }),
@@ -230,6 +232,60 @@ describe('AuthService session management', () => {
       otp,
       newPassword: 'another-password-123',
     })).rejects.toThrow('Invalid or expired reset code');
+  });
+
+  it('changes the authenticated user password and revokes existing sessions', async () => {
+    user.password = await bcrypt.hash('current-password', 4);
+    user.password_reset_otp_hash = 'stale-reset-hash';
+    user.password_reset_expires_at = new Date(Date.now() + 60_000);
+    user.password_reset_sent_at = new Date();
+    usersService.findByIdForUpdate.mockResolvedValue(user);
+    refreshTokenModel.update.mockResolvedValue([2]);
+
+    await expect(service.changePassword(user.id, {
+      currentPassword: 'current-password',
+      newPassword: 'new-password-123',
+    })).resolves.toEqual({
+      message: 'Password changed successfully. Please sign in again.',
+    });
+
+    await expect(bcrypt.compare('new-password-123', user.password)).resolves.toBe(true);
+    expect(user.password_reset_otp_hash).toBeNull();
+    expect(user.password_reset_expires_at).toBeNull();
+    expect(user.password_reset_sent_at).toBeNull();
+    expect(refreshTokenModel.update).toHaveBeenCalledWith(
+      expect.objectContaining({ revoked_at: expect.any(Date), last_used_at: expect.any(Date) }),
+      expect.objectContaining({
+        where: { user_id: user.id, revoked_at: null },
+        transaction,
+      }),
+    );
+  });
+
+  it('rejects change-password when the current password is incorrect', async () => {
+    user.password = await bcrypt.hash('current-password', 4);
+    usersService.findByIdForUpdate.mockResolvedValue(user);
+
+    await expect(service.changePassword(user.id, {
+      currentPassword: 'wrong-password',
+      newPassword: 'new-password-123',
+    })).rejects.toThrow('Current password is incorrect');
+
+    expect(user.update).not.toHaveBeenCalled();
+    expect(refreshTokenModel.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects reusing the current password as the new password', async () => {
+    user.password = await bcrypt.hash('current-password', 4);
+    usersService.findByIdForUpdate.mockResolvedValue(user);
+
+    await expect(service.changePassword(user.id, {
+      currentPassword: 'current-password',
+      newPassword: 'current-password',
+    })).rejects.toThrow('New password must be different from current password');
+
+    expect(user.update).not.toHaveBeenCalled();
+    expect(refreshTokenModel.update).not.toHaveBeenCalled();
   });
 
   it('stores only a hash when login creates a refresh token', async () => {

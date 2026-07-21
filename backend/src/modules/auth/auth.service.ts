@@ -8,7 +8,7 @@ import { Op, Transaction } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { UsersService } from '../users/users.service';
 import { RefreshToken, User } from '../../database/models';
-import { RegisterDto, LoginDto, ResetPasswordDto } from './dto/auth.dto';
+import { ChangePasswordDto, RegisterDto, LoginDto, ResetPasswordDto } from './dto/auth.dto';
 import { MailService } from '../mail/mail.service';
 
 export interface SessionMetadata {
@@ -215,6 +215,51 @@ export class AuthService {
     }
 
     return { message: 'Password reset successfully. Please sign in again.' };
+  }
+
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    const now = new Date();
+
+    await this.sequelize.transaction(async transaction => {
+      const user = await this.usersService.findByIdForUpdate(userId, transaction);
+
+      if (!user || user.status !== 'active') {
+        throw new UnauthorizedException('Account is not active');
+      }
+
+      const isCurrentPasswordValid = await bcrypt.compare(dto.currentPassword, user.password);
+      if (!isCurrentPasswordValid) {
+        throw new BadRequestException('Current password is incorrect');
+      }
+
+      if (dto.newPassword === dto.currentPassword) {
+        throw new BadRequestException('New password must be different from current password');
+      }
+
+      const bcryptRounds = this.getPositiveConfigNumber('BCRYPT_ROUNDS', 12);
+      const password = await bcrypt.hash(dto.newPassword, bcryptRounds);
+
+      await user.update(
+        {
+          password,
+          ...this.getClearedPasswordResetFields(now),
+        },
+        { transaction },
+      );
+
+      await this.refreshTokenModel.update(
+        { revoked_at: now, last_used_at: now },
+        {
+          where: { user_id: user.id, revoked_at: null },
+          transaction,
+        },
+      );
+    });
+
+    return { message: 'Password changed successfully. Please sign in again.' };
   }
 
   async refresh(refreshToken: string, metadata: SessionMetadata = {}) {
