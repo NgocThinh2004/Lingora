@@ -5,7 +5,14 @@ import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 const isPublicAuthRequest = (url: string): boolean =>
-  ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout'].some(path => url.endsWith(path));
+  [
+    '/auth/login',
+    '/auth/register',
+    '/auth/refresh',
+    '/auth/logout',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+  ].some(path => url.endsWith(path));
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);

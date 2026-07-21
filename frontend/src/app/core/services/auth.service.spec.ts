@@ -67,6 +67,42 @@ describe('AuthService', () => {
     expect(service.getRefreshToken()).toBe('refresh-token');
   });
 
+  it('requests a password reset code for the supplied email', () => {
+    service.forgotPassword('member@example.com').subscribe(response => {
+      expect(response.data.message).toBe('Request accepted');
+    });
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/auth/forgot-password`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ email: 'member@example.com' });
+    request.flush({ data: { message: 'Request accepted' } });
+  });
+
+  it('resets the password and clears an existing local session', () => {
+    localStorage.setItem('access_token', 'access-token');
+    localStorage.setItem('refresh_token', 'refresh-token');
+    localStorage.setItem('user_info', JSON.stringify(session.user));
+
+    service.resetPassword({
+      email: 'member@example.com',
+      otp: '123456',
+      newPassword: 'new-password-123',
+    }).subscribe();
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/auth/reset-password`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      email: 'member@example.com',
+      otp: '123456',
+      newPassword: 'new-password-123',
+    });
+    request.flush({ data: { message: 'Password reset successfully' } });
+
+    expect(service.getToken()).toBeNull();
+    expect(service.getRefreshToken()).toBeNull();
+    expect(service.currentUser()).toBeNull();
+  });
+
   it('clears local state even when server logout fails', () => {
     localStorage.setItem('access_token', 'access-token');
     localStorage.setItem('refresh_token', 'refresh-token');
