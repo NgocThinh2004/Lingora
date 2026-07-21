@@ -11,7 +11,7 @@ import {
 } from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { User } from '../../database/models';
+import { User } from '../users/models/user.model';
 
 @Controller('auth')
 export class AuthController {

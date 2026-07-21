@@ -2,7 +2,9 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/sequelize';
 import { Op, WhereOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { RefreshToken, Role, User } from '../../database/models';
+import { RefreshToken } from '../../auth/models/refresh-token.model';
+import { Role } from '../models/role.model';
+import { User } from '../models/user.model';
 import {
   AdminUsersQueryDto,
   AdminUserStatus,

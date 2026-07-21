@@ -135,9 +135,6 @@ export class AdminUsersComponent implements OnInit {
   closeDrawer(event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
-    if (this.saving()) {
-      return;
-    }
     this.drawerOpen.set(false);
     this.selectedUser.set(null);
     this.detailLoading.set(false);
