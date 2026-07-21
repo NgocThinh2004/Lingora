@@ -56,6 +56,7 @@ describe('AuthService session management', () => {
           REFRESH_TOKEN_TTL: '7d',
           RESET_OTP_TTL_MINUTES: '5',
           RESET_OTP_RESEND_SECONDS: '60',
+          RESET_OTP_MAX_ATTEMPTS: '5',
           BCRYPT_ROUNDS: '4',
         };
         return values[key];
@@ -132,6 +133,103 @@ describe('AuthService session management', () => {
       user.id,
       user.password_reset_otp_hash,
     );
+  });
+
+  it('resets the password, consumes the OTP and revokes existing sessions', async () => {
+    const otp = '123456';
+    user.password_reset_otp_hash = await bcrypt.hash(otp, 4);
+    user.password_reset_expires_at = new Date(Date.now() + 60_000);
+    user.password_reset_sent_at = new Date();
+    usersService.findByEmailForUpdate.mockResolvedValue(user);
+    refreshTokenModel.update.mockResolvedValue([2]);
+
+    await expect(service.resetPassword({
+      email: user.email,
+      otp,
+      newPassword: 'new-password-123',
+    })).resolves.toEqual({
+      message: 'Password reset successfully. Please sign in again.',
+    });
+
+    await expect(bcrypt.compare('new-password-123', user.password)).resolves.toBe(true);
+    expect(user.password_reset_otp_hash).toBeNull();
+    expect(user.password_reset_expires_at).toBeNull();
+    expect(user.password_reset_attempts).toBe(0);
+    expect(user.password_reset_sent_at).toBeNull();
+    expect(refreshTokenModel.update).toHaveBeenCalledWith(
+      expect.objectContaining({ revoked_at: expect.any(Date), last_used_at: expect.any(Date) }),
+      expect.objectContaining({
+        where: { user_id: user.id, revoked_at: null },
+        transaction,
+      }),
+    );
+  });
+
+  it('increments the attempt counter for an invalid OTP', async () => {
+    user.password_reset_otp_hash = await bcrypt.hash('123456', 4);
+    user.password_reset_expires_at = new Date(Date.now() + 60_000);
+    usersService.findByEmailForUpdate.mockResolvedValue(user);
+
+    await expect(service.resetPassword({
+      email: user.email,
+      otp: '654321',
+      newPassword: 'new-password-123',
+    })).rejects.toThrow('Invalid or expired reset code');
+
+    expect(user.password_reset_attempts).toBe(1);
+    expect(user.password_reset_otp_hash).toBeTruthy();
+    expect(refreshTokenModel.update).not.toHaveBeenCalled();
+  });
+
+  it('invalidates the OTP after the maximum number of failed attempts', async () => {
+    user.password_reset_otp_hash = await bcrypt.hash('123456', 4);
+    user.password_reset_expires_at = new Date(Date.now() + 60_000);
+    user.password_reset_attempts = 4;
+    usersService.findByEmailForUpdate.mockResolvedValue(user);
+
+    await expect(service.resetPassword({
+      email: user.email,
+      otp: '654321',
+      newPassword: 'new-password-123',
+    })).rejects.toThrow('Invalid or expired reset code');
+
+    expect(user.password_reset_otp_hash).toBeNull();
+    expect(user.password_reset_expires_at).toBeNull();
+    expect(user.password_reset_attempts).toBe(0);
+  });
+
+  it('clears and rejects an expired OTP', async () => {
+    user.password_reset_otp_hash = await bcrypt.hash('123456', 4);
+    user.password_reset_expires_at = new Date(Date.now() - 1000);
+    usersService.findByEmailForUpdate.mockResolvedValue(user);
+
+    await expect(service.resetPassword({
+      email: user.email,
+      otp: '123456',
+      newPassword: 'new-password-123',
+    })).rejects.toThrow('Invalid or expired reset code');
+
+    expect(user.password_reset_otp_hash).toBeNull();
+    expect(refreshTokenModel.update).not.toHaveBeenCalled();
+  });
+
+  it('does not allow a successfully consumed OTP to be reused', async () => {
+    const otp = '123456';
+    user.password_reset_otp_hash = await bcrypt.hash(otp, 4);
+    user.password_reset_expires_at = new Date(Date.now() + 60_000);
+    usersService.findByEmailForUpdate.mockResolvedValue(user);
+
+    await service.resetPassword({
+      email: user.email,
+      otp,
+      newPassword: 'new-password-123',
+    });
+
+    await expect(service.resetPassword({
+      email: user.email,
+      otp,
+      newPassword: 'another-password-123',
+    })).rejects.toThrow('Invalid or expired reset code');
   });
 
   it('stores only a hash when login creates a refresh token', async () => {

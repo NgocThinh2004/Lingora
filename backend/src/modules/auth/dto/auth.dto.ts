@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -38,4 +38,20 @@ export class ForgotPasswordDto {
   @IsEmail()
   @IsNotEmpty()
   email!: string;
+}
+
+export class ResetPasswordDto {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
+  @IsEmail()
+  @IsNotEmpty()
+  email!: string;
+
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'otp must contain exactly 6 digits' })
+  otp!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  newPassword!: string;
 }

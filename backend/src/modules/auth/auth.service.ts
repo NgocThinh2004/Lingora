@@ -8,7 +8,7 @@ import { Op, Transaction } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { UsersService } from '../users/users.service';
 import { RefreshToken, User } from '../../database/models';
-import { RegisterDto, LoginDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, ResetPasswordDto } from './dto/auth.dto';
 import { MailService } from '../mail/mail.service';
 
 export interface SessionMetadata {
@@ -147,6 +147,76 @@ export class AuthService {
     return { message: this.forgotPasswordMessage };
   }
 
+  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+    const now = new Date();
+    const maxAttempts = this.getPositiveConfigNumber('RESET_OTP_MAX_ATTEMPTS', 5);
+
+    const resetSucceeded = await this.sequelize.transaction(async transaction => {
+      const user = await this.usersService.findByEmailForUpdate(dto.email, transaction);
+
+      if (
+        !user ||
+        user.status !== 'active' ||
+        !user.password_reset_otp_hash ||
+        !user.password_reset_expires_at
+      ) {
+        return false;
+      }
+
+      if (
+        user.password_reset_expires_at.getTime() <= now.getTime() ||
+        user.password_reset_attempts >= maxAttempts
+      ) {
+        await user.update(this.getClearedPasswordResetFields(now), { transaction });
+        return false;
+      }
+
+      let isOtpValid = false;
+      try {
+        isOtpValid = await bcrypt.compare(dto.otp, user.password_reset_otp_hash);
+      } catch {
+        // A malformed stored hash must behave exactly like an invalid OTP.
+      }
+
+      if (!isOtpValid) {
+        const nextAttempts = user.password_reset_attempts + 1;
+        const update = nextAttempts >= maxAttempts
+          ? this.getClearedPasswordResetFields(now)
+          : { password_reset_attempts: nextAttempts, updated_at: now };
+
+        await user.update(update, { transaction });
+        return false;
+      }
+
+      const bcryptRounds = this.getPositiveConfigNumber('BCRYPT_ROUNDS', 12);
+      const password = await bcrypt.hash(dto.newPassword, bcryptRounds);
+
+      await user.update(
+        {
+          password,
+          ...this.getClearedPasswordResetFields(now),
+        },
+        { transaction },
+      );
+
+      await this.refreshTokenModel.update(
+        { revoked_at: now, last_used_at: now },
+        {
+          where: { user_id: user.id, revoked_at: null },
+          transaction,
+        },
+      );
+
+      return true;
+    });
+
+    if (!resetSucceeded) {
+      throw new BadRequestException('Invalid or expired reset code');
+    }
+
+    return { message: 'Password reset successfully. Please sign in again.' };
+  }
+
   async refresh(refreshToken: string, metadata: SessionMetadata = {}) {
     const tokenHash = this.hashRefreshToken(refreshToken);
 
@@ -282,5 +352,15 @@ export class AuthService {
   private getPositiveConfigNumber(key: string, fallback: number): number {
     const value = Number(this.configService.get<string>(key));
     return Number.isFinite(value) && value > 0 ? value : fallback;
+  }
+
+  private getClearedPasswordResetFields(now: Date) {
+    return {
+      password_reset_otp_hash: null,
+      password_reset_expires_at: null,
+      password_reset_attempts: 0,
+      password_reset_sent_at: null,
+      updated_at: now,
+    };
   }
 }

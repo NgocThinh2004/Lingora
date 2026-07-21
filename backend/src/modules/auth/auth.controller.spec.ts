@@ -12,6 +12,22 @@ describe('AuthController', () => {
     expect(authService.forgotPassword).toHaveBeenCalledWith('member@example.com');
   });
 
+  it('passes reset-password input to the service', async () => {
+    const authService = {
+      resetPassword: jest.fn().mockResolvedValue({ message: 'Password reset successfully' }),
+    };
+    const controller = new AuthController(authService as never);
+    const dto = {
+      email: 'member@example.com',
+      otp: '123456',
+      newPassword: 'new-password-123',
+    };
+
+    await controller.resetPassword(dto);
+
+    expect(authService.resetPassword).toHaveBeenCalledWith(dto);
+  });
+
   it('passes refresh token and request metadata to the service', async () => {
     const authService = {
       refresh: jest.fn().mockResolvedValue({ accessToken: 'new-access-token' }),
