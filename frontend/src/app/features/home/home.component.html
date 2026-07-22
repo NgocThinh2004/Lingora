@@ -1,0 +1,58 @@
+<div class="home-page">
+  <a routerLink="/create-post" class="quick-draft-card">
+    <img src="assets/images/default-avatar.svg" alt="Avatar" class="quick-draft-avatar" />
+    <span class="quick-draft-placeholder">Bạn đang nghĩ gì?</span>
+  </a>
+
+  <div class="filter-row">
+    <div class="dropdown-wrap">
+      <button type="button" class="filter-btn">
+        <span>{{ selectedCategoryLabel() }}</span>
+        <i class="bi bi-chevron-down"></i>
+      </button>
+      <div class="dropdown-menu">
+        <button type="button" class="dropdown-item" [class.active]="!selectedCategorySlug()" (click)="selectCategory('')">
+          Dành cho bạn
+        </button>
+        @for (category of categories(); track category.id) {
+          <button
+            type="button"
+            class="dropdown-item"
+            [class.active]="selectedCategorySlug() === category.slug"
+            (click)="selectCategory(category.slug)"
+          >
+            {{ translateCategoryName(category) }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="state-block">
+      <i class="bi bi-arrow-repeat spin"></i>
+      <span>Đang tải bảng tin...</span>
+    </div>
+  } @else if (posts().length === 0) {
+    <div class="state-block">
+      <i class="bi bi-inbox"></i>
+      <span>Chưa có bài viết nào phù hợp.</span>
+    </div>
+  } @else {
+    <div class="posts-list">
+      @for (post of posts(); track post.id) {
+        <app-post-card [post]="post"></app-post-card>
+      }
+    </div>
+
+    @if (page() < totalPages()) {
+      <button type="button" class="load-more-btn" (click)="loadMore()" [disabled]="loadingMore()">
+        @if (loadingMore()) {
+          Đang tải thêm...
+        } @else {
+          Xem thêm bài viết
+        }
+      </button>
+    }
+  }
+</div>

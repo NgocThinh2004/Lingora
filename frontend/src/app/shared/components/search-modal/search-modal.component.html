@@ -1,0 +1,91 @@
+@if (modalService.isOpen()) {
+  <div class="search-modal-backdrop show" (click)="close()">
+    <div class="search-modal-box" (click)="$event.stopPropagation()">
+      <div class="search-modal-header">
+        <i class="bi bi-search"></i>
+        <input
+          #searchInput
+          type="text"
+          class="search-modal-input"
+          placeholder="Tìm kiếm bài viết, tác giả, chuyên mục..."
+          [value]="query()"
+          (input)="onInput($any($event.target).value)"
+        />
+        @if (hasQuery()) {
+          <button type="button" class="search-modal-close" (click)="clear()" aria-label="Xóa">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        }
+        <span class="search-kbd-badge">ESC</span>
+      </div>
+
+      <div class="search-modal-body">
+        @if (!hasQuery()) {
+          @if (trendingAuthors().length > 0) {
+            <div>
+              <div class="search-section-title">Tác giả nổi bật</div>
+              <div class="search-avatar-scroll">
+                @for (author of trendingAuthors(); track author.id) {
+                  <button type="button" class="search-avatar-item" (click)="goToAuthor(author.id)">
+                    <img
+                      [src]="author.avatarUrl || 'assets/images/default-avatar.png'"
+                      [alt]="author.name"
+                      class="search-avatar-img"
+                    />
+                    <span class="search-avatar-label">{{ author.name }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (trendingCategories().length > 0) {
+            <div>
+              <div class="search-section-title">Chuyên mục nổi bật</div>
+              <div class="search-trending-list">
+                @for (category of trendingCategories(); track category.id) {
+                  <button type="button" class="search-trending-item" (click)="goToCategory(category.slug)">
+                    <i class="bi bi-hash"></i>
+                    <span>{{ translateCategoryName(category) }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        } @else {
+          <div>
+            <div class="search-section-title">
+              @if (searching()) {
+                Đang tìm kiếm...
+              } @else {
+                Kết quả tìm kiếm
+              }
+            </div>
+
+            @if (!searching() && results().length === 0) {
+              <div class="search-empty">Không tìm thấy kết quả phù hợp.</div>
+            }
+
+            <div class="search-results-list">
+              @for (post of results(); track post.id) {
+                <button type="button" class="search-result-item" (click)="goToPost(post.id)">
+                  <img
+                    [src]="post.author.avatarUrl || 'assets/images/default-avatar.png'"
+                    [alt]="post.author.name"
+                    class="search-result-avatar"
+                  />
+                  <div class="search-result-content">
+                    <div class="search-result-title">{{ resultTitle(post) }}</div>
+                    <div class="search-result-meta">
+                      <span>{{ post.author.name }}</span>
+                    </div>
+                  </div>
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

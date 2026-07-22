@@ -1,10 +1,18 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from './core/guards/admin.guard';
+import { MainLayoutComponent } from './shared/layouts/main-layout/main-layout.component';
+import { HomeComponent } from './features/home/home.component';
 
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent)
+    component: MainLayoutComponent,
+    children: [
+      {
+        path: '',
+        component: HomeComponent
+      }
+    ]
   },
   {
     path: 'auth/login',

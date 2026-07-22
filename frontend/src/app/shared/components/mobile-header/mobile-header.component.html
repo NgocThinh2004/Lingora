@@ -1,0 +1,22 @@
+<header class="mobile-header">
+  <div class="inner">
+    <button type="button" class="menu-btn" (click)="menuClick.emit()" aria-label="Mở menu">
+      <i class="bi bi-list fs-3"></i>
+    </button>
+
+    <a routerLink="/" class="brand">
+      <i class="bi bi-feather fs-4 text-primary"></i>
+      <span>Lingora</span>
+    </a>
+
+    <div class="actions">
+      <a routerLink="/create-post" class="create-btn">
+        <i class="bi bi-plus-lg"></i>
+        <span>Đăng bài</span>
+      </a>
+      <a routerLink="/profile" class="avatar-link">
+        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=32&h=32" alt="Avatar" />
+      </a>
+    </div>
+  </div>
+</header>
