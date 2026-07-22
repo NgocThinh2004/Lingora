@@ -3,54 +3,16 @@ import { RefreshToken } from '../modules/auth/models/refresh-token.model';
 import { CategoryTranslation } from '../modules/categories/models/category-translation.model';
 import { Category } from '../modules/categories/models/category.model';
 import { Language } from '../modules/languages/models/language.model';
+import { PostTranslation } from '../modules/posts/models/post-translation.model';
+import { Post } from '../modules/posts/models/post.model';
 import { Role } from '../modules/users/models/role.model';
 import { User } from '../modules/users/models/user.model';
 
-export { RefreshToken, Category, CategoryTranslation, Language, Role, User };
+export { RefreshToken, Category, CategoryTranslation, Language, Post, PostTranslation, Role, User };
 
 const table = (tableName: string): ClassDecorator =>
   Table({ tableName, timestamps: false, underscored: true, freezeTableName: true }) as ClassDecorator;
 
-
-@table('posts')
-export class Post extends Model {
-  @Column({ type: DataType.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true }) declare id: string;
-  @Column({ type: DataType.BIGINT.UNSIGNED, allowNull: false }) declare author_id: string;
-  @Column(DataType.INTEGER.UNSIGNED) declare category_id: number | null;
-  @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false }) declare original_language_id: number;
-  @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false, defaultValue: 0 }) declare view_count: number;
-  @Column({
-    type: DataType.ENUM('draft', 'pending_review', 'approved', 'rejected', 'published', 'archived'),
-    allowNull: false,
-    defaultValue: 'draft',
-  })
-  declare status: 'draft' | 'pending_review' | 'approved' | 'rejected' | 'published' | 'archived';
-  @Column(DataType.TEXT) declare review_note: string | null;
-  @Column(DataType.DATE) declare published_at: Date | null;
-  @Column({ type: DataType.DATE, allowNull: false }) declare created_at: Date;
-  @Column({ type: DataType.DATE, allowNull: false }) declare updated_at: Date;
-  @Column(DataType.DATE) declare deleted_at: Date | null;
-}
-
-@table('post_translations')
-export class PostTranslation extends Model {
-  @Column({ type: DataType.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true }) declare id: string;
-  @Column({ type: DataType.BIGINT.UNSIGNED, allowNull: false }) declare post_id: string;
-  @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false }) declare language_id: number;
-  @Column(DataType.STRING(255)) declare title: string | null;
-  @Column(DataType.STRING(200)) declare slug: string | null;
-  @Column(DataType.TEXT) declare summary: string | null;
-  @Column(DataType.TEXT('long')) declare content: string | null;
-  @Column({
-    type: DataType.ENUM('not_started', 'queued', 'processing', 'completed', 'failed'),
-    allowNull: false,
-    defaultValue: 'not_started',
-  })
-  declare translation_status: 'not_started' | 'queued' | 'processing' | 'completed' | 'failed';
-  @Column(DataType.STRING(50)) declare translation_provider: string | null;
-  @Column({ type: DataType.DATE, allowNull: false }) declare created_at: Date;
-  @Column({ type: DataType.DATE, allowNull: false }) declare updated_at: Date;
-}
 
 @table('translation_attempts')
 export class TranslationAttempt extends Model {

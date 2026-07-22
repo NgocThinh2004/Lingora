@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { Post, PostTranslation } from '../../database/models';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Language } from '../languages/models/language.model';
+import { PostTranslation } from '../posts/models/post-translation.model';
+import { Post } from '../posts/models/post.model';
 import { UsersModule } from '../users/users.module';
 import { User } from '../users/models/user.model';
 import { AdminCategoriesController } from './categories.controller';
