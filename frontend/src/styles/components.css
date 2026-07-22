@@ -1801,6 +1801,27 @@ select.form-select-sm {
   display: none !important;
 }
 
+/* Shared shell for admin directory pages. */
+.admin-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+}
+.admin-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+.admin-header h1 {
+  margin: 0 0 .5rem;
+  color: var(--text-main);
+  font-size: clamp(1.85rem, 3vw, 2.35rem);
+  font-weight: 700;
+  letter-spacing: -.03em;
+}
+.admin-header p { margin: 0; color: var(--text-muted); }
+
 /* Compact pagination shared by admin directory pages. */
 .admin-pagination {
   display: flex;
@@ -1833,6 +1854,63 @@ select.form-select-sm {
 @media (max-width: 575px) {
   .admin-pagination { gap: .25rem; }
   .admin-page-btn { min-width: 34px; height: 34px; padding-inline: .45rem; }
+}
+@media (max-width: 767.98px) {
+  .admin-container { padding: 1rem .75rem 2rem; }
+}
+
+/* Theme variants shared by the category directory and its confirmation dialog. */
+[data-bs-theme='dark'] app-admin-categories .status-pill.is-active { color: #75e0a7; background: #123525; }
+[data-bs-theme='dark'] app-admin-categories .status-pill.is-inactive { color: #fda29b; background: #3b1717; }
+[data-bs-theme='dark'] app-admin-categories .post-count b { color: #fdba74; background: #431407; }
+[data-bs-theme='dark'] app-admin-categories .confirm-icon { background: var(--accent-button-bg); }
+
+app-admin-categories .translation-chips { align-items: center; gap: .4rem; margin-top: .4rem; }
+app-admin-categories .translation-chips .translation-primary { height: 28px; padding: 3px 8px 3px 5px; align-items: center; gap: .35rem; line-height: 1; border-color: color-mix(in srgb, var(--text-muted) 20%, transparent); background: var(--bg-panel); box-shadow: 0 1px 2px rgb(15 23 42 / 7%); }
+app-admin-categories .translation-chips .translation-flag { display: inline-grid; width: 20px; height: 16px; flex: 0 0 20px; place-items: center; font-style: normal; line-height: 0; }
+app-admin-categories .translation-chips img { display: block; width: 18px; height: 13px; margin: 0; border: 1px solid rgb(15 23 42 / 10%); border-radius: 3px; object-fit: cover; vertical-align: middle; }
+app-admin-categories .translation-chips .translation-code { display: block; margin: 0; color: var(--text-main); font-size: .64rem; font-weight: 750; line-height: 1; }
+app-admin-categories .translation-chips .translation-more { min-width: 30px; height: 27px; padding-inline: .5rem; justify-content: center; border-color: color-mix(in srgb, var(--primary-color) 22%, var(--border-color)); color: var(--primary-color); background: var(--accent-button-bg); cursor: help; }
+app-admin-categories .translation-chips .translation-more.is-complete { border-color: color-mix(in srgb, var(--primary-color) 22%, var(--border-color)); color: var(--primary-color); background: var(--accent-button-bg); }
+app-admin-categories .post-count { color: var(--text-main); background: var(--bg-body); cursor: pointer; }
+app-admin-categories .post-count:hover { border-color: var(--primary-color); }
+app-admin-categories .post-count > i { color: var(--text-muted); font-size: .7rem; }
+app-admin-categories .posts-backdrop { position: fixed; inset: 0; z-index: 1085; border: 0; background: rgb(0 0 0 / 58%); }
+app-admin-categories .posts-panel { position: fixed; inset: 0 0 0 auto; z-index: 1090; display: grid; width: min(450px, 92vw); grid-template-rows: auto auto minmax(0, 1fr); border-left: 1px solid var(--border-color); color: var(--text-main); background: var(--bg-panel); box-shadow: -12px 0 32px rgb(15 23 42 / 16%); }
+app-admin-categories .posts-panel-header { display: flex; min-height: 72px; padding: 1rem 1.25rem; align-items: center; justify-content: space-between; gap: .75rem; border-bottom: 1px solid var(--border-color); }
+app-admin-categories .posts-panel-header h2 { display: flex; min-width: 0; margin: 0; align-items: center; gap: .6rem; font-size: 1.05rem; font-weight: 750; }
+app-admin-categories .posts-panel-header h2 i { color: var(--primary-color); }
+app-admin-categories .posts-panel-summary { display: flex; padding: .8rem 1.25rem; align-items: center; justify-content: space-between; gap: .75rem; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: .75rem; font-weight: 650; }
+app-admin-categories .posts-panel-summary span:last-child { padding: .2rem .55rem; border: 1px solid var(--border-color); border-radius: 999px; background: var(--bg-body); }
+app-admin-categories .posts-panel-body { min-height: 0; overflow-y: auto; }
+app-admin-categories .posts-panel-body app-ui-state { display: block; padding: 1rem; }
+app-admin-categories .category-post-item { padding: 1.25rem; border-bottom: 1px solid var(--border-color); }
+app-admin-categories .category-post-item h3 { margin: 0 0 .65rem; font-size: .95rem; font-weight: 700; line-height: 1.45; }
+app-admin-categories .category-post-item > div { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; color: var(--text-muted); font-size: .72rem; }
+app-admin-categories .category-post-item > div span { display: inline-flex; align-items: center; gap: .3rem; }
+app-admin-categories .category-post-item .post-status { padding: .18rem .45rem; border-radius: 999px; color: #067647; background: #ecfdf3; text-transform: capitalize; }
+[data-bs-theme='dark'] app-admin-categories .category-post-item .post-status { border-color: #1f6b46; color: #75e0a7; background: #123525; }
+
+app-admin-categories .confirm-backdrop.confirm-backdrop { z-index: 1090; background: rgb(15 23 42 / 52%); backdrop-filter: blur(3px); }
+app-admin-categories .confirm-dialog { position: fixed; top: 50%; left: 50%; z-index: 1100; width: min(410px, calc(100vw - 2rem)); padding: 1.4rem; border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent); border-radius: 20px; color: var(--text-main); background: var(--bg-panel); box-shadow: 0 24px 64px rgb(15 23 42 / 28%); transform: translate(-50%, -50%); }
+app-admin-categories .confirm-dialog .confirm-dialog-top { display: flex; align-items: flex-start; justify-content: space-between; }
+app-admin-categories .confirm-dialog .confirm-icon { display: grid; width: 48px; height: 48px; margin: 0; place-items: center; border: 1px solid color-mix(in srgb, var(--primary-color) 18%, transparent); border-radius: 14px; color: var(--accent-ui-color, var(--primary-color)); background: var(--accent-button-bg); box-shadow: 0 0 0 6px color-mix(in srgb, var(--primary-color) 7%, transparent); }
+app-admin-categories .confirm-close { display: grid; width: 34px; height: 34px; padding: 0; place-items: center; border: 0; border-radius: 10px; color: var(--text-muted); background: transparent; }
+app-admin-categories .confirm-close:hover:not(:disabled) { color: var(--text-main); background: var(--border-light); }
+app-admin-categories .confirm-dialog h2 { margin: 1.2rem 0 .45rem; font-size: 1.2rem; letter-spacing: -.02em; }
+app-admin-categories .confirm-dialog p { margin: 0; font-size: .83rem; line-height: 1.6; }
+app-admin-categories .confirm-dialog .confirm-actions { display: grid; margin-top: 1.25rem; grid-template-columns: .9fr 1.35fr; gap: .65rem; }
+app-admin-categories .confirm-dialog .confirm-actions .btn { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: .45rem; border-radius: 11px; font-size: .85rem; font-weight: 650; }
+app-admin-categories .confirm-dialog .confirm-delete { box-shadow: 0 8px 18px color-mix(in srgb, var(--primary-color) 20%, transparent); }
+
+@media (max-width: 430px) {
+  app-admin-categories .confirm-dialog .confirm-actions { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  app-admin-categories .category-filter-panel { grid-template-columns: 1fr 1fr; }
+  app-admin-categories .search-field { grid-column: 1 / -1; }
+  app-admin-categories .reset-filter { width: 46px; }
 }
 
 /* Mobile admin navigation controls injected by core.js. */
