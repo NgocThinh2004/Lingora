@@ -1,0 +1,27 @@
+<div class="app-wrapper">
+  <app-mobile-header (menuClick)="openMobileSidebar()"></app-mobile-header>
+
+  <main class="app-main-content" [class.no-right-panel]="!showRightPanel()">
+    <aside class="left-sidebar desktop-only">
+      <app-sidebar></app-sidebar>
+    </aside>
+
+    <div class="center-feed">
+      <router-outlet></router-outlet>
+    </div>
+
+    @if (showRightPanel()) {
+      <app-right-panel class="right-panel-slot"></app-right-panel>
+    }
+  </main>
+</div>
+
+@if (mobileSidebarOpen()) {
+  <div class="mobile-sidebar-backdrop" (click)="closeMobileSidebar()"></div>
+  <div class="mobile-sidebar-panel">
+    <button type="button" class="close-btn" (click)="closeMobileSidebar()" aria-label="Đóng menu">
+      <i class="bi bi-x-lg"></i>
+    </button>
+    <app-sidebar></app-sidebar>
+  </div>
+}

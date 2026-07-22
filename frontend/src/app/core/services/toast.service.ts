@@ -13,6 +13,10 @@ export class ToastService {
   private toastSubject = new Subject<ToastMessage>();
   toastState$ = this.toastSubject.asObservable();
 
+  show(message: string, type: 'success' | 'error' = 'error') {
+    this.toastSubject.next({ message, type });
+  }
+
   showSuccess(message: string) {
     this.toastSubject.next({ message, type: 'success' });
   }

@@ -1,0 +1,24 @@
+<aside class="right-panel">
+  <!-- <div class="search-box" (click)="searchModalService.open()">
+    <i class="bi bi-search"></i>
+    <input
+      type="search"
+      placeholder="Tìm kiếm trên Lingora..."
+      (focus)="searchModalService.open()"
+      (input)="onSearchInput($any($event.target).value)"
+    />
+  </div> -->
+
+  <button type="button" class="search-box" (click)="searchModalService.open()">
+    <i class="bi bi-search"></i>
+    <span class="search-placeholder">Tìm kiếm trên Lingora...</span>
+  </button>
+
+  <div class="widget">
+    <div class="widget-header">
+      <h6>Gợi ý cho bạn</h6>
+      <a routerLink="/explore" class="see-all">Xem tất cả</a>
+    </div>
+    <p class="muted small">Danh sách tác giả nổi bật sẽ hiển thị tại đây khi kết nối API.</p>
+  </div>
+</aside>

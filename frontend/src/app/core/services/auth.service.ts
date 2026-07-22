@@ -132,6 +132,10 @@ export class AuthService {
     }
   }
 
+  isAuthenticated(): boolean {
+    return !!this.getToken() || !!this.currentUser();
+  }
+
   getToken(): string | null {
     return localStorage.getItem(this.accessTokenKey);
   }
