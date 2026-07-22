@@ -4,6 +4,7 @@ import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { LanguagesModule } from './modules/languages/languages.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { LanguagesModule } from './modules/languages/languages.module';
     UsersModule,
     AuthModule,
     LanguagesModule,
+    CategoriesModule,
   ],
   controllers: [],
   providers: [],

@@ -32,7 +32,7 @@ export class AdminLayoutComponent implements OnInit {
     { label: 'Admin Dashboard', icon: 'bi-speedometer2', route: '/admin' },
     { label: 'Manage Users', icon: 'bi-people', route: '/admin/users' },
     { label: 'Manage Posts', icon: 'bi-file-earmark-check' },
-    { label: 'Manage Categories', icon: 'bi-tags' },
+    { label: 'Manage Categories', icon: 'bi-tags', route: '/admin/categories' },
     { label: 'Manage Languages', icon: 'bi-translate', route: '/admin/languages' }
   ];
 
