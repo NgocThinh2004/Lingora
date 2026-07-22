@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { AdminPostsService } from './admin-posts.service';
 import { AdminPostsQueryDto, ReviewAdminPostDto } from './dto/admin-posts.dto';
 

@@ -7,8 +7,9 @@ import {
 import { InjectModel } from '@nestjs/sequelize';
 import { fn, Op, Transaction, UniqueConstraintError } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { Post, PostTranslation } from '../../database/models';
 import { Language } from '../languages/models/language.model';
+import { PostTranslation } from '../posts/models/post-translation.model';
+import { Post } from '../posts/models/post.model';
 import { User } from '../users/models/user.model';
 import {
   AdminCategoriesQueryDto,

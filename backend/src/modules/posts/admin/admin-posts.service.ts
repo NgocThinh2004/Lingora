@@ -2,11 +2,12 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { Post, PostTranslation } from '../../database/models';
-import { CategoryTranslation } from '../categories/models/category-translation.model';
-import { Category } from '../categories/models/category.model';
-import { Language } from '../languages/models/language.model';
-import { User } from '../users/models/user.model';
+import { CategoryTranslation } from '../../categories/models/category-translation.model';
+import { Category } from '../../categories/models/category.model';
+import { Language } from '../../languages/models/language.model';
+import { User } from '../../users/models/user.model';
+import { PostTranslation } from '../models/post-translation.model';
+import { Post } from '../models/post.model';
 import { AdminPostsQueryDto, ReviewAdminPostDto } from './dto/admin-posts.dto';
 
 type UiStatus = 'pending' | 'approved' | 'rejected';
