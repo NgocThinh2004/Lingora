@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Op } from 'sequelize';
 import { CategoriesService } from './categories.service';
 
 describe('CategoriesService', () => {
@@ -135,7 +136,6 @@ describe('CategoriesService', () => {
       { id: 2, code: 'vi', is_default: false },
     ]);
     postTranslationModel.findAll.mockResolvedValue([
-      { post_id: '21', language_id: 1, title: 'Technology', slug: 'technology' },
       { post_id: '21', language_id: 2, title: 'Công nghệ', slug: 'cong-nghe' },
     ]);
     userModel.findAll.mockResolvedValue([{ id: '3', display_name: 'An', username: 'an' }]);
@@ -144,6 +144,27 @@ describe('CategoriesService', () => {
 
     expect(result.data[0]).toMatchObject({ title: 'Công nghệ', authorName: 'An' });
     expect(result.meta).toEqual({ total: 1, shown: 1 });
+    expect(postTranslationModel.findAll).toHaveBeenCalledWith({
+      where: {
+        language_id: 2,
+        title: { [Op.ne]: null },
+      },
+    });
+  });
+
+  it('omits posts that do not have a title in the requested language', async () => {
+    categoryModel.findByPk.mockResolvedValue({ id: 7 });
+    languageModel.findAll.mockResolvedValue([
+      { id: 1, code: 'vi', is_default: false },
+      { id: 2, code: 'en', is_default: true },
+    ]);
+    postTranslationModel.findAll.mockResolvedValue([]);
+
+    const result = await service.findPosts(7, 'en');
+
+    expect(result).toEqual({ data: [], meta: { total: 0, shown: 0 } });
+    expect(postModel.findAll).not.toHaveBeenCalled();
+    expect(postModel.count).not.toHaveBeenCalled();
   });
 
   it('returns not found when deleting an unknown category', async () => {

@@ -108,41 +108,54 @@ export class CategoriesService {
       throw new NotFoundException('Category not found');
     }
 
-    const where = { category_id: categoryId, deleted_at: null };
-    const [posts, total, languages] = await Promise.all([
+    const languages = await this.languageModel.findAll();
+    const selectedLanguage = languageCode
+      ? languages.find(language => language.code === languageCode)
+      : languages.find(language => language.is_default);
+    if (!selectedLanguage) {
+      return { data: [], meta: { total: 0, shown: 0 } };
+    }
+
+    const translations = (await this.postTranslationModel.findAll({
+      where: {
+        language_id: selectedLanguage.id,
+        title: { [Op.ne]: null },
+      },
+    })).filter(item => Boolean(item.title?.trim()));
+    if (!translations.length) {
+      return { data: [], meta: { total: 0, shown: 0 } };
+    }
+
+    const translatedPostIds = translations.map(item => item.post_id);
+    const where = {
+      category_id: categoryId,
+      deleted_at: null,
+      id: { [Op.in]: translatedPostIds },
+    };
+    const [posts, total] = await Promise.all([
       this.postModel.findAll({
         where,
         order: [['published_at', 'DESC'], ['updated_at', 'DESC']],
         limit: 10,
       }),
       this.postModel.count({ where }),
-      this.languageModel.findAll(),
     ]);
     if (!posts.length) {
       return { data: [], meta: { total: 0, shown: 0 } };
     }
 
-    const postIds = posts.map(post => post.id);
     const authorIds = [...new Set(posts.map(post => post.author_id))];
-    const [translations, authors] = await Promise.all([
-      this.postTranslationModel.findAll({ where: { post_id: { [Op.in]: postIds } } }),
-      this.userModel.findAll({ where: { id: { [Op.in]: authorIds } } }),
-    ]);
-    const requestedLanguage = languages.find(language => language.code === languageCode);
-    const defaultLanguage = languages.find(language => language.is_default);
+    const authors = await this.userModel.findAll({ where: { id: { [Op.in]: authorIds } } });
+    const translationMap = new Map(translations.map(item => [item.post_id, item]));
     const authorMap = new Map(authors.map(author => [author.id, author]));
 
     return {
       data: posts.map(post => {
-        const candidates = translations.filter(item => item.post_id === post.id);
-        const translation = candidates.find(item => item.language_id === requestedLanguage?.id)
-          ?? candidates.find(item => item.language_id === defaultLanguage?.id)
-          ?? candidates.find(item => item.title)
-          ?? candidates[0];
+        const translation = translationMap.get(post.id);
         const author = authorMap.get(post.author_id);
         return {
           id: post.id,
-          title: translation?.title || 'Untitled post',
+          title: translation!.title!,
           slug: translation?.slug ?? null,
           authorName: author?.display_name || author?.username || 'Unknown author',
           status: post.status,
