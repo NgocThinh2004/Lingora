@@ -4,7 +4,7 @@ import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/ro
 import { filter, map, startWith } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { inject } from '@angular/core';
-import { SidebarComponent } from '../../components/sidebar/sidebar.component';
+import { AppSidebarComponent } from '../../components/app-sidebar.component';
 import { MobileHeaderComponent } from '../../components/mobile-header/mobile-header.component';
 import { RightPanelComponent } from '../../components/right-panel/right-panel.component';
 
@@ -14,7 +14,7 @@ import { RightPanelComponent } from '../../components/right-panel/right-panel.co
   imports: [
     CommonModule,
     RouterOutlet,
-    SidebarComponent,
+    AppSidebarComponent,
     MobileHeaderComponent,
     RightPanelComponent,
   ],
