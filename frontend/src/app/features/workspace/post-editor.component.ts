@@ -5,11 +5,11 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { of, switchMap } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { AuthorPost, CreatePostPayload, PostTranslation } from '../posts/models/post.model';
-import { EditorMediaType } from '../../core/models/upload.model';
-import { PostsService } from '../posts/services/posts.service';
-import { UploadsService } from '../../core/services/uploads.service';
-import { AuthService } from '../../core/services/auth.service';
+import { EditorMediaType } from './models/editor-upload.model';
+import { AuthorPostsService } from '../posts/services/author-posts.service';
+import { EditorUploadsService } from './services/editor-uploads.service';
 
 type SaveMode = 'draft' | 'submit';
 type BaselineFormat = 'normal' | 'superscript' | 'subscript';
@@ -22,8 +22,8 @@ type BaselineFormat = 'normal' | 'superscript' | 'subscript';
   styleUrl: './post-editor.component.scss',
 })
 export class PostEditorComponent implements OnInit, OnDestroy {
-  private readonly postsService = inject(PostsService);
-  private readonly uploadsService = inject(UploadsService);
+  private readonly postsService = inject(AuthorPostsService);
+  private readonly uploadsService = inject(EditorUploadsService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly sanitizer = inject(DomSanitizer);
@@ -59,7 +59,6 @@ export class PostEditorComponent implements OnInit, OnDestroy {
 
   draft: CreatePostPayload = {
     title: '',
-    summary: '',
     categoryId: undefined,
     originalLanguageId: 1,
     targetLanguageIds: [2, 3],
@@ -165,7 +164,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
 
     return (
       this.createdPost.translations.find(
-        (translation: any) => translation.languageId === this.createdPost?.originalLanguageId,
+        (translation) => translation.languageId === this.createdPost?.originalLanguageId,
       ) ?? null
     );
   }
@@ -766,20 +765,19 @@ export class PostEditorComponent implements OnInit, OnDestroy {
     this.error = '';
     this.postsService.getAuthorPost(postId).subscribe({
       next: post => {
-        const source = post.translations.find((item: any) => item.languageId === post.originalLanguageId) ?? post.translations[0];
+        const source = post.translations.find(item => item.languageId === post.originalLanguageId) ?? post.translations[0];
         this.createdPost = post;
         this.draft = {
           title: source?.title ?? '',
-          summary: source?.summary ?? '',
           categoryId: post.categoryId ?? undefined,
           originalLanguageId: post.originalLanguageId,
           targetLanguageIds: post.translationMatrix
-            .filter((item: any) => item.languageId !== post.originalLanguageId)
-            .map((item: any) => item.languageId),
+            .filter(item => item.languageId !== post.originalLanguageId)
+            .map(item => item.languageId),
           content: source?.content ?? '',
         };
         this.allowedTargetLanguageIds.clear();
-        this.draft.targetLanguageIds?.forEach((id: any) => this.allowedTargetLanguageIds.add(id));
+        this.draft.targetLanguageIds?.forEach(id => this.allowedTargetLanguageIds.add(id));
         this.targetInput = this.draft.targetLanguageIds?.join(',') ?? '';
         if (this.postBody?.nativeElement) {
           this.postBody.nativeElement.innerHTML = this.draft.content;
@@ -796,7 +794,6 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   private buildPayload(): CreatePostPayload {
     return {
       title: this.draft.title.trim(),
-      summary: this.draft.summary?.trim() || undefined,
       categoryId: this.draft.categoryId,
       originalLanguageId: this.draft.originalLanguageId,
       targetLanguageIds: this.parseTargetLanguageIds(),
@@ -1141,7 +1138,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   }
 
   private hasDraftContent(): boolean {
-    return Boolean(this.draft.title.trim() || this.editorTextContent() || this.draft.summary?.trim());
+    return Boolean(this.draft.title.trim() || this.editorTextContent());
   }
 
   private closeToolbarMenus(): void {

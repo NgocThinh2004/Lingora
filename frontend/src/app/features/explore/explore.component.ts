@@ -1,144 +1,76 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { debounceTime, distinctUntilChanged, Subject, Subscription, forkJoin, map } from 'rxjs';
-import { PostsService } from '../posts/services/posts.service';
-import { UserService } from '../users/services/user.service';
-import { CategoryService } from '../categories/services/category.service';
-import { translateCategory, Category } from '../categories/models/category.model';
-import { UiPreferencesService } from '../../core/services/ui-preferences.service';
-import { CommonModule } from '@angular/common';
-import { PostCardComponent } from '../../shared/components/post-card/post-card.component';
-import { User } from '../users/models/user.model';
-import { Post } from '../posts/models/post.model';
-import { FormsModule } from '@angular/forms';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { PageShellService } from '../../core/ui/page-shell.service';
+import { FeedPostsService } from '../posts/services/feed-posts.service';
+import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [CommonModule, RouterLink, PostCardComponent, FormsModule],
+  imports: [SidebarComponent],
   templateUrl: './explore.component.html',
-  styleUrl: './explore.component.scss'
 })
 export class ExploreComponent implements OnInit, OnDestroy {
-  private readonly ui = inject(UiPreferencesService);
-  private readonly postsService = inject(PostsService);
-  private readonly userService = inject(UserService);
-  private readonly categoryService = inject(CategoryService);
+  private readonly ui = inject(PageShellService);
+  private readonly postsService = inject(FeedPostsService);
 
   query = '';
-  tab: 'top' | 'posts' | 'publications' | 'people' = 'top';
-  
-  // Results
-  topPosts: Post[] = [];
-  featuredPeople: User[] = [];
-  featuredPublications: Category[] = [];
-  
-  posts: Post[] = [];
-  people: User[] = [];
-  publications: Category[] = [];
-
-  loading = false;
+  tab = 'top';
+  results: ExploreResult[] = [];
+  loading = true;
   error = '';
-
-  private readonly searchSubject = new Subject<string>();
-  private searchSubscription?: Subscription;
 
   ngOnInit(): void {
     this.ui.mount('Lingora - Explore');
-    this.searchSubscription = this.searchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged()
-    ).subscribe(() => {
-      this.executeSearch();
+    this.postsService.list({ limit: 50 }).subscribe({
+      next: response => {
+        const postResults: ExploreResult[] = response.items.map(post => {
+          const source = post.translations.find(item => item.languageCode === post.originalLanguage) ?? post.translations[0];
+          return {
+            type: 'posts',
+            title: source?.title || 'Untitled',
+            subtitle: `${post.author.name || post.author.handle} · Published post`,
+            icon: 'bi bi-file-text',
+            href: `/post-detail?id=${post.id}`,
+          };
+        });
+        const peopleResults: ExploreResult[] = [...new Map(response.items.map(post => [post.author.id, post.author])).values()].map(author => ({
+          type: 'people',
+          title: author.name || author.handle,
+          subtitle: author.bio || `@${author.handle}`,
+          icon: 'bi bi-person',
+          href: `/profile?id=${author.id}`,
+        }));
+        this.results = [...postResults, ...peopleResults];
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'Unable to load explore data from the database.';
+        this.loading = false;
+      },
     });
-    
-    this.executeSearch();
   }
 
   ngOnDestroy(): void {
     this.ui.unmount();
-    this.searchSubscription?.unsubscribe();
+  }
+
+  get visibleResults(): ExploreResult[] {
+    const query = this.query.trim().toLowerCase();
+    return this.results.filter(result =>
+      (this.tab === 'top' || result.type === this.tab) &&
+      (!query || `${result.title} ${result.subtitle}`.toLowerCase().includes(query)),
+    );
   }
 
   updateQuery(event: Event): void {
     this.query = (event.target as HTMLInputElement).value;
-    this.searchSubject.next(this.query);
   }
+}
 
-  clearQuery(): void {
-    this.query = '';
-    this.searchSubject.next(this.query);
-  }
-
-  setTab(tab: 'top' | 'posts' | 'publications' | 'people'): void {
-    if (this.tab !== tab) {
-      this.tab = tab;
-      this.executeSearch();
-    }
-  }
-
-  executeSearch(): void {
-    this.loading = true;
-    this.error = '';
-    const q = this.query.trim().toLowerCase();
-
-    if (this.tab === 'top') {
-      const postsReq = this.postsService.list({ q: q, limit: 10 }).pipe(map(res => res.items));
-      const peopleReq = q ? this.userService.search(q) : this.userService.getRecommended();
-      const pubsReq = this.categoryService.findAll();
-
-      forkJoin({ posts: postsReq, people: peopleReq, pubs: pubsReq }).subscribe({
-        next: (res) => {
-          this.topPosts = res.posts;
-          this.featuredPeople = res.people.slice(0, 2);
-          
-          let filteredPubs = res.pubs;
-          if (q) {
-            filteredPubs = filteredPubs.filter(c => 
-              translateCategory(c, 'vi').toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)
-            );
-          }
-          this.featuredPublications = filteredPubs.slice(0, 2);
-          this.loading = false;
-        },
-        error: () => this.handleError()
-      });
-    } else if (this.tab === 'posts') {
-      this.postsService.list({ q: q, limit: 20 }).subscribe({
-        next: (res) => {
-          this.posts = res.items;
-          this.loading = false;
-        },
-        error: () => this.handleError()
-      });
-    } else if (this.tab === 'people') {
-      const peopleReq = q ? this.userService.search(q) : this.userService.getRecommended();
-      peopleReq.subscribe({
-        next: (users) => {
-          this.people = users;
-          this.loading = false;
-        },
-        error: () => this.handleError()
-      });
-    } else if (this.tab === 'publications') {
-      this.categoryService.findAll().subscribe({
-        next: (categories) => {
-          this.publications = q ? categories.filter(c => 
-            translateCategory(c, 'vi').toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)
-          ) : categories;
-          this.loading = false;
-        },
-        error: () => this.handleError()
-      });
-    }
-  }
-  
-  translateCategoryName(cat: Category): string {
-    return translateCategory(cat, 'vi');
-  }
-
-  private handleError(): void {
-    this.error = 'Unable to load explore data.';
-    this.loading = false;
-  }
+interface ExploreResult {
+  type: 'posts' | 'people';
+  title: string;
+  subtitle: string;
+  icon: string;
+  href: string;
 }

@@ -18,7 +18,6 @@ export interface AdminPostTranslation extends AdminPostLanguage {
 export interface AdminPost {
   id: string;
   title: string;
-  summary?: string | null;
   content?: string | null;
   author: { id: string; name: string; avatarUrl: string | null };
   category: { id: number; name: string; status: string } | null;

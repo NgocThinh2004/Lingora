@@ -1,5 +1,5 @@
-import { User } from '../../users/models/user.model';
 import { Category } from '../../categories/models/category.model';
+import { User } from '../../users/models/user.model';
 
 export type PostStatus =
   | 'draft'
@@ -27,7 +27,6 @@ export interface PostTranslation {
   languageId: number;
   title: string | null;
   slug: string | null;
-  summary: string | null;
   content: string | null;
   translationStatus: TranslationStatus;
   translationProvider: string | null;
@@ -81,7 +80,6 @@ export interface ApiItemResponse<T> {
 
 export interface CreatePostPayload {
   title: string;
-  summary?: string;
   categoryId?: number;
   originalLanguageId: number;
   targetLanguageIds?: number[];
@@ -102,7 +100,7 @@ export interface PostListParams {
 }
 
 export interface PostOptions {
-  languages: Array<{ id: number; code: string; label: string; nativeLabel: string }>;
+  languages: Array<{ id: number; code: string; label: string; nativeLabel: string; flagCode: string | null }>;
   categories: Array<{ id: number; label: string }>;
 }
 
@@ -120,10 +118,8 @@ export interface Post {
   categoryId: number | null;
   originalLanguage: string;
   coverImageUrl?: string | null;
-  coverVideoUrl?: string | null;
   imageUrl?: string | null;
-  videoUrl?: string | null;
-  status: PostStatus;
+  status: 'draft' | 'published';
   viewCount: number;
   likeCount?: number;
   commentCount?: number;

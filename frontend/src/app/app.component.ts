@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastComponent } from './shared/components/toast/toast.component';
-import { ThemeService } from './core/services/theme.service';
-import { SearchModalComponent } from './shared/components/search-modal/search-modal.component';
+import { ThemeService } from './core/theme/theme.service';
+import { SearchModalComponent } from './features/search/search-modal.component';
 
 @Component({
   selector: 'app-root',

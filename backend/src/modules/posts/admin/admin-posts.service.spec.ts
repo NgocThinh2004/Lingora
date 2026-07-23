@@ -38,8 +38,8 @@ describe('AdminPostsService', () => {
       status: 'pending_review', review_note: null, created_at: submittedAt,
     }]);
     translationModel.findAll.mockResolvedValue([
-      { id: '121', post_id: '12', language_id: 1, title: 'Original English title', summary: 'English summary', content: '<p>English body</p>', translation_status: 'completed' },
-      { id: '122', post_id: '12', language_id: 2, title: 'Tiêu đề tiếng Việt', summary: 'Tóm tắt', content: '<p>Nội dung</p>', translation_status: 'completed' },
+      { id: '121', post_id: '12', language_id: 1, title: 'Original English title', content: '<p>English body</p>', translation_status: 'completed' },
+      { id: '122', post_id: '12', language_id: 2, title: 'Tiêu đề tiếng Việt', content: '<p>Nội dung</p>', translation_status: 'completed' },
     ]);
     userModel.findAll.mockResolvedValue([{ id: '3', display_name: 'An', username: 'an', avatar: null }]);
     categoryModel.findAll.mockResolvedValue([{ id: 4, slug: 'technology' }]);
@@ -56,7 +56,6 @@ describe('AdminPostsService', () => {
 
     expect(result).toMatchObject({
       title: 'Original English title',
-      summary: 'English summary',
       content: '<p>English body</p>',
       category: { id: 4, name: 'Công nghệ' },
       originalLanguage: { code: 'en' },

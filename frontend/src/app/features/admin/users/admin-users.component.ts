@@ -3,9 +3,9 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { PaginationMeta } from '../../../core/models/api-response.model';
-import { AuthService } from '../../../core/services/auth.service';
-import { ToastService } from '../../../core/services/toast.service';
+import { AuthService } from '../../../core/auth/auth.service';
+import { PaginationMeta } from '../../../core/http/api-response.model';
+import { ToastService } from '../../../core/notifications/toast.service';
 import { UiStateComponent } from '../../../shared/components/ui-state/ui-state.component';
 import { AdminUser, AdminUserRole, AdminUserStatus } from './models/admin-user.model';
 import { AdminUsersService } from './services/admin-users.service';

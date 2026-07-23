@@ -1,4 +1,30 @@
-<section class="my-posts-workspace">
+<div class="angular-only">
+
+  <div class="app-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button aria-controls="mobileSidebar" class="btn btn-link d-lg-none me-2 text-reset p-0"
+          data-bs-target="#mobileSidebar" data-bs-toggle="offcanvas" type="button">
+          <i class="bi bi-list fs-3"></i>
+        </button>
+        <a class="d-flex align-items-center text-decoration-none" routerLink="/workspace/posts">
+          <i class="bi bi-feather fs-4 text-primary me-2"></i>
+          <span class="fs-5 fw-bold text-main">Lingora</span>
+        </a>
+        <div class="d-flex align-items-center ms-auto gap-2">
+          <a class="btn btn-primary btn-sm fw-medium px-3 rounded-pill" routerLink="/workspace/create"><i
+              class="bi bi-plus-lg me-1"></i> <span data-i18n="create">Create</span></a>
+          <a class="text-decoration-none" href="#">
+            <span class="rounded-circle border text-white fw-bold"
+              style="display: inline-grid; place-items: center; width: 32px; height: 32px; background: var(--primary-color);">A</span>
+          </a>
+        </div>
+      </div>
+    </header>
+    <main class="app-main-content no-right-panel">
+      <app-sidebar />
+      <div class="center-feed" style="max-width: 100%; align-items: stretch;">
+        <section class="my-posts-workspace">
           <header class="my-posts-top">
             <h1>{{ translate('my_posts_title') }}</h1>
           </header>
@@ -33,9 +59,9 @@
                 <select aria-label="Filter by language" class="filter-select" data-language-filter=""
                   name="languageFilter" [(ngModel)]="languageFilter">
                   <option value="all">{{ translate('all_languages') }}</option>
-                  <option value="en">{{ translate('english') }}</option>
-                  <option value="vi">{{ translate('vietnamese') }}</option>
-                  <option value="zh">{{ translate('chinese') }}</option>
+                  <option *ngFor="let language of languageOptions" [value]="language.code.toLowerCase()">
+                    {{ language.nativeLabel || language.label }}
+                  </option>
                 </select>
                 <select aria-label="Filter by date" class="filter-select" name="dateFilter" [(ngModel)]="dateFilter">
                   <option value="all">{{ translate('all_dates') }}</option>
@@ -108,7 +134,7 @@
                         [checked]="isSelected(post)"
                         (change)="togglePostSelection(post, $any($event.target).checked)" /></td>
                     <td class="post-title-cell">
-                      <strong>{{ primaryTranslation(post)?.title || translate('untitled') }}</strong>
+                      <strong>{{ postTitle(post) }}</strong>
                       <span>{{ categoryLabel(post) }}</span>
                       <div *ngIf="post.reviewNote" class="post-row-actions" style="opacity: 1; transform: none;">
                         <span class="row-link is-danger">Review note: {{ post.reviewNote }}</span>
@@ -116,13 +142,13 @@
                     </td>
                     <td><span class="status-badge" [ngClass]="statusBadgeClass(post)"><span>{{ statusLabel(post)
                           }}</span></span></td>
-                    <td><span class="language-badge"><i [class]="flagClass(post.originalLanguageId) + ' rounded-1'"></i>
+                    <td><span class="language-badge"><img class="language-flag" [src]="flagUrl(post.originalLanguageId)" alt="">
                         {{ languageCode(post.originalLanguageId) }}</span></td>
                     <td>
                       <div class="d-flex flex-wrap align-items-center gap-1">
                         <span *ngFor="let translation of targetMatrix(post).slice(0, 1); trackBy: trackMatrix"
-                          class="language-badge" style="background: rgba(13, 110, 253, 0.12); color: #0d6efd;"><i
-                            [class]="flagClass(translation.languageId) + ' rounded-1'"></i> {{
+                          class="language-badge" style="background: rgba(13, 110, 253, 0.12); color: #0d6efd;"><img
+                            class="language-flag" [src]="flagUrl(translation.languageId)" alt=""> {{
                           languageCode(translation.languageId) }}</span>
                         <span *ngIf="targetMatrix(post).length > 1" class="language-badge"
                           style="background: rgba(13, 110, 253, 0.12); color: #0d6efd;">+{{ targetMatrix(post).length -
@@ -178,3 +204,52 @@
             </ul>
           </div>
         </section>
+      </div>
+    </main>
+  </div>
+
+  <div *ngIf="confirmationAction" class="confirmation-backdrop" role="presentation"
+    (click)="$event.target === $event.currentTarget && closeConfirmation()">
+    <section class="confirmation-dialog" role="dialog" aria-modal="true"
+      [attr.aria-labelledby]="'confirmationTitle'">
+      <button class="confirmation-close" type="button" aria-label="Close"
+        [disabled]="confirmationBusy" (click)="closeConfirmation()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+
+      <div class="confirmation-icon" aria-hidden="true">
+        <i class="bi bi-trash3"></i>
+      </div>
+      <h2 id="confirmationTitle">{{ confirmationTitle() }}</h2>
+      <p class="confirmation-message">{{ confirmationMessage() }}</p>
+
+      <div class="confirmation-warning">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <span>{{ confirmationWarning() }}</span>
+      </div>
+
+      <div class="confirmation-actions">
+        <button class="confirmation-cancel" type="button" [disabled]="confirmationBusy"
+          (click)="closeConfirmation()">{{ translate('cancel_action') }}</button>
+        <button class="confirmation-submit" type="button" [disabled]="confirmationBusy"
+          (click)="confirmPendingAction()">
+          <span *ngIf="confirmationBusy" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          {{ confirmationButtonLabel() }}
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <div aria-labelledby="mobileSidebarLabel" class="offcanvas offcanvas-start" id="mobileSidebar" tabindex="-1">
+    <div class="offcanvas-header border-bottom">
+      <span class="visually-hidden" id="mobileSidebarLabel">Navigation</span>
+      <button aria-label="Close" class="btn-close ms-auto" data-bs-dismiss="offcanvas" type="button"></button>
+    </div>
+    <app-sidebar />
+  </div>
+
+
+
+
+
+</div>

@@ -4,9 +4,9 @@ import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/ro
 import { filter, map, startWith } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { inject } from '@angular/core';
-import { AppSidebarComponent } from '../../components/app-sidebar.component';
+import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { MobileHeaderComponent } from '../../components/mobile-header/mobile-header.component';
-import { RightPanelComponent } from '../../components/right-panel/right-panel.component';
+import { RightPanelComponent } from './right-panel/right-panel.component';
 
 @Component({
   selector: 'app-main-layout',
@@ -14,7 +14,7 @@ import { RightPanelComponent } from '../../components/right-panel/right-panel.co
   imports: [
     CommonModule,
     RouterOutlet,
-    AppSidebarComponent,
+    SidebarComponent,
     MobileHeaderComponent,
     RightPanelComponent,
   ],
@@ -39,6 +39,18 @@ export class MainLayoutComponent {
   );
 
   readonly showRightPanel = toSignal(this.showRightPanel$, { initialValue: true });
+
+  private readonly contentMaxWidth$ = this.router.events.pipe(
+    filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+    startWith(null),
+    map(() => {
+      let route = this.activatedRoute.firstChild;
+      while (route?.firstChild) route = route.firstChild;
+      return (route?.snapshot?.data?.['contentMaxWidth'] ?? '720px') as string;
+    }),
+  );
+
+  readonly contentMaxWidth = toSignal(this.contentMaxWidth$, { initialValue: '720px' });
 
   openMobileSidebar() {
     this.mobileSidebarOpen.set(true);

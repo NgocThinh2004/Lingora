@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { ToastService } from '../../../core/services/toast.service';
-import { LocaleService } from '../../../core/services/locale.service';
+import { LocaleService } from '../../../core/locale/locale.service';
+import { ToastService } from '../../../core/notifications/toast.service';
 import { AdminLanguage } from './models/admin-language.model';
 import { AdminLanguagesComponent } from './admin-languages.component';
 import { AdminLanguagesService } from './services/admin-languages.service';

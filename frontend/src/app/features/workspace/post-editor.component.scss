@@ -1,5 +1,5 @@
 /* Force black border on buttons when profile color is white/light */
-  html[data-accent-tone="light"] .btn-accent, 
+  html[data-accent-tone="light"] .btn-accent,
   html[data-accent-tone="light"] .fb-btn-primary {
     border: 1px solid #000000 !important;
     box-shadow: inset 0 0 0 1px #000000 !important;

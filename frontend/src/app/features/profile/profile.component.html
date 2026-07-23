@@ -1,4 +1,8 @@
-    <div class="profile-main w-100">
+<div class="feature-page feature-page-profile">
+  <div class="profile-app">
+    <app-sidebar />
+
+    <main class="profile-main">
       @if (notice() || error()) {
         <div class="alert mx-3 mt-3" [class.alert-success]="!!notice()" [class.alert-danger]="!!error()" role="status">
           {{ error() || notice() }}
@@ -313,7 +317,8 @@
 
       </section>
       }
-    </div>
+    </main>
+  </div>
 
   <!-- Mobile Bottom Navigation -->
   <nav class="mobile-bottom-nav d-lg-none">
@@ -443,5 +448,5 @@
         <!-- Subscribers list will be injected here -->
       </div>
     </section>
-  
-
+  </div>
+</div>

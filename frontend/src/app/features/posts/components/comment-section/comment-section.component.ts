@@ -4,8 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { CommentService } from '../../services/comment.service';
 import { Comment } from '../../models/comment.model';
 import { LikeService } from '../../services/like.service';
-import { AuthService } from '../../../../core/services/auth.service';
-import { LocaleService } from '../../../../core/services/locale.service';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { LocaleService } from '../../../../core/locale/locale.service';
 import { RouterModule } from '@angular/router';
 
 @Component({
@@ -18,7 +18,7 @@ import { RouterModule } from '@angular/router';
 export class CommentSectionComponent implements OnInit {
   @Input({ required: true }) postId!: number;
   @Input({ required: true }) postAuthorId!: number;
-  
+
   private commentService = inject(CommentService);
   private likeService = inject(LikeService);
   public localeService = inject(LocaleService);
@@ -27,13 +27,13 @@ export class CommentSectionComponent implements OnInit {
   comments = signal<Comment[]>([]);
   totalComments = signal<number>(0);
   loading = signal<boolean>(false);
-  
+
   newCommentText = signal<string>('');
   isSubmitting = signal<boolean>(false);
-  
+
   replyingToCommentId = signal<string | null>(null);
   replyingToText = signal<string>('');
-  
+
   editingCommentId = signal<string | null>(null);
   editingCommentText = signal<string>('');
 
@@ -70,7 +70,7 @@ export class CommentSectionComponent implements OnInit {
     if (!content || !this.authService.isAuthenticated()) return;
 
     this.isSubmitting.set(true);
-    
+
     this.commentService.createComment(this.postId.toString(), content).subscribe({
       next: () => {
         this.isSubmitting.set(false);
@@ -88,7 +88,7 @@ export class CommentSectionComponent implements OnInit {
     if (!content || !this.authService.isAuthenticated()) return;
 
     this.isSubmitting.set(true);
-    
+
     this.commentService.createComment(this.postId.toString(), content, target.id).subscribe({
       next: () => {
         this.isSubmitting.set(false);

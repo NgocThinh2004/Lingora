@@ -1,6 +1,6 @@
 <div class="home-page">
   <a routerLink="/create-post" class="quick-draft-card">
-    <img src="assets/images/default-avatar.svg" alt="Avatar" class="quick-draft-avatar" />
+    <img [src]="quickDraftAvatar()" alt="Avatar" class="quick-draft-avatar" />
     <span class="quick-draft-placeholder">Bạn đang nghĩ gì?</span>
   </a>
 
@@ -45,14 +45,14 @@
       }
     </div>
 
-    @if (loadingMore()) {
-      <div class="infinite-loader">
-        <i class="bi bi-arrow-repeat spin"></i>
-        <span>Đang tải thêm bài viết...</span>
-      </div>
+    @if (page() < totalPages()) {
+      <button type="button" class="load-more-btn" (click)="loadMore()" [disabled]="loadingMore()">
+        @if (loadingMore()) {
+          Đang tải thêm...
+        } @else {
+          Xem thêm bài viết
+        }
+      </button>
     }
-
-    <!-- Invisible sentinel element for IntersectionObserver -->
-    <div #sentinel class="infinite-scroll-sentinel"></div>
   }
 </div>

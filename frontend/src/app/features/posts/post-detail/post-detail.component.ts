@@ -1,14 +1,14 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { PostsService } from '../services/posts.service';
+import { FeedPostsService } from '../services/feed-posts.service';
 import { Post, getPostTranslation } from '../models/post.model';
-import { LocaleService } from '../../../core/services/locale.service';
+import { LocaleService } from '../../../core/locale/locale.service';
 import { Title } from '@angular/platform-browser';
 import { CommentSectionComponent } from '../components/comment-section/comment-section.component';
 import { LikeService } from '../services/like.service';
-import { AuthService } from '../../../core/services/auth.service';
-import { ToastService } from '../../../core/services/toast.service';
+import { AuthService } from '../../../core/auth/auth.service';
+import { ToastService } from '../../../core/notifications/toast.service';
 
 @Component({
   selector: 'app-post-detail',
@@ -19,7 +19,7 @@ import { ToastService } from '../../../core/services/toast.service';
 })
 export class PostDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
-  private readonly postService = inject(PostsService);
+  private readonly postService = inject(FeedPostsService);
   private localeService = inject(LocaleService);
   private titleService = inject(Title);
   private likeService = inject(LikeService);
@@ -38,16 +38,9 @@ export class PostDetailComponent implements OnInit {
     return getPostTranslation(currentPost, this.localeService.selectedLocale());
   });
 
-  isVideo = computed(() => {
-    const currentPost = this.post();
-    if (!currentPost) return false;
-    const url = currentPost.videoUrl || currentPost.imageUrl || '';
-    return /\.mp4(\?|$)/i.test(url) || url.includes('/video/upload/');
-  });
-
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
+      const id = params.get('id') || this.route.snapshot.queryParamMap.get('id');
       if (id) {
         this.loadPost(Number(id));
       }
@@ -64,7 +57,7 @@ export class PostDetailComponent implements OnInit {
         const title = this.displayedTranslation()?.title;
         if (title) this.titleService.setTitle(`${title} - Lingora`);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        
+
         // Fetch related posts
         this.postService.getRelated(id).subscribe({
           next: (relatedData) => {
@@ -86,7 +79,7 @@ export class PostDetailComponent implements OnInit {
   toggleLike(): void {
     const p = this.post();
     if (!p) return;
-    
+
     if (!this.authService.isAuthenticated()) {
       this.toast.show('Vui lòng đăng nhập để thích bài viết');
       return;

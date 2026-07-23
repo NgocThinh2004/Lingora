@@ -1,5 +1,5 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
-import { PostsService } from '../posts.service';
+import { AuthorPostsService } from '../author/author-posts.service';
 import { PublicPostsService } from './public-posts.service';
 import { PublicPostsQueryDto } from './dto/public-posts.dto';
 
@@ -7,7 +7,7 @@ import { PublicPostsQueryDto } from './dto/public-posts.dto';
 export class PublicPostsController {
   constructor(
     private readonly postsService: PublicPostsService,
-    private readonly authorPostsService: PostsService,
+    private readonly authorPostsService: AuthorPostsService,
   ) {}
 
   @Get('options')

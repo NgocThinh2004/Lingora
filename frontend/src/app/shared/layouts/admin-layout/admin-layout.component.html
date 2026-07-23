@@ -60,7 +60,7 @@
         <summary><i class="bi bi-list" aria-hidden="true"></i><span>More</span></summary>
         <div class="admin-more__menu">
           <a routerLink="/" (click)="closeMenu()"><i class="bi bi-arrow-left" aria-hidden="true"></i>Back to Feed</a>
-          <span aria-disabled="true"><i class="bi bi-gear" aria-hidden="true"></i>Settings</span>
+          <a routerLink="/admin/settings" (click)="closeMenu()"><i class="bi bi-gear" aria-hidden="true"></i>Settings</a>
           <button type="button" (click)="logout()"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>Sign Out</button>
         </div>
       </details>

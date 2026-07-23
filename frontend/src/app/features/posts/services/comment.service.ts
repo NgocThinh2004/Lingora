@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../../core/models/api-response.model';
+import { ApiResponse } from '../../../core/http/api-response.model';
 import { PaginatedResult } from '../models/post.model';
 import { Comment } from '../models/comment.model';
 

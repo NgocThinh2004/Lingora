@@ -37,7 +37,7 @@ export class AdminPostsService {
     filtered.sort((left, right) => new Date(right.submittedAt).getTime() - new Date(left.submittedAt).getTime());
     const start = (query.page - 1) * query.limit;
     return {
-      data: filtered.slice(start, start + query.limit).map(({ content, summary, reviewNote, ...post }) => post),
+      data: filtered.slice(start, start + query.limit).map(({ content, reviewNote, ...post }) => post),
       meta: {
         pagination: {
           total: filtered.length,
@@ -134,7 +134,6 @@ export class AdminPostsService {
       return {
         id: String(post.id),
         title: displayTranslation?.title || 'Untitled post',
-        summary: displayTranslation?.summary ?? null,
         content: displayTranslation?.content ?? null,
         author: {
           id: String(post.author_id),
