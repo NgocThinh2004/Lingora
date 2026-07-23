@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FeedPostsService } from '../services/feed-posts.service';
@@ -27,6 +28,7 @@ export class PostDetailComponent implements OnInit {
   private likeService = inject(LikeService);
   private authService = inject(AuthService);
   private toast = inject(ToastService);
+  private sanitizer = inject(DomSanitizer);
 
   post = signal<Post | null>(null);
   relatedPosts = signal<Post[]>([]);
@@ -37,7 +39,13 @@ export class PostDetailComponent implements OnInit {
   displayedTranslation = computed(() => {
     const currentPost = this.post();
     if (!currentPost) return null;
-    return getPostTranslation(currentPost, this.localeService.selectedLocale());
+    const trans = getPostTranslation(currentPost, this.localeService.selectedLocale());
+    if (!trans) return null;
+    
+    return {
+      ...trans,
+      safeContentHtml: this.sanitizer.bypassSecurityTrustHtml(trans.contentHtml || '')
+    };
   });
 
   ngOnInit(): void {

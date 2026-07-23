@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, computed, inject } from '@angular/core';
+import { Component, Input, OnInit, computed, inject } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { LocaleService } from '../../../../core/locale/locale.service';
@@ -17,15 +18,27 @@ import { AuthorTooltipComponent } from '../../../../shared/components/author-too
   templateUrl: './post-card.component.html',
   styleUrl: './post-card.component.scss',
 })
-export class PostCardComponent {
+export class PostCardComponent implements OnInit {
   private readonly languageService = inject(LocaleService);
   private readonly likeService = inject(LikeService);
   private readonly toast = inject(ToastService);
   private readonly authService = inject(AuthService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   @Input({ required: true }) post!: Post;
 
   readonly currentLang = computed(() => this.languageService.current());
+  
+  readonly safeContentHtml = computed(() => {
+    const translation = getPostTranslation(this.post, this.currentLang());
+    if (translation?.contentHtml) {
+      return this.sanitizer.bypassSecurityTrustHtml(translation.contentHtml);
+    }
+    return '';
+  });
+
+  ngOnInit() {
+  }
 
   get translation() {
     return getPostTranslation(this.post, this.currentLang());
