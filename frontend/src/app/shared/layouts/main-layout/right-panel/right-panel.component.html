@@ -1,13 +1,15 @@
 <aside class="right-panel">
-  <div class="right-search-box mb-4" (click)="searchModalService.open()">
-    <i class="bi bi-search"></i>
-    <input
-      type="search"
-      readonly
-      placeholder="Tìm kiếm trên Lingora..."
-      aria-label="Tìm kiếm trên Lingora"
-      (focus)="searchModalService.open()">
-  </div>
+  @if (!isExplorePage) {
+    <div class="right-search-box mb-4" (click)="searchModalService.open()">
+      <i class="bi bi-search"></i>
+      <input
+        type="search"
+        readonly
+        placeholder="Tìm kiếm trên Lingora..."
+        aria-label="Tìm kiếm trên Lingora"
+        (focus)="searchModalService.open()">
+    </div>
+  }
 
   <div class="featured-authors-widget mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3">

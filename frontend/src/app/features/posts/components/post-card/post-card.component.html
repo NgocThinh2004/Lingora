@@ -1,12 +1,15 @@
 <article class="post-card">
   <header class="post-header">
-    <a [routerLink]="['/profile', post.author.id]" class="author-group">
-      <img [src]="post.author.avatarUrl || 'assets/images/default-avatar.svg'" [alt]="post.author.name" class="author-avatar" />
-      <div class="author-meta">
-        <span class="author-name">{{ post.author.name }}</span>
-        <span class="post-time">{{ post.createdAt | date: 'mediumDate' }}</span>
-      </div>
-    </a>
+    <div class="author-tooltip-container position-relative">
+      <a [routerLink]="['/profile', post.author.id]" class="author-group text-decoration-none">
+        <img [src]="post.author.avatarUrl || 'assets/images/default-avatar.svg'" [alt]="post.author.name" class="author-avatar" />
+        <div class="author-meta">
+          <span class="author-name">{{ post.author.name }}</span>
+          <span class="post-time">{{ post.createdAt | date: 'mediumDate' }}</span>
+        </div>
+      </a>
+      <app-author-tooltip [user]="post.author"></app-author-tooltip>
+    </div>
 
     @if (categoryLabel) {
       <span class="category-badge">{{ categoryLabel }}</span>

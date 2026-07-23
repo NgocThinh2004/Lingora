@@ -1,13 +1,14 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { PageShellService } from '../../core/ui/page-shell.service';
 import { SubscriptionsService } from './services/subscriptions.service';
-import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
+import { AuthorTooltipComponent } from '../../shared/components/author-tooltip/author-tooltip.component';
 
 @Component({
   selector: 'app-subscriptions',
   standalone: true,
-  imports: [SidebarComponent],
+  imports: [AuthorTooltipComponent],
   templateUrl: './subscriptions.component.html',
+  styleUrl: './subscriptions.component.scss'
 })
 export class SubscriptionsComponent implements OnInit, OnDestroy {
   private readonly ui = inject(PageShellService);

@@ -7,11 +7,12 @@ import { LikeService } from '../../services/like.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { LocaleService } from '../../../../core/locale/locale.service';
 import { RouterModule } from '@angular/router';
+import { AuthorTooltipComponent } from '../../../../shared/components/author-tooltip/author-tooltip.component';
 
 @Component({
   selector: 'app-comment-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AuthorTooltipComponent],
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss']
 })

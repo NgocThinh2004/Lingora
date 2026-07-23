@@ -23,29 +23,43 @@ export const routes: Routes = [
           import('./features/settings/settings.component').then(m => m.SettingsComponent),
         data: { showRightPanel: false, contentMaxWidth: '780px' },
       },
+      {
+        path: 'explore',
+        loadComponent: () => import('./features/explore/explore.component').then(m => m.ExploreComponent),
+      },
+      {
+        path: 'subscriptions',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/subscriptions/subscriptions.component').then(m => m.SubscriptionsComponent),
+      },
+      {
+        path: 'post-detail',
+        loadComponent: () => import('./features/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent),
+      },
+      {
+        path: 'post/:id',
+        loadComponent: () => import('./features/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent),
+      },
+      {
+        path: 'posts/:id',
+        loadComponent: () => import('./features/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent),
+      },
+      {
+        path: 'profile',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/profile/profile.component').then(m => m.ProfileComponent),
+        data: { showRightPanel: false },
+      },
+      {
+        path: 'profile/:id',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/profile/profile.component').then(m => m.ProfileComponent),
+        data: { showRightPanel: false },
+      },
     ],
-  },
-  {
-    path: 'explore',
-    loadComponent: () => import('./features/explore/explore.component').then(m => m.ExploreComponent),
-  },
-  {
-    path: 'subscriptions',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/subscriptions/subscriptions.component').then(m => m.SubscriptionsComponent),
-  },
-  {
-    path: 'post-detail',
-    loadComponent: () => import('./features/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent),
-  },
-  {
-    path: 'post/:id',
-    loadComponent: () => import('./features/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent),
-  },
-  {
-    path: 'posts/:id',
-    loadComponent: () => import('./features/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent),
   },
   {
     path: 'auth/login',
@@ -93,18 +107,6 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/workspace/post-editor.component').then(m => m.PostEditorComponent),
-  },
-  {
-    path: 'profile',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/profile/profile.component').then(m => m.ProfileComponent),
-  },
-  {
-    path: 'profile/:id',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/profile/profile.component').then(m => m.ProfileComponent),
   },
   {
     path: 'admin',

@@ -27,4 +27,9 @@ export class SubscriptionsController {
   async unsubscribe(@CurrentUser('id') userId: string, @Param('authorId') authorId: string) {
     return { data: await this.subscriptionsService.unsubscribe(userId, authorId) };
   }
+
+  @Get('check/:authorId')
+  async checkSubscription(@CurrentUser('id') userId: string, @Param('authorId') authorId: string) {
+    return { data: await this.subscriptionsService.checkSubscription(userId, authorId) };
+  }
 }

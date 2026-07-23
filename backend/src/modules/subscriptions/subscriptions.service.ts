@@ -58,4 +58,9 @@ export class SubscriptionsService {
     ]);
     return { followers, following };
   }
+
+  async checkSubscription(subscriberId: string, authorId: string) {
+    const sub = await this.subscriptionModel.findOne({ where: { subscriber_id: subscriberId, author_id: authorId } });
+    return { subscribed: !!sub };
+  }
 }

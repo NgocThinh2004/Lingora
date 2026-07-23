@@ -26,13 +26,14 @@
               <div class="search-section-title">Tác giả nổi bật</div>
               <div class="search-avatar-scroll">
                 @for (author of trendingAuthors(); track author.id) {
-                  <button type="button" class="search-avatar-item" (click)="goToAuthor(author.id)">
+                  <button type="button" class="search-avatar-item author-tooltip-container position-relative" (click)="goToAuthor(author.id)">
                     <img
                       [src]="author.avatarUrl || 'assets/images/default-avatar.png'"
                       [alt]="author.name"
                       class="search-avatar-img"
                     />
                     <span class="search-avatar-label">{{ author.name }}</span>
+                    <app-author-tooltip [user]="author"></app-author-tooltip>
                   </button>
                 }
               </div>
@@ -69,11 +70,14 @@
             <div class="search-results-list">
               @for (post of results(); track post.id) {
                 <button type="button" class="search-result-item" (click)="goToPost(post.id)">
-                  <img
-                    [src]="post.author.avatarUrl || 'assets/images/default-avatar.png'"
-                    [alt]="post.author.name"
-                    class="search-result-avatar"
-                  />
+                  <div class="author-tooltip-container position-relative">
+                    <img
+                      [src]="post.author.avatarUrl || 'assets/images/default-avatar.png'"
+                      [alt]="post.author.name"
+                      class="search-result-avatar"
+                    />
+                    <app-author-tooltip [user]="post.author"></app-author-tooltip>
+                  </div>
                   <div class="search-result-content">
                     <div class="search-result-title">{{ resultTitle(post) }}</div>
                     <div class="search-result-meta">

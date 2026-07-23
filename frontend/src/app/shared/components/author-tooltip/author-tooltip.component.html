@@ -1,0 +1,16 @@
+<div class="author-hover-card p-3 shadow-sm" (click)="$event.stopPropagation()">
+  <div class="d-flex align-items-center mb-3 cursor-pointer" (click)="goToAuthor($event)" style="cursor: pointer;">
+    <img [src]="user?.avatarUrl || user?.avatar || 'assets/images/default-avatar.png'" class="rounded-circle border me-3" width="56" height="56" style="object-fit:cover;" [alt]="user?.name || user?.username">
+    <div>
+      <h6 class="fw-bold mb-0 text-main">{{ user?.name || user?.displayName || user?.username }}</h6>
+      <div class="text-muted small">&#64;{{ user?.handle || user?.username }}</div>
+    </div>
+  </div>
+  <p class="small text-muted mb-3" style="line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+    {{ user?.bio || 'Chưa có thông tin giới thiệu.' }}
+  </p>
+  <button class="btn btn-subscribe w-100" [class.subscribed]="isSubscribed" (click)="toggleSubscribe($event)" [disabled]="loading">
+    <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+    {{ isSubscribed ? 'Following' : 'Follow' }}
+  </button>
+</div>

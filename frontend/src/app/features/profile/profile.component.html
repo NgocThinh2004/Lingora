@@ -1,8 +1,4 @@
-<div class="feature-page feature-page-profile">
-  <div class="profile-app">
-    <app-sidebar />
-
-    <main class="profile-main">
+<main class="profile-main">
       @if (notice() || error()) {
         <div class="alert mx-3 mt-3" [class.alert-success]="!!notice()" [class.alert-danger]="!!error()" role="status">
           {{ error() || notice() }}
@@ -318,7 +314,6 @@
       </section>
       }
     </main>
-  </div>
 
   <!-- Mobile Bottom Navigation -->
   <nav class="mobile-bottom-nav d-lg-none">
@@ -449,4 +444,3 @@
       </div>
     </section>
   </div>
-</div>
