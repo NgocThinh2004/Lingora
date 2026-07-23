@@ -113,3 +113,33 @@ h6 {
   background-color: var(--primary-color);
   color: #ffffff;
 }
+
+.right-search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 1rem;
+  border-radius: 99px;
+  cursor: text;
+  transition: all var(--transition-speed) ease;
+
+  i {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+  }
+
+  input {
+    border: none;
+    background: transparent;
+    outline: none;
+    width: 100%;
+    color: var(--text-main);
+    font-size: 0.95rem;
+
+    &::placeholder {
+      color: var(--text-muted);
+    }
+  }
+}
