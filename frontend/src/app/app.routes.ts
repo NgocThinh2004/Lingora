@@ -11,6 +11,11 @@ export const routes: Routes = [
       {
         path: '',
         component: HomeComponent
+      },
+      {
+        path: 'settings',
+        data: { showRightPanel: false, contentMaxWidth: '780px' },
+        loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent)
       }
     ]
   },
@@ -54,6 +59,11 @@ export const routes: Routes = [
       {
         path: 'categories',
         loadComponent: () => import('./features/admin/categories/admin-categories.component').then(m => m.AdminCategoriesComponent)
+      },
+      {
+        path: 'settings',
+        data: { settingsContext: 'admin' },
+        loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent)
       }
     ]
   },

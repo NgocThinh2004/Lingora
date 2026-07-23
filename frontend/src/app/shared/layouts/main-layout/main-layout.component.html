@@ -6,7 +6,7 @@
       <app-sidebar></app-sidebar>
     </aside>
 
-    <div class="center-feed">
+    <div class="center-feed" [style.--content-max-width]="contentMaxWidth()">
       <router-outlet></router-outlet>
     </div>
 

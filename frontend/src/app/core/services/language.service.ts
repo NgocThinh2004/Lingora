@@ -1,9 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, signal } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Language } from '../models/language.model';
 import { ApiResponse } from '../models/api-response.model';
+import { PublicLanguage } from '../models/locale.model';
 
 const LANG_KEY = 'preferredLanguage';
 
@@ -14,9 +14,9 @@ export class LanguageService {
 
   constructor(private readonly http: HttpClient) {}
 
-  findAll(): Observable<Language[]> {
+  findAll(): Observable<PublicLanguage[]> {
     return this.http
-      .get<ApiResponse<Language[]>>(`${environment.apiUrl}/languages`)
+      .get<ApiResponse<PublicLanguage[]>>(`${environment.apiUrl}/languages`)
       .pipe(map((res) => res.data));
   }
 

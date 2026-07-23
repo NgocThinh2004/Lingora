@@ -40,6 +40,18 @@ export class MainLayoutComponent {
 
   readonly showRightPanel = toSignal(this.showRightPanel$, { initialValue: true });
 
+  private readonly contentMaxWidth$ = this.router.events.pipe(
+    filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+    startWith(null),
+    map(() => {
+      let route = this.activatedRoute.firstChild;
+      while (route?.firstChild) route = route.firstChild;
+      return (route?.snapshot?.data?.['contentMaxWidth'] ?? '720px') as string;
+    }),
+  );
+
+  readonly contentMaxWidth = toSignal(this.contentMaxWidth$, { initialValue: '720px' });
+
   openMobileSidebar() {
     this.mobileSidebarOpen.set(true);
   }
