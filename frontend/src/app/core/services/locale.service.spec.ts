@@ -52,6 +52,7 @@ describe('LocaleService', () => {
 
     expect(service.selectedLocale()).toBe('vi');
     expect(localStorage.getItem('lingora-locale')).toBe('vi');
+    expect(localStorage.getItem('preferredLanguage')).toBe('vi');
   });
 
   it('ignores locale codes that are not active', () => {
@@ -59,5 +60,19 @@ describe('LocaleService', () => {
 
     expect(service.selectedLocale()).toBe('en');
     expect(localStorage.getItem('lingora-locale')).toBeNull();
+  });
+
+  it('translates the shared sidebar and My Posts labels from core.js', () => {
+    service.selectLocale('vi');
+    expect(service.translate('home')).toBe('Trang chủ');
+    expect(service.translate('more')).toBe('Thêm');
+    expect(service.translate('my_posts_title')).toBe('Bài viết của tôi');
+    expect(service.translate('original_language')).toBe('Ngôn ngữ gốc');
+    expect(service.translate('items')).toBe('bài viết');
+
+    service.selectLocale('zh');
+    expect(service.translate('sign_out')).toBe('退出登录');
+    expect(service.translate('search_posts')).toBe('搜索你的文章...');
+    expect(service.translate('item')).toBe('篇文章');
   });
 });

@@ -52,6 +52,7 @@ export class PublicPostsService {
 
     const where: any = {
       deleted_at: null,
+      status: 'published',
     };
     if (categoryId) {
       where.category_id = categoryId;
@@ -144,6 +145,8 @@ export class PublicPostsService {
         authorId: Number(post.author_id),
         categoryId: post.category_id,
         originalLanguage: languageMap.get(post.original_language_id) || 'en',
+        coverImageUrl: post.image_url || null,
+        coverVideoUrl: post.video_url || null,
         imageUrl: post.image_url || null,
         videoUrl: post.video_url || null,
         status: post.status,

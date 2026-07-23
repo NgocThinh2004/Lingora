@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -65,4 +65,24 @@ export class ChangePasswordDto {
   @IsNotEmpty()
   @MinLength(8)
   newPassword!: string;
+}
+
+export class UpdateProfileDto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  displayName?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^[a-zA-Z0-9_]{3,30}$/, {
+    message: 'username must contain 3-30 letters, numbers, or underscores',
+  })
+  username?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  bio?: string;
 }

@@ -35,6 +35,10 @@ export class UsersService {
     });
   }
 
+  async findByUsername(username: string, transaction?: Transaction): Promise<User | null> {
+    return this.userModel.findOne({ where: { username }, transaction });
+  }
+
   async findByEmailForUpdate(email: string, transaction: Transaction): Promise<User | null> {
     return this.userModel.findOne({
       where: { email: email.toLowerCase() },
