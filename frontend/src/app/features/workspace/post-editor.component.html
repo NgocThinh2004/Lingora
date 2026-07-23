@@ -1,9 +1,5 @@
 ﻿<div class="angular-only editor-page" data-page="create-post">
 
-  <div class="editor-feedback" *ngIf="notice || error" [class.is-error]="!!error" role="status">
-    {{ error || notice }}
-  </div>
-
   <header aria-label="Post actions" class="editor-topbar">
     <a aria-label="Back to previous page" class="back-link" data-back-link="" href="#" (click)="$event.preventDefault(); goToMyPosts()">
       <span aria-hidden="true"></span>

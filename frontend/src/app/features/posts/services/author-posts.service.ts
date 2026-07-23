@@ -25,26 +25,29 @@ export class AuthorPostsService {
 
   getPostOptions(): Observable<PostOptions> {
     return this.http
-      .get<ApiItemResponse<PostOptions>>(`${this.baseUrl}/posts/options`)
-      .pipe(map(response => response.data));
+      .get<ApiItemResponse<PostOptions | ApiItemResponse<PostOptions>>>(`${this.baseUrl}/posts/options`)
+      .pipe(map(response => this.unwrapItem(response)));
   }
 
   getAuthorPost(postId: string | number): Observable<AuthorPost> {
     return this.http
-      .get<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts/${postId}`)
-      .pipe(map((response) => response.data));
+      .get<ApiItemResponse<AuthorPost | ApiItemResponse<AuthorPost>>>(`${this.baseUrl}/author/posts/${postId}`)
+      .pipe(map(response => this.unwrapItem(response)));
   }
 
   createAuthorPost(payload: CreatePostPayload): Observable<AuthorPost> {
     return this.http
-      .post<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts`, payload)
-      .pipe(map((response) => response.data));
+      .post<ApiItemResponse<AuthorPost | ApiItemResponse<AuthorPost>>>(`${this.baseUrl}/author/posts`, payload)
+      .pipe(map(response => this.unwrapItem(response)));
   }
 
   updateAuthorPost(postId: string | number, payload: UpdatePostPayload): Observable<AuthorPost> {
     return this.http
-      .patch<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts/${postId}`, payload)
-      .pipe(map((response) => response.data));
+      .patch<ApiItemResponse<AuthorPost | ApiItemResponse<AuthorPost>>>(
+        `${this.baseUrl}/author/posts/${postId}`,
+        payload,
+      )
+      .pipe(map(response => this.unwrapItem(response)));
   }
 
   submitAuthorPost(postId: string | number): Observable<AuthorPost> {
@@ -75,8 +78,20 @@ export class AuthorPostsService {
 
   private authorPostAction(postId: string | number, action: string): Observable<AuthorPost> {
     return this.http
-      .post<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts/${postId}/${action}`, null)
-      .pipe(map((response) => response.data));
+      .post<ApiItemResponse<AuthorPost | ApiItemResponse<AuthorPost>>>(
+        `${this.baseUrl}/author/posts/${postId}/${action}`,
+        null,
+      )
+      .pipe(map(response => this.unwrapItem(response)));
+  }
+
+  private unwrapItem<T>(response: ApiItemResponse<T | ApiItemResponse<T>>): T {
+    const value = response.data;
+    if (value && typeof value === 'object' && 'data' in value) {
+      return value.data;
+    }
+
+    return value as T;
   }
 
   private toHttpParams(params: PostListParams): HttpParams {
