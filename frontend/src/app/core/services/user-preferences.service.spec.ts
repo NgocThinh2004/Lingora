@@ -15,8 +15,6 @@ describe('UserPreferencesService', () => {
     expect(service.preferences()).toEqual({
       compactView: false,
       autoPlayMedia: true,
-      showSubscribers: true,
-      showFollowing: true,
     });
   });
 
@@ -39,8 +37,6 @@ describe('UserPreferencesService', () => {
     expect(service.preferences()).toEqual({
       compactView: false,
       autoPlayMedia: false,
-      showSubscribers: true,
-      showFollowing: true,
     });
   });
 });

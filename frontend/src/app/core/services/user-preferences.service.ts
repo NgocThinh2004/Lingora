@@ -9,8 +9,6 @@ const STORAGE_KEY = 'lingora-user-preferences';
 const DEFAULT_PREFERENCES: UserPreferences = {
   compactView: false,
   autoPlayMedia: true,
-  showSubscribers: true,
-  showFollowing: true,
 };
 
 @Injectable({ providedIn: 'root' })
@@ -40,8 +38,6 @@ export class UserPreferencesService {
       return {
         compactView: this.booleanOrDefault(saved.compactView, DEFAULT_PREFERENCES.compactView),
         autoPlayMedia: this.booleanOrDefault(saved.autoPlayMedia, DEFAULT_PREFERENCES.autoPlayMedia),
-        showSubscribers: this.booleanOrDefault(saved.showSubscribers, DEFAULT_PREFERENCES.showSubscribers),
-        showFollowing: this.booleanOrDefault(saved.showFollowing, DEFAULT_PREFERENCES.showFollowing),
       };
     } catch {
       return DEFAULT_PREFERENCES;

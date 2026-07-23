@@ -117,37 +117,6 @@
         </label>
       </div>
 
-      <div class="preference-row">
-        <span>
-          <strong>Hiển thị người đăng ký</strong>
-          <small>Cho phép người khác xem danh sách những người đang theo dõi bạn.</small>
-        </span>
-        <label class="perfect-switch">
-          <input
-            class="perfect-switch-input"
-            type="checkbox"
-            aria-label="Hiển thị người đăng ký"
-            [checked]="preferences().showSubscribers"
-            (change)="updatePreference('showSubscribers', $event, 'Hiển thị người đăng ký')">
-          <span class="perfect-switch-track"><span class="perfect-switch-thumb"></span></span>
-        </label>
-      </div>
-
-      <div class="preference-row">
-        <span>
-          <strong>Hiển thị danh sách đang theo dõi</strong>
-          <small>Cho phép người khác xem danh sách những tài khoản bạn đang theo dõi.</small>
-        </span>
-        <label class="perfect-switch">
-          <input
-            class="perfect-switch-input"
-            type="checkbox"
-            aria-label="Hiển thị danh sách đang theo dõi"
-            [checked]="preferences().showFollowing"
-            (change)="updatePreference('showFollowing', $event, 'Hiển thị danh sách đang theo dõi')">
-          <span class="perfect-switch-track"><span class="perfect-switch-thumb"></span></span>
-        </label>
-      </div>
     </div>
   </article>
 
