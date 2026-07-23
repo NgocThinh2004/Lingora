@@ -1,5 +1,7 @@
 'use strict';
 
+const bcrypt = require('bcrypt');
+
 const ARTICLE_SLUGS = [
   'xay-dung-san-pham-ai-da-ngon-ngu-co-trach-nhiem',
   'responsible-multilingual-ai-product-design',
@@ -28,6 +30,40 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
 
     try {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('Professional demo data must not be seeded in production.');
+      }
+
+      const now = new Date();
+      await queryInterface.bulkInsert(
+        'roles',
+        [{ name: 'member' }],
+        { ignoreDuplicates: true, transaction },
+      );
+
+      const memberRoles = await queryInterface.sequelize.query(
+        `SELECT id FROM roles WHERE name = 'member' LIMIT 1`,
+        { type: QueryTypes.SELECT, transaction },
+      );
+      if (!memberRoles.length) {
+        throw new Error('Cannot seed demo data: member role could not be prepared.');
+      }
+
+      await queryInterface.bulkInsert(
+        'languages',
+        [
+          { code: 'vi', name: 'Tiếng Việt', native_name: 'Tiếng Việt', flag_code: 'vn', is_default: false, is_active: true },
+          { code: 'en', name: 'English', native_name: 'English', flag_code: 'us', is_default: true, is_active: true },
+          { code: 'zh', name: '中文', native_name: '中文', flag_code: 'cn', is_default: false, is_active: true },
+          { code: 'es', name: 'Spanish', native_name: 'Español', flag_code: 'es', is_default: false, is_active: true },
+        ],
+        { ignoreDuplicates: true, transaction },
+      );
+      await queryInterface.sequelize.query(
+        `UPDATE languages SET is_active = 1 WHERE code IN ('vi', 'en', 'zh', 'es')`,
+        { transaction },
+      );
+
       const languages = await queryInterface.sequelize.query(
         `SELECT id, code FROM languages WHERE is_active = 1`,
         { type: QueryTypes.SELECT, transaction },
@@ -40,34 +76,110 @@ module.exports = {
         }
       }
 
-      const categories = await queryInterface.sequelize.query(
-        `SELECT id FROM categories WHERE slug = 'technology' AND status = 'active' LIMIT 1`,
+      let categories = await queryInterface.sequelize.query(
+        `SELECT id FROM categories WHERE slug = 'technology' LIMIT 1`,
         { type: QueryTypes.SELECT, transaction },
       );
       if (!categories.length) {
-        throw new Error('Cannot seed demo posts: active "technology" category was not found.');
+        await queryInterface.bulkInsert(
+          'categories',
+          [{ slug: 'technology', status: 'active', created_at: now, updated_at: now }],
+          { transaction },
+        );
+        categories = await queryInterface.sequelize.query(
+          `SELECT id FROM categories WHERE slug = 'technology' LIMIT 1`,
+          { type: QueryTypes.SELECT, transaction },
+        );
+      } else {
+        await queryInterface.bulkUpdate(
+          'categories',
+          { status: 'active', updated_at: now },
+          { id: categories[0].id },
+          { transaction },
+        );
       }
+
+      const categoryNames = {
+        vi: { name: 'Công nghệ', slug: 'cong-nghe' },
+        en: { name: 'Technology', slug: 'technology' },
+        zh: { name: '科技', slug: 'ke-ji' },
+        es: { name: 'Tecnología', slug: 'tecnologia' },
+      };
+      await queryInterface.bulkInsert(
+        'category_translations',
+        Object.entries(categoryNames).map(([code, value]) => ({
+          category_id: categories[0].id,
+          language_id: languageByCode.get(code),
+          name: value.name,
+          slug: value.slug,
+        })),
+        { ignoreDuplicates: true, transaction },
+      );
+
+      const passwordHash = await bcrypt.hash(
+        process.env.DEMO_USER_PASSWORD || 'LingoraDemo@2026',
+        12,
+      );
+      await queryInterface.bulkInsert(
+        'users',
+        [
+          {
+            username: 'lingora_demo_author',
+            display_name: 'Minh Anh',
+            email: 'demo.author@lingora.local',
+            password: passwordHash,
+            avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=160&h=160',
+            bio: 'Product writer exploring responsible technology and multilingual experiences.',
+            role_id: memberRoles[0].id,
+            status: 'active',
+            created_at: now,
+            updated_at: now,
+            deleted_at: null,
+          },
+          {
+            username: 'lingora_demo_reader',
+            display_name: 'Daniel Chen',
+            email: 'demo.reader@lingora.local',
+            password: passwordHash,
+            avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=160&h=160',
+            bio: 'Software architect interested in secure and maintainable content platforms.',
+            role_id: memberRoles[0].id,
+            status: 'active',
+            created_at: now,
+            updated_at: now,
+            deleted_at: null,
+          },
+        ],
+        { ignoreDuplicates: true, transaction },
+      );
+      await queryInterface.sequelize.query(
+        `UPDATE users
+         SET role_id = :roleId, status = 'active', deleted_at = NULL, updated_at = :updatedAt
+         WHERE email IN ('demo.author@lingora.local', 'demo.reader@lingora.local')`,
+        {
+          replacements: { roleId: memberRoles[0].id, updatedAt: now },
+          transaction,
+        },
+      );
 
       const users = await queryInterface.sequelize.query(
-        `SELECT u.id, u.username, u.display_name, r.name AS role_name
-         FROM users u
-         INNER JOIN roles r ON r.id = u.role_id
-         WHERE u.status = 'active' AND u.deleted_at IS NULL
-         ORDER BY CASE WHEN r.name = 'admin' THEN 0 ELSE 1 END, u.id`,
+        `SELECT id, username, display_name, email
+         FROM users
+         WHERE email IN ('demo.author@lingora.local', 'demo.reader@lingora.local')
+           AND status = 'active' AND deleted_at IS NULL`,
         { type: QueryTypes.SELECT, transaction },
       );
-      if (!users.length) {
-        throw new Error('Cannot seed demo posts: no active user was found.');
+      const demoAuthor = users.find((user) => user.email === 'demo.author@lingora.local');
+      const demoReader = users.find((user) => user.email === 'demo.reader@lingora.local');
+      if (!demoAuthor || !demoReader) {
+        throw new Error('Cannot seed demo data: demo users could not be prepared.');
       }
 
-      const admin = users.find((user) => user.role_name === 'admin') || users[0];
-      const member = users.find((user) => user.role_name === 'member') || admin;
       const categoryId = categories[0].id;
-      const now = new Date();
 
       const articles = [
         {
-          authorId: member.id,
+          authorId: demoAuthor.id,
           originalCode: 'vi',
           imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=85&w=1600',
           inlineImage: {
@@ -110,7 +222,7 @@ module.exports = {
             },
           },
           comment: {
-            authorId: admin.id,
+            authorId: demoReader.id,
             originalCode: 'vi',
             content: 'Bài viết trình bày rất rõ mối liên hệ giữa chất lượng bản dịch và thiết kế sản phẩm. Phần đo lường đặc biệt hữu ích cho đội ngũ đang xây dựng MVP.',
             translations: {
@@ -121,7 +233,7 @@ module.exports = {
           },
         },
         {
-          authorId: admin.id,
+          authorId: demoReader.id,
           originalCode: 'en',
           imageUrl: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=85&w=1600',
           inlineImage: {
@@ -164,7 +276,7 @@ module.exports = {
             },
           },
           comment: {
-            authorId: member.id,
+            authorId: demoAuthor.id,
             originalCode: 'en',
             content: 'The distinction between feature ownership and genuinely shared infrastructure is practical. It gives teams a useful rule for keeping a codebase maintainable.',
             translations: {
@@ -175,7 +287,7 @@ module.exports = {
           },
         },
         {
-          authorId: member.id,
+          authorId: demoAuthor.id,
           originalCode: 'zh',
           imageUrl: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&q=85&w=1600',
           inlineImage: {
@@ -234,7 +346,7 @@ module.exports = {
             },
           },
           comment: {
-            authorId: admin.id,
+            authorId: demoReader.id,
             originalCode: 'zh',
             content: '把安全设计为日常工程习惯，比在发布前集中修补更有效。事故演练和可搜索的审计记录尤其重要。',
             translations: {
@@ -404,6 +516,12 @@ module.exports = {
       if (postIds.length) {
         await queryInterface.bulkDelete('posts', { id: postIds }, { transaction });
       }
+
+      await queryInterface.bulkDelete(
+        'users',
+        { email: ['demo.author@lingora.local', 'demo.reader@lingora.local'] },
+        { transaction },
+      );
 
       await transaction.commit();
     } catch (error) {
