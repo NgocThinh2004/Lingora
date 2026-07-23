@@ -20,7 +20,7 @@ export interface TranslationMatrixItem {
 }
 
 export interface PostTranslation {
-  id: number;
+  id: string;
   languageId: number;
   title: string | null;
   slug: string | null;
@@ -33,8 +33,8 @@ export interface PostTranslation {
 }
 
 export interface AuthorPost {
-  id: number;
-  authorId: number;
+  id: string;
+  authorId: string;
   categoryId: number | null;
   originalLanguageId: number;
   status: PostStatus;
@@ -46,6 +46,18 @@ export interface AuthorPost {
   deletedAt: string | null;
   translations: PostTranslation[];
   translationMatrix: TranslationMatrixItem[];
+}
+
+export interface PublicPost extends AuthorPost {
+  author: {
+    id: string;
+    username: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+    bio: string | null;
+  };
+  likeCount: number;
+  commentCount: number;
 }
 
 export interface PaginationMeta {
@@ -84,4 +96,9 @@ export interface PostListParams {
   trash?: boolean;
   page?: number;
   limit?: number;
+}
+
+export interface PostOptions {
+  languages: Array<{ id: number; code: string; label: string; nativeLabel: string }>;
+  categories: Array<{ id: number; label: string }>;
 }

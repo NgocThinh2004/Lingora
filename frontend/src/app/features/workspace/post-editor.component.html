@@ -1,5 +1,9 @@
 ﻿<div class="angular-only editor-page" data-page="create-post">
 
+  <div class="editor-feedback" *ngIf="notice || error" [class.is-error]="!!error" role="status">
+    {{ error || notice }}
+  </div>
+
   <header aria-label="Post actions" class="editor-topbar">
     <a aria-label="Back to previous page" class="back-link" data-back-link="" href="#" (click)="$event.preventDefault(); goToMyPosts()">
       <span aria-hidden="true"></span>
@@ -9,12 +13,12 @@
     </button>
     <div class="editor-topbar-spacer"></div>
     <button class="btn btn-light" data-preview-button="" type="button" data-i18n="btn_preview" (click)="openPreview()">Preview</button>
-    <button class="btn btn-accent" data-publish-button="" type="button" data-i18n="btn_continue" (click)="openPublishOptions()" [disabled]="isBodyOverLimit" [attr.aria-disabled]="isBodyOverLimit" [attr.title]="isBodyOverLimit ? 'The post exceeds the 3,000-word limit.' : null">Continue</button>
+    <button class="btn btn-accent" data-publish-button="" type="button" data-i18n="btn_continue" (click)="openPublishOptions()" [disabled]="isTitleOverLimit || isBodyOverLimit" [attr.aria-disabled]="isTitleOverLimit || isBodyOverLimit" [attr.title]="isTitleOverLimit || isBodyOverLimit ? 'The post exceeds its word limit.' : null">Continue</button>
   </header>
   <nav aria-label="Writing toolbar" class="editor-toolbar" (mousedown)="handleToolbarMouseDown($event)" (click)="handleToolbarClick($event)">
-    <input accept="image/*" class="hidden-file-input" id="editorImageInput" type="file" (change)="uploadMedia('image', $event)" />
-    <input accept="audio/*" class="hidden-file-input" id="editorAudioInput" type="file" (change)="uploadMedia('audio', $event)" />
-    <input accept="video/*" class="hidden-file-input" id="editorVideoInput" type="file" (change)="uploadMedia('video', $event)" />
+    <input accept="image/jpeg,image/png,image/webp,image/gif" class="hidden-file-input" id="editorImageInput" type="file" (change)="uploadMedia('image', $event)" />
+    <input accept="audio/aac,audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/webm" class="hidden-file-input" id="editorAudioInput" type="file" (change)="uploadMedia('audio', $event)" />
+    <input accept="video/mp4,video/ogg,video/quicktime,video/webm" class="hidden-file-input" id="editorVideoInput" type="file" (change)="uploadMedia('video', $event)" />
     <div aria-label="History" class="toolbar-group">
       <button aria-label="Undo" class="tool-btn icon-tool" data-command="undo" type="button">
         <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
@@ -459,8 +463,8 @@
         <textarea autocomplete="off" aria-describedby="postTitleLimit" class="title-input" id="postTitle" name="postTitle" placeholder="Title" rows="1" [(ngModel)]="draft.title" (input)="autoResizeTitle($event)"></textarea>
         <div class="writing-limit" id="postTitleLimit" aria-live="polite" [class.is-near]="isTitleNearLimit"><span data-title-word-count>{{ titleLimitLabel }}</span></div>
         <div aria-label="Authors" class="author-row" data-author-row="">
-          <span class="language-chip" data-author-chip="Alone" style="padding-right: 12px; cursor: default;">
-            <span>Alone</span>
+          <span class="language-chip" [attr.data-author-chip]="authorDisplayName" style="padding-right: 12px; cursor: default;">
+            <span>{{ authorDisplayName }}</span>
           </span>
         </div>
         <label class="sr-only" for="postBody">Post body</label>
@@ -563,9 +567,9 @@
             <article class="preview-article">
               <h1 data-preview-title="">{{ draft.title || 'Untitled post' }}</h1>
               <div class="preview-author-row">
-                <span class="preview-avatar" data-preview-avatar="">A</span>
+                <span class="preview-avatar" data-preview-avatar="">{{ authorInitial }}</span>
                 <div class="preview-author-meta">
-                  <strong data-preview-author="">Alone</strong>
+                  <strong data-preview-author="">{{ authorDisplayName }}</strong>
                   <time data-preview-date="">JUL 07, 2026</time>
                 </div>
               </div>
@@ -617,6 +621,7 @@
         <div class="publish-form-group mb-4">
           <h3 class="fb-modal-heading" data-i18n="post_category">Post Category</h3>
           <select class="form-select category-select" id="post_category" name="postCategory" style="width: 100%;" [(ngModel)]="draft.categoryId" (ngModelChange)="updateCategoryId($event)">
+            <option [ngValue]="undefined">No category</option>
             <option *ngFor="let category of categoryOptions" [ngValue]="category.id">{{ category.label }}</option>
           </select>
         </div>

@@ -25,7 +25,8 @@
     <main class="app-main-content">
       
       <!-- COLUMN 1: LEFT SIDEBAR NAVIGATION -->
-      <aside class="left-sidebar">
+      <app-sidebar />
+      <aside class="left-sidebar d-none" aria-hidden="true">
         <div>
           <!-- Substack Logo -->
           <div class="substack-logo-container">
@@ -117,13 +118,9 @@
             </button>
             <ul class="dropdown-menu shadow border-light-subtle">
               <li><a class="dropdown-item" [class.active]="category === 'all'" href="#" (click)="selectCategory($event, 'all')"><span data-i18n="for_you">For you</span></a></li>
-              <li><a class="dropdown-item" [class.active]="category === 'Artificial Intelligence'" data-feed-category="Artificial Intelligence" href="#" (click)="selectCategory($event, 'Artificial Intelligence')"><span data-i18n="cat_ai">Artificial Intelligence</span></a></li>
-              <li><a class="dropdown-item" [class.active]="category === 'Backend Engineering'" data-feed-category="Backend Engineering" href="#" (click)="selectCategory($event, 'Backend Engineering')"><span data-i18n="cat_backend">Backend Engineering</span></a></li>
-              <li><a class="dropdown-item" [class.active]="category === 'Design'" data-feed-category="Design" href="#" (click)="selectCategory($event, 'Design')"><span data-i18n="cat_design">Design</span></a></li>
-              <li><a class="dropdown-item" data-feed-category="Frontend Development" href="#"><span data-i18n="cat_frontend">Frontend Development</span></a></li>
-              <li><a class="dropdown-item" data-feed-category="Mobile Development" href="#"><span data-i18n="cat_mobile">Mobile Development</span></a></li>
-              <li><a class="dropdown-item" data-feed-category="Data Science" href="#"><span data-i18n="cat_data">Data Science</span></a></li>
-              <li><a class="dropdown-item" data-feed-category="Cybersecurity" href="#"><span data-i18n="cat_cyber">Cybersecurity</span></a></li>
+              @for (categoryName of categories; track categoryName) {
+                <li><a class="dropdown-item" [class.active]="category === categoryName" href="#" (click)="selectCategory($event, categoryName)">{{ categoryName }}</a></li>
+              }
             </ul>
           </div>
         </div>
@@ -187,7 +184,22 @@
             <a href="#" class="text-decoration-none small text-muted" data-i18n="see_all">See all</a>
           </div>
           
-          <!-- Recommended Authors List (CSDL Users table mockup) -->
+          @for (author of recommendedAuthors; track author.id) {
+            <div class="featured-author-item">
+              <div class="featured-author-info">
+                <img [src]="author.avatar" [alt]="author.name" class="featured-author-avatar">
+                <div class="featured-author-meta">
+                  <span class="featured-author-name">{{ author.name }}</span>
+                  <span class="featured-author-count">Lingora author</span>
+                </div>
+              </div>
+              <a class="btn-profile-view text-decoration-none" [href]="'/profile?id=' + author.id">View Profile</a>
+            </div>
+          } @empty {
+            <p class="small text-muted mb-0">No published authors yet.</p>
+          }
+          <div class="d-none" aria-hidden="true">
+          <!-- Legacy prototype examples kept hidden from the live database view. -->
           <div class="featured-author-item">
             <div class="featured-author-info">
               <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=80&h=80" alt="Tuấn" class="featured-author-avatar">
@@ -219,6 +231,7 @@
               </div>
             </div>
             <button class="btn-profile-view" data-i18n="view_profile">View Profile</button>
+          </div>
           </div>
         </div>
       </aside>

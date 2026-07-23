@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -8,6 +8,8 @@ import {
   AuthorPost,
   CreatePostPayload,
   PostListParams,
+  PostOptions,
+  PublicPost,
   UpdatePostPayload,
 } from '../models/post.model';
 
@@ -15,36 +17,46 @@ import {
 export class PostsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
-  private readonly authorHeaders = new HttpHeaders({ 'x-user-id': '1' });
 
   listAuthorPosts(params: PostListParams = {}): Observable<ApiCollectionResponse<AuthorPost>> {
     return this.http.get<ApiCollectionResponse<AuthorPost>>(`${this.baseUrl}/author/posts`, {
-      headers: this.authorHeaders,
       params: this.toHttpParams(params),
     });
   }
 
+  listPublicPosts(params: Pick<PostListParams, 'search' | 'page' | 'limit'> = {}): Observable<ApiCollectionResponse<PublicPost>> {
+    return this.http.get<ApiCollectionResponse<PublicPost>>(`${this.baseUrl}/posts`, {
+      params: this.toHttpParams(params),
+    });
+  }
+
+  getPublicPost(postId: string | number): Observable<PublicPost> {
+    return this.http
+      .get<ApiItemResponse<PublicPost>>(`${this.baseUrl}/posts/${postId}`)
+      .pipe(map(response => response.data));
+  }
+
+  getPostOptions(): Observable<PostOptions> {
+    return this.http
+      .get<ApiItemResponse<PostOptions>>(`${this.baseUrl}/posts/options`)
+      .pipe(map(response => response.data));
+  }
+
   getAuthorPost(postId: string | number): Observable<AuthorPost> {
     return this.http
-      .get<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts/${postId}`, {
-        headers: this.authorHeaders,
-      })
+      .get<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts/${postId}`)
       .pipe(map((response) => response.data));
   }
 
   createAuthorPost(payload: CreatePostPayload): Observable<AuthorPost> {
     return this.http
-      .post<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts`, payload, {
-        headers: this.authorHeaders,
-      })
+      .post<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts`, payload)
       .pipe(map((response) => response.data));
   }
 
   updateAuthorPost(postId: string | number, payload: UpdatePostPayload): Observable<AuthorPost> {
     return this.http
-      .patch<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts/${postId}`, payload, {
-        headers: this.authorHeaders,
-      })
+      .patch<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts/${postId}`, payload)
       .pipe(map((response) => response.data));
   }
 
@@ -68,11 +80,15 @@ export class PostsService {
     return this.authorPostAction(postId, 'restore-trash');
   }
 
+  deleteAuthorPostPermanently(postId: string | number): Observable<void> {
+    return this.http
+      .delete<ApiItemResponse<{ id: string }>>(`${this.baseUrl}/author/posts/${postId}`)
+      .pipe(map(() => undefined));
+  }
+
   private authorPostAction(postId: string | number, action: string): Observable<AuthorPost> {
     return this.http
-      .post<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts/${postId}/${action}`, null, {
-        headers: this.authorHeaders,
-      })
+      .post<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts/${postId}/${action}`, null)
       .pipe(map((response) => response.data));
   }
 

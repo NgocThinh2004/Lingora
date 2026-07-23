@@ -1,190 +1,237 @@
-import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, OnInit, OnDestroy, signal, inject, ViewEncapsulation } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
+import { PostsService } from '../../core/services/posts.service';
 import { UiPreferencesService } from '../../core/services/ui-preferences.service';
+import { AuthorPost } from '../../core/models/post.model';
+import { SubscriptionsService } from '../../core/services/subscriptions.service';
+import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule, AppSidebarComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
   encapsulation: ViewEncapsulation.None,
 })
-export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
-  private readonly ui = inject(UiPreferencesService);
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+export class ProfileComponent implements OnInit, OnDestroy {
+  private authService = inject(AuthService);
+  private postsService = inject(PostsService);
+  private ui = inject(UiPreferencesService);
+  private router = inject(Router);
+  private subscriptionsService = inject(SubscriptionsService);
 
-  ngOnInit(): void {
+  user = this.authService.currentUser;
+
+  // Local profile state for editing
+  profileForm = {
+    displayName: '',
+    username: '',
+    bio: ''
+  };
+
+  isEditing = signal(false);
+  posts = signal<AuthorPost[]>([]);
+  categoryOptions: Array<{ id: number; label: string }> = [];
+  followersCount = signal(0);
+  followingCount = signal(0);
+  loadingProfile = signal(true);
+  savingProfile = signal(false);
+  savingPassword = signal(false);
+  notice = signal('');
+  error = signal('');
+
+  // Modals state
+  showPasswordModal = signal(false);
+  showHandleModal = signal(false);
+  showSubscribersModal = signal(false);
+
+  // Settings
+  passwordForm = { current: '', new: '', confirm: '' };
+  handleOption = 'current';
+  customHandle = '';
+
+  // Password UI
+  passwordFieldType = 'password';
+
+  ngOnInit() {
     this.ui.mount('Profile - Lingora');
+
+    const currentUser = this.user();
+    this.setProfileForm(currentUser);
+
+    this.authService.getMe().subscribe({
+      next: user => {
+        this.setProfileForm(user);
+        this.loadingProfile.set(false);
+      },
+      error: err => {
+        this.error.set(this.formatError(err));
+        this.loadingProfile.set(false);
+      },
+    });
+
+    // Load user's posts
+    this.postsService.listAuthorPosts({ status: 'published', limit: 10 }).subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.posts.set(res.data);
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load posts', err);
+      }
+    });
+
+    this.postsService.getPostOptions().subscribe({
+      next: options => {
+        this.categoryOptions = options.categories;
+      },
+      error: () => {
+        this.categoryOptions = [];
+      },
+    });
+
+    this.subscriptionsService.stats().subscribe({
+      next: stats => {
+        this.followersCount.set(stats.followers);
+        this.followingCount.set(stats.following);
+      },
+      error: err => this.error.set(this.formatError(err)),
+    });
   }
 
-  ngAfterViewInit(): void {
-    const saved = this.readUser();
-    this.input('#displayName').value = saved.displayName;
-    this.input('#username').value = saved.handle;
-    this.textarea('#bio').value = saved.bio;
-    this.renderProfile(saved);
-  }
-
-  ngOnDestroy(): void {
+  ngOnDestroy() {
     this.ui.unmount();
   }
 
-  @HostListener('click', ['$event'])
-  handleClick(event: MouseEvent): void {
-    const target = event.target instanceof Element ? event.target : null;
-    if (!target) return;
-
-    if (target.closest('[data-edit-profile]')) return this.showEditor(true);
-    if (target.closest('[data-done-edit]')) return this.saveProfile();
-    if (target.closest('[data-profile-more-button]')) return this.toggle('[data-profile-more-menu]');
-    if (target.closest('[data-open-password-modal]')) return this.setHidden('[data-password-modal]', false);
-    if (target.closest('[data-close-password-modal]')) return this.setHidden('[data-password-modal]', true);
-    if (target.closest('[data-locked-handle]')) return this.setHidden('[data-handle-modal]', false);
-    if (target.closest('[data-close-handle-modal]')) return this.setHidden('[data-handle-modal]', true);
-    if (target.closest('[data-update-handle]')) return this.updateHandle();
-    if (target.closest('[data-avatar-button]')) return this.input('#avatarInput').click();
-    if (target.closest('#btnSeeSubscribers')) {
-      event.preventDefault();
-      return this.setHidden('#subscribersModal', false);
-    }
-    if (target.closest('#closeSubscribersModalBtn, #closeSubscribersModalBg')) {
-      return this.setHidden('#subscribersModal', true);
-    }
-
-    const togglePassword = target.closest<HTMLButtonElement>('[data-toggle-password]');
-    if (togglePassword) {
-      const input = togglePassword.parentElement?.querySelector<HTMLInputElement>('input');
-      if (input) {
-        input.type = input.type === 'password' ? 'text' : 'password';
-        const icon = togglePassword.querySelector('i');
-        if (icon) icon.className = input.type === 'text' ? 'bi bi-eye-slash' : 'bi bi-eye';
-      }
-      return;
-    }
-
-    const colorButton = target.closest('.color-dot');
-    if (colorButton) {
-      colorButton.parentElement?.querySelector('.color-popover')?.classList.toggle('is-open');
-      return;
-    }
-
-    const swatch = target.closest<HTMLElement>('[data-color-value]');
-    if (swatch) this.selectColor(swatch);
+  get initial(): string {
+    const name = this.profileForm.displayName || 'U';
+    return name.charAt(0).toUpperCase();
   }
 
-  @HostListener('change', ['$event'])
-  handleChange(event: Event): void {
-    const target = event.target;
-    if (target instanceof HTMLInputElement && target.matches('[data-handle-option]')) {
-      this.query<HTMLButtonElement>('[data-update-handle]').disabled = false;
+  get avatarUrl(): string {
+    return this.user()?.avatarUrl || '';
+  }
+
+  postTitle(post: AuthorPost): string {
+    return post.translations.find(translation => translation.title)?.title || 'Untitled';
+  }
+
+  postContent(post: AuthorPost): string {
+    const translation = post.translations.find(item => item.content || item.summary);
+    return translation?.content || translation?.summary || '';
+  }
+
+  categoryLabel(post: AuthorPost): string {
+    if (post.categoryId === null) {
+      return 'General';
     }
-    if (target instanceof HTMLInputElement && target.id === 'avatarInput' && target.files?.[0]) {
-      const url = URL.createObjectURL(target.files[0]);
-      this.all<HTMLElement>('[data-edit-avatar], [data-hero-avatar], [data-chip-avatar]').forEach((avatar) => {
-        avatar.innerHTML = `<img src="${url}" alt="Profile avatar">`;
+    return this.categoryOptions.find(category => category.id === post.categoryId)?.label
+      || `Category ${post.categoryId}`;
+  }
+
+  toggleEdit(editing: boolean) {
+    this.isEditing.set(editing);
+  }
+
+  saveProfile() {
+    if (!this.profileForm.displayName.trim() || !this.normalizeUsername(this.profileForm.username)) {
+      this.error.set('Display name and a valid username are required.');
+      return;
+    }
+
+    this.savingProfile.set(true);
+    this.error.set('');
+    this.notice.set('');
+    this.authService.updateProfile({
+      displayName: this.profileForm.displayName.trim(),
+      username: this.normalizeUsername(this.profileForm.username),
+      bio: this.profileForm.bio.trim(),
+    }).subscribe({
+      next: user => {
+        this.setProfileForm(user);
+        this.notice.set('Profile updated successfully.');
+        this.savingProfile.set(false);
+        this.isEditing.set(false);
+      },
+      error: err => {
+        this.error.set(this.formatError(err));
+        this.savingProfile.set(false);
+      },
+    });
+  }
+
+  updateHandle() {
+    if (this.handleOption === 'custom') {
+      const handle = this.customHandle.trim();
+      this.profileForm.username = handle.startsWith('@') ? handle : `@${handle}`;
+    } else if (this.handleOption === 'suggested') {
+      this.profileForm.username = '@' + this.profileForm.displayName.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase().slice(0, 30);
+    }
+    this.showHandleModal.set(false);
+  }
+
+  submitPassword() {
+    if (this.passwordForm.new.length >= 8 && this.passwordForm.new === this.passwordForm.confirm) {
+      this.savingPassword.set(true);
+      this.error.set('');
+      this.authService.changePassword({
+        currentPassword: this.passwordForm.current,
+        newPassword: this.passwordForm.new,
+      }).subscribe({
+        next: () => {
+          this.passwordForm = { current: '', new: '', confirm: '' };
+          this.showPasswordModal.set(false);
+          this.savingPassword.set(false);
+          this.authService.expireSession();
+          void this.router.navigate(['/auth/login'], {
+            queryParams: { message: 'Password updated. Please sign in again.' },
+          });
+        },
+        error: err => {
+          this.error.set(this.formatError(err));
+          this.savingPassword.set(false);
+        },
       });
     }
   }
 
-  @HostListener('submit', ['$event'])
-  handleSubmit(event: SubmitEvent): void {
-    const form = event.target;
-    if (!(form instanceof HTMLFormElement) || !form.matches('[data-password-form]')) return;
-    event.preventDefault();
-    const current = form.querySelector<HTMLInputElement>('#profileCurrentPassword')?.value ?? '';
-    const next = form.querySelector<HTMLInputElement>('#profileNewPassword')?.value ?? '';
-    const confirm = form.querySelector<HTMLInputElement>('#profileConfirmPassword')?.value ?? '';
-    this.setText('#profileCurrentPasswordError', current ? '' : 'Enter your current password.');
-    this.setText('#profileNewPasswordError', next.length >= 8 ? '' : 'Use at least 8 characters.');
-    this.setText('#profileConfirmPasswordError', confirm === next ? '' : 'Passwords do not match.');
-    if (!current || next.length < 8 || confirm !== next) return;
-    this.setText('#profileGlobalMessage', 'Password updated successfully.');
-    form.reset();
+  togglePasswordVisibility() {
+    this.passwordFieldType = this.passwordFieldType === 'password' ? 'text' : 'password';
   }
 
-  @HostListener('input', ['$event'])
-  handleInput(event: Event): void {
-    const target = event.target;
-    if (target instanceof HTMLInputElement && target.matches('[data-password-field]')) {
-      const form = target.closest('form');
-      const current = form?.querySelector<HTMLInputElement>('#profileCurrentPassword')?.value ?? '';
-      const next = form?.querySelector<HTMLInputElement>('#profileNewPassword')?.value ?? '';
-      const confirm = form?.querySelector<HTMLInputElement>('#profileConfirmPassword')?.value ?? '';
-      const submit = form?.querySelector<HTMLButtonElement>('[data-submit-password]');
-      if (submit) submit.disabled = !current || next.length < 8 || confirm !== next;
-    }
+  selectColor(color: string, type: 'accent' | 'background') {
+    document.documentElement.style.setProperty(
+      type === 'accent' ? '--profile-accent' : '--profile-background',
+      color
+    );
   }
 
-  private showEditor(editing: boolean): void {
-    this.query('[data-profile-view]').classList.toggle('is-active', !editing);
-    this.query('[data-profile-edit]').classList.toggle('is-active', editing);
-  }
-
-  private saveProfile(): void {
-    const user = {
-      ...this.readUser(),
-      displayName: this.input('#displayName').value.trim() || 'Alone',
-      handle: this.input('#username').value.trim() || '@alone254544',
-      bio: this.textarea('#bio').value.trim(),
-    };
-    localStorage.setItem('lingoraCurrentUser', JSON.stringify(user));
-    this.renderProfile(user);
-    this.showEditor(false);
-  }
-
-  private updateHandle(): void {
-    const selected = this.query<HTMLInputElement>('[data-handle-option]:checked').value;
-    const raw = selected === 'custom'
-      ? this.query<HTMLInputElement>('[data-handle-custom]').value.trim()
-      : this.query<HTMLElement>(selected === 'suggested' ? '[data-handle-suggested]' : '[data-handle-current]').textContent?.trim() ?? '';
-    const handle = raw.startsWith('@') ? raw : `@${raw}`;
-    if (handle.length < 3) {
-      this.setText('[data-handle-warning]', 'Enter a valid handle.');
+  private setProfileForm(user: ReturnType<AuthService['currentUser']>): void {
+    if (!user) {
       return;
     }
-    this.input('#username').value = handle;
-    this.setHidden('[data-handle-modal]', true);
+    this.profileForm = {
+      displayName: user.displayName || user.username,
+      username: `@${user.username.replace(/^@/, '')}`,
+      bio: user.bio || '',
+    };
   }
 
-  private selectColor(swatch: HTMLElement): void {
-    const picker = swatch.closest<HTMLElement>('[data-color-picker]');
-    const color = swatch.dataset['colorValue'] ?? '';
-    if (!picker) return;
-    picker.querySelectorAll('.color-swatch').forEach((item) => item.classList.toggle('is-selected', item === swatch));
-    const text = picker.querySelector<HTMLElement>('span[id$="ColorText"]');
-    if (text) text.textContent = color || 'None';
-    const button = picker.querySelector<HTMLElement>('.color-dot');
-    if (button) button.style.backgroundColor = color || 'transparent';
-    document.documentElement.style.setProperty(picker.dataset['colorPicker'] === 'accent' ? '--profile-accent' : '--profile-background', color || 'transparent');
-    picker.querySelector('.color-popover')?.classList.remove('is-open');
+  private normalizeUsername(value: string): string {
+    return value.trim().replace(/^@/, '');
   }
 
-  private renderProfile(user: { displayName: string; handle: string; bio: string }): void {
-    this.all<HTMLElement>('[data-view-name]').forEach((element) => element.textContent = user.displayName);
-    this.setText('[data-view-handle]', user.handle);
-    this.setText('[data-view-bio]', user.bio || 'No game no life');
-    this.all<HTMLElement>('[data-edit-avatar] span, [data-hero-avatar] span, [data-chip-avatar] span')
-      .forEach((element) => element.textContent = user.displayName.charAt(0).toUpperCase());
-  }
-
-  private readUser(): { displayName: string; handle: string; bio: string; [key: string]: unknown } {
-    try {
-      const saved = JSON.parse(localStorage.getItem('lingoraCurrentUser') ?? '{}') as Record<string, unknown>;
-      return {
-        ...saved,
-        displayName: String(saved['displayName'] || 'Alone'),
-        handle: String(saved['handle'] || '@alone254544'),
-        bio: String(saved['bio'] || 'No game no life'),
-      };
-    } catch {
-      return { displayName: 'Alone', handle: '@alone254544', bio: 'No game no life' };
+  private formatError(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      const message = error.error?.meta?.error?.message ?? error.error?.message;
+      return Array.isArray(message) ? message.join(' ') : message || error.message;
     }
+    return 'Unable to complete the request. Please try again.';
   }
-
-  private setHidden(selector: string, hidden: boolean): void { this.query<HTMLElement>(selector).hidden = hidden; }
-  private toggle(selector: string): void { const element = this.query<HTMLElement>(selector); element.hidden = !element.hidden; }
-  private setText(selector: string, value: string): void { this.query<HTMLElement>(selector).textContent = value; }
-  private input(selector: string): HTMLInputElement { return this.query<HTMLInputElement>(selector); }
-  private textarea(selector: string): HTMLTextAreaElement { return this.query<HTMLTextAreaElement>(selector); }
-  private query<T extends Element = HTMLElement>(selector: string): T { return this.host.nativeElement.querySelector<T>(selector)!; }
-  private all<T extends Element = HTMLElement>(selector: string): T[] { return Array.from(this.host.nativeElement.querySelectorAll<T>(selector)); }
 }

@@ -4,6 +4,9 @@ import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { LanguagesModule } from './modules/languages/languages.module';
+import { PostsModule } from './modules/posts/posts.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -14,6 +17,9 @@ import { LanguagesModule } from './modules/languages/languages.module';
     UsersModule,
     AuthModule,
     LanguagesModule,
+    PostsModule,
+    UploadsModule,
+    SubscriptionsModule,
   ],
   controllers: [],
   providers: [],

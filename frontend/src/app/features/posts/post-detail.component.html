@@ -57,12 +57,7 @@
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 mt-3">{{ post.category }}</span>
             <h1 class="fw-bold mt-3 mb-2">{{ post.title }}</h1>
             <p class="lead text-muted">{{ post.summary }}</p>
-            <div class="post-content mt-4">
-              <p>Artificial intelligence is becoming part of everyday software development. The useful question is no longer whether teams should use it, but where it creates dependable value.</p>
-              <h2>Start with the workflow</h2>
-              <p>Strong teams use AI to accelerate research, drafts, tests, and repetitive implementation while keeping architecture and product judgment with people.</p>
-              <p>The result is a shorter feedback loop: ideas are tested sooner, reviews stay focused, and engineers spend more time on decisions that require context.</p>
-            </div>
+            <div class="post-content mt-4" [innerHTML]="post.content"></div>
             <div class="substack-post-footer mt-4">
               <button class="footer-action-item" type="button" (click)="toggleLike()"><i class="bi" [class.bi-heart]="!liked" [class.bi-heart-fill]="liked"></i> {{ likes }}</button>
               <span class="footer-action-item"><i class="bi bi-chat"></i> {{ comments.length }}</span>
@@ -99,7 +94,7 @@
         </div>
 
         <!-- Related Posts Section (Same Category) -->
-        <div class="mt-5 pt-4 border-top">
+        <div class="mt-5 pt-4 border-top d-none" aria-hidden="true">
           <h4 class="fw-bold mb-4" data-i18n="related_posts">Related Posts</h4>
 
           <div id="relatedPostsContainer" class="d-flex flex-column gap-3">

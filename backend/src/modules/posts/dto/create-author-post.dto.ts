@@ -1,7 +1,8 @@
-import { ArrayUnique, IsArray, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { ArrayUnique, IsArray, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class CreateAuthorPostDto {
   @IsString()
+  @IsNotEmpty()
   @MaxLength(255)
   title!: string;
 
@@ -27,5 +28,6 @@ export class CreateAuthorPostDto {
   targetLanguageIds?: number[];
 
   @IsString()
+  @IsNotEmpty()
   content!: string;
 }

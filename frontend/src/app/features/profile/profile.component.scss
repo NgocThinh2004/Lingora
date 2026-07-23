@@ -1,128 +1,70 @@
-:root, [data-bs-theme="light"] {
-        --bg: #ffffff;
-        --panel: #ffffff;
-        --panel-soft: #f7f7f7;
-        --line: #e2e2e2;
-        --line-soft: #f0f0f0;
-        --text: #1a1a1a;
-        --muted: #757575;
-        --muted-2: #9e9e9e;
-        --accent: #ff6719;
-        --accent-contrast: #ffffff;
-        --teal: #00866b;
-        --picker-bg: #ffffff;
-        --picker-line: #e2e2e2;
-        --picker-soft: #f7f7f7;
-        --picker-text: #1a1a1a;
-        --picker-muted: #757575;
-      }
+.feature-page-profile {
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --panel-soft: #f7f7f7;
+  --line: #e2e2e2;
+  --line-soft: #f0f0f0;
+  --text: #1a1a1a;
+  --muted: #757575;
+  --muted-2: #9e9e9e;
+  --accent: #ff6719;
+  --accent-contrast: #ffffff;
+  --teal: #00866b;
+  --picker-bg: #ffffff;
+  --picker-line: #e2e2e2;
+  --picker-soft: #f7f7f7;
+  --picker-text: #1a1a1a;
+  --picker-muted: #757575;
+  min-height: 100vh;
+  color: var(--text);
+  background: var(--bg);
+}
 
-      [data-bs-theme="dark"] {
-        --bg: #141616;
-        --panel: #181a1a;
-        --panel-soft: #222525;
-        --line: #303333;
-        --line-soft: #252828;
-        --text: #f4f4f4;
-        --muted: #a4a6a8;
-        --muted-2: #7e8284;
-        --accent: #ff6719;
-        --accent-contrast: #ffffff;
-        --teal: #00866b;
-        --picker-bg: #151620;
-        --picker-line: #2c3041;
-        --picker-soft: #242633;
-        --picker-text: #f3f4f8;
-        --picker-muted: #b8bbc8;
-      }
+[data-bs-theme="dark"] .feature-page-profile {
+  --bg: #141616;
+  --panel: #181a1a;
+  --panel-soft: #222525;
+  --line: #303333;
+  --line-soft: #252828;
+  --text: #f4f4f4;
+  --muted: #a4a6a8;
+  --muted-2: #7e8284;
+  --picker-bg: #151620;
+  --picker-line: #2c3041;
+  --picker-soft: #242633;
+  --picker-text: #f3f4f8;
+  --picker-muted: #b8bbc8;
+}
 
-      * {
-        box-sizing: border-box;
-      }
+.profile-app {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+}
 
-      body {
-        min-height: 100vh;
-        margin: 0;
-        color: var(--text);
-        background: var(--bg) !important;
-        /* font-family is inherited from base.css via --font-family-base variable */
-        letter-spacing: 0;
-      }
+.profile-main {
+  min-width: 0;
+  color: var(--text);
+  background: var(--bg);
+}
 
-      .profile-main h1,
-      .profile-main h2,
-      .profile-main h3,
-      .profile-main h4,
-      .profile-main h5,
-      .profile-main h6 {
-        color: var(--text);
-        letter-spacing: 0;
-      }
+.profile-main h1,
+.profile-main h2,
+.profile-main h3,
+.profile-main h4,
+.profile-main h5,
+.profile-main h6 {
+  color: var(--text);
+  letter-spacing: 0;
+}
 
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      button,
-      input,
-      textarea {
-        font: inherit;
-      }
-
-      button {
-        cursor: pointer;
-      }
-
-      .profile-app {
-        display: grid;
-        grid-template-columns: 260px minmax(0, 1fr);
-        min-height: 100vh;
-      }
-
-      .profile-main {
-        min-width: 0;
-      }
-
-      .substack-logo-container {
-        padding: 0.5rem 0.75rem 1.5rem 0.75rem;
-      }
-      
-      .substack-logo {
-        font-size: 1.6rem;
-        color: var(--primary-color);
-        font-weight: 800;
-        letter-spacing: -0.04em;
-      }
-      
-      .sidebar-create-btn {
-        background-color: var(--primary-color) !important;
-        border-color: var(--primary-color) !important;
-        color: var(--accent-contrast, #ffffff) !important;
-        border-radius: 99px !important;
-        padding: 0.65rem 1.5rem !important;
-        font-weight: 600 !important;
-        font-size: 0.95rem !important;
-        width: 100%;
-        text-align: center;
-        margin-top: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        transition: all var(--transition-speed) ease;
-      }
-      
-      .sidebar-create-btn:hover {
-        background-color: var(--primary-hover) !important;
-        border-color: var(--primary-hover) !important;
-      }
-      
-      .sidebar-footer-menu {
-        margin-top: auto;
-        padding-top: 1.25rem;
-        border-top: 1px solid var(--border-color);
-      }
+@media (max-width: 991px) {
+  .profile-app {
+    display: block;
+  }
+}
 
       .profile-view-top {
         min-height: 74px;
@@ -297,6 +239,109 @@
         border-radius: 18px;
         background: var(--panel);
         box-shadow: 0 10px 28px rgba(20, 22, 22, .05);
+      }
+
+      #profilePostsContainer .substack-post-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      #profilePostsContainer .author-badge-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      #profilePostsContainer .author-avatar {
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      #profilePostsContainer .author-avatar-fallback {
+        display: grid;
+        place-items: center;
+        color: #ffffff;
+        background: var(--teal);
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      #profilePostsContainer .author-meta-info {
+        display: flex;
+        flex-direction: column;
+      }
+
+      #profilePostsContainer .author-name {
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      #profilePostsContainer .post-timestamp {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      #profilePostsContainer .category-label {
+        display: inline-flex;
+        width: fit-content;
+        margin-top: 14px;
+        padding: 4px 10px;
+        border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+        border-radius: 999px;
+        color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      #profilePostsContainer .post-link {
+        display: block;
+        color: inherit;
+        text-decoration: none;
+      }
+
+      #profilePostsContainer .post-title {
+        margin: 14px 0 5px;
+        color: var(--text);
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.35;
+      }
+
+      #profilePostsContainer .substack-post-content {
+        color: var(--text);
+        font-size: 16px;
+        line-height: 1.7;
+        overflow-wrap: anywhere;
+      }
+
+      #profilePostsContainer .substack-post-content:empty {
+        display: none;
+      }
+
+      #profilePostsContainer .substack-post-footer {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-top: 12px;
+        padding-top: 4px;
+      }
+
+      #profilePostsContainer .footer-action-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      [data-bs-theme="dark"] #profilePostsContainer .substack-post {
+        box-shadow: 0 10px 28px rgba(0, 0, 0, .18);
       }
 
       .profile-avatar {

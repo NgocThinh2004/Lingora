@@ -1,62 +1,61 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { PublicPost } from '../../core/models/post.model';
+import { PostsService } from '../../core/services/posts.service';
 import { UiPreferencesService } from '../../core/services/ui-preferences.service';
+import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
+  imports: [AppSidebarComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
   encapsulation: ViewEncapsulation.None,
 })
 export class HomeComponent implements OnInit, OnDestroy {
   private readonly ui = inject(UiPreferencesService);
+  private readonly postsService = inject(PostsService);
 
   search = '';
   category = 'all';
-  readonly posts = [
-    {
-      id: 1,
-      author: 'Elena Rostova',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=80&h=80',
-      category: 'Artificial Intelligence',
-      title: 'How AI is changing the way we build software',
-      summary: 'A practical look at modern AI-assisted workflows and what they mean for product teams.',
-      timestamp: '2 hours ago', likes: 128, comments: 24, views: 1840, liked: false,
-    },
-    {
-      id: 2,
-      author: 'Thái Dương',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=80&h=80',
-      category: 'Backend Engineering',
-      title: 'Designing services that stay simple as they scale',
-      summary: 'Patterns for service boundaries, queues, observability, and database ownership in growing systems.',
-      timestamp: 'Yesterday', likes: 94, comments: 18, views: 1260, liked: false,
-    },
-    {
-      id: 3,
-      author: 'Hoàng Anh',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=80&h=80',
-      category: 'Design',
-      title: 'Small interface decisions with a large impact',
-      summary: 'Why consistency, readable hierarchy, and clear feedback matter more than decorative complexity.',
-      timestamp: '3 days ago', likes: 76, comments: 11, views: 980, liked: false,
-    },
-  ];
+  posts: FeedPost[] = [];
+  loading = true;
+  error = '';
+  private categoryLabels = new Map<number, string>();
 
   ngOnInit(): void {
     this.ui.mount('Lingora - Multilingual AI-Translated Feed');
+    this.postsService.getPostOptions().subscribe({
+      next: options => {
+        this.categoryLabels = new Map(options.categories.map(category => [category.id, category.label]));
+        this.posts.forEach(post => post.category = this.categoryName(post.categoryId));
+      },
+    });
+    this.loadPosts();
   }
 
   ngOnDestroy(): void {
     this.ui.unmount();
   }
 
-  get visiblePosts() {
+  get visiblePosts(): FeedPost[] {
     const query = this.search.trim().toLowerCase();
-    return this.posts.filter((post) =>
+    return this.posts.filter(post =>
       (this.category === 'all' || post.category === this.category) &&
       (!query || `${post.title} ${post.summary} ${post.author} ${post.category}`.toLowerCase().includes(query)),
     );
+  }
+
+  get recommendedAuthors() {
+    return [...new Map(this.posts.map(post => [post.authorId, {
+      id: post.authorId,
+      name: post.author,
+      avatar: post.avatar,
+    }])).values()].slice(0, 3);
+  }
+
+  get categories(): string[] {
+    return [...new Set(this.posts.map(post => post.category))];
   }
 
   setSearch(event: Event): void {
@@ -68,8 +67,65 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.category = category;
   }
 
-  toggleLike(post: (typeof this.posts)[number]): void {
+  toggleLike(post: FeedPost): void {
     post.liked = !post.liked;
-    post.likes += post.liked ? 1 : -1;
   }
+
+  private loadPosts(): void {
+    this.postsService.listPublicPosts({ limit: 50 }).subscribe({
+      next: response => {
+        this.posts = response.data.map(post => this.toFeedPost(post));
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'Unable to load posts from the database.';
+        this.loading = false;
+      },
+    });
+  }
+
+  private toFeedPost(post: PublicPost): FeedPost {
+    const source = post.translations.find(item => item.languageId === post.originalLanguageId) ?? post.translations[0];
+    return {
+      id: post.id,
+      categoryId: post.categoryId,
+      authorId: post.author.id,
+      author: post.author.displayName || post.author.username,
+      avatar: post.author.avatarUrl || '/assets/images/lingora-mark.svg',
+      category: this.categoryName(post.categoryId),
+      title: source?.title || 'Untitled',
+      summary: source?.summary || this.toPlainText(source?.content || '').slice(0, 220),
+      timestamp: new Date(post.publishedAt || post.updatedAt).toLocaleDateString(),
+      likes: post.likeCount,
+      comments: post.commentCount,
+      views: post.viewCount,
+      liked: false,
+    };
+  }
+
+  private toPlainText(html: string): string {
+    const element = document.createElement('div');
+    element.innerHTML = html;
+    return (element.textContent || '').trim();
+  }
+
+  private categoryName(categoryId: number | null): string {
+    return categoryId ? this.categoryLabels.get(categoryId) || `Category ${categoryId}` : 'Uncategorized';
+  }
+}
+
+interface FeedPost {
+  id: string;
+  categoryId: number | null;
+  authorId: string;
+  author: string;
+  avatar: string;
+  category: string;
+  title: string;
+  summary: string;
+  timestamp: string;
+  likes: number;
+  comments: number;
+  views: number;
+  liked: boolean;
 }

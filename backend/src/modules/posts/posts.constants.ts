@@ -9,7 +9,7 @@ export const POST_STATUSES = [
 
 export type PostStatus = (typeof POST_STATUSES)[number];
 
-export const AUTHOR_EDITABLE_POST_STATUSES: readonly PostStatus[] = ['draft', 'rejected'];
+export const AUTHOR_EDITABLE_POST_STATUSES: readonly PostStatus[] = ['draft', 'pending_review', 'rejected'];
 
 export const POST_STATUS_TRANSITIONS: Record<PostStatus, readonly PostStatus[]> = {
   draft: ['pending_review', 'archived'],

@@ -1,387 +1,534 @@
 <div class="feature-page feature-page-profile">
-<div class="profile-app">
-      <aside class="left-sidebar">
-        <div>
-          <div class="substack-logo-container">
-            <a href="/home" class="text-decoration-none d-flex align-items-center gap-2">
-              <i class="bi bi-bookmark-fill substack-logo"></i>
-              <span class="fs-5 fw-bold text-main" style="letter-spacing: -0.02em;">Lingora</span>
-            </a>
-          </div>
-
-          <nav class="sidebar-nav">
-            <a href="/home" class="sidebar-nav-item">
-              <i class="bi bi-house-door"></i> <span data-i18n="home">Home</span>
-            </a>
-
-            <a href="/workspace/posts" class="sidebar-nav-item">
-              <i class="bi bi-journal-text"></i> <span data-i18n="my_articles">My Articles</span>
-            </a>
-            <a href="/profile" class="sidebar-nav-item active" aria-current="page">
-              <i class="bi bi-person"></i> <span data-i18n="profile">Profile</span>
-            </a>
-          </nav>
-          
-          <a href="/workspace/create?from=profile.html" class="sidebar-create-btn">
-            <span data-i18n="create">Create</span> <i class="bi bi-plus-lg"></i>
+  <div class="profile-app">
+    <app-sidebar />
+    <aside class="left-sidebar d-none" aria-hidden="true">
+      <div>
+        <div class="substack-logo-container">
+          <a href="/home" class="text-decoration-none d-flex align-items-center gap-2">
+            <i class="bi bi-bookmark-fill substack-logo"></i>
+            <span class="fs-5 fw-bold text-main" style="letter-spacing: -0.02em;">Lingora</span>
           </a>
         </div>
 
+        <nav class="sidebar-nav">
+          <a href="/home" class="sidebar-nav-item">
+            <i class="bi bi-house-door"></i> <span data-i18n="home">Home</span>
+          </a>
 
-<div class="sidebar-footer-menu">
+          <a href="/workspace/posts" class="sidebar-nav-item">
+            <i class="bi bi-journal-text"></i> <span data-i18n="my_articles">My Articles</span>
+          </a>
+          <a href="/profile" class="sidebar-nav-item active" aria-current="page">
+            <i class="bi bi-person"></i> <span data-i18n="profile">Profile</span>
+          </a>
+        </nav>
 
-                    <!-- Sidebar Controls (Theme & Language) -->
-          <div class="sidebar-controls mb-2">
-            <!-- Theme Switch and Language -->
-            <div class="d-flex align-items-center justify-content-start gap-2 ps-3 pe-2 mb-2">
-              <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 38px; height: 38px; border-radius: 8px; border-color: var(--border-color);">
-                  <img src="https://flagcdn.com/w20/gb.png" width="24" height="18" id="sidebarLangFlag" style="border-radius:2px; object-fit: cover;" alt="Language">
-                </button>
-                <ul class="dropdown-menu shadow border-light-subtle" style="min-width: 120px; border-radius: 12px; font-size: 14px;">
-                  <li><a class="dropdown-item py-1.5 fw-medium global-lang-select" href="#" data-lang="en"><img src="https://flagcdn.com/w20/gb.png" width="18" alt="English" class="me-2" style="border-radius:2px;"> English</a></li>
-                  <li><a class="dropdown-item py-1.5 fw-medium global-lang-select" href="#" data-lang="vi"><img src="https://flagcdn.com/w20/vn.png" width="18" alt="Tiếng Việt" class="me-2" style="border-radius:2px;"> Tiếng Việt</a></li>
-                  <li><a class="dropdown-item py-1.5 fw-medium global-lang-select" href="#" data-lang="zh"><img src="https://flagcdn.com/w20/cn.png" width="18" alt="中文" class="me-2" style="border-radius:2px;"> 中文</a></li>
-                </ul>
-              </div>
-              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-0" id="sidebarThemeToggle" style="width: 38px; height: 38px; border-radius: 8px; border-color: var(--border-color); color: var(--text-main);" aria-label="Toggle theme">
-                <i class="bi bi-moon-fill" id="sidebarThemeIcon" style="font-size: 17px;"></i>
+        <a href="/workspace/create?from=profile.html" class="sidebar-create-btn">
+          <span data-i18n="create">Create</span> <i class="bi bi-plus-lg"></i>
+        </a>
+      </div>
+
+
+      <div class="sidebar-footer-menu">
+
+        <!-- Sidebar Controls (Theme & Language) -->
+        <div class="sidebar-controls mb-2">
+          <!-- Theme Switch and Language -->
+          <div class="d-flex align-items-center justify-content-start gap-2 ps-3 pe-2 mb-2">
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-0"
+                type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                style="width: 38px; height: 38px; border-radius: 8px; border-color: var(--border-color);">
+                <img src="https://flagcdn.com/w20/gb.png" width="24" height="18" id="sidebarLangFlag"
+                  style="border-radius:2px; object-fit: cover;" alt="Language">
               </button>
+              <ul class="dropdown-menu shadow border-light-subtle"
+                style="min-width: 120px; border-radius: 12px; font-size: 14px;">
+                <li><a class="dropdown-item py-1.5 fw-medium global-lang-select" href="#" data-lang="en"><img
+                      src="https://flagcdn.com/w20/gb.png" width="18" alt="English" class="me-2"
+                      style="border-radius:2px;"> English</a></li>
+                <li><a class="dropdown-item py-1.5 fw-medium global-lang-select" href="#" data-lang="vi"><img
+                      src="https://flagcdn.com/w20/vn.png" width="18" alt="Tiếng Việt" class="me-2"
+                      style="border-radius:2px;"> Tiếng Việt</a></li>
+                <li><a class="dropdown-item py-1.5 fw-medium global-lang-select" href="#" data-lang="zh"><img
+                      src="https://flagcdn.com/w20/cn.png" width="18" alt="中文" class="me-2" style="border-radius:2px;">
+                    中文</a></li>
+              </ul>
             </div>
-          </div>
-
-          <div class="dropdown">
-            <button class="btn btn-link text-decoration-none text-main d-flex align-items-center gap-2 p-1.5 w-100 border-0 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-list fs-5"></i>
-              <span class="fw-medium" data-i18n="more">More</span>
+            <button class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-0"
+              id="sidebarThemeToggle"
+              style="width: 38px; height: 38px; border-radius: 8px; border-color: var(--border-color); color: var(--text-main);"
+              aria-label="Toggle theme">
+              <i class="bi bi-moon-fill" id="sidebarThemeIcon" style="font-size: 17px;"></i>
             </button>
-            <ul class="dropdown-menu shadow border-light-subtle">
-              <li><a class="dropdown-item py-2" href="/settings"><i class="bi bi-gear me-2"></i> <span data-i18n="settings">Settings</span></a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item py-2 text-danger" href="#" id="signOutBtn"><i class="bi bi-box-arrow-right me-2"></i> <span data-i18n="sign_out">Sign Out</span></a></li>
-            </ul>
           </div>
         </div>
-      </aside>
 
-      <main class="profile-main">
-        <section class="profile-page is-active" data-profile-view>
-          <header class="profile-view-top">
-            <h1 data-view-name>Alone</h1>
-          </header>
+        <div class="dropdown">
+          <button
+            class="btn btn-link text-decoration-none text-main d-flex align-items-center gap-2 p-1.5 w-100 border-0 text-start"
+            type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-list fs-5"></i>
+            <span class="fw-medium" data-i18n="more">More</span>
+          </button>
+          <ul class="dropdown-menu shadow border-light-subtle">
+            <li><a class="dropdown-item py-2" href="/settings"><i class="bi bi-gear me-2"></i> <span
+                  data-i18n="settings">Settings</span></a></li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+            <li><a class="dropdown-item py-2 text-danger" href="#" id="signOutBtn"><i
+                  class="bi bi-box-arrow-right me-2"></i> <span data-i18n="sign_out">Sign Out</span></a></li>
+          </ul>
+        </div>
+      </div>
+    </aside>
 
-          <div class="view-shell">
-            <section class="profile-hero">
-              <div>
-                <h2 class="profile-name" data-view-name>Alone</h2>
-                <div class="profile-handle" data-view-handle>&#64;alone254544</div>
-                <p class="profile-bio" data-view-bio>No game no life</p>
-                <div class="profile-chip">
-                  <span class="profile-avatar avatar-badge" data-chip-avatar><span>A</span></span>
-                  <span data-view-name>Alone</span>
-                </div>
+    <main class="profile-main">
+      @if (notice() || error()) {
+        <div class="alert mx-3 mt-3" [class.alert-success]="!!notice()" [class.alert-danger]="!!error()" role="status">
+          {{ error() || notice() }}
+        </div>
+      }
+      @if (!isEditing()) {
+      <section class="profile-page is-active" data-profile-view>
+        <header class="profile-view-top">
+          <h1>{{ profileForm.displayName }}</h1>
+        </header>
+
+        <div class="view-shell">
+          <section class="profile-hero">
+            <div>
+              <h2 class="profile-name">{{ profileForm.displayName }}</h2>
+              <div class="profile-handle">{{ profileForm.username }}</div>
+              <p class="profile-bio">{{ profileForm.bio || 'No bio provided.' }}</p>
+              <div class="profile-chip">
+                <span class="profile-avatar avatar-badge" [class.has-image]="!!avatarUrl">
+                  @if (avatarUrl) {
+                    <img [src]="avatarUrl" [alt]="profileForm.displayName">
+                  } @else {
+                    <span>{{ initial }}</span>
+                  }
+                </span>
+                <span>{{ profileForm.displayName }}</span>
               </div>
-
-              <div class="profile-avatar-column d-flex flex-column align-items-center gap-3">
-                <div class="profile-avatar hero-avatar m-0" data-hero-avatar><span>A</span></div>
-                <button class="profile-action is-primary btn-subscribe d-none m-0" style="min-height: 44px; padding: 0 24px; width: auto;" id="guestSubscribeBtn" type="button">
-                  <i class="bi bi-plus-lg me-1"></i> <span data-i18n="subscribe">Theo dõi</span>
-                </button>
-              </div>
-            </section>
-            
-            <div class="profile-stats" aria-label="Profile statistics">
-              <a class="profile-stat" href="#" id="btnSeeSubscribers">
-                <strong id="profileFollowersCount">840</strong>
-                <span data-i18n="followers">Followers</span>
-              </a>
-              <button class="profile-stat" type="button" id="btnSeeFollowing">
-                <strong id="profileFollowingCount">36</strong>
-                <span data-i18n="following">Following</span>
-              </button>
-              <span class="profile-stat">
-                <strong id="profilePostsCount">0</strong>
-                <span data-i18n="posts">Posts</span>
-              </span>
             </div>
 
-            <div class="action-row" id="profileActionRow">
-              <a class="profile-action is-primary" id="profileCreateBtn" href="/workspace/create?from=profile.html"><span data-i18n="create">Create</span> <i class="bi bi-caret-down-fill"></i></a>
-              <button class="profile-action" type="button" id="profileEditBtn" data-edit-profile data-i18n="profile_edit_profile">Edit profile</button>
-              <div class="profile-more" id="profileMoreWrap">
-                <button class="profile-action is-icon" type="button" aria-label="More" aria-expanded="false" data-profile-more-button>...</button>
-                <div class="profile-more-menu" data-profile-more-menu hidden>
-                  <button class="profile-more-item" type="button" data-open-password-modal>
-                    <i class="bi bi-shield-lock"></i>
+            <div class="profile-avatar-column d-flex flex-column align-items-center gap-3">
+              <div class="profile-avatar hero-avatar m-0" [class.has-image]="!!avatarUrl">
+                @if (avatarUrl) {
+                  <img [src]="avatarUrl" [alt]="profileForm.displayName">
+                } @else {
+                  <span>{{ initial }}</span>
+                }
+              </div>
+              <button class="profile-action is-primary btn-subscribe d-none m-0"
+                style="min-height: 44px; padding: 0 24px; width: auto;" type="button">
+                <i class="bi bi-plus-lg me-1"></i> <span data-i18n="subscribe">Theo dõi</span>
+              </button>
+            </div>
+          </section>
+
+          <div class="profile-stats" aria-label="Profile statistics">
+            <a class="profile-stat" href="#" (click)="showSubscribersModal.set(true); $event.preventDefault()">
+              <strong>{{ followersCount() }}</strong>
+              <span data-i18n="followers">Followers</span>
+            </a>
+            <button class="profile-stat" type="button">
+              <strong>{{ followingCount() }}</strong>
+              <span data-i18n="following">Following</span>
+            </button>
+            <span class="profile-stat">
+              <strong>{{ posts().length }}</strong>
+              <span data-i18n="posts">Posts</span>
+            </span>
+          </div>
+
+          <div class="action-row">
+            <a class="profile-action is-primary" routerLink="/workspace/create">
+              <span data-i18n="create">Create</span> <i class="bi bi-caret-down-fill"></i>
+            </a>
+            <button class="profile-action" type="button" (click)="toggleEdit(true)" data-i18n="profile_edit_profile">Edit profile</button>
+            <div class="profile-more dropdown">
+              <button class="profile-action is-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">...</button>
+              <ul class="dropdown-menu shadow border-light-subtle">
+                <li>
+                  <button class="dropdown-item py-2" type="button" (click)="showPasswordModal.set(true)">
+                    <i class="bi bi-shield-lock me-2"></i>
                     <span data-i18n="change_password">Change password</span>
                   </button>
-                </div>
-              </div>
+                </li>
+              </ul>
             </div>
-
-            <div id="profilePostsContainer" class="mt-5"></div>
-
-
           </div>
-        </section>
 
-        <section class="profile-page" data-profile-edit>
-          <div class="edit-shell">
-            <header class="edit-heading">
-              <h1 data-i18n="profile_edit_title">Edit Profile</h1>
-              <button class="done-btn" type="button" data-done-edit data-i18n="profile_done">Done</button>
-            </header>
-
-            <form id="profileForm">
-              <div class="edit-avatar-wrap">
-                <button class="edit-avatar-button" type="button" data-avatar-button aria-label="Change avatar">
-                  <span class="profile-avatar" data-edit-avatar><span>A</span></span>
-                </button>
-                <button class="edit-pencil" type="button" data-avatar-button aria-label="Change avatar"><i class="bi bi-pencil" aria-hidden="true"></i></button>
-                <input class="hidden-file" id="avatarInput" type="file" accept="image/*">
-              </div>
-
-              <div class="field-stack">
-                <div class="field">
-                  <label for="displayName" data-i18n="profile_name_label">Name</label>
-                  <input class="input" id="displayName" type="text" value="Alone" autocomplete="name">
-                </div>
-
-                <div class="field">
-                  <label for="username" data-i18n="profile_handle_label">Handle</label>
-                  <div class="input-row">
-                    <input class="input" id="username" type="text" value="&#64;alone254544" readonly aria-readonly="true">
-                    <button class="handle-edit-btn" type="button" data-locked-handle data-i18n="profile_edit_handle">Edit</button>
-                  </div>
-                </div>
-
-                <div class="field">
-                  <label for="bio" data-i18n="profile_bio_label">Bio</label>
-                  <textarea class="textarea" id="bio"></textarea>
-                </div>
-              </div>
-
-              <div class="divider"></div>
-
-              <h2 class="branding-title" data-i18n="profile_branding">Branding</h2>
-              <p class="branding-copy" data-i18n="profile_branding_desc">Customize the look of your profile.</p>
-
-
-              <div class="brand-row">
-                <label for="accentColor" data-i18n="profile_accent_color">Accent color</label>
-                <div class="color-field" data-color-picker="accent">
-                  <span id="accentColorText">#FF6719</span>
-                  <button class="color-dot" id="accentColorButton" type="button" aria-label="Choose accent color"></button>
-                  <div class="color-popover" aria-label="Accent color palette">
-                    <span class="color-popover-title" data-i18n="profile_accent_color">Accent color</span>
-                    <div class="color-swatch-grid">
-                      <button class="color-swatch" type="button" data-color-value="#FF6719" style="--swatch:#FF6719" aria-label="#FF6719"></button>
-                      <button class="color-swatch" type="button" data-color-value="#FFFFFF" style="--swatch:#FFFFFF" aria-label="#FFFFFF"></button>
-                      <button class="color-swatch" type="button" data-color-value="#E11D48" style="--swatch:#E11D48" aria-label="#E11D48"></button>
-                      <button class="color-swatch" type="button" data-color-value="#EF4444" style="--swatch:#EF4444" aria-label="#EF4444"></button>
-                      <button class="color-swatch" type="button" data-color-value="#F59E0B" style="--swatch:#F59E0B" aria-label="#F59E0B"></button>
-                      <button class="color-swatch" type="button" data-color-value="#22C55E" style="--swatch:#22C55E" aria-label="#22C55E"></button>
-                      <button class="color-swatch" type="button" data-color-value="#06B6D4" style="--swatch:#06B6D4" aria-label="#06B6D4"></button>
-                      <button class="color-swatch" type="button" data-color-value="#3B82F6" style="--swatch:#3B82F6" aria-label="#3B82F6"></button>
-                      <button class="color-swatch" type="button" data-color-value="#6366F1" style="--swatch:#6366F1" aria-label="#6366F1"></button>
-                      <button class="color-swatch" type="button" data-color-value="#8B5CF6" style="--swatch:#8B5CF6" aria-label="#8B5CF6"></button>
-                      <button class="color-swatch" type="button" data-color-value="#EC4899" style="--swatch:#EC4899" aria-label="#EC4899"></button>
-                      <button class="color-swatch" type="button" data-color-value="#111827" style="--swatch:#111827" aria-label="#111827"></button>
-                      <button class="color-swatch" type="button" data-color-value="#FB7185" style="--swatch:#FB7185" aria-label="#FB7185"></button>
-                      <button class="color-swatch" type="button" data-color-value="#F97316" style="--swatch:#F97316" aria-label="#F97316"></button>
-                      <button class="color-swatch" type="button" data-color-value="#84CC16" style="--swatch:#84CC16" aria-label="#84CC16"></button>
-                      <button class="color-swatch" type="button" data-color-value="#14B8A6" style="--swatch:#14B8A6" aria-label="#14B8A6"></button>
-                      <button class="color-swatch" type="button" data-color-value="#40E0D0" style="--swatch:#40E0D0" aria-label="#40E0D0"></button>
-                      <button class="color-swatch" type="button" data-color-value="#0EA5E9" style="--swatch:#0EA5E9" aria-label="#0EA5E9"></button>
-                      <button class="color-swatch" type="button" data-color-value="#2563EB" style="--swatch:#2563EB" aria-label="#2563EB"></button>
-                      <button class="color-swatch" type="button" data-color-value="#7C3AED" style="--swatch:#7C3AED" aria-label="#7C3AED"></button>
-                      <button class="color-swatch" type="button" data-color-value="#C026D3" style="--swatch:#C026D3" aria-label="#C026D3"></button>
-                      <button class="color-swatch" type="button" data-color-value="#FF1493" style="--swatch:#FF1493" aria-label="#FF1493"></button>
-                      <button class="color-swatch" type="button" data-color-value="#BE123C" style="--swatch:#BE123C" aria-label="#BE123C"></button>
-                      <button class="color-swatch" type="button" data-color-value="#A16207" style="--swatch:#A16207" aria-label="#A16207"></button>
-                      <button class="color-swatch" type="button" data-color-value="#FFD166" style="--swatch:#FFD166" aria-label="#FFD166"></button>
-                      <button class="color-swatch" type="button" data-color-value="#334155" style="--swatch:#334155" aria-label="#334155"></button>
-                      <button class="color-swatch" type="button" data-color-value="#6B7280" style="--swatch:#6B7280" aria-label="#6B7280"></button>
+          <div id="profilePostsContainer" class="mt-5">
+            @if (posts().length > 0) {
+              @for (post of posts(); track post.id) {
+                <article class="substack-post">
+                  <div class="substack-post-header">
+                    <div class="author-badge-group">
+                      @if (avatarUrl) {
+                        <img class="author-avatar" [src]="avatarUrl" [alt]="profileForm.displayName">
+                      } @else {
+                        <span class="author-avatar author-avatar-fallback">{{ initial }}</span>
+                      }
+                      <div class="author-meta-info">
+                        <span class="author-name">{{ profileForm.displayName }}</span>
+                        <span class="post-timestamp">{{ post.updatedAt | date:'shortDate' }}</span>
+                      </div>
                     </div>
                   </div>
+
+                  <span class="category-label">{{ categoryLabel(post) }}</span>
+
+                  <a class="post-link" routerLink="/post-detail" [queryParams]="{ id: post.id }">
+                    <h2 class="post-title">{{ postTitle(post) }}</h2>
+                    <div class="substack-post-content post-content" [innerHTML]="postContent(post)"></div>
+                  </a>
+
+                  <div class="substack-post-footer">
+                    <span class="footer-action-item"><i class="bi bi-heart"></i><span>0</span></span>
+                    <span class="footer-action-item"><i class="bi bi-chat"></i><span>0</span></span>
+                    <span class="footer-action-item"><i class="bi bi-eye"></i><span>{{ post.viewCount }}</span></span>
+                  </div>
+                </article>
+              }
+            } @else {
+              <div class="text-center text-muted p-4">
+                <i class="bi bi-inbox fs-1"></i>
+                <p class="mt-2">No posts available.</p>
+              </div>
+            }
+          </div>
+
+        </div>
+      </section>
+      }
+
+      @if (isEditing()) {
+      <section class="profile-page is-active" data-profile-edit>
+        <div class="edit-shell">
+          <header class="edit-heading">
+            <h1 data-i18n="profile_edit_title">Edit Profile</h1>
+            <button class="done-btn" type="button" (click)="saveProfile()" [disabled]="savingProfile()" data-i18n="profile_done">{{ savingProfile() ? 'Saving...' : 'Done' }}</button>
+          </header>
+
+          <form id="profileForm">
+            <div class="edit-avatar-wrap">
+              <button class="edit-avatar-button" type="button" aria-label="Change avatar">
+                <span class="profile-avatar" [class.has-image]="!!avatarUrl">
+                  @if (avatarUrl) {
+                    <img [src]="avatarUrl" [alt]="profileForm.displayName">
+                  } @else {
+                    <span>{{ initial }}</span>
+                  }
+                </span>
+              </button>
+              <button class="edit-pencil" type="button" aria-label="Change avatar"><i
+                  class="bi bi-pencil" aria-hidden="true"></i></button>
+              <input class="hidden-file" id="avatarInput" type="file" accept="image/*">
+            </div>
+
+            <div class="field-stack">
+              <div class="field">
+                <label for="displayName" data-i18n="profile_name_label">Name</label>
+                <input class="input" id="displayName" type="text" [(ngModel)]="profileForm.displayName" name="displayName" autocomplete="name">
+              </div>
+
+              <div class="field">
+                <label for="username" data-i18n="profile_handle_label">Handle</label>
+                <div class="input-row">
+                  <input class="input" id="username" type="text" [value]="profileForm.username" readonly aria-readonly="true">
+                  <button class="handle-edit-btn" type="button" (click)="showHandleModal.set(true)"
+                    data-i18n="profile_edit_handle">Edit</button>
                 </div>
               </div>
 
-              <div class="brand-row">
-                <label for="backgroundColor" data-i18n="profile_background_color">Background color</label>
-                <div class="color-field" data-color-picker="background">
-                  <span id="backgroundColorText">None</span>
-                  <button class="color-dot is-empty" id="backgroundColorButton" type="button" aria-label="Choose background color"></button>
-                  <div class="color-popover" aria-label="Background color palette">
-                    <span class="color-popover-title" data-i18n="profile_background_color">Background color</span>
-                    <div class="color-swatch-grid">
-                      <button class="color-swatch is-none" type="button" data-color-value="" aria-label="No background color"></button>
-                      <button class="color-swatch" type="button" data-color-value="#FF6719" style="--swatch:#FF6719" aria-label="#FF6719"></button>
-                      <button class="color-swatch" type="button" data-color-value="#FFFFFF" style="--swatch:#FFFFFF" aria-label="#FFFFFF"></button>
-                      <button class="color-swatch" type="button" data-color-value="#E11D48" style="--swatch:#E11D48" aria-label="#E11D48"></button>
-                      <button class="color-swatch" type="button" data-color-value="#EF4444" style="--swatch:#EF4444" aria-label="#EF4444"></button>
-                      <button class="color-swatch" type="button" data-color-value="#F59E0B" style="--swatch:#F59E0B" aria-label="#F59E0B"></button>
-                      <button class="color-swatch" type="button" data-color-value="#22C55E" style="--swatch:#22C55E" aria-label="#22C55E"></button>
-                      <button class="color-swatch" type="button" data-color-value="#06B6D4" style="--swatch:#06B6D4" aria-label="#06B6D4"></button>
-                      <button class="color-swatch" type="button" data-color-value="#3B82F6" style="--swatch:#3B82F6" aria-label="#3B82F6"></button>
-                      <button class="color-swatch" type="button" data-color-value="#6366F1" style="--swatch:#6366F1" aria-label="#6366F1"></button>
-                      <button class="color-swatch" type="button" data-color-value="#8B5CF6" style="--swatch:#8B5CF6" aria-label="#8B5CF6"></button>
-                      <button class="color-swatch" type="button" data-color-value="#EC4899" style="--swatch:#EC4899" aria-label="#EC4899"></button>
-                      <button class="color-swatch" type="button" data-color-value="#111827" style="--swatch:#111827" aria-label="#111827"></button>
-                      <button class="color-swatch" type="button" data-color-value="#FB7185" style="--swatch:#FB7185" aria-label="#FB7185"></button>
-                      <button class="color-swatch" type="button" data-color-value="#F97316" style="--swatch:#F97316" aria-label="#F97316"></button>
-                      <button class="color-swatch" type="button" data-color-value="#84CC16" style="--swatch:#84CC16" aria-label="#84CC16"></button>
-                      <button class="color-swatch" type="button" data-color-value="#14B8A6" style="--swatch:#14B8A6" aria-label="#14B8A6"></button>
-                      <button class="color-swatch" type="button" data-color-value="#40E0D0" style="--swatch:#40E0D0" aria-label="#40E0D0"></button>
-                      <button class="color-swatch" type="button" data-color-value="#0EA5E9" style="--swatch:#0EA5E9" aria-label="#0EA5E9"></button>
-                      <button class="color-swatch" type="button" data-color-value="#2563EB" style="--swatch:#2563EB" aria-label="#2563EB"></button>
-                      <button class="color-swatch" type="button" data-color-value="#7C3AED" style="--swatch:#7C3AED" aria-label="#7C3AED"></button>
-                      <button class="color-swatch" type="button" data-color-value="#C026D3" style="--swatch:#C026D3" aria-label="#C026D3"></button>
-                      <button class="color-swatch" type="button" data-color-value="#FF1493" style="--swatch:#FF1493" aria-label="#FF1493"></button>
-                      <button class="color-swatch" type="button" data-color-value="#BE123C" style="--swatch:#BE123C" aria-label="#BE123C"></button>
-                      <button class="color-swatch" type="button" data-color-value="#A16207" style="--swatch:#A16207" aria-label="#A16207"></button>
-                      <button class="color-swatch" type="button" data-color-value="#FFD166" style="--swatch:#FFD166" aria-label="#FFD166"></button>
-                      <button class="color-swatch" type="button" data-color-value="#334155" style="--swatch:#334155" aria-label="#334155"></button>
-                      <button class="color-swatch" type="button" data-color-value="#6B7280" style="--swatch:#6B7280" aria-label="#6B7280"></button>
-                    </div>
+              <div class="field">
+                <label for="bio" data-i18n="profile_bio_label">Bio</label>
+                <textarea class="textarea" id="bio" [(ngModel)]="profileForm.bio" name="bio"></textarea>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <h2 class="branding-title" data-i18n="profile_branding">Branding</h2>
+            <p class="branding-copy" data-i18n="profile_branding_desc">Customize the look of your profile.</p>
+
+
+            <div class="brand-row">
+              <label for="accentColor" data-i18n="profile_accent_color">Accent color</label>
+              <div class="color-field" data-color-picker="accent">
+                <span id="accentColorText">#FF6719</span>
+                <button class="color-dot" id="accentColorButton" type="button"
+                  aria-label="Choose accent color"></button>
+                <div class="color-popover" aria-label="Accent color palette">
+                  <span class="color-popover-title" data-i18n="profile_accent_color">Accent color</span>
+                  <div class="color-swatch-grid">
+                    <button class="color-swatch" type="button" data-color-value="#FF6719" style="--swatch:#FF6719"
+                      aria-label="#FF6719"></button>
+                    <button class="color-swatch" type="button" data-color-value="#FFFFFF" style="--swatch:#FFFFFF"
+                      aria-label="#FFFFFF"></button>
+                    <button class="color-swatch" type="button" data-color-value="#E11D48" style="--swatch:#E11D48"
+                      aria-label="#E11D48"></button>
+                    <button class="color-swatch" type="button" data-color-value="#EF4444" style="--swatch:#EF4444"
+                      aria-label="#EF4444"></button>
+                    <button class="color-swatch" type="button" data-color-value="#F59E0B" style="--swatch:#F59E0B"
+                      aria-label="#F59E0B"></button>
+                    <button class="color-swatch" type="button" data-color-value="#22C55E" style="--swatch:#22C55E"
+                      aria-label="#22C55E"></button>
+                    <button class="color-swatch" type="button" data-color-value="#06B6D4" style="--swatch:#06B6D4"
+                      aria-label="#06B6D4"></button>
+                    <button class="color-swatch" type="button" data-color-value="#3B82F6" style="--swatch:#3B82F6"
+                      aria-label="#3B82F6"></button>
+                    <button class="color-swatch" type="button" data-color-value="#6366F1" style="--swatch:#6366F1"
+                      aria-label="#6366F1"></button>
+                    <button class="color-swatch" type="button" data-color-value="#8B5CF6" style="--swatch:#8B5CF6"
+                      aria-label="#8B5CF6"></button>
+                    <button class="color-swatch" type="button" data-color-value="#EC4899" style="--swatch:#EC4899"
+                      aria-label="#EC4899"></button>
+                    <button class="color-swatch" type="button" data-color-value="#111827" style="--swatch:#111827"
+                      aria-label="#111827"></button>
+                    <button class="color-swatch" type="button" data-color-value="#FB7185" style="--swatch:#FB7185"
+                      aria-label="#FB7185"></button>
+                    <button class="color-swatch" type="button" data-color-value="#F97316" style="--swatch:#F97316"
+                      aria-label="#F97316"></button>
+                    <button class="color-swatch" type="button" data-color-value="#84CC16" style="--swatch:#84CC16"
+                      aria-label="#84CC16"></button>
+                    <button class="color-swatch" type="button" data-color-value="#14B8A6" style="--swatch:#14B8A6"
+                      aria-label="#14B8A6"></button>
+                    <button class="color-swatch" type="button" data-color-value="#40E0D0" style="--swatch:#40E0D0"
+                      aria-label="#40E0D0"></button>
+                    <button class="color-swatch" type="button" data-color-value="#0EA5E9" style="--swatch:#0EA5E9"
+                      aria-label="#0EA5E9"></button>
+                    <button class="color-swatch" type="button" data-color-value="#2563EB" style="--swatch:#2563EB"
+                      aria-label="#2563EB"></button>
+                    <button class="color-swatch" type="button" data-color-value="#7C3AED" style="--swatch:#7C3AED"
+                      aria-label="#7C3AED"></button>
+                    <button class="color-swatch" type="button" data-color-value="#C026D3" style="--swatch:#C026D3"
+                      aria-label="#C026D3"></button>
+                    <button class="color-swatch" type="button" data-color-value="#FF1493" style="--swatch:#FF1493"
+                      aria-label="#FF1493"></button>
+                    <button class="color-swatch" type="button" data-color-value="#BE123C" style="--swatch:#BE123C"
+                      aria-label="#BE123C"></button>
+                    <button class="color-swatch" type="button" data-color-value="#A16207" style="--swatch:#A16207"
+                      aria-label="#A16207"></button>
+                    <button class="color-swatch" type="button" data-color-value="#FFD166" style="--swatch:#FFD166"
+                      aria-label="#FFD166"></button>
+                    <button class="color-swatch" type="button" data-color-value="#334155" style="--swatch:#334155"
+                      aria-label="#334155"></button>
+                    <button class="color-swatch" type="button" data-color-value="#6B7280" style="--swatch:#6B7280"
+                      aria-label="#6B7280"></button>
                   </div>
                 </div>
               </div>
-            </form>
-          </div>
+            </div>
 
-        </section>
-      </main>
-    </div>
-
-    <!-- Mobile Bottom Navigation -->
-    <nav class="mobile-bottom-nav d-lg-none">
-      <a href="/home" class="nav-item" aria-label="Home">
-        <i class="bi bi-house"></i>
-      </a>
-      <a href="/workspace/posts" class="nav-item" aria-label="My Articles">
-        <i class="bi bi-journal-text"></i>
-      </a>
-      <a href="/settings" class="nav-item" aria-label="Settings">
-        <i class="bi bi-gear"></i>
-      </a>
-    </nav>
-
-    <div class="handle-modal" data-handle-modal hidden>
-      <div class="handle-modal-backdrop" data-close-handle-modal></div>
-      <section class="handle-modal-panel" role="dialog" aria-modal="true" aria-labelledby="handleModalTitle">
-        <header class="handle-modal-head">
-          <div class="handle-modal-icon" aria-hidden="true">&#64;</div>
-          <button class="handle-modal-close" type="button" data-close-handle-modal aria-label="Close">&times;</button>
-          <h2 class="handle-modal-title" id="handleModalTitle">Edit your handle</h2>
-          <p class="handle-modal-copy">Your handle helps people find and connect with you on Lingora.</p>
-        </header>
-
-        <div class="handle-option-list">
-          <label class="handle-option">
-            <input type="radio" name="handleChoice" value="current" data-handle-option checked>
-            <span class="handle-option-main">
-              <span class="handle-value" data-handle-current>&#64;alone254544</span>
-              <span class="handle-caption">Current Handle</span>
-            </span>
-          </label>
-
-          <label class="handle-option">
-            <input type="radio" name="handleChoice" value="suggested" data-handle-option>
-            <span class="handle-option-main">
-              <span class="handle-value" data-handle-suggested>&#64;alone960455</span>
-              <span class="handle-caption">Suggested</span>
-            </span>
-          </label>
-
-          <label class="handle-option">
-            <input type="radio" name="handleChoice" value="custom" data-handle-option>
-            <span class="handle-option-main">
-              <input class="handle-custom-input" type="text" placeholder="&#64; Enter a handle" autocomplete="off" spellcheck="false" data-handle-custom>
-              <span class="handle-warning" data-handle-warning></span>
-            </span>
-          </label>
+            <div class="brand-row">
+              <label for="backgroundColor" data-i18n="profile_background_color">Background color</label>
+              <div class="color-field" data-color-picker="background">
+                <span id="backgroundColorText">None</span>
+                <button class="color-dot is-empty" id="backgroundColorButton" type="button"
+                  aria-label="Choose background color"></button>
+                <div class="color-popover" aria-label="Background color palette">
+                  <span class="color-popover-title" data-i18n="profile_background_color">Background color</span>
+                  <div class="color-swatch-grid">
+                    <button class="color-swatch is-none" type="button" data-color-value=""
+                      aria-label="No background color"></button>
+                    <button class="color-swatch" type="button" data-color-value="#FF6719" style="--swatch:#FF6719"
+                      aria-label="#FF6719"></button>
+                    <button class="color-swatch" type="button" data-color-value="#FFFFFF" style="--swatch:#FFFFFF"
+                      aria-label="#FFFFFF"></button>
+                    <button class="color-swatch" type="button" data-color-value="#E11D48" style="--swatch:#E11D48"
+                      aria-label="#E11D48"></button>
+                    <button class="color-swatch" type="button" data-color-value="#EF4444" style="--swatch:#EF4444"
+                      aria-label="#EF4444"></button>
+                    <button class="color-swatch" type="button" data-color-value="#F59E0B" style="--swatch:#F59E0B"
+                      aria-label="#F59E0B"></button>
+                    <button class="color-swatch" type="button" data-color-value="#22C55E" style="--swatch:#22C55E"
+                      aria-label="#22C55E"></button>
+                    <button class="color-swatch" type="button" data-color-value="#06B6D4" style="--swatch:#06B6D4"
+                      aria-label="#06B6D4"></button>
+                    <button class="color-swatch" type="button" data-color-value="#3B82F6" style="--swatch:#3B82F6"
+                      aria-label="#3B82F6"></button>
+                    <button class="color-swatch" type="button" data-color-value="#6366F1" style="--swatch:#6366F1"
+                      aria-label="#6366F1"></button>
+                    <button class="color-swatch" type="button" data-color-value="#8B5CF6" style="--swatch:#8B5CF6"
+                      aria-label="#8B5CF6"></button>
+                    <button class="color-swatch" type="button" data-color-value="#EC4899" style="--swatch:#EC4899"
+                      aria-label="#EC4899"></button>
+                    <button class="color-swatch" type="button" data-color-value="#111827" style="--swatch:#111827"
+                      aria-label="#111827"></button>
+                    <button class="color-swatch" type="button" data-color-value="#FB7185" style="--swatch:#FB7185"
+                      aria-label="#FB7185"></button>
+                    <button class="color-swatch" type="button" data-color-value="#F97316" style="--swatch:#F97316"
+                      aria-label="#F97316"></button>
+                    <button class="color-swatch" type="button" data-color-value="#84CC16" style="--swatch:#84CC16"
+                      aria-label="#84CC16"></button>
+                    <button class="color-swatch" type="button" data-color-value="#14B8A6" style="--swatch:#14B8A6"
+                      aria-label="#14B8A6"></button>
+                    <button class="color-swatch" type="button" data-color-value="#40E0D0" style="--swatch:#40E0D0"
+                      aria-label="#40E0D0"></button>
+                    <button class="color-swatch" type="button" data-color-value="#0EA5E9" style="--swatch:#0EA5E9"
+                      aria-label="#0EA5E9"></button>
+                    <button class="color-swatch" type="button" data-color-value="#2563EB" style="--swatch:#2563EB"
+                      aria-label="#2563EB"></button>
+                    <button class="color-swatch" type="button" data-color-value="#7C3AED" style="--swatch:#7C3AED"
+                      aria-label="#7C3AED"></button>
+                    <button class="color-swatch" type="button" data-color-value="#C026D3" style="--swatch:#C026D3"
+                      aria-label="#C026D3"></button>
+                    <button class="color-swatch" type="button" data-color-value="#FF1493" style="--swatch:#FF1493"
+                      aria-label="#FF1493"></button>
+                    <button class="color-swatch" type="button" data-color-value="#BE123C" style="--swatch:#BE123C"
+                      aria-label="#BE123C"></button>
+                    <button class="color-swatch" type="button" data-color-value="#A16207" style="--swatch:#A16207"
+                      aria-label="#A16207"></button>
+                    <button class="color-swatch" type="button" data-color-value="#FFD166" style="--swatch:#FFD166"
+                      aria-label="#FFD166"></button>
+                    <button class="color-swatch" type="button" data-color-value="#334155" style="--swatch:#334155"
+                      aria-label="#334155"></button>
+                    <button class="color-swatch" type="button" data-color-value="#6B7280" style="--swatch:#6B7280"
+                      aria-label="#6B7280"></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
         </div>
 
-        <div class="handle-modal-actions">
-          <button class="handle-submit" type="button" data-update-handle disabled>Update handle</button>
-          <button class="handle-cancel" type="button" data-close-handle-modal>Cancel</button>
+      </section>
+      }
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-bottom-nav d-lg-none">
+    <a href="/home" class="nav-item" aria-label="Home">
+      <i class="bi bi-house"></i>
+    </a>
+    <a href="/workspace/posts" class="nav-item" aria-label="My Articles">
+      <i class="bi bi-journal-text"></i>
+    </a>
+    <a href="/settings" class="nav-item" aria-label="Settings">
+      <i class="bi bi-gear"></i>
+    </a>
+  </nav>
+
+  <div class="handle-modal" [hidden]="!showHandleModal()">
+    <div class="handle-modal-backdrop" (click)="showHandleModal.set(false)"></div>
+    <section class="handle-modal-panel" role="dialog" aria-modal="true" aria-labelledby="handleModalTitle">
+      <header class="handle-modal-head">
+        <div class="handle-modal-icon" aria-hidden="true">&#64;</div>
+        <button class="handle-modal-close" type="button" (click)="showHandleModal.set(false)" aria-label="Close">&times;</button>
+        <h2 class="handle-modal-title" id="handleModalTitle">Edit your handle</h2>
+        <p class="handle-modal-copy">Your handle helps people find and connect with you on Lingora.</p>
+      </header>
+
+      <div class="handle-option-list">
+        <label class="handle-option">
+          <input type="radio" name="handleChoice" value="current" [(ngModel)]="handleOption">
+          <span class="handle-option-main">
+            <span class="handle-value">{{ profileForm.username }}</span>
+            <span class="handle-caption">Current Handle</span>
+          </span>
+        </label>
+
+        <label class="handle-option">
+          <input type="radio" name="handleChoice" value="suggested" [(ngModel)]="handleOption">
+          <span class="handle-option-main">
+            <span class="handle-value">Suggested</span>
+            <span class="handle-caption">Auto-generated</span>
+          </span>
+        </label>
+
+        <label class="handle-option">
+          <input type="radio" name="handleChoice" value="custom" [(ngModel)]="handleOption">
+          <span class="handle-option-main">
+            <input class="handle-custom-input" type="text" placeholder="&#64; Enter a handle" autocomplete="off"
+              spellcheck="false" [(ngModel)]="customHandle">
+          </span>
+        </label>
+      </div>
+
+      <div class="handle-modal-actions">
+        <button class="handle-submit" type="button" (click)="updateHandle()">Update handle</button>
+        <button class="handle-cancel" type="button" (click)="showHandleModal.set(false)">Cancel</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="password-modal" [hidden]="!showPasswordModal()">
+    <div class="password-modal-backdrop" (click)="showPasswordModal.set(false)"></div>
+    <section class="password-modal-panel" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
+      <header class="password-modal-head">
+        <div class="password-modal-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></div>
+        <button class="password-modal-close" type="button" (click)="showPasswordModal.set(false)" aria-label="Close">&times;</button>
+        <h2 class="password-modal-title" id="passwordModalTitle" data-i18n="change_password">Change password</h2>
+        <p class="password-modal-copy" data-i18n="password_description_short">Update the password for your Lingora
+          account.</p>
+      </header>
+
+      <form class="password-form" (ngSubmit)="submitPassword()">
+        <div class="password-field">
+          <label for="profileCurrentPassword" data-i18n="current_password_label">Current password</label>
+          <div class="password-input-wrap">
+            <input id="profileCurrentPassword" [type]="passwordFieldType" autocomplete="current-password" [(ngModel)]="passwordForm.current" name="currentPassword">
+            <button class="password-toggle" type="button" aria-label="Show password" (click)="togglePasswordVisibility()">
+              <i class="bi" [ngClass]="passwordFieldType === 'password' ? 'bi-eye' : 'bi-eye-slash'" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
-      </section>
-    </div>
 
-    <div class="password-modal" data-password-modal hidden>
-      <div class="password-modal-backdrop" data-close-password-modal></div>
-      <section class="password-modal-panel" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
-        <header class="password-modal-head">
-          <div class="password-modal-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></div>
-          <button class="password-modal-close" type="button" data-close-password-modal aria-label="Close">&times;</button>
-          <h2 class="password-modal-title" id="passwordModalTitle" data-i18n="change_password">Change password</h2>
-          <p class="password-modal-copy" data-i18n="password_description_short">Update the password for your Lingora account.</p>
-        </header>
-
-        <form class="password-form" data-password-form>
-          <div class="password-field">
-            <label for="profileCurrentPassword" data-i18n="current_password_label">Current password</label>
-            <div class="password-input-wrap">
-              <input id="profileCurrentPassword" type="password" autocomplete="current-password" data-password-field>
-              <button class="password-toggle" type="button" aria-label="Show password" data-toggle-password>
-                <i class="bi bi-eye" aria-hidden="true"></i>
-              </button>
-            </div>
-            <span id="profileCurrentPasswordError" class="password-message is-error" aria-live="polite"></span>
+        <div class="password-field">
+          <label for="profileNewPassword" data-i18n="new_password_label">New password</label>
+          <div class="password-input-wrap">
+            <input id="profileNewPassword" [type]="passwordFieldType" autocomplete="new-password" [(ngModel)]="passwordForm.new" name="newPassword">
+            <button class="password-toggle" type="button" aria-label="Show password" (click)="togglePasswordVisibility()">
+              <i class="bi" [ngClass]="passwordFieldType === 'password' ? 'bi-eye' : 'bi-eye-slash'" aria-hidden="true"></i>
+            </button>
           </div>
-
-          <div class="password-field">
-            <label for="profileNewPassword" data-i18n="new_password_label">New password</label>
-            <div class="password-input-wrap">
-              <input id="profileNewPassword" type="password" autocomplete="new-password" data-password-field>
-              <button class="password-toggle" type="button" aria-label="Show password" data-toggle-password>
-                <i class="bi bi-eye" aria-hidden="true"></i>
-              </button>
-            </div>
-            <span id="profileNewPasswordHint" class="password-hint" data-i18n="password_min_hint">Use at least 8 characters.</span>
-            <span id="profileNewPasswordError" class="password-message is-error" aria-live="polite"></span>
-          </div>
-
-          <div class="password-field">
-            <label for="profileConfirmPassword" data-i18n="confirm_new_password_label">Confirm new password</label>
-            <div class="password-input-wrap">
-              <input id="profileConfirmPassword" type="password" autocomplete="new-password" data-password-field>
-              <button class="password-toggle" type="button" aria-label="Show password" data-toggle-password>
-                <i class="bi bi-eye" aria-hidden="true"></i>
-              </button>
-            </div>
-            <span id="profileConfirmPasswordError" class="password-message is-error" aria-live="polite"></span>
-          </div>
-          
-          <span id="profileGlobalMessage" class="password-message" aria-live="polite"></span>
-
-          <div class="password-actions">
-            <button class="password-cancel" type="button" data-close-password-modal data-i18n="cancel">Cancel</button>
-            <button class="password-submit" type="submit" data-submit-password data-i18n="update_password" disabled>Update password</button>
-          </div>
-        </form>
-      </section>
-    </div>
-
-    <!-- Subscribers Modal -->
-    <div class="password-modal" id="subscribersModal" hidden style="align-items: flex-start; padding-top: 15vh;">
-      <div class="password-modal-backdrop" id="closeSubscribersModalBg"></div>
-      <section class="password-modal-panel" role="dialog" aria-modal="true" aria-labelledby="subscribersModalTitle">
-        <header class="password-modal-head" style="padding-bottom: 12px;">
-          <button class="password-modal-close" type="button" id="closeSubscribersModalBtn" aria-label="Close">&times;</button>
-          <h2 class="password-modal-title" id="subscribersModalTitle" data-i18n="subscribers">Người đăng ký</h2>
-          <div class="mt-3">
-            <div class="right-search-box w-100" id="subscribersSearchWrap">
-              <i class="bi bi-search"></i>
-              <input type="text" id="subscribersSearchInput" placeholder="Tìm kiếm người đăng ký..." data-i18n="search_subscribers_placeholder">
-            </div>
-          </div>
-        </header>
-        <div id="subscribersListContainer" style="padding: 16px 24px; max-height: 400px; overflow-y: auto;">
-          <!-- Subscribers list will be injected here -->
+          <span id="profileNewPasswordHint" class="password-hint" data-i18n="password_min_hint">Use at least 8
+            characters.</span>
         </div>
-      </section>
-    </div>
+
+        <div class="password-field">
+          <label for="profileConfirmPassword" data-i18n="confirm_new_password_label">Confirm new password</label>
+          <div class="password-input-wrap">
+            <input id="profileConfirmPassword" [type]="passwordFieldType" autocomplete="new-password" [(ngModel)]="passwordForm.confirm" name="confirmPassword">
+            <button class="password-toggle" type="button" aria-label="Show password" (click)="togglePasswordVisibility()">
+              <i class="bi" [ngClass]="passwordFieldType === 'password' ? 'bi-eye' : 'bi-eye-slash'" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="password-actions">
+          <button class="password-cancel" type="button" (click)="showPasswordModal.set(false)" data-i18n="cancel">Cancel</button>
+          <button class="password-submit" type="submit" data-i18n="update_password" [disabled]="savingPassword() || !passwordForm.current || passwordForm.new.length < 8 || passwordForm.new !== passwordForm.confirm">{{ savingPassword() ? 'Updating...' : 'Update password' }}</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <!-- Subscribers Modal -->
+  <div class="password-modal" id="subscribersModal" hidden style="align-items: flex-start; padding-top: 15vh;">
+    <div class="password-modal-backdrop" id="closeSubscribersModalBg"></div>
+    <section class="password-modal-panel" role="dialog" aria-modal="true" aria-labelledby="subscribersModalTitle">
+      <header class="password-modal-head" style="padding-bottom: 12px;">
+        <button class="password-modal-close" type="button" id="closeSubscribersModalBtn"
+          aria-label="Close">&times;</button>
+        <h2 class="password-modal-title" id="subscribersModalTitle" data-i18n="subscribers">Người đăng ký</h2>
+        <div class="mt-3">
+          <div class="right-search-box w-100" id="subscribersSearchWrap">
+            <i class="bi bi-search"></i>
+            <input type="text" id="subscribersSearchInput" placeholder="Tìm kiếm người đăng ký..."
+              data-i18n="search_subscribers_placeholder">
+          </div>
+        </div>
+      </header>
+      <div id="subscribersListContainer" style="padding: 16px 24px; max-height: 400px; overflow-y: auto;">
+        <!-- Subscribers list will be injected here -->
+      </div>
+    </section>
+  </div>
 </div>

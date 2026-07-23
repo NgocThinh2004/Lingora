@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Req, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch, UseGuards, Req, HttpCode, HttpStatus } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import {
@@ -8,6 +8,7 @@ import {
   RefreshTokenDto,
   ResetPasswordDto,
   ChangePasswordDto,
+  UpdateProfileDto,
 } from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -69,6 +70,12 @@ export class AuthController {
   async getMe(@CurrentUser() user: User) {
     const data = await this.authService.getMe(user.id);
     return data;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  async updateMe(@CurrentUser() user: User, @Body() dto: UpdateProfileDto) {
+    return this.authService.updateProfile(user.id, dto);
   }
 
   private getSessionMetadata(request: Request) {

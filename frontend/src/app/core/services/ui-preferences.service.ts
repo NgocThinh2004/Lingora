@@ -1,9 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class UiPreferencesService {
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
   private previousBodyClass = '';
   private mounted = false;
 
@@ -26,8 +28,9 @@ export class UiPreferencesService {
 
     if (target.closest('#signOutBtn, #mobileSignOutBtn')) {
       event.preventDefault();
-      localStorage.removeItem('lingoraCurrentUser');
-      void this.router.navigateByUrl('/auth/login');
+      this.authService.logout().subscribe({
+        complete: () => void this.router.navigateByUrl('/auth/login'),
+      });
       return;
     }
 

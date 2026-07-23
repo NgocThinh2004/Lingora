@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { SubscriptionsService } from '../../core/services/subscriptions.service';
 import { UiPreferencesService } from '../../core/services/ui-preferences.service';
 import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
 
@@ -12,35 +13,68 @@ import { AppSidebarComponent } from '../../shared/components/app-sidebar.compone
 })
 export class SubscriptionsComponent implements OnInit, OnDestroy {
   private readonly ui = inject(UiPreferencesService);
+  private readonly subscriptionsService = inject(SubscriptionsService);
 
   tab: 'all' | 'manage' = 'all';
   authorFilter = '';
-  authors = [
-    { name: 'Elena Rostova', role: 'Artificial Intelligence Lead', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=80&h=80' },
-    { name: 'Hồ Quốc Tuấn', role: 'Economics Author', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=80&h=80' },
-    { name: 'Thái Dương', role: 'Tech Lead & Architecture', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=80&h=80' },
-  ];
-  readonly posts = [
-    { id: 1, author: 'Elena Rostova', title: 'How AI is changing the way we build software', summary: 'A practical look at modern AI-assisted workflows.', time: '2 hours ago' },
-    { id: 2, author: 'Thái Dương', title: 'Designing services that stay simple as they scale', summary: 'Patterns for clear service boundaries and reliable delivery.', time: 'Yesterday' },
-    { id: 3, author: 'Hồ Quốc Tuấn', title: 'Signals worth watching in the modern economy', summary: 'A measured view of growth, rates, and long-term investment.', time: '3 days ago' },
-  ];
+  authors: SubscriptionAuthorView[] = [];
+  posts: SubscriptionPostView[] = [];
+  loading = true;
+  error = '';
 
   ngOnInit(): void {
     this.ui.mount('Subscriptions - Lingora');
+    this.loadSubscriptions();
   }
 
-  ngOnDestroy(): void {
-    this.ui.unmount();
-  }
+  ngOnDestroy(): void { this.ui.unmount(); }
 
-  get visiblePosts() {
-    return this.posts.filter((post) => !this.authorFilter || post.author === this.authorFilter);
+  get visiblePosts(): SubscriptionPostView[] {
+    return this.posts.filter(post => !this.authorFilter || post.author === this.authorFilter);
   }
 
   unfollow(name: string): void {
-    this.authors = this.authors.filter((author) => author.name !== name);
-    if (this.authorFilter === name) this.authorFilter = '';
-    localStorage.setItem('lingoraSubscribedAuthors', JSON.stringify(this.authors.map((author) => author.name)));
+    const author = this.authors.find(item => item.name === name);
+    if (!author) return;
+    this.subscriptionsService.unsubscribe(author.id).subscribe({
+      next: () => {
+        this.authors = this.authors.filter(item => item.id !== author.id);
+        this.posts = this.posts.filter(post => post.authorId !== author.id);
+        if (this.authorFilter === name) this.authorFilter = '';
+      },
+      error: () => this.error = 'Unable to update this subscription.',
+    });
+  }
+
+  private loadSubscriptions(): void {
+    this.subscriptionsService.list().subscribe({
+      next: data => {
+        this.authors = data.authors.map(author => ({
+          id: author.id,
+          name: author.displayName || author.username,
+          role: author.bio || `@${author.username}`,
+          avatar: author.avatarUrl || '/assets/images/lingora-mark.svg',
+        }));
+        this.posts = data.posts.map(post => {
+          const source = post.translations.find(item => item.languageId === post.originalLanguageId) ?? post.translations[0];
+          return {
+            id: post.id,
+            authorId: post.author.id,
+            author: post.author.displayName || post.author.username,
+            title: source?.title || 'Untitled',
+            summary: source?.summary || '',
+            time: new Date(post.publishedAt || post.updatedAt).toLocaleDateString(),
+          };
+        });
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'Unable to load subscriptions from the database.';
+        this.loading = false;
+      },
+    });
   }
 }
+
+interface SubscriptionAuthorView { id: string; name: string; role: string; avatar: string; }
+interface SubscriptionPostView { id: string; authorId: string; author: string; title: string; summary: string; time: string; }

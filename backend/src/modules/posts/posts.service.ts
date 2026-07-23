@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import sanitizeHtml from 'sanitize-html';
 import { Op, Transaction, WhereOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { Post, PostTranslation } from '../../database/models';
+import { Category, CategoryTranslation, Comment, Language, Post, PostLike, PostTranslation, User } from '../../database/models';
 import { TranslationStatus } from '../translations/translations.constants';
 import { AdminPostsQueryDto } from './dto/admin-posts-query.dto';
 import { AuthorPostsQueryDto } from './dto/author-posts-query.dto';
@@ -70,12 +70,30 @@ type AdminPostMetricsResponse = {
   translations: Record<TranslationStatus, number>;
 };
 
+type PublicPostResponse = AuthorPostResponse & {
+  author: {
+    id: string;
+    username: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+    bio: string | null;
+  };
+  likeCount: number;
+  commentCount: number;
+};
+
 @Injectable()
 export class PostsService {
   constructor(
     private readonly sequelize: Sequelize,
     @InjectModel(Post) private readonly postModel: typeof Post,
     @InjectModel(PostTranslation) private readonly postTranslationModel: typeof PostTranslation,
+    @InjectModel(User) private readonly userModel: typeof User,
+    @InjectModel(PostLike) private readonly postLikeModel: typeof PostLike,
+    @InjectModel(Comment) private readonly commentModel: typeof Comment,
+    @InjectModel(Language) private readonly languageModel: typeof Language,
+    @InjectModel(Category) private readonly categoryModel: typeof Category,
+    @InjectModel(CategoryTranslation) private readonly categoryTranslationModel: typeof CategoryTranslation,
   ) {}
 
   getAllowedTransitions(status: PostStatus): readonly PostStatus[] {
@@ -104,6 +122,25 @@ export class PostsService {
     }
   }
 
+  assertEditorContentLimits(title: string, content: string): void {
+    if (!title.trim()) {
+      throw new BadRequestException('Title is required');
+    }
+
+    if (!this.hasMeaningfulEditorContent(content)) {
+      throw new BadRequestException('Content is required');
+    }
+
+    if (this.countWords(title) > 20) {
+      throw new BadRequestException('Title must contain no more than 20 words');
+    }
+
+    const plainContent = sanitizeHtml(content, { allowedTags: [], allowedAttributes: {} });
+    if (this.countWords(plainContent) > 3000) {
+      throw new BadRequestException('Content must contain no more than 3000 words');
+    }
+  }
+
   buildTranslationMatrix(
     translations: Array<{
       language_id: number;
@@ -119,6 +156,8 @@ export class PostsService {
   }
 
   async createAuthorPost(authorId: string, dto: CreateAuthorPostDto): Promise<AuthorPostResponse> {
+    this.assertEditorContentLimits(dto.title, dto.content);
+
     return this.sequelize.transaction(async (transaction) => {
       const now = new Date();
       const post = await this.postModel.create(
@@ -217,6 +256,72 @@ export class PostsService {
     return this.toAuthorPostResponse(post, translations);
   }
 
+  async listPublicPosts(query: { search?: string; page?: number; limit?: number }) {
+    const page = Math.max(1, query.page ?? 1);
+    const limit = Math.min(50, Math.max(1, query.limit ?? 10));
+    const posts = await this.postModel.findAll({
+      where: { status: 'published', deleted_at: null },
+      order: [['published_at', 'DESC'], ['updated_at', 'DESC']],
+    });
+    const translationsByPost = await this.getTranslationsByPostIds(posts.map(post => post.id));
+    const search = query.search?.trim().toLowerCase();
+    const matchingPosts = posts.filter(post => {
+      if (!search) return true;
+      return (translationsByPost.get(post.id) ?? []).some(translation =>
+        [translation.title, translation.summary, translation.content]
+          .filter(Boolean)
+          .some(value => sanitizeHtml(value!, { allowedTags: [], allowedAttributes: {} }).toLowerCase().includes(search)),
+      );
+    });
+    const start = (page - 1) * limit;
+    const items = await Promise.all(
+      matchingPosts.slice(start, start + limit).map(post =>
+        this.toPublicPostResponse(post, translationsByPost.get(post.id) ?? []),
+      ),
+    );
+    return {
+      items,
+      meta: {
+        page,
+        limit,
+        total: matchingPosts.length,
+        totalPages: Math.max(1, Math.ceil(matchingPosts.length / limit)),
+      },
+    };
+  }
+
+  async getPostOptions() {
+    const [languages, categories, categoryTranslations] = await Promise.all([
+      this.languageModel.findAll({ where: { is_active: true }, order: [['id', 'ASC']] }),
+      this.categoryModel.findAll({ where: { status: 'active' }, order: [['id', 'ASC']] }),
+      this.categoryTranslationModel.findAll({ order: [['language_id', 'ASC']] }),
+    ]);
+    return {
+      languages: languages.map(language => ({
+        id: language.id,
+        code: language.code,
+        label: language.name,
+        nativeLabel: language.native_name,
+      })),
+      categories: categories.map(category => {
+        const translation = categoryTranslations.find(item => item.category_id === category.id);
+        return { id: category.id, label: translation?.name || category.slug };
+      }),
+    };
+  }
+
+  async getPublicPost(postId: string): Promise<PublicPostResponse> {
+    const post = await this.postModel.findOne({
+      where: { id: postId, status: 'published', deleted_at: null },
+    });
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+    await post.increment('view_count');
+    await post.reload();
+    return this.toPublicPostResponse(post, await this.findTranslations(post.id));
+  }
+
   async updateAuthorPost(
     authorId: string,
     postId: string,
@@ -234,6 +339,7 @@ export class PostsService {
         content: dto.content ?? currentSource?.content ?? '',
       };
       const sanitizedNextContent = this.sanitizeContent(nextSource.content);
+      this.assertEditorContentLimits(nextSource.title, sanitizedNextContent);
       const sourceChanged = this.hasSourceChanged(currentSource, {
         languageId: originalLanguageId,
         title: nextSource.title,
@@ -284,7 +390,10 @@ export class PostsService {
       this.assertCanTransition(post.status, 'pending_review');
 
       const sourceTranslation = await this.findSourceTranslation(post.id, post.original_language_id, transaction);
-      if (!sourceTranslation?.title?.trim() || !sourceTranslation.content?.trim()) {
+      if (
+        !sourceTranslation?.title?.trim() ||
+        !this.hasMeaningfulEditorContent(sourceTranslation.content ?? '')
+      ) {
         throw new BadRequestException('A post must have source title and content before review submission');
       }
 
@@ -343,6 +452,22 @@ export class PostsService {
 
       const translations = await this.findTranslations(post.id, transaction);
       return this.toAuthorPostResponse(post, translations);
+    });
+  }
+
+  async deleteAuthorPostPermanently(
+    authorId: string,
+    postId: string,
+  ): Promise<{ id: string }> {
+    return this.sequelize.transaction(async (transaction) => {
+      const post = await this.findAuthorPostOrThrow(authorId, postId, transaction, true);
+      if (!post.deleted_at) {
+        throw new BadRequestException('Post must be in trash before permanent deletion');
+      }
+
+      const id = post.id;
+      await post.destroy({ transaction });
+      return { id };
     });
   }
 
@@ -873,6 +998,18 @@ export class PostsService {
       .replace(/^-+|-+$/g, '');
   }
 
+  private countWords(value: string): number {
+    return value.trim().split(/\s+/).filter(Boolean).length;
+  }
+
+  private hasMeaningfulEditorContent(content: string): boolean {
+    const plainContent = sanitizeHtml(content, { allowedTags: [], allowedAttributes: {} })
+      .replace(/\u00a0/g, ' ')
+      .trim();
+
+    return Boolean(plainContent || /<(img|audio|video)\b/i.test(content));
+  }
+
   private toAuthorPostResponse(post: Post, translations: PostTranslation[]): AuthorPostResponse {
     return {
       id: post.id,
@@ -899,6 +1036,29 @@ export class PostsService {
         updatedAt: translation.updated_at,
       })),
       translationMatrix: this.buildTranslationMatrix(translations),
+    };
+  }
+
+  private async toPublicPostResponse(post: Post, translations: PostTranslation[]): Promise<PublicPostResponse> {
+    const [author, likeCount, commentCount] = await Promise.all([
+      this.userModel.findByPk(post.author_id),
+      this.postLikeModel.count({ where: { post_id: post.id } }),
+      this.commentModel.count({ where: { post_id: post.id, status: 'approved' } }),
+    ]);
+    if (!author) {
+      throw new NotFoundException('Post author not found');
+    }
+    return {
+      ...this.toAuthorPostResponse(post, translations),
+      author: {
+        id: author.id,
+        username: author.username,
+        displayName: author.display_name,
+        avatarUrl: author.avatar,
+        bio: author.bio,
+      },
+      likeCount,
+      commentCount,
     };
   }
 }

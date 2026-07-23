@@ -2,13 +2,14 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { of, switchMap } from 'rxjs';
 import { AuthorPost, CreatePostPayload, PostTranslation } from '../../core/models/post.model';
 import { EditorMediaType } from '../../core/models/upload.model';
 import { PostsService } from '../../core/services/posts.service';
 import { UploadsService } from '../../core/services/uploads.service';
+import { AuthService } from '../../core/services/auth.service';
 
 type SaveMode = 'draft' | 'submit';
 type BaselineFormat = 'normal' | 'superscript' | 'subscript';
@@ -24,7 +25,9 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   private readonly postsService = inject(PostsService);
   private readonly uploadsService = inject(UploadsService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly authService = inject(AuthService);
   private savedRange: Range | null = null;
   private activeBaselineFormat: BaselineFormat = 'normal';
   private navigateAfterSave = false;
@@ -35,29 +38,29 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   readonly titleWordLimit = 20;
   readonly bodyWordLimit = 3000;
 
+  get authorDisplayName(): string {
+    const user = this.authService.currentUser();
+    return user?.displayName?.trim() || user?.username || 'Lingora Author';
+  }
+
+  get authorInitial(): string {
+    return this.authorDisplayName.charAt(0).toUpperCase();
+  }
+
   @ViewChild('postBody') private readonly postBody?: ElementRef<HTMLElement>;
 
-  readonly languageOptions = [
+  languageOptions = [
     { id: 1, code: 'vi', label: 'Vietnamese', nativeLabel: 'Tiếng Việt' },
     { id: 2, code: 'en', label: 'English', nativeLabel: 'English' },
     { id: 3, code: 'zh', label: 'Chinese', nativeLabel: '中文 (Chinese)' },
   ];
 
-  readonly categoryOptions = [
-    { id: 1, label: 'Technology' },
-    { id: 2, label: 'Lifestyle' },
-    { id: 3, label: 'Education' },
-    { id: 4, label: 'Entertainment' },
-    { id: 5, label: 'Travel' },
-    { id: 6, label: 'Food' },
-    { id: 7, label: 'Business' },
-    { id: 8, label: 'Health' },
-  ];
+  categoryOptions: Array<{ id: number; label: string }> = [];
 
   draft: CreatePostPayload = {
     title: '',
     summary: '',
-    categoryId: 1,
+    categoryId: undefined,
     originalLanguageId: 1,
     targetLanguageIds: [2, 3],
     content: '',
@@ -94,6 +97,20 @@ export class PostEditorComponent implements OnInit, OnDestroy {
     document.documentElement.setAttribute('data-bs-theme', 'light');
     document.body.classList.add('editor-page');
     this.updateBodyModalClasses();
+    this.postsService.getPostOptions().subscribe({
+      next: options => {
+        this.languageOptions = options.languages;
+        this.categoryOptions = options.categories;
+      },
+      error: () => {
+        // Language fallbacks remain available; an empty category list safely saves as uncategorized.
+      },
+    });
+
+    const postId = this.route.snapshot.paramMap.get('id');
+    if (postId) {
+      this.loadPost(postId);
+    }
   }
 
   ngOnDestroy(): void {
@@ -129,6 +146,10 @@ export class PostEditorComponent implements OnInit, OnDestroy {
     return this.isNearLimit(this.titleWordCount, this.titleWordLimit);
   }
 
+  get isTitleOverLimit(): boolean {
+    return this.titleWordCount > this.titleWordLimit;
+  }
+
   get isBodyNearLimit(): boolean {
     return this.isNearLimit(this.bodyWordCount, this.bodyWordLimit);
   }
@@ -156,7 +177,8 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   }
 
   updateCategoryId(value: string | number): void {
-    this.draft.categoryId = this.toRequiredNumber(value, 1);
+    const parsed = Number(value);
+    this.draft.categoryId = Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
   }
 
   updateContentFromEditor(event: Event): void {
@@ -685,8 +707,12 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   private save(mode: SaveMode): void {
     this.syncContentFromEditor();
     const payload = this.buildPayload();
-    if (!payload.title.trim() || !payload.content.trim()) {
+    if (!payload.title.trim() || !this.hasMeaningfulContent(payload.content)) {
       this.error = 'Title va content la bat buoc.';
+      return;
+    }
+    if (this.isTitleOverLimit || this.isBodyOverLimit) {
+      this.error = `Title toi da ${this.titleWordLimit} words va content toi da ${this.bodyWordLimit} words.`;
       return;
     }
 
@@ -703,7 +729,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
         switchMap((post) => {
           this.createdPost = post;
 
-          if (mode === 'submit') {
+          if (mode === 'submit' && post.status !== 'pending_review') {
             return this.postsService.submitAuthorPost(post.id);
           }
 
@@ -733,6 +759,38 @@ export class PostEditorComponent implements OnInit, OnDestroy {
           this.navigateAfterSave = false;
         },
       });
+  }
+
+  private loadPost(postId: string): void {
+    this.saveMode = 'draft';
+    this.error = '';
+    this.postsService.getAuthorPost(postId).subscribe({
+      next: post => {
+        const source = post.translations.find(item => item.languageId === post.originalLanguageId) ?? post.translations[0];
+        this.createdPost = post;
+        this.draft = {
+          title: source?.title ?? '',
+          summary: source?.summary ?? '',
+          categoryId: post.categoryId ?? undefined,
+          originalLanguageId: post.originalLanguageId,
+          targetLanguageIds: post.translationMatrix
+            .filter(item => item.languageId !== post.originalLanguageId)
+            .map(item => item.languageId),
+          content: source?.content ?? '',
+        };
+        this.allowedTargetLanguageIds.clear();
+        this.draft.targetLanguageIds?.forEach(id => this.allowedTargetLanguageIds.add(id));
+        this.targetInput = this.draft.targetLanguageIds?.join(',') ?? '';
+        if (this.postBody?.nativeElement) {
+          this.postBody.nativeElement.innerHTML = this.draft.content;
+        }
+        this.saveMode = null;
+      },
+      error: error => {
+        this.error = this.formatError(error);
+        this.saveMode = null;
+      },
+    });
   }
 
   private buildPayload(): CreatePostPayload {
@@ -1655,6 +1713,14 @@ export class PostEditorComponent implements OnInit, OnDestroy {
       .length;
   }
 
+  private hasMeaningfulContent(content: string): boolean {
+    const container = document.createElement('div');
+    container.innerHTML = content;
+    const text = (container.textContent || '').replace(/\u00a0/g, ' ').trim();
+
+    return Boolean(text || container.querySelector('img, audio, video'));
+  }
+
   private trimToWordLimit(value: string, limit: number): string {
     const words = value.match(/\S+/g) ?? [];
     if (words.length <= limit) {
@@ -1700,7 +1766,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
 
   private formatError(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
-      const message = error.error?.message as string | string[] | undefined;
+      const message = (error.error?.meta?.error?.message ?? error.error?.message) as string | string[] | undefined;
       if (Array.isArray(message)) {
         return message.join(' ');
       }

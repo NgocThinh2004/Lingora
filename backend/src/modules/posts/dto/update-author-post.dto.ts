@@ -1,8 +1,9 @@
-import { ArrayUnique, IsArray, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { ArrayUnique, IsArray, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class UpdateAuthorPostDto {
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(255)
   title?: string;
 
@@ -30,5 +31,6 @@ export class UpdateAuthorPostDto {
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   content?: string;
 }
