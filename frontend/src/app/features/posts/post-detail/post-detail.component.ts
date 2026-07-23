@@ -10,10 +10,12 @@ import { LikeService } from '../services/like.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../core/notifications/toast.service';
 
+import { AuthorTooltipComponent } from '../../../shared/components/author-tooltip/author-tooltip.component';
+
 @Component({
   selector: 'app-post-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, CommentSectionComponent],
+  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent],
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
 })

@@ -1,0 +1,58 @@
+:host {
+  display: block;
+  padding-top: 3rem;
+  
+  @media (max-width: 991px) {
+    padding-top: 2.25rem;
+  }
+}
+
+/* Subscriptions Page Tabs */
+
+.subscriptions-tabs-nav {
+  display: flex;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--bg-body);
+}
+
+@media (max-width: 991px) {
+  .subscriptions-tabs-nav {
+    top: 60px; /* Offset for mobile header */
+  }
+}
+.subscriptions-tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.5rem 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.subscriptions-tab-btn:hover {
+  color: var(--text-main);
+}
+.subscriptions-tab-btn.active {
+  color: var(--text-main);
+  font-weight: 600;
+  border-bottom-color: var(--text-main);
+}
+
+/* Subscribed Authors Manage Grid Item */
+.manage-author-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s ease;
+}

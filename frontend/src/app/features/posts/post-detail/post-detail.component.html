@@ -33,17 +33,20 @@
 
       <div class="substack-post-header mb-4 pb-3 border-bottom d-flex align-items-center justify-content-between">
         <div class="author-badge-group d-flex align-items-center position-relative author-tooltip-container" style="z-index: 2;">
-          <img [src]="p.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=48&h=48'"
-               [alt]="p.author.name"
-               class="author-avatar me-3 rounded-circle border"
-               style="width:48px;height:48px;object-fit:cover;">
-          <div class="author-meta-info">
-            <div class="d-flex align-items-center flex-wrap">
-              <span class="author-name me-1 fw-bold text-main">{{ p.author.name }}</span>
-              <span class="post-timestamp text-muted small ms-2">{{ p.createdAt | date:'mediumDate' }}</span>
+          <a [routerLink]="['/profile', p.author.id]" class="d-flex align-items-center text-decoration-none">
+            <img [src]="p.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=48&h=48'"
+                 [alt]="p.author.name"
+                 class="author-avatar me-3 rounded-circle border"
+                 style="width:48px;height:48px;object-fit:cover;">
+            <div class="author-meta-info">
+              <div class="d-flex align-items-center flex-wrap">
+                <span class="author-name me-1 fw-bold text-main">{{ p.author.name }}</span>
+                <span class="post-timestamp text-muted small ms-2">{{ p.createdAt | date:'mediumDate' }}</span>
+              </div>
+              <div class="text-muted small">&#64;{{ p.author.handle }}</div>
             </div>
-            <div class="text-muted small">&#64;{{ p.author.handle }}</div>
-          </div>
+          </a>
+          <app-author-tooltip [user]="p.author"></app-author-tooltip>
         </div>
       </div>
 
@@ -91,9 +94,12 @@
                 {{ getPostTranslationByLocale(rel)?.title || 'Untitled' }}
               </h5>
               <div class="d-flex align-items-center gap-2 text-muted small mt-3">
-                <img [src]="rel.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=24&h=24'"
-                     class="rounded-circle" width="24" height="24" style="object-fit:cover;" [alt]="rel.author.name">
-                <span class="fw-medium text-main">{{ rel.author.name }}</span>
+                <div class="author-tooltip-container position-relative d-flex align-items-center gap-2">
+                  <img [src]="rel.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=24&h=24'"
+                       class="rounded-circle" width="24" height="24" style="object-fit:cover;" [alt]="rel.author.name">
+                  <span class="fw-medium text-main">{{ rel.author.name }}</span>
+                  <app-author-tooltip [user]="rel.author"></app-author-tooltip>
+                </div>
                 <span class="ms-auto"><i class="bi bi-heart me-1"></i>{{ rel.likeCount || 0 }}</span>
                 <span class="ms-2"><i class="bi bi-chat me-1"></i>{{ rel.commentCount || 0 }}</span>
               </div>

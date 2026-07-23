@@ -42,3 +42,74 @@ h6 {
   font-size: 0.8rem;
   text-align: center;
 }
+
+/* Featured Author Widget (White card on gray sidebar layout) */
+.featured-authors-widget {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.featured-author-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.featured-author-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.featured-author-item:first-child {
+  padding-top: 0;
+}
+
+.featured-author-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.featured-author-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.featured-author-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.featured-author-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.featured-author-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Substack-style badge buttons */
+.btn-profile-view {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 99px;
+  font-weight: 600;
+  background-color: var(--accent-button-bg);
+  border: none;
+  color: var(--accent-button-text);
+  transition: all var(--transition-speed) ease;
+}
+
+.btn-profile-view:hover {
+  background-color: var(--primary-color);
+  color: #ffffff;
+}

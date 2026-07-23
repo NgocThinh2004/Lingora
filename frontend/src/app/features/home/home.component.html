@@ -46,13 +46,11 @@
     </div>
 
     @if (page() < totalPages()) {
-      <button type="button" class="load-more-btn" (click)="loadMore()" [disabled]="loadingMore()">
+      <div #scrollTrigger class="scroll-trigger text-center py-4 text-muted">
         @if (loadingMore()) {
-          Đang tải thêm...
-        } @else {
-          Xem thêm bài viết
+          <i class="bi bi-arrow-repeat spin me-2"></i> Đang tải thêm...
         }
-      </button>
+      </div>
     }
   }
 </div>

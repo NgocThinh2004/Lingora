@@ -8,10 +8,12 @@ import { translateCategory } from '../../../categories/models/category.model';
 import { Post, getPostTranslation } from '../../models/post.model';
 import { LikeService } from '../../services/like.service';
 
+import { AuthorTooltipComponent } from '../../../../shared/components/author-tooltip/author-tooltip.component';
+
 @Component({
   selector: 'app-post-card',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, AuthorTooltipComponent],
   templateUrl: './post-card.component.html',
   styleUrl: './post-card.component.scss',
 })

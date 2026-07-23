@@ -9,11 +9,12 @@ import { Post, getPostTranslation } from '../posts/models/post.model';
 import { FeedPostsService } from '../posts/services/feed-posts.service';
 import { User } from '../users/models/user.model';
 import { SearchModalService } from '../../core/ui/search-modal.service';
+import { AuthorTooltipComponent } from '../../shared/components/author-tooltip/author-tooltip.component';
 
 @Component({
   selector: 'app-search-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AuthorTooltipComponent],
   templateUrl: './search-modal.component.html',
   styleUrl: './search-modal.component.scss',
 })

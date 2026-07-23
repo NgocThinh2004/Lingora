@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { SearchModalService } from '../../../../core/ui/search-modal.service';
 import { User } from '../../../../features/users/models/user.model';
 import { UsersService } from '../../../../features/users/services/users.service';
@@ -15,6 +15,7 @@ import { UsersService } from '../../../../features/users/services/users.service'
 export class RightPanelComponent implements OnInit {
   readonly searchModalService = inject(SearchModalService);
   private readonly usersService = inject(UsersService);
+  readonly router = inject(Router);
   readonly recommendedUsers = signal<User[]>([]);
   readonly recommendationsLoading = signal(true);
 
@@ -30,5 +31,9 @@ export class RightPanelComponent implements OnInit {
 
   userAvatar(user: User): string {
     return user.avatarUrl || 'assets/images/lingora-mark.svg';
+  }
+
+  get isExplorePage(): boolean {
+    return this.router.url.startsWith('/explore');
   }
 }

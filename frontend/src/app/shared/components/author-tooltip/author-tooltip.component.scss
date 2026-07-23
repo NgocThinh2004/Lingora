@@ -1,0 +1,104 @@
+/* ==========================================================
+   SUBSCRIBE & TOOLTIP STYLES
+   ========================================================== */
+/* For Angular component, we use the class directly */
+.author-hover-card {
+  position: absolute;
+  pointer-events: none;
+  top: 100%;
+  left: -20px;
+  z-index: 1050;
+  min-width: 280px;
+  max-width: 340px; /* Constrain width so text wraps */
+  white-space: normal; /* Ensure text can wrap */
+  background-color: var(--bg-panel);
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  transform-origin: top left;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.author-hover-card::before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: transparent;
+}
+
+:host-context(.author-tooltip-container:hover) .author-hover-card {
+  visibility: visible;
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 0.25s ease 0.1s, transform 0.25s ease 0.1s;
+}
+
+/* ── Subscribe / Follow Button (Premium Redesign) ── */
+.btn-subscribe {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: 32px;
+  min-width: 120px;
+  padding: 0 1.15rem;
+  border: 1px solid transparent !important;
+  border-radius: 50rem !important;
+  background: var(--primary-color) !important;
+  color: #ffffff !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-subscribe:not(.subscribed):hover {
+  background: var(--primary-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(255, 103, 25, 0.15);
+}
+
+/* Subscribed state: subtle outlined pill */
+.btn-subscribe.subscribed {
+  border: 1px solid #ced4da !important;
+  color: var(--text-main) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+:host-context([data-bs-theme="dark"]) .btn-subscribe.subscribed {
+  border-color: #495057 !important;
+}
+
+/* Subscribed hover → Twitter/X "Unfollow" red hint */
+.btn-subscribe.subscribed:hover {
+  border-color: #dc2626 !important;
+  color: #dc2626 !important;
+  background: rgba(220, 38, 38, 0.08) !important;
+  transform: none;
+}
+
+/* Hide real text on hover, show unfollow label via data-attr */
+.btn-subscribe.subscribed:hover span {
+  visibility: hidden;
+}
+.btn-subscribe.subscribed:hover::after {
+  content: "Unfollow";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}

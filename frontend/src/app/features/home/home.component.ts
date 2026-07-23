@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, ElementRef, ViewChild, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LocaleService } from '../../core/locale/locale.service';
 import { Category, translateCategory } from '../categories/models/category.model';
@@ -10,13 +10,31 @@ import { FeedPostsService } from '../posts/services/feed-posts.service';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
-  selector: 'app-feed',
+  selector: 'app-home',
   standalone: true,
   imports: [CommonModule, RouterLink, PostCardComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
-export class HomeComponent {
+export class HomeComponent implements OnDestroy {
+  private observer?: IntersectionObserver;
+
+  @ViewChild('scrollTrigger') set scrollTrigger(el: ElementRef<HTMLElement> | undefined) {
+    if (el) {
+      if (!this.observer) {
+        this.observer = new IntersectionObserver(([entry]) => {
+          if (entry.isIntersecting && !this.loadingMore() && this.page() < this.totalPages()) {
+            this.loadMore();
+          }
+        }, { rootMargin: '400px' });
+      }
+      this.observer.observe(el.nativeElement);
+    }
+  }
+
+  ngOnDestroy() {
+    this.observer?.disconnect();
+  }
   private readonly postService = inject(FeedPostsService);
   private readonly categoryService = inject(CategoriesService);
   private readonly languageService = inject(LocaleService);

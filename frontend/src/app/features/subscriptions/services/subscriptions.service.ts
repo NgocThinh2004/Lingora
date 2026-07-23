@@ -32,7 +32,15 @@ export class SubscriptionsService {
       .pipe(map(response => response.data));
   }
 
-  unsubscribe(authorId: string): Observable<unknown> {
+  unsubscribe(authorId: string | number): Observable<unknown> {
     return this.http.delete(`${this.baseUrl}/${authorId}`);
+  }
+
+  subscribe(authorId: string | number): Observable<{ authorId: string; subscribed: boolean }> {
+    return this.http.post<ApiItemResponse<{ authorId: string; subscribed: boolean }>>(`${this.baseUrl}/${authorId}`, {}).pipe(map(res => res.data));
+  }
+
+  checkSubscription(authorId: string | number): Observable<{ subscribed: boolean }> {
+    return this.http.get<ApiItemResponse<{ subscribed: boolean }>>(`${this.baseUrl}/check/${authorId}`).pipe(map(res => res.data));
   }
 }
