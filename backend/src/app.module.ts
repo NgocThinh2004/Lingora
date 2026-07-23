@@ -6,6 +6,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { LanguagesModule } from './modules/languages/languages.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { PostsModule } from './modules/posts/posts.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { PostsModule } from './modules/posts/posts.module';
     LanguagesModule,
     CategoriesModule,
     PostsModule,
+    UploadsModule,
+    SubscriptionsModule,
   ],
   controllers: [],
   providers: [],

@@ -33,15 +33,28 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "/assets"
               }
             ],
             "styles": [
+              "src/assets/styles/variables.scss",
+              "src/assets/styles/base.scss",
+              "src/assets/styles/layouts.scss",
+              "src/assets/styles/components.scss",
+              "src/assets/styles/editor.scss",
               "src/styles.scss"
             ],
             "scripts": []
           },
           "configurations": {
             "production": {
+              "optimization": {
+                "fonts": false
+              },
               "budgets": [
                 {
                   "type": "initial",
@@ -51,7 +64,7 @@
                 {
                   "type": "anyComponentStyle",
                   "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumError": "64kB"
                 }
               ],
               "outputHashing": "all"
@@ -92,9 +105,19 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "/assets"
               }
             ],
             "styles": [
+              "src/assets/styles/variables.scss",
+              "src/assets/styles/base.scss",
+              "src/assets/styles/layouts.scss",
+              "src/assets/styles/components.scss",
+              "src/assets/styles/editor.scss",
               "src/styles.scss"
             ],
             "scripts": []

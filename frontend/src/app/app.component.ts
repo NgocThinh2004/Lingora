@@ -12,7 +12,7 @@ import { SearchModalComponent } from './shared/components/search-modal/search-mo
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  title = 'lingora-frontend';
+  title = 'Lingora';
 
   constructor(themeService: ThemeService) {
     // Instantiating the application-wide service restores the saved theme before routed views render.

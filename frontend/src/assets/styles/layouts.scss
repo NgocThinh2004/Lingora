@@ -1,0 +1,307 @@
+body {
+  background-color: var(--bg-body) !important;
+}
+
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ======================================================== */
+/* HEADER / MOBILE NAVBAR CONFIGURATIONS */
+/* ======================================================== */
+.app-header {
+  height: 60px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-body);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  display: flex;
+  align-items: center;
+  transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+}
+
+.header-container {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Desktop layout hides the top navbar since sidebar runs full height */
+@media (min-width: 992px) {
+  .app-header {
+    display: none !important;
+  }
+}
+
+/* ======================================================== */
+/* MAIN THREE-COLUMN GRID (SUBSTACK DESIGN) */
+/* ======================================================== */
+.app-main-content {
+  display: grid;
+  grid-template-columns: 260px 1fr 340px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  flex: 1;
+}
+
+/* Page layouts without right sidebar widgets (dashboard / editors) */
+.app-main-content.no-right-panel {
+  grid-template-columns: 260px 1fr;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Left Sidebar: Sticky, full screen height, logo on top, plus menu bottom */
+.left-sidebar {
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  padding: 1.5rem 1.25rem 1.5rem 0.5rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 1010;
+  transition: border-color var(--transition-speed) ease;
+}
+
+.left-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.left-sidebar::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.left-sidebar:hover::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+}
+
+/* Center Feed: Pure white, clean reading column */
+.center-feed {
+  background-color: var(--bg-body);
+  padding: 1.5rem 2.5rem;
+  overflow-y: auto;
+  border-right: 1px solid var(--border-color);
+  transition: border-color var(--transition-speed) ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Restrict readable content width within center feed */
+.center-feed > * {
+  width: 100%;
+  max-width: 720px;
+}
+
+/* Right Panel: Sticky, search box on top, recommendations middle */
+.right-panel {
+  background-color: var(--bg-body);
+  padding: 1.5rem 0.5rem 1.5rem 1.5rem;
+  position: sticky;
+  top: 1.5rem;
+  align-self: flex-start;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ======================================================== */
+/* SEARCH BOX IN RIGHT SIDEBAR (SUBSTACK STYLE) */
+/* ======================================================== */
+.right-search-box {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.right-search-box i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+.right-search-box input {
+  padding: 0.55rem 0.75rem 0.55rem 2.5rem !important;
+  background-color: #f7f7f8 !important;
+  border: 1px solid transparent !important;
+  border-radius: 99px !important;
+  font-size: 0.875rem !important;
+  height: 40px;
+  color: var(--text-main);
+  transition: all var(--transition-speed) ease;
+  width: 100%;
+}
+
+[data-bs-theme="dark"] .right-search-box input {
+  background-color: #1a1a1c !important;
+}
+
+.right-search-box input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: none !important;
+  background-color: var(--bg-body) !important;
+}
+
+/* ======================================================== */
+/* RESPONSIVE LAYOUTS */
+/* ======================================================== */
+@media (max-width: 1200px) {
+  .app-main-content {
+    grid-template-columns: 240px 1fr;
+    max-width: 960px;
+  }
+  .center-feed {
+    border-right: none;
+    padding: 2rem;
+  }
+  .right-panel {
+    display: none;
+  }
+}
+
+@media (max-width: 991px) {
+  .app-main-content {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+  .app-main-content.no-right-panel {
+    grid-template-columns: 1fr !important;
+  }
+  .center-feed {
+    border-left: none;
+    border-right: none;
+    padding: 1.5rem 1rem;
+  }
+  .left-sidebar {
+    display: none;
+  }
+  .right-panel {
+    display: none;
+  }
+}
+
+/* ======================================================== */
+/* SHARED SIDEBAR LAYOUT COMPONENTS */
+/* ======================================================== */
+.sidebar-create-btn {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--accent-contrast, #ffffff) !important;
+  border-radius: 99px !important;
+  padding: 0.65rem 1.5rem !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  width: 100%;
+  text-align: center;
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all var(--transition-speed) ease;
+}
+
+.sidebar-create-btn:hover {
+  background-color: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+}
+
+.sidebar-footer-menu {
+  margin-top: auto;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.footer-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* ======================================================== */
+/* AUTHENTICATION PAGES (LOGIN / REGISTER) */
+/* ======================================================== */
+.auth-body {
+  background-color: var(--bg-body);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 1.5rem;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.auth-card {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color) !important;
+  border-radius: 24px;
+  padding: 2.25rem 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-bs-theme="dark"] .auth-card {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.24) !important;
+}
+
+.auth-logo {
+  color: var(--text-main);
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+}
+
+.auth-logo i {
+  color: var(--primary-color) !important;
+}
+
+.auth-title {
+  letter-spacing: -0.03em;
+  font-size: 1.75rem;
+}
+
+.auth-subtitle {
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.quick-login-section {
+  border-color: var(--border-color) !important;
+}
+
+.quick-login-section .btn-outline-secondary {
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+  background-color: transparent;
+  transition: all var(--transition-speed) ease;
+}
+
+.quick-login-section .btn-outline-secondary:hover {
+  background-color: var(--border-color) !important;
+  border-color: var(--border-color) !important;
+}
+

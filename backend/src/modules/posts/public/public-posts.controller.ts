@@ -1,10 +1,19 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { PostsService } from '../posts.service';
 import { PublicPostsService } from './public-posts.service';
 import { PublicPostsQueryDto } from './dto/public-posts.dto';
 
 @Controller('posts')
 export class PublicPostsController {
-  constructor(private readonly postsService: PublicPostsService) {}
+  constructor(
+    private readonly postsService: PublicPostsService,
+    private readonly authorPostsService: PostsService,
+  ) {}
+
+  @Get('options')
+  async options() {
+    return { data: await this.authorPostsService.getPostOptions() };
+  }
 
   @Get()
   listFeed(@Query() query: PublicPostsQueryDto) {

@@ -1,0 +1,97 @@
+<div class="feature-page feature-page-explore">
+<div class="app-wrapper">
+    
+    <!-- MOBILE HEADER -->
+    <header class="app-header">
+      <div class="header-container">
+        <button class="btn btn-link d-lg-none me-2 text-reset p-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar">
+          <i class="bi bi-list fs-3"></i>
+        </button>
+        <a href="/home" class="d-flex align-items-center text-decoration-none">
+          <i class="bi bi-feather fs-4 text-primary me-2"></i>
+          <span class="fs-5 fw-bold text-main">Lingora</span>
+        </a>
+        <div class="d-flex align-items-center ms-auto gap-2">
+          <a href="/workspace/create" class="btn btn-primary btn-sm fw-medium px-2 px-sm-3 rounded-pill d-inline-flex align-items-center me-1"><i class="bi bi-plus-lg me-1"></i> <span data-i18n="create">Create</span></a>
+
+          <a href="/profile" class="text-decoration-none">
+            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=32&h=32" class="rounded-circle border" width="32" height="32" alt="Avatar">
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- 3-COLUMN LAYOUT -->
+    <main class="app-main-content">
+      
+      <!-- COLUMN 1: LEFT SIDEBAR NAVIGATION -->
+      <app-sidebar />
+
+      <!-- COLUMN 2: CENTER WORKSPACE FEED -->
+      <div class="center-feed" id="exploreCenterFeed">
+        
+        <!-- Sticky Search + Tabs Header -->
+        <div class="explore-sticky-header sticky-top">
+
+          <!-- Explore Search Bar with YouTube-style dropdown -->
+          <div class="explore-search-header position-relative" id="exploreSearchBox">
+            <div class="explore-search-input-box">
+              <i class="bi bi-search text-muted fs-5"></i>
+              <input type="text" id="explorePageSearchInput" class="explore-page-search-input" placeholder="Search Lingora..." data-i18n="search_placeholder" autocomplete="off" [value]="query" (input)="updateQuery($event)">
+              <button type="button" class="btn-clear-search" [class.d-none]="!query" id="exploreClearBtn" aria-label="Clear" (click)="query = ''"><i class="bi bi-x-lg fs-6"></i></button>
+            </div>
+            <!-- Suggestions Panel -->
+            <div id="exploreSuggestionsPanel" class="explore-suggestions-panel d-none"></div>
+          </div>
+
+          <!-- Substack Explore Tabs -->
+          <div class="explore-tabs-nav border-bottom">
+            <button class="explore-tab-btn" [class.active]="tab === 'top'" data-tab="top" data-i18n="top" (click)="tab = 'top'">Top</button>
+            <button class="explore-tab-btn" [class.active]="tab === 'posts'" data-tab="posts" data-i18n="posts" (click)="tab = 'posts'">Posts</button>
+            <button class="explore-tab-btn" [class.active]="tab === 'publications'" data-tab="publications" data-i18n="publications" (click)="tab = 'publications'">Publications</button>
+            <button class="explore-tab-btn" [class.active]="tab === 'people'" data-tab="people" data-i18n="people" (click)="tab = 'people'">People</button>
+          </div>
+
+        </div><!-- /explore-sticky-header -->
+
+        <!-- Search Query Header / Results Count -->
+        <div id="exploreQueryHeader" class="mb-3 text-muted small mt-4" [class.d-none]="!query">
+          <span data-i18n="showing_results_for">Showing results for </span><strong id="exploreQueryText" class="text-main">"{{ query }}"</strong><span> &bull; </span><span id="exploreCountText">{{ visibleResults.length }} results</span>
+        </div>
+
+        <!-- Results Feed Container -->
+        <div id="exploreResultsContainer" class="explore-results-list pb-5 mt-4">
+          @for (result of visibleResults; track result.title) {
+            <a class="search-result-item text-decoration-none" [href]="result.href">
+              <span class="d-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary flex-shrink-0" style="width:48px;height:48px"><i class="bi" [class]="result.icon"></i></span>
+              <span class="search-result-content">
+                <strong class="search-result-title d-block">{{ result.title }}</strong>
+                <span class="search-result-meta">{{ result.subtitle }}</span>
+              </span>
+            </a>
+          } @empty {
+            <div class="text-center py-5 text-muted"><i class="bi bi-search fs-2 d-block mb-2"></i>No matching results found.</div>
+          }
+        </div>
+
+      </div>
+
+      <!-- COLUMN 3: RIGHT PANEL (Widgets & Recommendations) -->
+      <aside class="right-panel"></aside>
+
+    </main>
+  </div>
+
+  <!-- MOBILE SIDEBAR / OFFCANVAS -->
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel"></div>
+
+  <!-- Scripts -->
+  
+  
+  
+  
+  <!-- Sticky header detection: add shadow when stuck -->
+  
+
+  <!-- Explore Page Specific Logic -->
+</div>

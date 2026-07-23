@@ -1,7 +1,7 @@
 <article class="post-card">
   <header class="post-header">
     <a [routerLink]="['/profile', post.author.id]" class="author-group">
-      <img [src]="post.author.avatarUrl || 'assets/images/default-avatar.png'" [alt]="post.author.name" class="author-avatar" />
+      <img [src]="post.author.avatarUrl || 'assets/images/default-avatar.svg'" [alt]="post.author.name" class="author-avatar" />
       <div class="author-meta">
         <span class="author-name">{{ post.author.name }}</span>
         <span class="post-time">{{ post.createdAt | date: 'mediumDate' }}</span>

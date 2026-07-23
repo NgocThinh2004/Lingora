@@ -62,6 +62,26 @@ export class AuthService {
     ).pipe(tap(() => this.clearSession()));
   }
 
+  getMe(): Observable<CurrentUser> {
+    return this.http.get<ApiResponse<CurrentUser>>(`${this.apiUrl}/me`).pipe(
+      map(response => response.data),
+      tap(user => this.storeCurrentUser(user)),
+    );
+  }
+
+  updateProfile(payload: { displayName: string; username: string; bio: string }): Observable<CurrentUser> {
+    return this.http.patch<ApiResponse<CurrentUser>>(`${this.apiUrl}/me`, payload).pipe(
+      map(response => response.data),
+      tap(user => this.storeCurrentUser(user)),
+    );
+  }
+
+  changePassword(payload: { currentPassword: string; newPassword: string }): Observable<{ message: string }> {
+    return this.http
+      .post<ApiResponse<{ message: string }>>(`${this.apiUrl}/change-password`, payload)
+      .pipe(map(response => response.data));
+  }
+
   refreshSession(): Observable<AuthSession> {
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
@@ -118,9 +138,13 @@ export class AuthService {
       localStorage.setItem(this.refreshTokenKey, authResult.refreshToken);
     }
     if (authResult.user) {
-      localStorage.setItem(this.userInfoKey, JSON.stringify(authResult.user));
-      this.currentUserSignal.set(authResult.user);
+      this.storeCurrentUser(authResult.user);
     }
+  }
+
+  private storeCurrentUser(user: CurrentUser): void {
+    localStorage.setItem(this.userInfoKey, JSON.stringify(user));
+    this.currentUserSignal.set(user);
   }
 
   private clearSession(): void {

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/sequelize';
@@ -9,7 +9,7 @@ import { Sequelize } from 'sequelize-typescript';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/models/user.model';
 import { RefreshToken } from './models/refresh-token.model';
-import { ChangePasswordDto, RegisterDto, LoginDto, ResetPasswordDto } from './dto/auth.dto';
+import { ChangePasswordDto, RegisterDto, LoginDto, ResetPasswordDto, UpdateProfileDto } from './dto/auth.dto';
 import { MailService } from '../mail/mail.service';
 
 export interface SessionMetadata {
@@ -88,8 +88,38 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
-    const { password, ...result } = user.toJSON();
-    return result;
+    const role = await this.usersService.getRoleById(user.role_id);
+    return this.toCurrentUser(user, role?.name);
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    return this.sequelize.transaction(async transaction => {
+      const user = await this.usersService.findByIdForUpdate(userId, transaction);
+      if (!user || user.status !== 'active') {
+        throw new UnauthorizedException('Account is not active');
+      }
+
+      const username = dto.username?.trim();
+      if (username && username !== user.username) {
+        const existingUser = await this.usersService.findByUsername(username, transaction);
+        if (existingUser && existingUser.id !== user.id) {
+          throw new ConflictException('Username is already in use');
+        }
+      }
+
+      await user.update(
+        {
+          username: username ?? user.username,
+          display_name: dto.displayName === undefined ? user.display_name : dto.displayName.trim(),
+          bio: dto.bio === undefined ? user.bio : dto.bio.trim() || null,
+          updated_at: new Date(),
+        },
+        { transaction },
+      );
+
+      const role = await this.usersService.getRoleById(user.role_id, transaction);
+      return this.toCurrentUser(user, role?.name);
+    });
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
@@ -368,7 +398,20 @@ export class AuthService {
         displayName: user.display_name,
         avatarUrl: user.avatar,
         role: role?.name,
+        bio: user.bio,
       }
+    };
+  }
+
+  private toCurrentUser(user: User, role?: string) {
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      displayName: user.display_name,
+      avatarUrl: user.avatar,
+      bio: user.bio,
+      role,
     };
   }
 

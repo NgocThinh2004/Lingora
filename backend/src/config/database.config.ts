@@ -1,18 +1,19 @@
+import { ConfigService } from '@nestjs/config';
 import { SequelizeModuleOptions } from '@nestjs/sequelize';
 import { databaseModels } from '../database/models';
 
-export function databaseConfig(): SequelizeModuleOptions {
+export function databaseConfig(configService: ConfigService): SequelizeModuleOptions {
   return {
     dialect: 'mysql',
-    host: process.env.DB_HOST ?? '127.0.0.1',
-    port: Number(process.env.DB_PORT ?? 3306),
-    username: process.env.DB_USER ?? 'lingora_app',
-    password: process.env.DB_PASSWORD ?? '',
-    database: process.env.DB_NAME ?? 'lingora_dev',
+    host: configService.get<string>('DB_HOST', '127.0.0.1'),
+    port: configService.get<number>('DB_PORT', 3306),
+    username: configService.get<string>('DB_USER', 'lingora_app'),
+    password: configService.get<string>('DB_PASSWORD', ''),
+    database: configService.get<string>('DB_NAME', 'lingora_dev'),
     models: databaseModels,
     autoLoadModels: false,
     synchronize: false,
-    logging: process.env.DB_LOGGING === 'true' ? console.log : false,
+    logging: configService.get<string>('DB_LOGGING') === 'true' ? console.log : false,
     define: {
       underscored: true,
       freezeTableName: true,
