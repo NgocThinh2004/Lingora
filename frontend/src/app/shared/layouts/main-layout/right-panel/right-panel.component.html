@@ -1,13 +1,13 @@
 <aside class="right-panel">
   @if (!isExplorePage) {
-    <div class="right-search-box mb-4" (click)="searchModalService.open()">
+    <div class="right-search-box mb-4" (click)="openSearch($event)">
       <i class="bi bi-search"></i>
       <input
         type="search"
         readonly
         placeholder="Tìm kiếm trên Lingora..."
         aria-label="Tìm kiếm trên Lingora"
-        (focus)="searchModalService.open()">
+        (focus)="openSearch($event)">
     </div>
   }
 

@@ -5,11 +5,11 @@ import { Injectable, signal } from '@angular/core';
 export class SearchModalService {
   readonly isOpen = signal(false);
 
-  open() {
+  open() { console.log('SearchModalService.open() CALLED!');
     this.isOpen.set(true);
   }
 
-  close() {
+  close() { console.log('SearchModalService.close() CALLED!');
     this.isOpen.set(false);
   }
 }

@@ -36,4 +36,10 @@ export class RightPanelComponent implements OnInit {
   get isExplorePage(): boolean {
     return this.router.url.startsWith('/explore');
   }
+
+  openSearch(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.searchModalService.open();
+  }
 }
