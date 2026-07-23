@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, AfterViewInit, ElementRef, ViewChild, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged, Subject, Subscription, forkJoin, map } from 'rxjs';
 import { PostsService } from '../posts/services/posts.service';
@@ -19,7 +19,9 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './explore.component.html',
   styleUrl: './explore.component.scss'
 })
-export class ExploreComponent implements OnInit, OnDestroy {
+export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('stickyHeader') stickyHeaderRef!: ElementRef<HTMLElement>;
+  private observer?: IntersectionObserver;
   private readonly ui = inject(UiPreferencesService);
   private readonly postsService = inject(PostsService);
   private readonly userService = inject(UserService);
@@ -43,6 +45,22 @@ export class ExploreComponent implements OnInit, OnDestroy {
   private readonly searchSubject = new Subject<string>();
   private searchSubscription?: Subscription;
 
+  ngAfterViewInit() {
+    if (this.stickyHeaderRef) {
+      const sentinel = document.createElement('div');
+      this.stickyHeaderRef.nativeElement.parentElement?.insertBefore(
+        sentinel, this.stickyHeaderRef.nativeElement
+      );
+      this.observer = new IntersectionObserver(
+        ([entry]) => {
+          this.stickyHeaderRef.nativeElement.classList.toggle('is-stuck', !entry.isIntersecting);
+        },
+        { threshold: 1 }
+      );
+      this.observer.observe(sentinel);
+    }
+  }
+
   ngOnInit(): void {
     this.ui.mount('Lingora - Explore');
     this.searchSubscription = this.searchSubject.pipe(
@@ -56,6 +74,7 @@ export class ExploreComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.observer?.disconnect();
     this.ui.unmount();
     this.searchSubscription?.unsubscribe();
   }
@@ -142,3 +161,4 @@ export class ExploreComponent implements OnInit, OnDestroy {
     this.loading = false;
   }
 }
+
