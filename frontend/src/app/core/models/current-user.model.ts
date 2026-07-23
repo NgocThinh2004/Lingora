@@ -9,9 +9,3 @@ export interface CurrentUser {
   bio?: string | null;
   role?: UserRole;
 }
-
-export interface AuthSession {
-  accessToken: string;
-  refreshToken?: string;
-  user: CurrentUser;
-}

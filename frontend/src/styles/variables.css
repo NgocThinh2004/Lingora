@@ -11,10 +11,16 @@
   --bg-body: #ffffff;
   --bg-sidebar: #ffffff;
   --bg-panel: #ffffff;
+  --bg-secondary: #f7f7f8;
   --text-main: #1a1a1a;
   --text-muted: #757575;
   --border-color: #f0f0f0;
   --border-light: #f5f5f5;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 9999px;
 
   --primary-color: #FF6719;
   /* Signature Substack Orange */
@@ -32,6 +38,7 @@
   --bg-body: #111111;
   --bg-sidebar: #111111;
   --bg-panel: #181818;
+  --bg-secondary: #1a1a1c;
   --text-main: #f5f5f5;
   --text-muted: #888888;
   --border-color: #2a2a2a;

@@ -1,3 +1,6 @@
+import { Category } from './category.model';
+import { User } from './user.model';
+
 export type PostStatus =
   | 'draft'
   | 'pending_review'
@@ -101,4 +104,51 @@ export interface PostListParams {
 export interface PostOptions {
   languages: Array<{ id: number; code: string; label: string; nativeLabel: string }>;
   categories: Array<{ id: number; label: string }>;
+}
+
+export interface FeedPostTranslation {
+  id: number;
+  languageCode: string;
+  title: string;
+  contentHtml: string;
+  source: 'original' | 'human' | 'machine';
+}
+
+export interface Post {
+  id: number;
+  authorId: number;
+  categoryId: number | null;
+  originalLanguage: string;
+  coverImageUrl?: string | null;
+  coverVideoUrl?: string | null;
+  imageUrl?: string | null;
+  videoUrl?: string | null;
+  status: 'draft' | 'published';
+  viewCount: number;
+  likeCount?: number;
+  commentCount?: number;
+  liked?: boolean;
+  author: User;
+  category?: Category | null;
+  translations: FeedPostTranslation[];
+  createdAt: string;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+/** Select the requested display translation, then fall back to the original language. */
+export function getPostTranslation(post: Post, lang: string): FeedPostTranslation | undefined {
+  return (
+    post.translations?.find(translation => translation.languageCode === lang)
+    ?? post.translations?.find(translation => translation.languageCode === post.originalLanguage)
+    ?? post.translations?.[0]
+  );
 }

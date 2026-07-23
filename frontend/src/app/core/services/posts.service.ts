@@ -9,6 +9,7 @@ import {
   CreatePostPayload,
   PostListParams,
   PostOptions,
+  Post,
   PublicPost,
   UpdatePostPayload,
 } from '../models/post.model';
@@ -25,15 +26,28 @@ export class PostsService {
   }
 
   listPublicPosts(params: Pick<PostListParams, 'search' | 'page' | 'limit'> = {}): Observable<ApiCollectionResponse<PublicPost>> {
-    return this.http.get<ApiCollectionResponse<PublicPost>>(`${this.baseUrl}/posts`, {
-      params: this.toHttpParams(params),
-    });
+    return this.http
+      .get<ApiCollectionResponse<PublicPost> | ApiItemResponse<{ items: Post[]; meta: ApiCollectionResponse<PublicPost>['meta'] }>>(
+        `${this.baseUrl}/posts`,
+        { params: this.toHttpParams(params) },
+      )
+      .pipe(map((response): ApiCollectionResponse<PublicPost> => {
+        if (Array.isArray(response.data)) {
+          return response as ApiCollectionResponse<PublicPost>;
+        }
+        return {
+          data: response.data.items.map(post => this.toLegacyPublicPost(post)),
+          meta: response.data.meta,
+        };
+      }));
   }
 
   getPublicPost(postId: string | number): Observable<PublicPost> {
     return this.http
-      .get<ApiItemResponse<PublicPost>>(`${this.baseUrl}/posts/${postId}`)
-      .pipe(map(response => response.data));
+      .get<ApiItemResponse<PublicPost | Post>>(`${this.baseUrl}/posts/${postId}`)
+      .pipe(map(response => this.isLegacyPublicPost(response.data)
+        ? response.data
+        : this.toLegacyPublicPost(response.data)));
   }
 
   getPostOptions(): Observable<PostOptions> {
@@ -90,6 +104,58 @@ export class PostsService {
     return this.http
       .post<ApiItemResponse<AuthorPost>>(`${this.baseUrl}/author/posts/${postId}/${action}`, null)
       .pipe(map((response) => response.data));
+  }
+
+  private isLegacyPublicPost(post: PublicPost | Post): post is PublicPost {
+    return 'originalLanguageId' in post;
+  }
+
+  private toLegacyPublicPost(post: Post): PublicPost {
+    const originalIndex = Math.max(
+      0,
+      post.translations.findIndex(translation => translation.languageCode === post.originalLanguage),
+    );
+    const createdAt = post.createdAt;
+
+    return {
+      id: String(post.id),
+      authorId: String(post.authorId),
+      categoryId: post.categoryId,
+      originalLanguageId: originalIndex + 1,
+      status: post.status,
+      reviewNote: null,
+      viewCount: post.viewCount,
+      publishedAt: createdAt,
+      createdAt,
+      updatedAt: createdAt,
+      deletedAt: null,
+      translations: post.translations.map((translation, index) => ({
+        id: String(translation.id),
+        languageId: index + 1,
+        title: translation.title,
+        slug: null,
+        summary: null,
+        content: translation.contentHtml,
+        translationStatus: 'completed',
+        translationProvider: null,
+        createdAt,
+        updatedAt: createdAt,
+      })),
+      translationMatrix: post.translations.map((_, index) => ({
+        languageId: index + 1,
+        status: 'completed',
+        provider: null,
+      })),
+      author: {
+        id: String(post.author.id),
+        username: post.author.handle,
+        displayName: post.author.name,
+        avatarUrl: post.author.avatarUrl || null,
+        bio: post.author.bio || null,
+      },
+      likeCount: post.likeCount || 0,
+      commentCount: post.commentCount || 0,
+    };
   }
 
   private toHttpParams(params: PostListParams): HttpParams {

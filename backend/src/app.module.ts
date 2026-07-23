@@ -4,6 +4,7 @@ import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { LanguagesModule } from './modules/languages/languages.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
@@ -17,6 +18,7 @@ import { SubscriptionsModule } from './modules/subscriptions/subscriptions.modul
     UsersModule,
     AuthModule,
     LanguagesModule,
+    CategoriesModule,
     PostsModule,
     UploadsModule,
     SubscriptionsModule,

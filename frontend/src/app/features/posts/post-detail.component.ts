@@ -29,7 +29,8 @@ export class PostDetailComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.ui.mount('Lingora - Post Details');
-    const postId = this.route.snapshot.queryParamMap.get('id');
+    const postId = this.route.snapshot.paramMap.get('id')
+      || this.route.snapshot.queryParamMap.get('id');
     if (!postId) {
       this.error = 'Post id is missing.';
       this.loading = false;

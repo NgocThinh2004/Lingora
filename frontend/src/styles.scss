@@ -14,6 +14,34 @@ app-login, app-register, app-forgot-password, app-reset-password {
   width: 100%;
 }
 
+/* Post moderation preview is injected HTML, so these rules intentionally live
+   outside component encapsulation. Dark status colors mirror the static admin prototype. */
+app-admin-posts .review-content > :first-child { margin-top: 0; }
+app-admin-posts .review-content > :last-child { margin-bottom: 0; }
+app-admin-posts .review-content p { margin: 0 0 .85rem; }
+app-admin-posts .review-content h2 { margin: 1.15rem 0 .55rem; color: var(--text-main); font-size: 1.05rem; font-weight: 700; line-height: 1.35; }
+app-admin-posts .review-content blockquote { margin: .9rem 0; padding: .75rem .9rem; border-left: 3px solid var(--primary-color); border-radius: 0 8px 8px 0; color: var(--text-muted); background: var(--border-light); }
+app-admin-posts .review-content ol,
+app-admin-posts .review-content ul { margin: 0 0 .9rem; padding-left: 1.25rem; }
+app-admin-posts .review-content li + li { margin-top: .4rem; }
+app-admin-posts .review-content figure { margin: .9rem 0; }
+app-admin-posts .review-content img,
+app-admin-posts .review-content video { display: block; width: 100%; height: auto; max-height: 320px; object-fit: cover; border: 1px solid var(--border-color); border-radius: 10px; background: var(--border-light); }
+app-admin-posts .review-content figcaption { margin-top: .45rem; color: var(--text-muted); font-size: .72rem; line-height: 1.45; text-align: center; }
+app-admin-posts .translation-jobs { max-height: 230px; overflow-y: auto; padding-right: .2rem; }
+@media (max-width: 767.98px) {
+  app-admin-posts .translation-jobs { max-height: 180px; }
+}
+[data-bs-theme="dark"] app-admin-posts .status-pending { color: #fec84b; background: #3b2c0b; }
+[data-bs-theme="dark"] app-admin-posts .status-approved { color: #75e0a7; background: #123525; }
+[data-bs-theme="dark"] app-admin-posts .status-rejected { color: #fda29b; background: #3b1717; }
+[data-bs-theme="dark"] app-admin-posts .translation-job.translation-completed { background: #123525; }
+[data-bs-theme="dark"] app-admin-posts .translation-job.translation-failed { background: #3b1717; }
+[data-bs-theme="dark"] app-admin-posts .translation-job.translation-not_started { background: #252525; }
+[data-bs-theme="dark"] app-admin-posts .translation-job.translation-queued,
+[data-bs-theme="dark"] app-admin-posts .translation-job.translation-processing { background: #102a43; }
+[data-bs-theme="dark"] app-admin-posts .category-state-hidden { color: #ffd56a; border-color: #7a5b13; background: rgb(181 113 0 / 18%); }
+
 /* Angular renders validation messages conditionally, so invalid input-group borders
    are styled here instead of relying on the prototype's JS-controlled error class. */
 .auth-shell .input-group:has(.form-control.is-invalid) .input-group-text,

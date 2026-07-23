@@ -11,6 +11,7 @@ export class ThemeService {
   private readonly preferenceSignal = signal<ThemePreference>('system');
 
   readonly preference = this.preferenceSignal.asReadonly();
+  readonly mode = this.preferenceSignal.asReadonly();
 
   constructor(
     @Inject(DOCUMENT) private readonly document: Document,
