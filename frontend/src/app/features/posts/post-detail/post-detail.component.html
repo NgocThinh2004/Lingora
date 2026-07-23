@@ -49,7 +49,7 @@
 
       <div class="substack-post-content post-content mt-4 text-main" style="line-height: 1.8;">
         <!-- Binding the translated HTML securely -->
-        <div [innerHTML]="displayedTranslation()?.contentHtml"></div>
+        <div class="article-content" [innerHTML]="displayedTranslation()?.contentHtml"></div>
       </div>
 
       @if (p.imageUrl) {
