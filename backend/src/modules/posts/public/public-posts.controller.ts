@@ -11,6 +11,11 @@ export class PublicPostsController {
     return this.postsService.listFeed(query);
   }
 
+  @Get(':id/related')
+  getRelated(@Param('id', ParseIntPipe) id: number) {
+    return this.postsService.getRelated(id);
+  }
+
   @Get(':id')
   getById(@Param('id', ParseIntPipe) id: number) {
     return this.postsService.getById(id);

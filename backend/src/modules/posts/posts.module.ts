@@ -12,11 +12,13 @@ import { PublicPostsController } from './public/public-posts.controller';
 import { PublicPostsService } from './public/public-posts.service';
 import { PostTranslation } from './models/post-translation.model';
 import { Post } from './models/post.model';
+import { Comment } from '../comments/models/comment.model';
+import { PostLike } from '../likes/models/post-like.model';
 
 @Module({
   imports: [
     UsersModule,
-    SequelizeModule.forFeature([Post, PostTranslation, User, Category, CategoryTranslation, Language]),
+    SequelizeModule.forFeature([Post, PostTranslation, User, Category, CategoryTranslation, Language, Comment, PostLike]),
   ],
   controllers: [AdminPostsController, PublicPostsController],
   providers: [AdminPostsService, PublicPostsService, RolesGuard],

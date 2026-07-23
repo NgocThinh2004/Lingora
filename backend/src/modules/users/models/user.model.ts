@@ -1,4 +1,6 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, Model, Table, HasMany } from 'sequelize-typescript';
+import { Comment } from '../../comments/models/comment.model';
+import { CommentLike } from '../../comments/models/comment-like.model';
 
 export type UserStatus = 'active' | 'inactive' | 'banned';
 
@@ -60,4 +62,10 @@ export class User extends Model {
 
   @Column(DataType.DATE)
   declare deleted_at: Date | null;
+
+  @HasMany(() => Comment, 'user_id')
+  declare comments: Comment[];
+
+  @HasMany(() => CommentLike, 'user_id')
+  declare comment_likes: CommentLike[];
 }
