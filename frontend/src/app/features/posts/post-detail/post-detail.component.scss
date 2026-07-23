@@ -42,6 +42,36 @@
   background: #181818;
 }
 
+:host ::ng-deep .article-content figure {
+  margin: 2rem 0;
+}
+
+:host ::ng-deep .article-content img,
+:host ::ng-deep .article-content video {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 640px;
+  border: 1px solid var(--border-color, #e5e8e6);
+  border-radius: 14px;
+  object-fit: cover;
+  background: #000;
+}
+
+:host ::ng-deep .article-content video {
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+}
+
+:host ::ng-deep .article-content figcaption {
+  margin-top: 0.65rem;
+  color: var(--text-muted, #6c757d);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
 .code-line {
   display: flex;
   align-items: baseline;
