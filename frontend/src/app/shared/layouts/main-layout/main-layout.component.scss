@@ -93,6 +93,14 @@
   padding-top: 1rem;
 }
 
+:host ::ng-deep .mobile-sidebar-panel .left-sidebar {
+  position: static;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  border-right: 0;
+}
+
 .close-btn {
   position: absolute;
   top: 1rem;
