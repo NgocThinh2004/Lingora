@@ -2,7 +2,7 @@
   <app-mobile-header (menuClick)="openMobileSidebar()"></app-mobile-header>
 
   <main class="app-main-content" [class.no-right-panel]="!showRightPanel()">
-    <app-sidebar class="desktop-only"></app-sidebar>
+    <app-sidebar class="left-sidebar desktop-only"></app-sidebar>
 
     <div class="center-feed">
       <router-outlet></router-outlet>

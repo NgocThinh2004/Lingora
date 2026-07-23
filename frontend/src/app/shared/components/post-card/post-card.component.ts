@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Post, getPostTranslation } from '../../../core/models/post.model';
-import { translateCategory } from '../../../core/models/category.model';
+import { Post, getPostTranslation } from '../../../features/posts/models/post.model';
+import { translateCategory } from '../../../features/categories/models/category.model';
 import { LanguageService } from '../../../core/services/language.service';
-import { LikeService } from '../../../core/services/like.service';
+import { LikeService } from '../../../features/posts/services/like.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -34,7 +34,7 @@ export class PostCardComponent {
   }
 
   get isVideo() {
-    const url = this.post.coverVideoUrl || this.post.coverImageUrl || '';
+    const url = this.post.videoUrl || this.post.imageUrl || '';
     return /\.mp4(\?|$)/i.test(url) || url.includes('/video/upload/');
   }
 
@@ -47,7 +47,7 @@ export class PostCardComponent {
       return;
     }
 
-    this.likeService.toggle(this.post.id).subscribe((status) => {
+    this.likeService.togglePostLike(this.post.id).subscribe((status) => {
       this.post = { ...this.post, liked: status.liked, likeCount: status.likeCount };
     });
   }

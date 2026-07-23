@@ -56,7 +56,7 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
           avatar: author.avatarUrl || '/assets/images/lingora-mark.svg',
         }));
         this.posts = data.posts.map(post => {
-          const source = post.translations.find(item => item.languageId === post.originalLanguageId) ?? post.translations[0];
+          const source = post.translations.find((item: any) => item.languageId === post.originalLanguageId) ?? post.translations[0];
           return {
             id: post.id,
             authorId: post.author.id,

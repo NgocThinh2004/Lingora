@@ -5,14 +5,14 @@ import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError
 import { ApiResponse } from '../models/api-response.model';
 import {
   AuthMessage,
-  AuthSession,
   ForgotPasswordRequest,
   LoginRequest,
   RefreshTokenRequest,
   RegisterRequest,
   ResetPasswordRequest,
+  AuthSession,
 } from '../models/auth.model';
-import { CurrentUser } from '../models/current-user.model';
+import { CurrentUser } from '../../features/users/models/current-user.model';
 
 @Injectable({
   providedIn: 'root'

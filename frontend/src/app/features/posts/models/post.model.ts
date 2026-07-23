@@ -1,5 +1,5 @@
-import { Category } from './category.model';
-import { User } from './user.model';
+import { User } from '../../users/models/user.model';
+import { Category } from '../../categories/models/category.model';
 
 export type PostStatus =
   | 'draft'
@@ -123,7 +123,7 @@ export interface Post {
   coverVideoUrl?: string | null;
   imageUrl?: string | null;
   videoUrl?: string | null;
-  status: 'draft' | 'published';
+  status: PostStatus;
   viewCount: number;
   likeCount?: number;
   commentCount?: number;

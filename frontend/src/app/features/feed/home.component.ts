@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { PublicPost } from '../../core/models/post.model';
-import { PostsService } from '../../core/services/posts.service';
+import { PostsService } from '../posts/services/posts.service';
 import { UiPreferencesService } from '../../core/services/ui-preferences.service';
 import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
 

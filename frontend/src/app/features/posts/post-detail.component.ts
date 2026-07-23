@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { PostsService } from '../../core/services/posts.service';
+import { PostsService } from './services/posts.service';
 import { UiPreferencesService } from '../../core/services/ui-preferences.service';
 import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
 

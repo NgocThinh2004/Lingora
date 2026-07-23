@@ -7,8 +7,12 @@ import { PostTranslation } from '../modules/posts/models/post-translation.model'
 import { Post } from '../modules/posts/models/post.model';
 import { Role } from '../modules/users/models/role.model';
 import { User } from '../modules/users/models/user.model';
+import { Comment } from '../modules/comments/models/comment.model';
+import { CommentLike } from '../modules/likes/models/comment-like.model';
+import { CommentTranslation } from '../modules/comments/models/comment-translation.model';
+import { PostLike } from '../modules/likes/models/post-like.model';
 
-export { RefreshToken, Category, CategoryTranslation, Language, Post, PostTranslation, Role, User };
+export { RefreshToken, Category, CategoryTranslation, Language, Post, PostTranslation, Role, User, Comment, CommentLike, CommentTranslation, PostLike };
 
 const table = (tableName: string): ClassDecorator =>
   Table({ tableName, timestamps: false, underscored: true, freezeTableName: true }) as ClassDecorator;
@@ -28,37 +32,6 @@ export class TranslationAttempt extends Model {
   @Column(DataType.DATE) declare finished_at: Date | null;
 }
 
-@table('comments')
-export class Comment extends Model {
-  @Column({ type: DataType.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true }) declare id: string;
-  @Column({ type: DataType.BIGINT.UNSIGNED, allowNull: false }) declare post_id: string;
-  @Column({ type: DataType.BIGINT.UNSIGNED, allowNull: false }) declare user_id: string;
-  @Column(DataType.BIGINT.UNSIGNED) declare parent_id: string | null;
-  @Column(DataType.BIGINT.UNSIGNED) declare reply_to_comment_id: string | null;
-  @Column(DataType.BIGINT.UNSIGNED) declare reply_to_user_id: string | null;
-  @Column(DataType.STRING(150)) declare reply_to_username: string | null;
-  @Column({ type: DataType.TEXT, allowNull: false }) declare content: string;
-  @Column({ type: DataType.ENUM('pending', 'approved', 'rejected', 'hidden'), allowNull: false, defaultValue: 'approved' })
-  declare status: 'pending' | 'approved' | 'rejected' | 'hidden';
-  @Column({ type: DataType.DATE, allowNull: false }) declare created_at: Date;
-  @Column({ type: DataType.DATE, allowNull: false }) declare updated_at: Date;
-}
-
-@table('post_likes')
-export class PostLike extends Model {
-  @Column({ type: DataType.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true }) declare id: string;
-  @Column({ type: DataType.BIGINT.UNSIGNED, allowNull: false }) declare post_id: string;
-  @Column({ type: DataType.BIGINT.UNSIGNED, allowNull: false }) declare user_id: string;
-  @Column({ type: DataType.DATE, allowNull: false }) declare created_at: Date;
-}
-
-@table('comment_likes')
-export class CommentLike extends Model {
-  @Column({ type: DataType.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true }) declare id: string;
-  @Column({ type: DataType.BIGINT.UNSIGNED, allowNull: false }) declare comment_id: string;
-  @Column({ type: DataType.BIGINT.UNSIGNED, allowNull: false }) declare user_id: string;
-  @Column({ type: DataType.DATE, allowNull: false }) declare created_at: Date;
-}
 
 @table('subscriptions')
 export class Subscription extends Model {
@@ -79,6 +52,7 @@ export const databaseModels = [
   PostTranslation,
   TranslationAttempt,
   Comment,
+  CommentTranslation,
   PostLike,
   CommentLike,
   Subscription,

@@ -7,6 +7,8 @@ import { User } from '../../users/models/user.model';
 import { Category } from '../../categories/models/category.model';
 import { CategoryTranslation } from '../../categories/models/category-translation.model';
 import { Language } from '../../languages/models/language.model';
+import { Comment } from '../../comments/models/comment.model';
+import { PostLike } from '../../likes/models/post-like.model';
 import { PublicPostsQueryDto } from './dto/public-posts.dto';
 
 @Injectable()
@@ -20,6 +22,8 @@ export class PublicPostsService {
     @InjectModel(CategoryTranslation)
     private readonly categoryTranslationModel: typeof CategoryTranslation,
     @InjectModel(Language) private readonly languageModel: typeof Language,
+    @InjectModel(Comment) private readonly commentModel: typeof Comment,
+    @InjectModel(PostLike) private readonly postLikeModel: typeof PostLike,
   ) {}
 
   async listFeed(query: PublicPostsQueryDto) {
@@ -75,6 +79,11 @@ export class PublicPostsService {
       where.id = { [Op.in]: matchingPostIds.length ? matchingPostIds : [0] };
     }
 
+    // Filter by single post ID if passed internally
+    if ((query as any).id) {
+      where.id = (query as any).id;
+    }
+
     const { rows: posts, count: total } = await this.postModel.findAndCountAll({
       where,
       order: [
@@ -96,7 +105,7 @@ export class PublicPostsService {
     const authorIds = [...new Set(posts.map((p) => Number(p.author_id)))];
     const categoryIds = [...new Set(posts.map((p) => p.category_id).filter(Boolean))] as number[];
 
-    const [translations, authors, categories, categoryTranslations] = await Promise.all([
+    const [translations, authors, categories, categoryTranslations, commentsCountRaw, likesCountRaw] = await Promise.all([
       this.postTranslationModel.findAll({
         where: { post_id: postIds },
       }),
@@ -105,7 +114,23 @@ export class PublicPostsService {
       categoryIds.length
         ? this.categoryTranslationModel.findAll({ where: { category_id: categoryIds } })
         : [],
+      this.commentModel.findAll({
+        attributes: ['post_id', [this.postModel.sequelize!.fn('COUNT', this.postModel.sequelize!.col('id')), 'count']],
+        where: { post_id: postIds },
+        group: ['post_id']
+      }),
+      this.postLikeModel.findAll({
+        attributes: ['post_id', [this.postModel.sequelize!.fn('COUNT', this.postModel.sequelize!.col('id')), 'count']],
+        where: { post_id: postIds },
+        group: ['post_id']
+      }),
     ]);
+
+    const commentCounts = new Map<any, number>();
+    commentsCountRaw.forEach((c: any) => commentCounts.set(c.post_id, Number(c.getDataValue('count'))));
+
+    const likeCounts = new Map<any, number>();
+    likesCountRaw.forEach((l: any) => likeCounts.set(l.post_id, Number(l.getDataValue('count'))));
 
     const authorMap = new Map<any, User>();
     authors.forEach((u) => {
@@ -151,6 +176,9 @@ export class PublicPostsService {
         videoUrl: post.video_url || null,
         status: post.status,
         viewCount: post.view_count || 0,
+        commentCount: commentCounts.get(post.id) || commentCounts.get(Number(post.id)) || commentCounts.get(String(post.id)) || 0,
+        likeCount: likeCounts.get(post.id) || likeCounts.get(Number(post.id)) || likeCounts.get(String(post.id)) || 0,
+        liked: false, // TODO: Implement if user is authenticated
         author: {
           id: Number(postAuthor?.id || post.author_id),
           name: postAuthor?.display_name || postAuthor?.username || 'Tác giả',
@@ -205,9 +233,35 @@ export class PublicPostsService {
 
     post.increment('view_count', { by: 1 }).catch(() => null);
 
-    const result = await this.listFeed({ page: 1, limit: 1 });
+    const result = await this.listFeed({ page: 1, limit: 1, id } as any);
     const found = result.items.find((p) => p.id === Number(id));
     if (!found) throw new NotFoundException('Post details not found');
     return found;
+  }
+
+  async getRelated(id: number) {
+    const post = await this.postModel.findOne({
+      where: { id, deleted_at: null },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const limit = 4; // Fetch 4 to safely exclude the current one and return up to 3
+    let result = await this.listFeed({
+      category: post.category_id ? post.category_id.toString() : undefined,
+      limit,
+    } as any);
+
+    let related = result.items.filter((p) => p.id !== Number(id)).slice(0, 3);
+
+    // If no related posts in same category, fallback to newest posts
+    if (related.length === 0) {
+      const fallbackResult = await this.listFeed({ limit } as any);
+      related = fallbackResult.items.filter((p) => p.id !== Number(id)).slice(0, 3);
+    }
+
+    return related;
   }
 }

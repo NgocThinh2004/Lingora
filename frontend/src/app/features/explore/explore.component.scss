@@ -1,1 +1,547 @@
+:host {
+    display: block;
+    width: 100%;
+    max-width: 720px;
+}
+.explore-search-input-box {
+    display: flex;
+    align-items: center;
+    background-color: #f7f7f8 !important;
+    border: 1px solid transparent !important;
+    border-radius: 99px !important;
+    padding: 0.7rem 1.5rem !important;
+    gap: 0.75rem;
+    height: 48px;
+    width: 100%;
+    transition: all var(--transition-speed, 0.2s) ease;
+}
+
+[data-bs-theme="dark"] .explore-search-input-box {
+    background-color: #1a1a1c !important;
+}
+
+.explore-search-input-box:focus-within {
+    border-color: var(--primary-color, #ff6c1f) !important;
+    background-color: var(--bg-body, #ffffff) !important;
+    box-shadow: 0 0 0 3px rgba(255, 108, 31, 0.12) !important;
+}
+
+.explore-search-header:has(.explore-suggestions-panel:not(.d-none)) .explore-search-input-box {
+    border-radius: 99px 99px 18px 18px !important;
+    border-bottom-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.explore-search-input,
+.explore-page-search-input {
+    border: none !important;
+    background: transparent !important;
+    width: 100%;
+    outline: none !important;
+    font-size: 0.95rem !important;
+    color: var(--text-main) !important;
+    font-weight: 400;
+}
+
+.explore-search-input::placeholder,
+.explore-page-search-input::placeholder {
+    color: var(--text-muted, #888);
+}
+
+.btn-clear-search {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    padding: 0 0 0 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.btn-clear-search:hover {
+    color: var(--text-main);
+}
+
+/* === Explore Search Dropdown (Seamless connected style) === */
+
+.explore-search-header {
+    position: relative;
+}
+
+/* Fix: cho phép sticky hoạt động với window scroll thay vì center-feed scroll */
+#exploreCenterFeed {
+    overflow-y: visible;
+}
+
+/* Sticky search + tabs container for explore page */
+.explore-sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: var(--bg-body);
+    padding-top: 1rem;
+    padding-bottom: 0;
+    transition: background-color var(--transition-speed) ease;
+    /* Shadow nhẹ khi sticky để tách biệt với nội dung bên dưới */
+    box-shadow: 0 2px 8px -2px transparent;
+}
+
+@media (max-width: 991px) {
+    .explore-sticky-header {
+        top: 60px;
+        /* Offset for mobile header */
+
+    }
+}
+
+.explore-sticky-header.is-stuck {
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.08);
+}
+
+[data-bs-theme="dark"] .explore-sticky-header.is-stuck {
+    box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.4);
+}
+
+.explore-sticky-header .explore-search-header {
+    margin-bottom: 0.75rem;
+}
+
+/* When dropdown is open, flatten the search box bottom radius */
+.explore-search-header:has(.explore-suggestions-panel:not(.d-none)) .explore-search-input-box {
+    border-radius: 24px 24px 0 0 !important;
+    border-bottom-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.explore-suggestions-panel {
+    position: absolute;
+    top: 100%;
+    /* flush against search box, no gap */
+    left: 0;
+    right: 0;
+    background: var(--bg-body, #fff);
+    border: 1.5px solid var(--primary-color, #ff6c1f);
+    border-top: none;
+    /* share border with box above */
+    border-radius: 0 0 24px 24px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+    z-index: 1050;
+    overflow: hidden;
+    padding: 0.75rem 0 0.5rem;
+    animation: fadeInDrop 0.12s ease;
+}
+
+[data-bs-theme="dark"] .explore-suggestions-panel {
+    background: #1a1a1c;
+    border-color: var(--primary-color, #ff6c1f);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes fadeInDrop {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Section label (TRENDING / RESULTS) */
+.suggestions-section-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text-muted, #888);
+    padding: 0 1.25rem 0.5rem;
+}
+
+/* Trending chips â€” horizontal pill row */
+.suggestions-trending-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0 1.25rem 0.75rem;
+}
+
+.suggestion-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.85rem;
+    border-radius: 99px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: rgba(255, 108, 31, 0.08);
+    color: var(--primary-color, #ff6c1f);
+    border: 1px solid rgba(255, 108, 31, 0.25);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.suggestion-chip:hover {
+    background: var(--primary-color, #ff6c1f);
+    color: #fff;
+    border-color: var(--primary-color, #ff6c1f);
+}
+
+[data-bs-theme="dark"] .suggestion-chip {
+    background: rgba(255, 108, 31, 0.1);
+    border-color: rgba(255, 108, 31, 0.3);
+}
+
+/* Result items â€” compact rows */
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    padding: 0.55rem 1.25rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    transition: background 0.12s ease;
+    gap: 0.6rem;
+}
+
+.suggestion-item:hover {
+    background: rgba(255, 108, 31, 0.06);
+}
+
+[data-bs-theme="dark"] .suggestion-item:hover {
+    background: rgba(255, 108, 31, 0.1);
+}
+
+.suggestion-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.suggestion-sub {
+    flex-shrink: 0;
+    font-size: 0.76rem;
+    color: var(--text-muted);
+}
+
+/* Thin divider between trending and results */
+.suggestions-divider {
+    height: 1px;
+    background: var(--border-color, #eee);
+    margin: 0.25rem 1.25rem 0.5rem;
+}
+
+[data-bs-theme="dark"] .suggestions-divider {
+    background: #2e2e35;
+}
+
+.explore-tabs-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.explore-tabs-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.explore-tab-btn {
+    background: transparent;
+    border: none;
+    padding: 0.75rem 0.25rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+
+
+.explore-tab-btn:hover {
+
+    color: var(--text-main);
+
+}
+
+
+
+.explore-tab-btn.active {
+
+    color: var(--text-main);
+
+    font-weight: 600;
+
+    border-bottom-color: var(--primary-color, #ff6c1f);
+
+}
+
+
+
+[data-bs-theme="dark"] .explore-tab-btn.active {
+
+    border-bottom-color: #ffffff;
+
+}
+
+
+
+/* Explore People / Publication Cards */
+
+.explore-card-item {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 1.25rem 0;
+
+    border-bottom: 1px solid var(--border-color);
+
+    gap: 1rem;
+
+}
+
+
+
+.explore-card-left {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 1rem;
+
+    min-width: 0;
+
+    flex: 1;
+
+}
+
+
+
+.explore-card-avatar {
+
+    width: 52px;
+
+    height: 52px;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+    flex-shrink: 0;
+
+}
+
+
+
+.explore-card-pub-icon {
+
+    width: 52px;
+
+    height: 52px;
+
+    border-radius: 12px;
+
+    object-fit: cover;
+
+    flex-shrink: 0;
+
+    background-color: rgba(255, 108, 31, 0.1);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 1.5rem;
+
+    color: var(--primary-color, #ff6c1f);
+
+}
+
+
+
+.explore-card-info {
+
+    min-width: 0;
+
+    flex: 1;
+
+}
+
+
+
+.explore-card-title {
+
+    font-weight: 600;
+
+    font-size: 1rem;
+
+    color: var(--text-main);
+
+    margin-bottom: 0.15rem;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+}
+
+
+
+.explore-card-sub {
+
+    font-size: 0.85rem;
+
+    color: var(--text-muted);
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+}
+
+
+
+.btn-subscribe-outline {
+
+    border: 1px solid var(--border-color);
+
+    background-color: transparent;
+
+    color: var(--text-main);
+
+    font-size: 0.85rem;
+
+    font-weight: 600;
+
+    padding: 0.4rem 1.1rem;
+
+    border-radius: 9999px;
+
+    transition: all 0.2s ease;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    min-width: 90px;
+
+    max-width: 140px;
+
+    text-align: center;
+
+    display: inline-block;
+
+}
+
+
+
+.btn-subscribe-outline:hover {
+
+    background-color: rgba(255, 108, 31, 0.08);
+
+    border-color: var(--primary-color, #ff6c1f);
+
+    color: var(--primary-color, #ff6c1f);
+
+}
+
+
+
+.btn-subscribe-outline.subscribed {
+
+    background-color: var(--primary-color, #ff6c1f);
+
+    border-color: var(--primary-color, #ff6c1f);
+
+    color: #ffffff;
+
+}
+
+
+
+/* Trending Topics Widget Styling (Consistent with featured-authors-widget) */
+
+.trending-item {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 1rem;
+
+    padding: 0.85rem 0;
+
+    border-bottom: 1px solid var(--border-color);
+
+    transition: all 0.2s ease;
+
+}
+
+
+
+.trending-item:last-child {
+
+    border-bottom: none;
+
+    padding-bottom: 0;
+
+}
+
+
+
+.trending-number {
+
+    font-size: 1.05rem;
+
+    font-weight: 700;
+
+    color: var(--text-muted);
+
+    font-family: monospace, sans-serif;
+
+    line-height: 1.4;
+
+    min-width: 24px;
+
+}
+
+
+
+.trending-info {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 0.15rem;
+
+    min-width: 0;
+
+    flex: 1;
+
+}
+
 
