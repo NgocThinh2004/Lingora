@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { of, switchMap } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { AuthorPost, CreatePostPayload, PostTranslation } from '../posts/models/post.model';
-import { EditorMediaType } from '../../core/models/upload.model';
-import { PostsService } from '../posts/services/posts.service';
-import { UploadsService } from '../../core/services/uploads.service';
-import { AuthService } from '../../core/services/auth.service';
+import { EditorMediaType } from './models/editor-upload.model';
+import { AuthorPostsService } from '../posts/services/author-posts.service';
+import { EditorUploadsService } from './services/editor-uploads.service';
+import { ToastService } from '../../core/notifications/toast.service';
 
 type SaveMode = 'draft' | 'submit';
 type BaselineFormat = 'normal' | 'superscript' | 'subscript';
@@ -22,12 +23,13 @@ type BaselineFormat = 'normal' | 'superscript' | 'subscript';
   styleUrl: './post-editor.component.scss',
 })
 export class PostEditorComponent implements OnInit, OnDestroy {
-  private readonly postsService = inject(PostsService);
-  private readonly uploadsService = inject(UploadsService);
+  private readonly postsService = inject(AuthorPostsService);
+  private readonly uploadsService = inject(EditorUploadsService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly authService = inject(AuthService);
+  private readonly toast = inject(ToastService);
   private savedRange: Range | null = null;
   private activeBaselineFormat: BaselineFormat = 'normal';
   private navigateAfterSave = false;
@@ -59,7 +61,6 @@ export class PostEditorComponent implements OnInit, OnDestroy {
 
   draft: CreatePostPayload = {
     title: '',
-    summary: '',
     categoryId: undefined,
     originalLanguageId: 1,
     targetLanguageIds: [2, 3],
@@ -87,9 +88,6 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   linkBubbleLeft = 150;
   linkBubbleAbove = false;
   shareLabel = 'Share';
-  notice = '';
-  error = '';
-
   private readonly allowedTargetLanguageIds = new Set<number>([2, 3]);
 
   ngOnInit(): void {
@@ -165,7 +163,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
 
     return (
       this.createdPost.translations.find(
-        (translation: any) => translation.languageId === this.createdPost?.originalLanguageId,
+        (translation) => translation.languageId === this.createdPost?.originalLanguageId,
       ) ?? null
     );
   }
@@ -407,18 +405,15 @@ export class PostEditorComponent implements OnInit, OnDestroy {
     }
 
     this.uploadingType = mediaType;
-    this.notice = '';
-    this.error = '';
-
     this.uploadsService.uploadEditorMedia(mediaType, file).subscribe({
       next: (upload) => {
         const url = this.uploadsService.toAbsoluteUrl(upload.url);
         this.insertHtml(this.buildMediaHtml(mediaType, url, upload.filename), true);
-        this.notice = `Da upload ${upload.filename}`;
+        this.toast.showSuccess(`Đã tải lên ${upload.filename}.`);
         this.uploadingType = null;
       },
       error: (error: unknown) => {
-        this.error = this.formatError(error);
+        this.toast.showError(this.formatError(error));
         this.uploadingType = null;
       },
     });
@@ -708,17 +703,17 @@ export class PostEditorComponent implements OnInit, OnDestroy {
     this.syncContentFromEditor();
     const payload = this.buildPayload();
     if (!payload.title.trim() || !this.hasMeaningfulContent(payload.content)) {
-      this.error = 'Title va content la bat buoc.';
+      this.toast.showError('Tiêu đề và nội dung là bắt buộc.');
       return;
     }
     if (this.isTitleOverLimit || this.isBodyOverLimit) {
-      this.error = `Title toi da ${this.titleWordLimit} words va content toi da ${this.bodyWordLimit} words.`;
+      this.toast.showError(
+        `Tiêu đề tối đa ${this.titleWordLimit} từ và nội dung tối đa ${this.bodyWordLimit} từ.`,
+      );
       return;
     }
 
     this.saveMode = mode;
-    this.notice = '';
-    this.error = '';
 
     const request$ = this.createdPost
       ? this.postsService.updateAuthorPost(this.createdPost.id, payload)
@@ -739,22 +734,20 @@ export class PostEditorComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (post) => {
           this.createdPost = post;
-          this.notice =
-            mode === 'submit'
-              ? `Da gui bai #${post.id} sang trang thai pending_review.`
-              : `Da luu draft #${post.id}.`;
           this.saveMode = null;
           if (mode === 'submit') {
-            void this.router.navigateByUrl('/workspace/posts');
+            this.navigateToMyPosts(`Bài #${post.id} đã được gửi duyệt.`);
             return;
           }
           if (this.navigateAfterSave) {
             this.navigateAfterSave = false;
-            void this.router.navigateByUrl('/workspace/posts');
+            this.navigateToMyPosts(`Đã lưu bản nháp #${post.id}.`);
+            return;
           }
+          this.toast.showSuccess(`Đã lưu bản nháp #${post.id}.`);
         },
         error: (error: unknown) => {
-          this.error = this.formatError(error);
+          this.toast.showError(this.formatError(error));
           this.saveMode = null;
           this.navigateAfterSave = false;
         },
@@ -763,23 +756,21 @@ export class PostEditorComponent implements OnInit, OnDestroy {
 
   private loadPost(postId: string): void {
     this.saveMode = 'draft';
-    this.error = '';
     this.postsService.getAuthorPost(postId).subscribe({
       next: post => {
-        const source = post.translations.find((item: any) => item.languageId === post.originalLanguageId) ?? post.translations[0];
+        const source = post.translations.find(item => item.languageId === post.originalLanguageId) ?? post.translations[0];
         this.createdPost = post;
         this.draft = {
           title: source?.title ?? '',
-          summary: source?.summary ?? '',
           categoryId: post.categoryId ?? undefined,
           originalLanguageId: post.originalLanguageId,
           targetLanguageIds: post.translationMatrix
-            .filter((item: any) => item.languageId !== post.originalLanguageId)
-            .map((item: any) => item.languageId),
+            .filter(item => item.languageId !== post.originalLanguageId)
+            .map(item => item.languageId),
           content: source?.content ?? '',
         };
         this.allowedTargetLanguageIds.clear();
-        this.draft.targetLanguageIds?.forEach((id: any) => this.allowedTargetLanguageIds.add(id));
+        this.draft.targetLanguageIds?.forEach(id => this.allowedTargetLanguageIds.add(id));
         this.targetInput = this.draft.targetLanguageIds?.join(',') ?? '';
         if (this.postBody?.nativeElement) {
           this.postBody.nativeElement.innerHTML = this.draft.content;
@@ -787,16 +778,26 @@ export class PostEditorComponent implements OnInit, OnDestroy {
         this.saveMode = null;
       },
       error: error => {
-        this.error = this.formatError(error);
+        this.toast.showError(this.formatError(error));
         this.saveMode = null;
       },
     });
   }
 
+  private navigateToMyPosts(successMessage: string): void {
+    this.toast.showSuccess(successMessage);
+    void this.router.navigateByUrl('/workspace/posts')
+      .then(navigated => {
+        if (!navigated) {
+          this.toast.showError('Không thể mở trang bài viết của tôi.');
+        }
+      })
+      .catch(() => this.toast.showError('Không thể mở trang bài viết của tôi.'));
+  }
+
   private buildPayload(): CreatePostPayload {
     return {
       title: this.draft.title.trim(),
-      summary: this.draft.summary?.trim() || undefined,
       categoryId: this.draft.categoryId,
       originalLanguageId: this.draft.originalLanguageId,
       targetLanguageIds: this.parseTargetLanguageIds(),
@@ -1141,7 +1142,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   }
 
   private hasDraftContent(): boolean {
-    return Boolean(this.draft.title.trim() || this.editorTextContent() || this.draft.summary?.trim());
+    return Boolean(this.draft.title.trim() || this.editorTextContent());
   }
 
   private closeToolbarMenus(): void {

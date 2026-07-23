@@ -1,14 +1,14 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Subscription, User } from '../../database/models';
-import { PostsService } from '../posts/posts.service';
+import { PublicPostsService } from '../posts/public/public-posts.service';
 
 @Injectable()
 export class SubscriptionsService {
   constructor(
     @InjectModel(Subscription) private readonly subscriptionModel: typeof Subscription,
     @InjectModel(User) private readonly userModel: typeof User,
-    private readonly postsService: PostsService,
+    private readonly postsService: PublicPostsService,
   ) {}
 
   async list(subscriberId: string) {
@@ -20,7 +20,7 @@ export class SubscriptionsService {
     const authors = authorIds.length
       ? await this.userModel.findAll({ where: { id: authorIds, status: 'active', deleted_at: null } })
       : [];
-    const publicPosts = await this.postsService.listPublicPosts({ limit: 50 });
+    const publicPosts = await this.postsService.listFeed({ limit: 50 });
     return {
       authors: authors.map(author => ({
         id: author.id,
@@ -29,7 +29,7 @@ export class SubscriptionsService {
         avatarUrl: author.avatar,
         bio: author.bio,
       })),
-      posts: publicPosts.items.filter(post => authorIds.includes(post.authorId)),
+      posts: publicPosts.items.filter(post => authorIds.includes(String(post.authorId))),
     };
   }
 

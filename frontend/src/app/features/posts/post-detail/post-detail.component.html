@@ -33,9 +33,9 @@
 
       <div class="substack-post-header mb-4 pb-3 border-bottom d-flex align-items-center justify-content-between">
         <div class="author-badge-group d-flex align-items-center position-relative author-tooltip-container" style="z-index: 2;">
-          <img [src]="p.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=48&h=48'" 
-               [alt]="p.author.name" 
-               class="author-avatar me-3 rounded-circle border" 
+          <img [src]="p.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=48&h=48'"
+               [alt]="p.author.name"
+               class="author-avatar me-3 rounded-circle border"
                style="width:48px;height:48px;object-fit:cover;">
           <div class="author-meta-info">
             <div class="d-flex align-items-center flex-wrap">
@@ -49,16 +49,12 @@
 
       <div class="substack-post-content post-content mt-4 text-main" style="line-height: 1.8;">
         <!-- Binding the translated HTML securely -->
-        <div [innerHTML]="displayedTranslation()?.contentHtml"></div>
+        <div class="article-content" [innerHTML]="displayedTranslation()?.contentHtml"></div>
       </div>
 
-      @if (p.imageUrl || p.videoUrl) {
+      @if (p.imageUrl) {
         <div class="post-image-embed mb-4 mt-4" style="max-height: none; height: auto; border: none; background: transparent; overflow: visible;">
-          @if (isVideo()) {
-            <video [src]="p.videoUrl || p.imageUrl" muted playsinline loop controls class="w-100 rounded-4 shadow-sm" style="max-height: 500px; object-fit: cover;"></video>
-          } @else {
-            <img [src]="p.imageUrl" alt="Cover" class="w-100 rounded-4 shadow-sm" style="max-height: 500px; object-fit: cover;">
-          }
+          <img [src]="p.imageUrl" alt="Cover" class="w-100 rounded-4 shadow-sm" style="max-height: 500px; object-fit: cover;">
         </div>
       }
 
@@ -95,7 +91,7 @@
                 {{ getPostTranslationByLocale(rel)?.title || 'Untitled' }}
               </h5>
               <div class="d-flex align-items-center gap-2 text-muted small mt-3">
-                <img [src]="rel.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=24&h=24'" 
+                <img [src]="rel.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=24&h=24'"
                      class="rounded-circle" width="24" height="24" style="object-fit:cover;" [alt]="rel.author.name">
                 <span class="fw-medium text-main">{{ rel.author.name }}</span>
                 <span class="ms-auto"><i class="bi bi-heart me-1"></i>{{ rel.likeCount || 0 }}</span>

@@ -1,22 +1,13 @@
 import { CommonModule } from '@angular/common';
-import {
-  AfterViewInit,
-  Component,
-  ElementRef,
-  OnDestroy,
-  ViewChild,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PostsService } from '../posts/services/posts.service';
-import { CategoryService } from '../categories/services/category.service';
-import { LanguageService } from '../../core/services/language.service';
-import { PostCardComponent } from '../../shared/components/post-card/post-card.component';
-import { Post } from '../posts/models/post.model';
+import { LocaleService } from '../../core/locale/locale.service';
 import { Category, translateCategory } from '../categories/models/category.model';
+import { CategoriesService } from '../categories/services/categories.service';
+import { PostCardComponent } from '../posts/components/post-card/post-card.component';
+import { Post } from '../posts/models/post.model';
+import { FeedPostsService } from '../posts/services/feed-posts.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-feed',
@@ -25,12 +16,11 @@ import { Category, translateCategory } from '../categories/models/category.model
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
-export class HomeComponent implements AfterViewInit, OnDestroy {
-  private readonly postService = inject(PostsService);
-  private readonly categoryService = inject(CategoryService);
-  private readonly languageService = inject(LanguageService);
-
-  @ViewChild('sentinel') sentinelRef?: ElementRef<HTMLDivElement>;
+export class HomeComponent {
+  private readonly postService = inject(FeedPostsService);
+  private readonly categoryService = inject(CategoriesService);
+  private readonly languageService = inject(LocaleService);
+  private readonly authService = inject(AuthService);
 
   readonly posts = signal<Post[]>([]);
   readonly categories = signal<Category[]>([]);
@@ -40,9 +30,10 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   readonly page = signal(1);
   readonly totalPages = signal(1);
 
-  private observer?: IntersectionObserver;
-
   readonly currentLang = computed(() => this.languageService.current());
+  readonly quickDraftAvatar = computed(() =>
+    this.authService.currentUser()?.avatarUrl || 'assets/images/default-avatar.svg',
+  );
 
   readonly selectedCategoryLabel = computed(() => {
     const slug = this.selectedCategorySlug();
@@ -57,42 +48,11 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       error: () => this.categories.set([]),
     });
 
-    // Tải lại feed mỗi khi ngôn ngữ hiển thị hoặc danh mục thay đổi.
-    effect(
-      () => {
-        this.currentLang();
-        this.selectedCategorySlug();
-        this.loadFeed(1);
-      },
-      { allowSignalWrites: true }
-    );
-  }
-
-  ngAfterViewInit() {
-    this.setupIntersectionObserver();
-  }
-
-  private setupIntersectionObserver() {
-    if (typeof IntersectionObserver === 'undefined') return;
-
-    this.observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          this.triggerInfiniteScroll();
-        }
-      },
-      { rootMargin: '300px' }
-    );
-
-    if (this.sentinelRef?.nativeElement) {
-      this.observer.observe(this.sentinelRef.nativeElement);
-    }
-  }
-
-  private triggerInfiniteScroll() {
-    if (!this.loading() && !this.loadingMore() && this.page() < this.totalPages()) {
-      this.loadMore();
-    }
+    // Tải lại feed mỗi khi ngôn ngữ hiển thị thay đổi.
+    effect(() => {
+      this.currentLang();
+      this.loadFeed(1);
+    }, { allowSignalWrites: true });
   }
 
   private loadFeed(page: number) {
@@ -114,7 +74,6 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
           this.totalPages.set(res?.meta?.totalPages || 1);
           this.loading.set(false);
           this.loadingMore.set(false);
-          this.reobserveSentinel();
         },
         error: () => {
           this.loading.set(false);
@@ -123,30 +82,17 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       });
   }
 
-  private reobserveSentinel() {
-    setTimeout(() => {
-      if (this.observer && this.sentinelRef?.nativeElement) {
-        this.observer.disconnect();
-        this.observer.observe(this.sentinelRef.nativeElement);
-      }
-    }, 100);
-  }
-
   selectCategory(slug: string) {
     this.selectedCategorySlug.set(slug);
   }
 
   loadMore() {
-    if (this.page() < this.totalPages() && !this.loadingMore()) {
+    if (this.page() < this.totalPages()) {
       this.loadFeed(this.page() + 1);
     }
   }
 
   translateCategoryName(category: Category) {
     return translateCategory(category, this.currentLang());
-  }
-
-  ngOnDestroy() {
-    this.observer?.disconnect();
   }
 }

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { AuthService } from '../../../core/services/auth.service';
-import { ToastService } from '../../../core/services/toast.service';
+import { AuthService } from '../../../core/auth/auth.service';
+import { ToastService } from '../../../core/notifications/toast.service';
 import { AdminUser } from './models/admin-user.model';
 import { AdminUsersComponent } from './admin-users.component';
 import { AdminUsersService } from './services/admin-users.service';

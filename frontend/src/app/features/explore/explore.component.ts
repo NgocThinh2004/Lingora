@@ -1,164 +1,124 @@
+import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, AfterViewInit, ElementRef, ViewChild, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { debounceTime, distinctUntilChanged, Subject, Subscription, forkJoin, map } from 'rxjs';
-import { PostsService } from '../posts/services/posts.service';
-import { UserService } from '../users/services/user.service';
-import { CategoryService } from '../categories/services/category.service';
-import { translateCategory, Category } from '../categories/models/category.model';
-import { UiPreferencesService } from '../../core/services/ui-preferences.service';
-import { CommonModule } from '@angular/common';
-import { PostCardComponent } from '../../shared/components/post-card/post-card.component';
-import { User } from '../users/models/user.model';
-import { Post } from '../posts/models/post.model';
-import { FormsModule } from '@angular/forms';
+import { PageShellService } from '../../core/ui/page-shell.service';
+import { FeedPostsService } from '../posts/services/feed-posts.service';
+import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
+import { PostCardComponent } from '../posts/components/post-card/post-card.component';
+import { Subject, Subscription } from 'rxjs';
+
+interface ExploreResult {
+  type: 'posts' | 'people';
+  id: string;
+  title: string;
+  subtitle: string;
+  href: string;
+  icon: string;
+  item: any;
+}
 
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [CommonModule, RouterLink, PostCardComponent, FormsModule],
+  imports: [SidebarComponent, CommonModule, RouterLink, PostCardComponent],
   templateUrl: './explore.component.html',
-  styleUrl: './explore.component.scss'
 })
 export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('stickyHeader') stickyHeaderRef!: ElementRef<HTMLElement>;
   private observer?: IntersectionObserver;
-  private readonly ui = inject(UiPreferencesService);
-  private readonly postsService = inject(PostsService);
-  private readonly userService = inject(UserService);
-  private readonly categoryService = inject(CategoryService);
+
+  private readonly pageShell = inject(PageShellService);
+  private readonly feedService = inject(FeedPostsService);
 
   query = '';
   tab: 'top' | 'posts' | 'publications' | 'people' = 'top';
-  
-  // Results
-  topPosts: Post[] = [];
-  featuredPeople: User[] = [];
-  featuredPublications: Category[] = [];
-  
-  posts: Post[] = [];
-  people: User[] = [];
-  publications: Category[] = [];
-
-  loading = false;
-  error = '';
 
   private readonly searchSubject = new Subject<string>();
   private searchSubscription?: Subscription;
-
-  ngAfterViewInit() {
-    if (this.stickyHeaderRef) {
-      const sentinel = document.createElement('div');
-      this.stickyHeaderRef.nativeElement.parentElement?.insertBefore(
-        sentinel, this.stickyHeaderRef.nativeElement
-      );
-      this.observer = new IntersectionObserver(
-        ([entry]) => {
-          this.stickyHeaderRef.nativeElement.classList.toggle('is-stuck', !entry.isIntersecting);
-        },
-        { threshold: 1 }
-      );
-      this.observer.observe(sentinel);
-    }
+  loading = false;
+  results: ExploreResult[] = [];
+  
+  get visibleResults() {
+    if (this.tab === 'top') return this.results;
+    return this.results.filter((r) => r.type === this.tab);
   }
 
-  ngOnInit(): void {
-    this.ui.mount('Lingora - Explore');
-    this.searchSubscription = this.searchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged()
-    ).subscribe(() => {
-      this.executeSearch();
+  ngOnInit() {
+    this.pageShell.setTitle('Khám phá');
+    
+    this.searchSubscription = this.searchSubject.subscribe((q) => {
+      this.fetchResults(q);
     });
     
-    this.executeSearch();
+    this.fetchResults('');
   }
 
-  ngOnDestroy(): void {
-    this.observer?.disconnect();
-    this.ui.unmount();
+  ngAfterViewInit() {
+    this.setupStickyHeaderObserver();
+  }
+
+  ngOnDestroy() {
     this.searchSubscription?.unsubscribe();
+    if (this.observer) {
+      this.observer.disconnect();
+    }
   }
 
-  updateQuery(event: Event): void {
-    this.query = (event.target as HTMLInputElement).value;
-    this.searchSubject.next(this.query);
+  private setupStickyHeaderObserver() {
+    if (!this.stickyHeaderRef) return;
+    
+    this.observer = new IntersectionObserver(
+      ([e]) => {
+        if (e.intersectionRatio < 1) {
+          e.target.classList.add('is-pinned');
+        } else {
+          e.target.classList.remove('is-pinned');
+        }
+      },
+      { threshold: [1], rootMargin: '-1px 0px 0px 0px' }
+    );
+    this.observer.observe(this.stickyHeaderRef.nativeElement);
   }
 
-  clearQuery(): void {
+  updateQuery(event: Event) {
+    const val = (event.target as HTMLInputElement).value;
+    this.query = val;
+    this.searchSubject.next(val);
+  }
+
+  clearQuery() {
     this.query = '';
-    this.searchSubject.next(this.query);
+    this.searchSubject.next('');
   }
 
-  setTab(tab: 'top' | 'posts' | 'publications' | 'people'): void {
-    if (this.tab !== tab) {
-      this.tab = tab;
-      this.executeSearch();
-    }
+  setTab(t: typeof this.tab) {
+    this.tab = t;
   }
 
-  executeSearch(): void {
+  private fetchResults(q: string) {
     this.loading = true;
-    this.error = '';
-    const q = this.query.trim().toLowerCase();
-
-    if (this.tab === 'top') {
-      const postsReq = this.postsService.list({ q: q, limit: 10 }).pipe(map(res => res.items));
-      const peopleReq = q ? this.userService.search(q) : this.userService.getRecommended();
-      const pubsReq = this.categoryService.findAll();
-
-      forkJoin({ posts: postsReq, people: peopleReq, pubs: pubsReq }).subscribe({
-        next: (res) => {
-          this.topPosts = res.posts;
-          this.featuredPeople = res.people.slice(0, 2);
-          
-          let filteredPubs = res.pubs;
-          if (q) {
-            filteredPubs = filteredPubs.filter(c => 
-              translateCategory(c, 'vi').toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)
-            );
-          }
-          this.featuredPublications = filteredPubs.slice(0, 2);
-          this.loading = false;
-        },
-        error: () => this.handleError()
-      });
-    } else if (this.tab === 'posts') {
-      this.postsService.list({ q: q, limit: 20 }).subscribe({
-        next: (res) => {
-          this.posts = res.items;
-          this.loading = false;
-        },
-        error: () => this.handleError()
-      });
-    } else if (this.tab === 'people') {
-      const peopleReq = q ? this.userService.search(q) : this.userService.getRecommended();
-      peopleReq.subscribe({
-        next: (users) => {
-          this.people = users;
-          this.loading = false;
-        },
-        error: () => this.handleError()
-      });
-    } else if (this.tab === 'publications') {
-      this.categoryService.findAll().subscribe({
-        next: (categories) => {
-          this.publications = q ? categories.filter(c => 
-            translateCategory(c, 'vi').toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)
-          ) : categories;
-          this.loading = false;
-        },
-        error: () => this.handleError()
-      });
-    }
-  }
-  
-  translateCategoryName(cat: Category): string {
-    return translateCategory(cat, 'vi');
+    this.feedService.list({ search: q, limit: 20 }).subscribe({
+      next: (response) => {
+        const postResults: ExploreResult[] = response.items.map((post) => ({
+          type: 'posts',
+          id: post.id.toString(),
+          title: post.title,
+          subtitle: `Bài viết của ${post.author?.name || 'Ẩn danh'}`,
+          href: `/post/${post.id}`,
+          icon: 'bi-file-text',
+          item: post,
+        }));
+        this.results = postResults;
+        this.loading = false;
+      },
+      error: () => {
+        this.results = [];
+        this.loading = false;
+      },
+    });
   }
 
-  private handleError(): void {
-    this.error = 'Unable to load explore data.';
-    this.loading = false;
+  translateCategoryName(pub: any): string {
+    return pub.name || 'Không xác định';
   }
 }
-

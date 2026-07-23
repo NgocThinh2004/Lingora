@@ -1,5 +1,5 @@
 import { Component, ElementRef, EventEmitter, HostListener, Input, Output, inject, signal } from '@angular/core';
-import { LocaleOption } from '../../../core/models/locale.model';
+import { LocaleOption } from '../../../core/locale/locale.model';
 
 export type LocaleMenuPosition = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
 

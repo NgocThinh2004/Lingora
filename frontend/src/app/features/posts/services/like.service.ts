@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../../core/models/api-response.model';
+import { ApiResponse } from '../../../core/http/api-response.model';
 
 export interface LikeToggleResponse {
   liked: boolean;

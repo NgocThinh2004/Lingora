@@ -1,8 +1,8 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Subject, of } from 'rxjs';
-import { LocaleService } from '../../../core/services/locale.service';
-import { ToastService } from '../../../core/services/toast.service';
+import { LocaleService } from '../../../core/locale/locale.service';
+import { ToastService } from '../../../core/notifications/toast.service';
 import { AdminCategoriesService } from '../categories/services/admin-categories.service';
 import { AdminPostsComponent } from './admin-posts.component';
 import { AdminPost } from './models/admin-post.model';

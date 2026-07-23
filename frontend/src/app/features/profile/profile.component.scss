@@ -1326,7 +1326,7 @@
           flex-basis: calc(50% - 4px);
         }
       }
-      
+
       .mobile-bottom-nav {
         display: none;
         position: fixed;
@@ -1341,7 +1341,7 @@
         justify-content: space-around;
         padding: 0 10px;
       }
-      
+
       .mobile-bottom-nav .nav-item {
         display: flex;
         flex-direction: column;
@@ -1354,12 +1354,12 @@
         height: 100%;
         transition: color var(--transition-speed, 0.15s) ease;
       }
-      
+
       .mobile-bottom-nav .nav-item:hover,
       .mobile-bottom-nav .nav-item.active {
         color: var(--text);
       }
-      
+
       @media (max-width: 991px) {
         .mobile-bottom-nav {
           display: flex;

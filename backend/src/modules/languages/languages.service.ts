@@ -11,7 +11,7 @@ import {
   AdminLanguagesQueryDto,
   CreateAdminLanguageDto,
   UpdateAdminLanguageDto,
-} from './dto/admin-languages.dto';
+} from './admin/dto/admin-languages.dto';
 import { Language } from './models/language.model';
 
 @Injectable()

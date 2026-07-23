@@ -12,8 +12,3 @@ export interface User {
   allowShowFollowing: boolean;
   createdAt?: string;
 }
-
-export interface AuthResponse {
-  user: User;
-  accessToken: string;
-}

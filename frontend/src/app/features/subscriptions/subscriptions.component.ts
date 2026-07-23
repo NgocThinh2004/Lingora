@@ -1,18 +1,16 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
-import { SubscriptionsService } from '../../core/services/subscriptions.service';
-import { UiPreferencesService } from '../../core/services/ui-preferences.service';
-import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { PageShellService } from '../../core/ui/page-shell.service';
+import { SubscriptionsService } from './services/subscriptions.service';
+import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-subscriptions',
   standalone: true,
-  imports: [AppSidebarComponent],
+  imports: [SidebarComponent],
   templateUrl: './subscriptions.component.html',
-  styleUrl: './subscriptions.component.scss',
-  encapsulation: ViewEncapsulation.None,
 })
 export class SubscriptionsComponent implements OnInit, OnDestroy {
-  private readonly ui = inject(UiPreferencesService);
+  private readonly ui = inject(PageShellService);
   private readonly subscriptionsService = inject(SubscriptionsService);
 
   tab: 'all' | 'manage' = 'all';
@@ -56,14 +54,13 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
           avatar: author.avatarUrl || '/assets/images/lingora-mark.svg',
         }));
         this.posts = data.posts.map(post => {
-          const source = post.translations.find((item: any) => item.languageId === post.originalLanguageId) ?? post.translations[0];
+          const source = post.translations.find(item => item.languageCode === post.originalLanguage) ?? post.translations[0];
           return {
-            id: post.id,
-            authorId: post.author.id,
-            author: post.author.displayName || post.author.username,
+            id: String(post.id),
+            authorId: String(post.author.id),
+            author: post.author.name || post.author.handle,
             title: source?.title || 'Untitled',
-            summary: source?.summary || '',
-            time: new Date(post.publishedAt || post.updatedAt).toLocaleDateString(),
+            time: new Date(post.createdAt).toLocaleDateString(),
           };
         });
         this.loading = false;
@@ -77,4 +74,4 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
 }
 
 interface SubscriptionAuthorView { id: string; name: string; role: string; avatar: string; }
-interface SubscriptionPostView { id: string; authorId: string; author: string; title: string; summary: string; time: string; }
+interface SubscriptionPostView { id: string; authorId: string; author: string; title: string; time: string; }

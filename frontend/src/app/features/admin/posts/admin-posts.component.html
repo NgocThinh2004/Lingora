@@ -122,7 +122,7 @@
           } @empty { <span class="muted">No target translations.</span> }
         </div>
         <h4 class="section-label">Content preview</h4>
-        <div class="review-content" [innerHTML]="post.content || post.summary || '&mdash;'"></div>
+        <div class="review-content" [innerHTML]="post.content || '&mdash;'"></div>
         <form [formGroup]="reviewForm" class="review-form">
           <label for="review-note">Review note</label>
           <textarea id="review-note" class="form-control" rows="3" formControlName="note" [class.is-invalid]="noteInvalid()" (input)="noteInvalid.set(false)" placeholder="Required when rejecting a post..."></textarea>

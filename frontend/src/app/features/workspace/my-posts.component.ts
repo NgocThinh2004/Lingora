@@ -1,13 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { LocaleService, UiTranslationKey } from '../../core/locale/locale.service';
 import { AuthorPost, PaginationMeta, PostStatus, PostTranslation } from '../posts/models/post.model';
-import { LocaleService, UiTranslationKey } from '../../core/services/locale.service';
-import { PostsService } from '../posts/services/posts.service';
-import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
+import { AuthorPostsService } from '../posts/services/author-posts.service';
+import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
+import { ToastService } from '../../core/notifications/toast.service';
 
 type AuthorAction = 'submit' | 'archive' | 'restore' | 'trash' | 'restore-trash';
 type ConfirmationAction = 'trash' | 'delete-permanent';
@@ -15,13 +16,14 @@ type ConfirmationAction = 'trash' | 'delete-permanent';
 @Component({
   selector: 'app-my-posts',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, AppSidebarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SidebarComponent],
   templateUrl: './my-posts.component.html',
   styleUrl: './my-posts.component.scss',
 })
 export class MyPostsComponent implements OnInit {
-  private readonly postsService = inject(PostsService);
+  private readonly postsService = inject(AuthorPostsService);
   private readonly locale = inject(LocaleService);
+  private readonly toast = inject(ToastService);
 
   readonly statuses: Array<PostStatus | 'all'> = [
     'all',
@@ -48,12 +50,9 @@ export class MyPostsComponent implements OnInit {
   trash = false;
   loading = false;
   busyKey = '';
-  notice = '';
-  error = '';
   selectedPostIds = new Set<string>();
-  darkMode = false;
-  sidebarMenuOpen = false;
   categoryOptions: Array<{ id: number; label: string }> = [];
+  languageOptions: Array<{ id: number; code: string; label: string; nativeLabel: string; flagCode: string | null }> = [];
   confirmationAction: ConfirmationAction | null = null;
   confirmationPostIds: string[] = [];
   confirmationBusy = false;
@@ -61,7 +60,10 @@ export class MyPostsComponent implements OnInit {
   ngOnInit(): void {
     this.locale.load();
     this.postsService.getPostOptions().subscribe({
-      next: options => this.categoryOptions = options.categories,
+      next: options => {
+        this.categoryOptions = options.categories;
+        this.languageOptions = options.languages;
+      },
     });
     this.loadPostCounts();
     this.loadPosts();
@@ -69,8 +71,6 @@ export class MyPostsComponent implements OnInit {
 
   loadPosts(): void {
     this.loading = true;
-    this.notice = '';
-    this.error = '';
 
     this.postsService
       .listAuthorPosts({
@@ -91,7 +91,7 @@ export class MyPostsComponent implements OnInit {
           }
         },
         error: (error: unknown) => {
-          this.error = this.formatError(error);
+          this.toast.showError(this.formatError(error));
           this.loading = false;
         },
       });
@@ -99,8 +99,6 @@ export class MyPostsComponent implements OnInit {
 
   runAction(post: AuthorPost, action: AuthorAction): void {
     this.busyKey = `${post.id}:${action}`;
-    this.error = '';
-    this.notice = '';
 
     const request$ =
       action === 'submit'
@@ -115,13 +113,15 @@ export class MyPostsComponent implements OnInit {
 
     request$.subscribe({
       next: (updatedPost) => {
-        this.notice = `Bài #${updatedPost.id} đã chuyển sang ${updatedPost.deletedAt ? 'trash' : updatedPost.status}.`;
+        this.toast.showSuccess(
+          `Bài #${updatedPost.id} đã chuyển sang ${updatedPost.deletedAt ? 'thùng rác' : updatedPost.status}.`,
+        );
         this.busyKey = '';
         this.loadPostCounts();
         this.loadPosts();
       },
       error: (error: unknown) => {
-        this.error = this.formatError(error);
+        this.toast.showError(this.formatError(error));
         this.busyKey = '';
       },
     });
@@ -129,7 +129,7 @@ export class MyPostsComponent implements OnInit {
 
   primaryTranslation(post: AuthorPost): PostTranslation | null {
     return (
-      post.translations.find((translation: any) => translation.languageId === post.originalLanguageId) ??
+      post.translations.find((translation) => translation.languageId === post.originalLanguageId) ??
       post.translations[0] ??
       null
     );
@@ -184,16 +184,16 @@ export class MyPostsComponent implements OnInit {
   }
 
   translatedLanguageSummary(post: AuthorPost): string {
-    const targets = post.translationMatrix.filter((translation: any) => translation.languageId !== post.originalLanguageId);
+    const targets = post.translationMatrix.filter((translation) => translation.languageId !== post.originalLanguageId);
     if (!targets.length) {
       return '-';
     }
 
-    return targets.map((translation: any) => `L${translation.languageId}: ${translation.status}`).join(', ');
+    return targets.map((translation) => `L${translation.languageId}: ${translation.status}`).join(', ');
   }
 
   targetMatrix(post: AuthorPost) {
-    return post.translationMatrix.filter((translation: any) => translation.languageId !== post.originalLanguageId);
+    return post.translationMatrix.filter((translation) => translation.languageId !== post.originalLanguageId);
   }
 
   visiblePosts(): AuthorPost[] {
@@ -205,7 +205,7 @@ export class MyPostsComponent implements OnInit {
 
     return this.posts.filter((post) => {
       const source = this.primaryTranslation(post);
-      const text = `${source?.title ?? ''} ${source?.summary ?? ''} ${source?.content ?? ''}`.toLowerCase();
+      const text = `${source?.title ?? ''} ${source?.content ?? ''}`.toLowerCase();
       const languageMatches =
         this.languageFilter === 'all' || this.languageCode(post.originalLanguageId).toLowerCase() === this.languageFilter;
       const dateMatches = this.dateFilter === 'all' || post.updatedAt.startsWith(this.dateFilter);
@@ -217,28 +217,24 @@ export class MyPostsComponent implements OnInit {
   }
 
   postSearchText(post: AuthorPost): string {
+    return this.postTitle(post);
+  }
+
+  postTitle(post: AuthorPost): string {
     const source = this.primaryTranslation(post);
-    return `${source?.title ?? ''} ${source?.summary ?? ''}`.trim();
+    return source?.title?.trim() || this.translate('untitled');
   }
 
   languageCode(languageId: number): string {
-    const codes: Record<number, string> = {
-      1: 'VI',
-      2: 'EN',
-      3: 'ZH',
-    };
-
-    return codes[languageId] ?? `L${languageId}`;
+    return this.languageOptions.find(language => language.id === languageId)?.code.toUpperCase()
+      ?? `L${languageId}`;
   }
 
-  flagClass(languageId: number): string {
-    const flags: Record<number, string> = {
-      1: 'fi fi-vn',
-      2: 'fi fi-us',
-      3: 'fi fi-cn',
-    };
-
-    return flags[languageId] ?? 'fi fi-un';
+  flagUrl(languageId: number): string {
+    const flagCode = this.languageOptions.find(language => language.id === languageId)?.flagCode;
+    return flagCode
+      ? `https://flagcdn.com/w40/${flagCode.toLowerCase()}.png`
+      : 'assets/images/lingora-mark.svg';
   }
 
   translate(key: UiTranslationKey): string {
@@ -346,9 +342,13 @@ export class MyPostsComponent implements OnInit {
       : this.postsService.deleteAuthorPostPermanently(id));
 
     this.confirmationBusy = true;
-    this.error = '';
     forkJoin(requests).subscribe({
       next: () => {
+        this.toast.showSuccess(
+          action === 'trash'
+            ? `Đã chuyển ${ids.length} bài vào thùng rác.`
+            : `Đã xóa vĩnh viễn ${ids.length} bài.`,
+        );
         this.confirmationBusy = false;
         this.confirmationAction = null;
         this.confirmationPostIds = [];
@@ -357,7 +357,7 @@ export class MyPostsComponent implements OnInit {
         this.loadPosts();
       },
       error: (error: unknown) => {
-        this.error = this.formatError(error);
+        this.toast.showError(this.formatError(error));
         this.confirmationBusy = false;
       },
     });
@@ -385,21 +385,6 @@ export class MyPostsComponent implements OnInit {
     return this.translate(this.confirmationAction === 'delete-permanent'
       ? 'delete_confirm_action'
       : 'trash_confirm_action');
-  }
-
-  toggleTheme(): void {
-    this.darkMode = !this.darkMode;
-    document.documentElement.setAttribute('data-bs-theme', this.darkMode ? 'dark' : 'light');
-  }
-
-  toggleSidebarMenu(event: Event): void {
-    event.stopPropagation();
-    this.sidebarMenuOpen = !this.sidebarMenuOpen;
-  }
-
-  @HostListener('document:click')
-  closeMenus(): void {
-    this.sidebarMenuOpen = false;
   }
 
   isBusy(post: AuthorPost, action: AuthorAction): boolean {

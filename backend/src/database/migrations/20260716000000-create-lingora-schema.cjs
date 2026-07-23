@@ -146,7 +146,6 @@ module.exports = {
       },
       title: { type: Sequelize.STRING(255), allowNull: true },
       slug: { type: Sequelize.STRING(200), allowNull: true },
-      summary: { type: Sequelize.TEXT, allowNull: true },
       content: { type: Sequelize.TEXT('long'), allowNull: true, comment: 'HTML và ảnh nhúng bên trong bài viết' },
       translation_status: {
         type: Sequelize.ENUM('not_started', 'queued', 'processing', 'completed', 'failed'),

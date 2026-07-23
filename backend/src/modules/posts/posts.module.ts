@@ -14,8 +14,8 @@ import {
 import { UsersModule } from '../users/users.module';
 import { AdminPostsController } from './admin/admin-posts.controller';
 import { AdminPostsService } from './admin/admin-posts.service';
-import { AuthorPostsController } from './author-posts.controller';
-import { PostsService } from './posts.service';
+import { AuthorPostsController } from './author/author-posts.controller';
+import { AuthorPostsService } from './author/author-posts.service';
 import { PublicPostsController } from './public/public-posts.controller';
 import { PublicPostsService } from './public/public-posts.service';
 
@@ -39,11 +39,11 @@ import { PublicPostsService } from './public/public-posts.service';
     PublicPostsController,
   ],
   providers: [
-    PostsService,
+    AuthorPostsService,
     AdminPostsService,
     PublicPostsService,
     RolesGuard,
   ],
-  exports: [PostsService, PublicPostsService],
+  exports: [PublicPostsService],
 })
 export class PostsModule {}

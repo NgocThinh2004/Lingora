@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
-import { LocaleService } from '../../../core/services/locale.service';
+import { AuthService } from '../../../core/auth/auth.service';
+import { LocaleService } from '../../../core/locale/locale.service';
 import { BrandComponent } from '../../components/brand/brand.component';
 import { LocaleSelectorComponent } from '../../components/locale-selector/locale-selector.component';
 import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
