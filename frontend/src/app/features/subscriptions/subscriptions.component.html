@@ -73,7 +73,7 @@
               @for (post of visiblePosts; track post.id) {
                 <article class="substack-post">
                   <div class="substack-post-header"><strong class="author-name">{{ post.author }}</strong><span class="post-timestamp ms-2">{{ post.time }}</span></div>
-                  <a [href]="'/post-detail?id=' + post.id" class="text-decoration-none text-reset d-block"><h2 class="post-title h4 fw-bold mt-3 mb-1">{{ post.title }}</h2><div class="substack-post-content">{{ post.summary }}</div></a>
+                  <a [href]="'/post-detail?id=' + post.id" class="text-decoration-none text-reset d-block"><h2 class="post-title h4 fw-bold mt-3 mb-1">{{ post.title }}</h2></a>
                 </article>
               } @empty {
                 <div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No matching posts found.</div>

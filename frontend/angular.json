@@ -41,11 +41,7 @@
               }
             ],
             "styles": [
-              "src/assets/styles/variables.scss",
-              "src/assets/styles/base.scss",
-              "src/assets/styles/layouts.scss",
-              "src/assets/styles/components.scss",
-              "src/assets/styles/editor.scss",
+              "src/app/features/workspace/post-editor.global.scss",
               "src/styles.scss"
             ],
             "scripts": []
@@ -113,11 +109,7 @@
               }
             ],
             "styles": [
-              "src/assets/styles/variables.scss",
-              "src/assets/styles/base.scss",
-              "src/assets/styles/layouts.scss",
-              "src/assets/styles/components.scss",
-              "src/assets/styles/editor.scss",
+              "src/app/features/workspace/post-editor.global.scss",
               "src/styles.scss"
             ],
             "scripts": []

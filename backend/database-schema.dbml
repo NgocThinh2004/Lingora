@@ -116,7 +116,6 @@ Table post_translations {
   language_id integer [not null]
   title varchar(255)
   slug varchar(200)
-  summary text
   content longtext
   translation_status translation_status [not null, default: 'not_started']
   translation_provider varchar(50)

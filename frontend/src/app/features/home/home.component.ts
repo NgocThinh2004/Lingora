@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PostService } from '../../core/services/post.service';
-import { CategoryService } from '../../core/services/category.service';
-import { LanguageService } from '../../core/services/language.service';
-import { PostCardComponent } from '../../shared/components/post-card/post-card.component';
-import { Post } from '../../core/models/post.model';
-import { Category, translateCategory } from '../../core/models/category.model';
+import { LocaleService } from '../../core/locale/locale.service';
+import { Category, translateCategory } from '../categories/models/category.model';
+import { CategoriesService } from '../categories/services/categories.service';
+import { PostCardComponent } from '../posts/components/post-card/post-card.component';
+import { Post } from '../posts/models/post.model';
+import { FeedPostsService } from '../posts/services/feed-posts.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-feed',
@@ -16,9 +17,10 @@ import { Category, translateCategory } from '../../core/models/category.model';
   styleUrl: './home.component.scss',
 })
 export class HomeComponent {
-  private readonly postService = inject(PostService);
-  private readonly categoryService = inject(CategoryService);
-  private readonly languageService = inject(LanguageService);
+  private readonly postService = inject(FeedPostsService);
+  private readonly categoryService = inject(CategoriesService);
+  private readonly languageService = inject(LocaleService);
+  private readonly authService = inject(AuthService);
 
   readonly posts = signal<Post[]>([]);
   readonly categories = signal<Category[]>([]);
@@ -29,6 +31,9 @@ export class HomeComponent {
   readonly totalPages = signal(1);
 
   readonly currentLang = computed(() => this.languageService.current());
+  readonly quickDraftAvatar = computed(() =>
+    this.authService.currentUser()?.avatarUrl || 'assets/images/default-avatar.svg',
+  );
 
   readonly selectedCategoryLabel = computed(() => {
     const slug = this.selectedCategorySlug();

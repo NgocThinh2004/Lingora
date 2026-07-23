@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { adminGuard } from './core/guards/admin.guard';
-import { createPostGuard } from './features/workspace/create-post.guard';
+import { adminGuard } from './core/auth/admin.guard';
+import { authGuard } from './core/auth/auth.guard';
 import { HomeComponent } from './features/home/home.component';
 import { MainLayoutComponent } from './shared/layouts/main-layout/main-layout.component';
 
@@ -31,7 +31,7 @@ export const routes: Routes = [
   },
   {
     path: 'subscriptions',
-    canActivate: [createPostGuard],
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/subscriptions/subscriptions.component').then(m => m.SubscriptionsComponent),
   },
@@ -63,13 +63,13 @@ export const routes: Routes = [
   },
   {
     path: 'auth/change-password',
-    canActivate: [createPostGuard],
+    canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/auth/change-password.component').then(m => m.ChangePasswordComponent),
+      import('./features/auth/change-password/change-password.component').then(m => m.ChangePasswordComponent),
   },
   {
     path: 'workspace/create',
-    canActivate: [createPostGuard],
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/workspace/post-editor.component').then(m => m.PostEditorComponent),
   },
@@ -80,25 +80,25 @@ export const routes: Routes = [
   },
   {
     path: 'workspace/posts',
-    canActivate: [createPostGuard],
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/workspace/my-posts.component').then(m => m.MyPostsComponent),
   },
   {
     path: 'workspace/posts/:id/edit',
-    canActivate: [createPostGuard],
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/workspace/post-editor.component').then(m => m.PostEditorComponent),
   },
   {
     path: 'profile',
-    canActivate: [createPostGuard],
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/profile/profile.component').then(m => m.ProfileComponent),
   },
   {
     path: 'profile/:id',
-    canActivate: [createPostGuard],
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/profile/profile.component').then(m => m.ProfileComponent),
   },

@@ -22,9 +22,6 @@ export class PostTranslation extends Model {
   @Column(DataType.STRING(200))
   declare slug: string | null;
 
-  @Column(DataType.TEXT)
-  declare summary: string | null;
-
   @Column(DataType.TEXT('long'))
   declare content: string | null;
 

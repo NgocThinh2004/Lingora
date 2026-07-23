@@ -1,13 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { AuthorPost, PaginationMeta, PostStatus, PostTranslation } from '../../core/models/post.model';
-import { LocaleService, UiTranslationKey } from '../../core/services/locale.service';
-import { PostsService } from '../../core/services/posts.service';
-import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
+import { LocaleService, UiTranslationKey } from '../../core/locale/locale.service';
+import { AuthorPost, PaginationMeta, PostStatus, PostTranslation } from '../posts/models/post.model';
+import { AuthorPostsService } from '../posts/services/author-posts.service';
+import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 
 type AuthorAction = 'submit' | 'archive' | 'restore' | 'trash' | 'restore-trash';
 type ConfirmationAction = 'trash' | 'delete-permanent';
@@ -15,12 +15,12 @@ type ConfirmationAction = 'trash' | 'delete-permanent';
 @Component({
   selector: 'app-my-posts',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, AppSidebarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SidebarComponent],
   templateUrl: './my-posts.component.html',
   styleUrl: './my-posts.component.scss',
 })
 export class MyPostsComponent implements OnInit {
-  private readonly postsService = inject(PostsService);
+  private readonly postsService = inject(AuthorPostsService);
   private readonly locale = inject(LocaleService);
 
   readonly statuses: Array<PostStatus | 'all'> = [
@@ -51,9 +51,8 @@ export class MyPostsComponent implements OnInit {
   notice = '';
   error = '';
   selectedPostIds = new Set<string>();
-  darkMode = false;
-  sidebarMenuOpen = false;
   categoryOptions: Array<{ id: number; label: string }> = [];
+  languageOptions: Array<{ id: number; code: string; label: string; nativeLabel: string; flagCode: string | null }> = [];
   confirmationAction: ConfirmationAction | null = null;
   confirmationPostIds: string[] = [];
   confirmationBusy = false;
@@ -61,7 +60,10 @@ export class MyPostsComponent implements OnInit {
   ngOnInit(): void {
     this.locale.load();
     this.postsService.getPostOptions().subscribe({
-      next: options => this.categoryOptions = options.categories,
+      next: options => {
+        this.categoryOptions = options.categories;
+        this.languageOptions = options.languages;
+      },
     });
     this.loadPostCounts();
     this.loadPosts();
@@ -205,7 +207,7 @@ export class MyPostsComponent implements OnInit {
 
     return this.posts.filter((post) => {
       const source = this.primaryTranslation(post);
-      const text = `${source?.title ?? ''} ${source?.summary ?? ''} ${source?.content ?? ''}`.toLowerCase();
+      const text = `${source?.title ?? ''} ${source?.content ?? ''}`.toLowerCase();
       const languageMatches =
         this.languageFilter === 'all' || this.languageCode(post.originalLanguageId).toLowerCase() === this.languageFilter;
       const dateMatches = this.dateFilter === 'all' || post.updatedAt.startsWith(this.dateFilter);
@@ -217,28 +219,24 @@ export class MyPostsComponent implements OnInit {
   }
 
   postSearchText(post: AuthorPost): string {
+    return this.postTitle(post);
+  }
+
+  postTitle(post: AuthorPost): string {
     const source = this.primaryTranslation(post);
-    return `${source?.title ?? ''} ${source?.summary ?? ''}`.trim();
+    return source?.title?.trim() || this.translate('untitled');
   }
 
   languageCode(languageId: number): string {
-    const codes: Record<number, string> = {
-      1: 'VI',
-      2: 'EN',
-      3: 'ZH',
-    };
-
-    return codes[languageId] ?? `L${languageId}`;
+    return this.languageOptions.find(language => language.id === languageId)?.code.toUpperCase()
+      ?? `L${languageId}`;
   }
 
-  flagClass(languageId: number): string {
-    const flags: Record<number, string> = {
-      1: 'fi fi-vn',
-      2: 'fi fi-us',
-      3: 'fi fi-cn',
-    };
-
-    return flags[languageId] ?? 'fi fi-un';
+  flagUrl(languageId: number): string {
+    const flagCode = this.languageOptions.find(language => language.id === languageId)?.flagCode;
+    return flagCode
+      ? `https://flagcdn.com/w40/${flagCode.toLowerCase()}.png`
+      : 'assets/images/lingora-mark.svg';
   }
 
   translate(key: UiTranslationKey): string {
@@ -385,21 +383,6 @@ export class MyPostsComponent implements OnInit {
     return this.translate(this.confirmationAction === 'delete-permanent'
       ? 'delete_confirm_action'
       : 'trash_confirm_action');
-  }
-
-  toggleTheme(): void {
-    this.darkMode = !this.darkMode;
-    document.documentElement.setAttribute('data-bs-theme', this.darkMode ? 'dark' : 'light');
-  }
-
-  toggleSidebarMenu(event: Event): void {
-    event.stopPropagation();
-    this.sidebarMenuOpen = !this.sidebarMenuOpen;
-  }
-
-  @HostListener('document:click')
-  closeMenus(): void {
-    this.sidebarMenuOpen = false;
   }
 
   isBusy(post: AuthorPost, action: AuthorAction): boolean {

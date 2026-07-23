@@ -1,19 +1,17 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
-import { PostsService } from '../../core/services/posts.service';
-import { UiPreferencesService } from '../../core/services/ui-preferences.service';
-import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { PageShellService } from '../../core/ui/page-shell.service';
+import { FeedPostsService } from '../posts/services/feed-posts.service';
+import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [AppSidebarComponent],
+  imports: [SidebarComponent],
   templateUrl: './explore.component.html',
-  styleUrl: './explore.component.scss',
-  encapsulation: ViewEncapsulation.None,
 })
 export class ExploreComponent implements OnInit, OnDestroy {
-  private readonly ui = inject(UiPreferencesService);
-  private readonly postsService = inject(PostsService);
+  private readonly ui = inject(PageShellService);
+  private readonly postsService = inject(FeedPostsService);
 
   query = '';
   tab = 'top';
@@ -23,22 +21,22 @@ export class ExploreComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.ui.mount('Lingora - Explore');
-    this.postsService.listPublicPosts({ limit: 50 }).subscribe({
+    this.postsService.list({ limit: 50 }).subscribe({
       next: response => {
-        const postResults: ExploreResult[] = response.data.map(post => {
-          const source = post.translations.find(item => item.languageId === post.originalLanguageId) ?? post.translations[0];
+        const postResults: ExploreResult[] = response.items.map(post => {
+          const source = post.translations.find(item => item.languageCode === post.originalLanguage) ?? post.translations[0];
           return {
             type: 'posts',
             title: source?.title || 'Untitled',
-            subtitle: `${post.author.displayName || post.author.username} · ${source?.summary || 'Published post'}`,
+            subtitle: `${post.author.name || post.author.handle} · Published post`,
             icon: 'bi bi-file-text',
             href: `/post-detail?id=${post.id}`,
           };
         });
-        const peopleResults: ExploreResult[] = [...new Map(response.data.map(post => [post.author.id, post.author])).values()].map(author => ({
+        const peopleResults: ExploreResult[] = [...new Map(response.items.map(post => [post.author.id, post.author])).values()].map(author => ({
           type: 'people',
-          title: author.displayName || author.username,
-          subtitle: author.bio || `@${author.username}`,
+          title: author.name || author.handle,
+          subtitle: author.bio || `@${author.handle}`,
           icon: 'bi bi-person',
           href: `/profile?id=${author.id}`,
         }));

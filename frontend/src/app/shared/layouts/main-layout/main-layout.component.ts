@@ -6,7 +6,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { inject } from '@angular/core';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { MobileHeaderComponent } from '../../components/mobile-header/mobile-header.component';
-import { RightPanelComponent } from '../../components/right-panel/right-panel.component';
+import { RightPanelComponent } from './right-panel/right-panel.component';
 
 @Component({
   selector: 'app-main-layout',

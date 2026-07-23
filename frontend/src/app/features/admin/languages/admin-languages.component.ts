@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { PaginationMeta } from '../../../core/models/api-response.model';
-import { ToastService } from '../../../core/services/toast.service';
-import { LocaleService } from '../../../core/services/locale.service';
+import { PaginationMeta } from '../../../core/http/api-response.model';
+import { LocaleService } from '../../../core/locale/locale.service';
+import { ToastService } from '../../../core/notifications/toast.service';
 import { UiStateComponent } from '../../../shared/components/ui-state/ui-state.component';
 import {
   AdminLanguage,

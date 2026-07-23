@@ -52,7 +52,6 @@ type ProviderResult =
   | {
       ok: true;
       title: string;
-      summary: string | null;
       content: string;
     }
   | {
@@ -232,7 +231,6 @@ export class TranslationsService {
             {
               title: result.title,
               slug: await this.generateUniqueSlug(result.title, target.language_id, target.id, transaction),
-              summary: result.summary,
               content: result.content,
               translation_status: 'completed',
               translation_provider: provider,
@@ -300,7 +298,6 @@ export class TranslationsService {
     return {
       ok: true,
       title: `[${context.targetLanguageCode}] ${context.source.title ?? ''}`,
-      summary: context.source.summary ? `[${context.targetLanguageCode}] ${context.source.summary}` : null,
       content: `<p><strong>Mock ${context.sourceLanguageCode} to ${context.targetLanguageCode}</strong></p>${context.source.content ?? ''}`,
     };
   }
@@ -340,7 +337,7 @@ export class TranslationsService {
   }
 
   private countTranslationCharacters(source: PostTranslation): number {
-    return [source.title, source.summary, source.content]
+    return [source.title, source.content]
       .filter(Boolean)
       .join('')
       .length;

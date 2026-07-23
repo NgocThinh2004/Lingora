@@ -1,21 +1,19 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { PostsService } from '../../core/services/posts.service';
-import { UiPreferencesService } from '../../core/services/ui-preferences.service';
-import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
+import { PageShellService } from '../../core/ui/page-shell.service';
+import { FeedPostsService } from './services/feed-posts.service';
+import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-post-detail',
   standalone: true,
-  imports: [AppSidebarComponent],
+  imports: [SidebarComponent],
   templateUrl: './post-detail.component.html',
-  styleUrl: './post-detail.component.scss',
-  encapsulation: ViewEncapsulation.None,
 })
 export class PostDetailComponent implements OnInit, OnDestroy {
-  private readonly ui = inject(UiPreferencesService);
+  private readonly ui = inject(PageShellService);
   private readonly route = inject(ActivatedRoute);
-  private readonly postsService = inject(PostsService);
+  private readonly postsService = inject(FeedPostsService);
 
   commentDraft = '';
   liked = false;
@@ -24,7 +22,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   loading = true;
   error = '';
   post: DetailPost = {
-    author: '', avatar: '/assets/images/lingora-mark.svg', category: '', title: '', summary: '', content: '', date: '', views: 0,
+    author: '', avatar: '/assets/images/lingora-mark.svg', category: '', title: '', content: '', date: '', views: 0,
   };
 
   ngOnInit(): void {
@@ -36,20 +34,25 @@ export class PostDetailComponent implements OnInit, OnDestroy {
       this.loading = false;
       return;
     }
-    this.postsService.getPublicPost(postId).subscribe({
+    const numericPostId = Number(postId);
+    if (!Number.isInteger(numericPostId) || numericPostId <= 0) {
+      this.error = 'Post id is invalid.';
+      this.loading = false;
+      return;
+    }
+    this.postsService.getById(numericPostId).subscribe({
       next: post => {
-        const source = post.translations.find(item => item.languageId === post.originalLanguageId) ?? post.translations[0];
+        const source = post.translations.find(item => item.languageCode === post.originalLanguage) ?? post.translations[0];
         this.post = {
-          author: post.author.displayName || post.author.username,
+          author: post.author.name || post.author.handle,
           avatar: post.author.avatarUrl || '/assets/images/lingora-mark.svg',
-          category: post.categoryId ? `Category ${post.categoryId}` : 'Uncategorized',
+          category: post.category?.translations[0]?.name || post.category?.slug || 'Uncategorized',
           title: source?.title || 'Untitled',
-          summary: source?.summary || '',
-          content: source?.content || '',
-          date: new Date(post.publishedAt || post.updatedAt).toLocaleDateString(),
+          content: source?.contentHtml || '',
+          date: new Date(post.createdAt).toLocaleDateString(),
           views: post.viewCount,
         };
-        this.likes = post.likeCount;
+        this.likes = post.likeCount || 0;
         this.loading = false;
       },
       error: () => {
@@ -70,7 +73,6 @@ interface DetailPost {
   avatar: string;
   category: string;
   title: string;
-  summary: string;
   content: string;
   date: string;
   views: number;

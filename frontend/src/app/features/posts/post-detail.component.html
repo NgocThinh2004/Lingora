@@ -56,7 +56,6 @@
             </div>
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 mt-3">{{ post.category }}</span>
             <h1 class="fw-bold mt-3 mb-2">{{ post.title }}</h1>
-            <p class="lead text-muted">{{ post.summary }}</p>
             <div class="post-content mt-4" [innerHTML]="post.content"></div>
             <div class="substack-post-footer mt-4">
               <button class="footer-action-item" type="button" (click)="toggleLike()"><i class="bi" [class.bi-heart]="!liked" [class.bi-heart-fill]="liked"></i> {{ likes }}</button>

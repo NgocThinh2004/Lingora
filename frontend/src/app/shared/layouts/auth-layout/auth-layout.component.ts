@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { LocaleService } from '../../../core/services/locale.service';
+import { LocaleService } from '../../../core/locale/locale.service';
 import { BrandComponent } from '../../components/brand/brand.component';
 import { LocaleSelectorComponent } from '../../components/locale-selector/locale-selector.component';
 import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';

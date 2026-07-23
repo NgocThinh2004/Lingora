@@ -22,7 +22,7 @@ export class PublicPostsService {
     @InjectModel(Language) private readonly languageModel: typeof Language,
   ) {}
 
-  async listFeed(query: PublicPostsQueryDto) {
+  async listFeed(query: PublicPostsQueryDto, postId?: number) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const offset = (page - 1) * limit;
@@ -54,6 +54,9 @@ export class PublicPostsService {
       deleted_at: null,
       status: 'published',
     };
+    if (postId !== undefined) {
+      where.id = postId;
+    }
     if (categoryId) {
       where.category_id = categoryId;
     }
@@ -65,7 +68,6 @@ export class PublicPostsService {
         where: {
           [Op.or]: [
             { title: { [Op.like]: keyword } },
-            { summary: { [Op.like]: keyword } },
             { content: { [Op.like]: keyword } },
           ],
         },
@@ -135,7 +137,7 @@ export class PublicPostsService {
             id: Number(t.id),
             languageCode: langCode,
             title: t.title || '',
-            contentHtml: t.content || t.summary || '',
+            contentHtml: t.content || '',
             source: (langCode === origLangCode ? 'original' : 'human') as 'original' | 'human' | 'machine',
           };
         });
@@ -146,9 +148,7 @@ export class PublicPostsService {
         categoryId: post.category_id,
         originalLanguage: languageMap.get(post.original_language_id) || 'en',
         coverImageUrl: post.image_url || null,
-        coverVideoUrl: post.video_url || null,
         imageUrl: post.image_url || null,
-        videoUrl: post.video_url || null,
         status: post.status,
         viewCount: post.view_count || 0,
         author: {
@@ -205,7 +205,7 @@ export class PublicPostsService {
 
     post.increment('view_count', { by: 1 }).catch(() => null);
 
-    const result = await this.listFeed({ page: 1, limit: 1 });
+    const result = await this.listFeed({ page: 1, limit: 1 }, id);
     const found = result.items.find((p) => p.id === Number(id));
     if (!found) throw new NotFoundException('Post details not found');
     return found;

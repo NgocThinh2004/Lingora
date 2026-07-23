@@ -1,12 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { PublicLanguage } from '../../core/models/locale.model';
-import { UserPreferenceKey } from '../../core/models/user-preferences.model';
-import { LanguageService } from '../../core/services/language.service';
-import { ThemePreference, ThemeService } from '../../core/services/theme.service';
-import { ToastService } from '../../core/services/toast.service';
-import { UserPreferencesService } from '../../core/services/user-preferences.service';
+import { LocaleService } from '../../core/locale/locale.service';
+import { PublicLanguage } from '../../core/locale/locale.model';
+import { ToastService } from '../../core/notifications/toast.service';
+import { UserPreferenceKey } from '../../core/preferences/user-preferences.model';
+import { UserPreferencesService } from '../../core/preferences/user-preferences.service';
+import { ThemePreference, ThemeService } from '../../core/theme/theme.service';
 import { UiStateComponent } from '../../shared/components/ui-state/ui-state.component';
 
 interface ThemeOption {
@@ -26,7 +26,7 @@ interface ThemeOption {
 export class SettingsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly themeService = inject(ThemeService);
-  private readonly languageService = inject(LanguageService);
+  private readonly languageService = inject(LocaleService);
   private readonly toastService = inject(ToastService);
   private readonly userPreferencesService = inject(UserPreferencesService);
 

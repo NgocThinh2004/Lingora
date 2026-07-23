@@ -1,0 +1,39 @@
+<aside class="right-panel">
+  <div class="right-search-box mb-4" (click)="searchModalService.open()">
+    <i class="bi bi-search"></i>
+    <input
+      type="search"
+      readonly
+      placeholder="Tìm kiếm trên Lingora..."
+      aria-label="Tìm kiếm trên Lingora"
+      (focus)="searchModalService.open()">
+  </div>
+
+  <div class="featured-authors-widget mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="fw-bold text-main mb-0">Gợi ý cho bạn</h6>
+    </div>
+
+    @if (recommendationsLoading()) {
+      <div class="recommendations-state">
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        <span>Đang tải...</span>
+      </div>
+    } @else {
+      @for (user of recommendedUsers(); track user.id) {
+        <div class="featured-author-item">
+          <a class="featured-author-info text-decoration-none" [routerLink]="['/profile', user.id]">
+            <img [src]="userAvatar(user)" [alt]="user.name" class="featured-author-avatar">
+            <span class="featured-author-meta">
+              <span class="featured-author-name">{{ user.name }}</span>
+              <span class="featured-author-count">{{ user.bio || ('@' + user.handle) }}</span>
+            </span>
+          </a>
+          <a class="btn-profile-view text-decoration-none" [routerLink]="['/profile', user.id]">Xem hồ sơ</a>
+        </div>
+      } @empty {
+        <p class="recommendations-empty">Chưa có tác giả được đề xuất.</p>
+      }
+    }
+  </div>
+</aside>

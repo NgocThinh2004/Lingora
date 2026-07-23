@@ -3,25 +3,25 @@ import { Component, OnInit, OnDestroy, signal, inject, ViewEncapsulation } from 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { AuthService } from '../../core/services/auth.service';
-import { PostsService } from '../../core/services/posts.service';
-import { UiPreferencesService } from '../../core/services/ui-preferences.service';
-import { AuthorPost } from '../../core/models/post.model';
-import { SubscriptionsService } from '../../core/services/subscriptions.service';
-import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
+import { AuthService } from '../../core/auth/auth.service';
+import { PageShellService } from '../../core/ui/page-shell.service';
+import { AuthorPost } from '../posts/models/post.model';
+import { AuthorPostsService } from '../posts/services/author-posts.service';
+import { SubscriptionsService } from '../subscriptions/services/subscriptions.service';
+import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AppSidebarComponent],
+  imports: [CommonModule, FormsModule, RouterModule, SidebarComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
   encapsulation: ViewEncapsulation.None,
 })
 export class ProfileComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
-  private postsService = inject(PostsService);
-  private ui = inject(UiPreferencesService);
+  private postsService = inject(AuthorPostsService);
+  private ui = inject(PageShellService);
   private router = inject(Router);
   private subscriptionsService = inject(SubscriptionsService);
 
@@ -123,8 +123,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   postContent(post: AuthorPost): string {
-    const translation = post.translations.find(item => item.content || item.summary);
-    return translation?.content || translation?.summary || '';
+    const translation = post.translations.find(item => item.content);
+    return translation?.content || '';
   }
 
   categoryLabel(post: AuthorPost): string {

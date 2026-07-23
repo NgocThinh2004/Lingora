@@ -1,55 +1,109 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
-import { ThemeService } from '../../../core/services/theme.service';
-import { LanguageService } from '../../../core/services/language.service';
 
-interface NavItem {
-  icon: string;
-  label: string;
-  route: string;
-}
+import {
+  Component,
+  HostListener,
+  inject,
+  OnInit,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../../core/auth/auth.service';
+import { LocaleService, UiTranslationKey } from '../../../core/locale/locale.service';
+import { ThemeService } from '../../../core/theme/theme.service';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
+  encapsulation: ViewEncapsulation.None,
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
   private readonly authService = inject(AuthService);
-  private readonly themeService = inject(ThemeService);
-  private readonly languageService = inject(LanguageService);
+  private readonly localeService = inject(LocaleService);
+  private readonly router = inject(Router);
+  readonly theme = inject(ThemeService);
+  readonly languageMenuOpen = signal(false);
+  readonly moreMenuOpen = signal(false);
+  readonly localeOptions = this.localeService.options;
+  readonly currentLanguage = this.localeService.selectedLocale;
 
-  readonly navItems: NavItem[] = [
-    { icon: 'bi-house-door-fill', label: 'Trang chủ', route: '/' },
-    { icon: 'bi-compass', label: 'Khám phá', route: '/explore' },
-    { icon: 'bi-person-lines-fill', label: 'Subscriptions', route: '/subscriptions' },
-    { icon: 'bi-journal-text', label: 'Bài viết của tôi', route: '/my-posts' },
-    { icon: 'bi-person', label: 'Hồ sơ', route: '/profile' },
-  ];
-
-  readonly languages = [
-    { code: 'en', label: 'English', flag: 'gb' },
-    { code: 'vi', label: 'Tiếng Việt', flag: 'vn' },
-    { code: 'zh', label: '中文', flag: 'cn' },
-  ];
-
-  readonly currentUser = computed(() => this.authService.currentUser());
-  readonly themeMode = computed(() => this.themeService.mode());
-  readonly currentLang = computed(() => this.languageService.current());
-
-  toggleTheme() {
-    this.themeService.toggle();
+  get profileAvatar(): string | null {
+    return this.authService.currentUser()?.avatarUrl ?? null;
   }
 
-  selectLanguage(code: string) {
-    this.languageService.setLanguage(code);
+  get currentLanguageFlag(): string {
+    return this.localeOptions().find(option => option.code === this.currentLanguage())?.flagUrl
+      ?? this.flagUrl(this.currentLanguage());
   }
 
-  logout() {
-    this.authService.logout();
+  ngOnInit(): void {
+    this.localeService.load();
+  }
+
+  translate(key: UiTranslationKey): string {
+    return this.localeService.translate(key);
+  }
+
+  toggleLanguageMenu(event: Event): void {
+    event.stopPropagation();
+    this.moreMenuOpen.set(false);
+    this.languageMenuOpen.update(open => !open);
+  }
+
+  toggleMoreMenu(event: Event): void {
+    event.stopPropagation();
+    this.languageMenuOpen.set(false);
+    this.moreMenuOpen.update(open => !open);
+  }
+
+  toggleTheme(event: Event): void {
+    event.stopPropagation();
+    this.closeMenus();
+    this.theme.toggle();
+  }
+
+  setLanguage(event: Event, language: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.localeService.selectLocale(language);
+    this.closeMenus();
+  }
+
+  flagUrl(language: string): string {
+    const country = language === 'vi' ? 'vn' : language === 'zh' ? 'cn' : 'gb';
+    return `https://flagcdn.com/w20/${country}.png`;
+  }
+
+  signOut(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.closeMenus();
+    this.authService.logout().subscribe({
+      complete: () => void this.router.navigate(['/auth/login']),
+    });
+  }
+
+  closeMenus(): void {
+    this.languageMenuOpen.set(false);
+    this.moreMenuOpen.set(false);
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeMenusOnOutsideClick(event: Event): void {
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest('[data-sidebar-language]')) {
+      this.languageMenuOpen.set(false);
+    }
+    if (!target?.closest('[data-sidebar-more]')) {
+      this.moreMenuOpen.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  closeMenusOnEscape(): void {
+    this.closeMenus();
   }
 }
