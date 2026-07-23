@@ -1,4 +1,4 @@
-import { CurrentUser } from './current-user.model';
+import { CurrentUser } from '../../features/users/models/current-user.model';
 
 export interface LoginRequest {
   emailOrUsername: string;

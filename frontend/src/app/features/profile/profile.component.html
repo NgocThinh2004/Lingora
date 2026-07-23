@@ -1,90 +1,4 @@
-<div class="feature-page feature-page-profile">
-  <div class="profile-app">
-    <app-sidebar />
-    <aside class="left-sidebar d-none" aria-hidden="true">
-      <div>
-        <div class="substack-logo-container">
-          <a href="/home" class="text-decoration-none d-flex align-items-center gap-2">
-            <i class="bi bi-bookmark-fill substack-logo"></i>
-            <span class="fs-5 fw-bold text-main" style="letter-spacing: -0.02em;">Lingora</span>
-          </a>
-        </div>
-
-        <nav class="sidebar-nav">
-          <a href="/home" class="sidebar-nav-item">
-            <i class="bi bi-house-door"></i> <span data-i18n="home">Home</span>
-          </a>
-
-          <a href="/workspace/posts" class="sidebar-nav-item">
-            <i class="bi bi-journal-text"></i> <span data-i18n="my_articles">My Articles</span>
-          </a>
-          <a href="/profile" class="sidebar-nav-item active" aria-current="page">
-            <i class="bi bi-person"></i> <span data-i18n="profile">Profile</span>
-          </a>
-        </nav>
-
-        <a href="/workspace/create?from=profile.html" class="sidebar-create-btn">
-          <span data-i18n="create">Create</span> <i class="bi bi-plus-lg"></i>
-        </a>
-      </div>
-
-
-      <div class="sidebar-footer-menu">
-
-        <!-- Sidebar Controls (Theme & Language) -->
-        <div class="sidebar-controls mb-2">
-          <!-- Theme Switch and Language -->
-          <div class="d-flex align-items-center justify-content-start gap-2 ps-3 pe-2 mb-2">
-            <div class="dropdown">
-              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-0"
-                type="button" data-bs-toggle="dropdown" aria-expanded="false"
-                style="width: 38px; height: 38px; border-radius: 8px; border-color: var(--border-color);">
-                <img src="https://flagcdn.com/w20/gb.png" width="24" height="18" id="sidebarLangFlag"
-                  style="border-radius:2px; object-fit: cover;" alt="Language">
-              </button>
-              <ul class="dropdown-menu shadow border-light-subtle"
-                style="min-width: 120px; border-radius: 12px; font-size: 14px;">
-                <li><a class="dropdown-item py-1.5 fw-medium global-lang-select" href="#" data-lang="en"><img
-                      src="https://flagcdn.com/w20/gb.png" width="18" alt="English" class="me-2"
-                      style="border-radius:2px;"> English</a></li>
-                <li><a class="dropdown-item py-1.5 fw-medium global-lang-select" href="#" data-lang="vi"><img
-                      src="https://flagcdn.com/w20/vn.png" width="18" alt="Tiếng Việt" class="me-2"
-                      style="border-radius:2px;"> Tiếng Việt</a></li>
-                <li><a class="dropdown-item py-1.5 fw-medium global-lang-select" href="#" data-lang="zh"><img
-                      src="https://flagcdn.com/w20/cn.png" width="18" alt="中文" class="me-2" style="border-radius:2px;">
-                    中文</a></li>
-              </ul>
-            </div>
-            <button class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-0"
-              id="sidebarThemeToggle"
-              style="width: 38px; height: 38px; border-radius: 8px; border-color: var(--border-color); color: var(--text-main);"
-              aria-label="Toggle theme">
-              <i class="bi bi-moon-fill" id="sidebarThemeIcon" style="font-size: 17px;"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="dropdown">
-          <button
-            class="btn btn-link text-decoration-none text-main d-flex align-items-center gap-2 p-1.5 w-100 border-0 text-start"
-            type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-list fs-5"></i>
-            <span class="fw-medium" data-i18n="more">More</span>
-          </button>
-          <ul class="dropdown-menu shadow border-light-subtle">
-            <li><a class="dropdown-item py-2" href="/settings"><i class="bi bi-gear me-2"></i> <span
-                  data-i18n="settings">Settings</span></a></li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-            <li><a class="dropdown-item py-2 text-danger" href="#" id="signOutBtn"><i
-                  class="bi bi-box-arrow-right me-2"></i> <span data-i18n="sign_out">Sign Out</span></a></li>
-          </ul>
-        </div>
-      </div>
-    </aside>
-
-    <main class="profile-main">
+    <div class="profile-main w-100">
       @if (notice() || error()) {
         <div class="alert mx-3 mt-3" [class.alert-success]="!!notice()" [class.alert-danger]="!!error()" role="status">
           {{ error() || notice() }}
@@ -399,8 +313,7 @@
 
       </section>
       }
-    </main>
-  </div>
+    </div>
 
   <!-- Mobile Bottom Navigation -->
   <nav class="mobile-bottom-nav d-lg-none">
@@ -530,5 +443,5 @@
         <!-- Subscribers list will be injected here -->
       </div>
     </section>
-  </div>
-</div>
+  
+

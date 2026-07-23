@@ -45,14 +45,14 @@
       }
     </div>
 
-    @if (page() < totalPages()) {
-      <button type="button" class="load-more-btn" (click)="loadMore()" [disabled]="loadingMore()">
-        @if (loadingMore()) {
-          Đang tải thêm...
-        } @else {
-          Xem thêm bài viết
-        }
-      </button>
+    @if (loadingMore()) {
+      <div class="infinite-loader">
+        <i class="bi bi-arrow-repeat spin"></i>
+        <span>Đang tải thêm bài viết...</span>
+      </div>
     }
+
+    <!-- Invisible sentinel element for IntersectionObserver -->
+    <div #sentinel class="infinite-scroll-sentinel"></div>
   }
 </div>

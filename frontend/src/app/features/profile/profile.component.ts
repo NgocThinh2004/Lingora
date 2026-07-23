@@ -4,9 +4,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { PostsService } from '../../core/services/posts.service';
+import { PostsService } from '../posts/services/posts.service';
 import { UiPreferencesService } from '../../core/services/ui-preferences.service';
-import { AuthorPost } from '../../core/models/post.model';
+import { AuthorPost } from '../posts/models/post.model';
 import { SubscriptionsService } from '../../core/services/subscriptions.service';
 import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
 
@@ -119,11 +119,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   postTitle(post: AuthorPost): string {
-    return post.translations.find(translation => translation.title)?.title || 'Untitled';
+    return post.translations.find((translation: any) => translation.title)?.title || 'Untitled';
   }
 
   postContent(post: AuthorPost): string {
-    const translation = post.translations.find(item => item.content || item.summary);
+    const translation = post.translations.find((item: any) => item.content || item.summary);
     return translation?.content || translation?.summary || '';
   }
 

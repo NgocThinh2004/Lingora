@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ApiItemResponse, PublicPost } from '../models/post.model';
+import { ApiItemResponse, PublicPost } from '../../features/posts/models/post.model';
 
 export interface SubscriptionAuthor {
   id: string;

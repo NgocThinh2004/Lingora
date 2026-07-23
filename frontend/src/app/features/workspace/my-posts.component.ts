@@ -4,9 +4,9 @@ import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { AuthorPost, PaginationMeta, PostStatus, PostTranslation } from '../../core/models/post.model';
+import { AuthorPost, PaginationMeta, PostStatus, PostTranslation } from '../posts/models/post.model';
 import { LocaleService, UiTranslationKey } from '../../core/services/locale.service';
-import { PostsService } from '../../core/services/posts.service';
+import { PostsService } from '../posts/services/posts.service';
 import { AppSidebarComponent } from '../../shared/components/app-sidebar.component';
 
 type AuthorAction = 'submit' | 'archive' | 'restore' | 'trash' | 'restore-trash';
@@ -129,7 +129,7 @@ export class MyPostsComponent implements OnInit {
 
   primaryTranslation(post: AuthorPost): PostTranslation | null {
     return (
-      post.translations.find((translation) => translation.languageId === post.originalLanguageId) ??
+      post.translations.find((translation: any) => translation.languageId === post.originalLanguageId) ??
       post.translations[0] ??
       null
     );
@@ -184,16 +184,16 @@ export class MyPostsComponent implements OnInit {
   }
 
   translatedLanguageSummary(post: AuthorPost): string {
-    const targets = post.translationMatrix.filter((translation) => translation.languageId !== post.originalLanguageId);
+    const targets = post.translationMatrix.filter((translation: any) => translation.languageId !== post.originalLanguageId);
     if (!targets.length) {
       return '-';
     }
 
-    return targets.map((translation) => `L${translation.languageId}: ${translation.status}`).join(', ');
+    return targets.map((translation: any) => `L${translation.languageId}: ${translation.status}`).join(', ');
   }
 
   targetMatrix(post: AuthorPost) {
-    return post.translationMatrix.filter((translation) => translation.languageId !== post.originalLanguageId);
+    return post.translationMatrix.filter((translation: any) => translation.languageId !== post.originalLanguageId);
   }
 
   visiblePosts(): AuthorPost[] {

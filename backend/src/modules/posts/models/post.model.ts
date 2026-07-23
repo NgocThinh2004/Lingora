@@ -1,4 +1,5 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, Model, Table, HasMany } from 'sequelize-typescript';
+import { Comment } from '../../comments/models/comment.model';
 
 @Table({
   tableName: 'posts',
@@ -49,4 +50,7 @@ export class Post extends Model {
 
   @Column(DataType.DATE)
   declare deleted_at: Date | null;
+
+  @HasMany(() => Comment, 'post_id')
+  declare comments: Comment[];
 }

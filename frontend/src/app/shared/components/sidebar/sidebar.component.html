@@ -1,72 +1,70 @@
-<div class="sidebar-inner">
-  <div>
-    <div class="logo-block">
-      <a routerLink="/" class="logo-link">
-        <img src="assets/images/lingora-mark.svg" alt="Lingora" class="logo-mark" />
-        <span class="logo-text">Lingora</span>
-      </a>
-    </div>
-
-    <nav class="nav-list">
-      @for (item of navItems; track item.route) {
-        <a
-          [routerLink]="item.route"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: item.route === '/' }"
-          class="nav-item"
-        >
-          <i class="bi" [class]="item.icon"></i>
-          <span>{{ item.label }}</span>
-        </a>
-      }
-    </nav>
-
-    <a routerLink="/create-post" class="create-btn">
-      <span>Viết bài</span>
-      <i class="bi bi-plus-lg"></i>
+<div>
+  <div class="logo-block">
+    <a routerLink="/" class="logo-link">
+      <img src="assets/images/lingora-mark.svg" alt="Lingora" class="logo-mark" />
+      <span class="logo-text">Lingora</span>
     </a>
   </div>
 
-  <div class="sidebar-footer">
-    <div class="controls-row">
-      <div class="dropdown-wrap">
-        <button type="button" class="icon-btn" [attr.aria-label]="'Ngôn ngữ'">
-          <i class="bi bi-globe2"></i>
-        </button>
-        <div class="dropdown-menu">
-          @for (lang of languages; track lang.code) {
-            <button
-              type="button"
-              class="dropdown-item"
-              [class.selected]="lang.code === currentLang()"
-              (click)="selectLanguage(lang.code)"
-            >
-              <img [src]="'https://flagcdn.com/w20/' + lang.flag + '.png'" [alt]="lang.label" />
-              {{ lang.label }}
-            </button>
-          }
-        </div>
-      </div>
+  <nav class="nav-list">
+    @for (item of navItems; track item.route) {
+      <a
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.route === '/' }"
+        class="nav-item"
+      >
+        <i class="bi" [class]="item.icon"></i>
+        <span>{{ item.label }}</span>
+      </a>
+    }
+  </nav>
 
-      <button type="button" class="icon-btn" (click)="toggleTheme()" aria-label="Đổi giao diện">
-        <i class="bi" [class.bi-moon-fill]="themeMode() === 'light'" [class.bi-sun-fill]="themeMode() === 'dark'"></i>
-      </button>
-    </div>
+  <a routerLink="/create-post" class="create-btn">
+    <span>Viết bài</span>
+    <i class="bi bi-plus-lg"></i>
+  </a>
+</div>
 
-    <div class="dropdown-wrap w-100">
-      <button type="button" class="more-btn">
-        <i class="bi bi-list"></i>
-        <span>Thêm</span>
+<div class="sidebar-footer">
+  <div class="controls-row">
+    <div class="dropdown-wrap">
+      <button type="button" class="icon-btn" [attr.aria-label]="'Ngôn ngữ'">
+        <img [src]="'https://flagcdn.com/w20/' + currentFlag() + '.png'" class="flag-icon" [alt]="currentLang()" />
       </button>
       <div class="dropdown-menu">
-        <a routerLink="/settings" class="dropdown-item">
-          <i class="bi bi-gear"></i> Cài đặt
-        </a>
-        <hr />
-        <button type="button" class="dropdown-item danger" (click)="logout()">
-          <i class="bi bi-box-arrow-right"></i> Đăng xuất
-        </button>
+        @for (lang of languages; track lang.code) {
+          <button
+            type="button"
+            class="dropdown-item"
+            [class.selected]="lang.code === currentLang()"
+            (click)="selectLanguage(lang.code)"
+          >
+            <img [src]="'https://flagcdn.com/w20/' + lang.flag + '.png'" [alt]="lang.label" />
+            {{ lang.label }}
+          </button>
+        }
       </div>
+    </div>
+
+    <button type="button" class="icon-btn" (click)="toggleTheme()" aria-label="Đổi giao diện">
+      <i class="bi" [class.bi-moon-fill]="themeMode() === 'light'" [class.bi-sun-fill]="themeMode() === 'dark'"></i>
+    </button>
+  </div>
+
+  <div class="dropdown-wrap w-100">
+    <button type="button" class="more-btn">
+      <i class="bi bi-list fs-5"></i>
+      <span class="fw-medium">Thêm</span>
+    </button>
+    <div class="dropdown-menu">
+      <a routerLink="/settings" class="dropdown-item">
+        <i class="bi bi-gear"></i> Cài đặt
+      </a>
+      <hr />
+      <button type="button" class="dropdown-item danger" (click)="logout()">
+        <i class="bi bi-box-arrow-right"></i> Đăng xuất
+      </button>
     </div>
   </div>
 </div>

@@ -90,7 +90,6 @@ body {
 .center-feed {
   background-color: var(--bg-body);
   padding: 1.5rem 2.5rem;
-  overflow-y: auto;
   border-right: 1px solid var(--border-color);
   transition: border-color var(--transition-speed) ease;
   display: flex;

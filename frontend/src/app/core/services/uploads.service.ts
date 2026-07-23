@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ApiItemResponse } from '../models/post.model';
+import { ApiItemResponse } from '../../features/posts/models/post.model';
 import { EditorMediaType, UploadResponse } from '../models/upload.model';
 
 @Injectable({ providedIn: 'root' })

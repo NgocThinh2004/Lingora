@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../../environments/environment';
 import {
   ApiCollectionResponse,
   ApiItemResponse,
@@ -12,12 +12,82 @@ import {
   Post,
   PublicPost,
   UpdatePostPayload,
+  PaginatedResult,
 } from '../models/post.model';
+import { ApiResponse } from '../../../core/models/api-response.model';
+
+export interface PostQuery {
+  lang?: string;
+  category?: string;
+  q?: string;
+  authorId?: string | number;
+  sort?: 'top' | 'newest';
+  page?: number;
+  limit?: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class PostsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
+
+  // ---------------------------------------------------------
+  // NEW API (from feature/homepage)
+  // ---------------------------------------------------------
+
+  list(query: PostQuery = {}): Observable<PaginatedResult<Post>> {
+    let params = new HttpParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, String(value));
+      }
+    });
+
+    return this.http
+      .get<ApiResponse<PaginatedResult<Post>>>(`${this.baseUrl}/posts`, { params })
+      .pipe(map((res) => res.data));
+  }
+
+  getById(id: number): Observable<Post> {
+    return this.http
+      .get<ApiResponse<Post>>(`${this.baseUrl}/posts/${id}`)
+      .pipe(map((res) => res.data));
+  }
+
+  getRelated(id: number): Observable<Post[]> {
+    return this.http
+      .get<ApiResponse<Post[]>>(`${this.baseUrl}/posts/${id}/related`)
+      .pipe(map((res) => res.data));
+  }
+
+  create(payload: {
+    categorySlug?: string;
+    originalLanguage: string;
+    coverImageUrl?: string;
+    coverVideoUrl?: string;
+    status?: 'draft' | 'published';
+    translations: { languageCode: string; title: string; contentHtml: string }[];
+  }): Observable<Post> {
+    return this.http
+      .post<ApiResponse<Post>>(`${this.baseUrl}/posts`, payload)
+      .pipe(map((res) => res.data));
+  }
+
+  update(id: number, payload: Partial<Parameters<PostsService['create']>[0]>): Observable<Post> {
+    return this.http
+      .patch<ApiResponse<Post>>(`${this.baseUrl}/posts/${id}`, payload)
+      .pipe(map((res) => res.data));
+  }
+
+  remove(id: number): Observable<{ message: string }> {
+    return this.http
+      .delete<ApiResponse<{ message: string }>>(`${this.baseUrl}/posts/${id}`)
+      .pipe(map((res) => res.data));
+  }
+
+  // ---------------------------------------------------------
+  // LEGACY API (from develop branch)
+  // ---------------------------------------------------------
 
   listAuthorPosts(params: PostListParams = {}): Observable<ApiCollectionResponse<AuthorPost>> {
     return this.http.get<ApiCollectionResponse<AuthorPost>>(`${this.baseUrl}/author/posts`, {
@@ -25,7 +95,7 @@ export class PostsService {
     });
   }
 
-  listPublicPosts(params: Pick<PostListParams, 'search' | 'page' | 'limit'> = {}): Observable<ApiCollectionResponse<PublicPost>> {
+  listPublicPosts(params: Partial<Pick<PostListParams, 'search' | 'page' | 'limit'>> = {}): Observable<ApiCollectionResponse<PublicPost>> {
     return this.http
       .get<ApiCollectionResponse<PublicPost> | ApiItemResponse<{ items: Post[]; meta: ApiCollectionResponse<PublicPost>['meta'] }>>(
         `${this.baseUrl}/posts`,
@@ -36,7 +106,7 @@ export class PostsService {
           return response as ApiCollectionResponse<PublicPost>;
         }
         return {
-          data: response.data.items.map(post => this.toLegacyPublicPost(post)),
+          data: response.data.items.map((post: any) => this.toLegacyPublicPost(post)),
           meta: response.data.meta,
         };
       }));
@@ -113,7 +183,7 @@ export class PostsService {
   private toLegacyPublicPost(post: Post): PublicPost {
     const originalIndex = Math.max(
       0,
-      post.translations.findIndex(translation => translation.languageCode === post.originalLanguage),
+      post.translations.findIndex((translation: any) => translation.languageCode === post.originalLanguage),
     );
     const createdAt = post.createdAt;
 
@@ -129,7 +199,7 @@ export class PostsService {
       createdAt,
       updatedAt: createdAt,
       deletedAt: null,
-      translations: post.translations.map((translation, index) => ({
+      translations: post.translations.map((translation: any, index: number) => ({
         id: String(translation.id),
         languageId: index + 1,
         title: translation.title,
@@ -141,7 +211,7 @@ export class PostsService {
         createdAt,
         updatedAt: createdAt,
       })),
-      translationMatrix: post.translations.map((_, index) => ({
+      translationMatrix: post.translations.map((_: any, index: number) => ({
         languageId: index + 1,
         status: 'completed',
         provider: null,
