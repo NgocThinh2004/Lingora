@@ -22,6 +22,12 @@ export class Post extends Model {
   @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false, defaultValue: 0 })
   declare view_count: number;
 
+  @Column(DataType.STRING(500))
+  declare image_url: string | null;
+
+  @Column(DataType.STRING(500))
+  declare video_url: string | null;
+
   @Column({
     type: DataType.ENUM('draft', 'pending_review', 'approved', 'rejected', 'published', 'archived'),
     allowNull: false,

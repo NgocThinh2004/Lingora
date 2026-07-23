@@ -8,6 +8,8 @@ import { UsersModule } from '../users/users.module';
 import { User } from '../users/models/user.model';
 import { AdminPostsController } from './admin/admin-posts.controller';
 import { AdminPostsService } from './admin/admin-posts.service';
+import { PublicPostsController } from './public/public-posts.controller';
+import { PublicPostsService } from './public/public-posts.service';
 import { PostTranslation } from './models/post-translation.model';
 import { Post } from './models/post.model';
 
@@ -16,7 +18,8 @@ import { Post } from './models/post.model';
     UsersModule,
     SequelizeModule.forFeature([Post, PostTranslation, User, Category, CategoryTranslation, Language]),
   ],
-  controllers: [AdminPostsController],
-  providers: [AdminPostsService, RolesGuard],
+  controllers: [AdminPostsController, PublicPostsController],
+  providers: [AdminPostsService, PublicPostsService, RolesGuard],
+  exports: [PublicPostsService],
 })
 export class PostsModule {}
