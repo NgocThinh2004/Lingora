@@ -1,0 +1,107 @@
+@if (loading()) {
+  <div class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+}
+
+@if (error()) {
+  <div class="alert alert-danger m-4" role="alert">
+    {{ error() }}
+  </div>
+}
+
+@if (post(); as p) {
+  <a routerLink="/" class="text-decoration-none text-muted mb-4 d-inline-flex align-items-center fw-medium mt-3 ms-2">
+    <i class="bi bi-arrow-left me-2"></i> <span>Back to Feed</span>
+  </a>
+
+  <div id="postDetailContainer">
+    <article class="substack-post border-0 py-0 px-2 px-md-3">
+      <div class="mb-3">
+        @if (p.category) {
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill fw-medium category-label">
+            {{ p.category.translations.length ? p.category.translations[0].name : p.category.slug }}
+          </span>
+        }
+      </div>
+
+      <h1 class="post-title fw-bold mb-4 text-main" style="font-size: 1.75rem; letter-spacing: -0.025em; line-height: 1.25; word-break: break-word; overflow-wrap: anywhere;">
+        {{ displayedTranslation()?.title }}
+      </h1>
+
+      <div class="substack-post-header mb-4 pb-3 border-bottom d-flex align-items-center justify-content-between">
+        <div class="author-badge-group d-flex align-items-center position-relative author-tooltip-container" style="z-index: 2;">
+          <img [src]="p.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=48&h=48'"
+               [alt]="p.author.name"
+               class="author-avatar me-3 rounded-circle border"
+               style="width:48px;height:48px;object-fit:cover;">
+          <div class="author-meta-info">
+            <div class="d-flex align-items-center flex-wrap">
+              <span class="author-name me-1 fw-bold text-main">{{ p.author.name }}</span>
+              <span class="post-timestamp text-muted small ms-2">{{ p.createdAt | date:'mediumDate' }}</span>
+            </div>
+            <div class="text-muted small">&#64;{{ p.author.handle }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="substack-post-content post-content mt-4 text-main" style="line-height: 1.8;">
+        <!-- Binding the translated HTML securely -->
+        <div [innerHTML]="displayedTranslation()?.contentHtml"></div>
+      </div>
+
+      @if (p.imageUrl) {
+        <div class="post-image-embed mb-4 mt-4" style="max-height: none; height: auto; border: none; background: transparent; overflow: visible;">
+          <img [src]="p.imageUrl" alt="Cover" class="w-100 rounded-4 shadow-sm" style="max-height: 500px; object-fit: cover;">
+        </div>
+      }
+
+      <div class="substack-post-footer mt-5 pt-3 border-top d-flex align-items-center gap-4">
+        <button class="footer-action-item btn btn-link text-decoration-none text-secondary d-flex align-items-center gap-1 p-0"
+                [class.text-danger]="p.liked" (click)="toggleLike()">
+          <i class="bi" [class.bi-heart]="!p.liked" [class.bi-heart-fill]="p.liked"></i> <span class="like-count">{{ p.likeCount || 0 }}</span>
+        </button>
+        <button class="footer-action-item btn btn-link text-decoration-none text-secondary d-flex align-items-center gap-1 p-0">
+          <i class="bi bi-chat"></i> <span id="footerCommentCount">{{ p.commentCount || 0 }}</span>
+        </button>
+        <span class="footer-action-item d-flex align-items-center gap-1">
+          <i class="bi bi-eye"></i> <span>{{ p.viewCount }}</span>
+        </span>
+      </div>
+    </article>
+
+    <app-comment-section [postId]="p.id" [postAuthorId]="p.authorId"></app-comment-section>
+
+    <!-- Related Posts Section (Same Category) -->
+    @if (relatedPosts().length > 0) {
+      <div class="mt-5 pt-4 border-top">
+        <h4 class="fw-bold mb-4">Related Posts</h4>
+        <div id="relatedPostsContainer" class="d-flex flex-column gap-3">
+          @for (rel of relatedPosts(); track rel.id) {
+            <a [routerLink]="['/posts', rel.id]" class="related-post-card text-reset text-decoration-none p-3 rounded-4 border border-light-subtle d-block transition-all hover-shadow">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-0.5 rounded-pill small category-label">
+                  {{ rel.category?.translations?.[0]?.name || rel.category?.slug }}
+                </span>
+                <span class="text-muted small post-timestamp">{{ rel.createdAt | date:'mediumDate' }}</span>
+              </div>
+              <h5 class="fw-bold mb-2 text-main">
+                {{ getPostTranslationByLocale(rel)?.title || 'Untitled' }}
+              </h5>
+              <div class="d-flex align-items-center gap-2 text-muted small mt-3">
+                <img [src]="rel.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=24&h=24'"
+                     class="rounded-circle" width="24" height="24" style="object-fit:cover;" [alt]="rel.author.name">
+                <span class="fw-medium text-main">{{ rel.author.name }}</span>
+                <span class="ms-auto"><i class="bi bi-heart me-1"></i>{{ rel.likeCount || 0 }}</span>
+                <span class="ms-2"><i class="bi bi-chat me-1"></i>{{ rel.commentCount || 0 }}</span>
+              </div>
+            </a>
+          }
+        </div>
+      </div>
+    }
+
+  </div>
+}

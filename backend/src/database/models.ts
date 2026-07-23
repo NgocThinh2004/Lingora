@@ -2,6 +2,7 @@ import { RefreshToken } from '../modules/auth/models/refresh-token.model';
 import { CategoryTranslation } from '../modules/categories/models/category-translation.model';
 import { Category } from '../modules/categories/models/category.model';
 import { Comment } from '../modules/comments/models/comment.model';
+import { CommentTranslation } from '../modules/comments/models/comment-translation.model';
 import { Language } from '../modules/languages/models/language.model';
 import { CommentLike } from '../modules/likes/models/comment-like.model';
 import { PostLike } from '../modules/likes/models/post-like.model';
@@ -16,6 +17,7 @@ export {
   Category,
   CategoryTranslation,
   Comment,
+  CommentTranslation,
   CommentLike,
   Language,
   Post,
@@ -38,6 +40,7 @@ export const databaseModels = [
   PostTranslation,
   TranslationAttempt,
   Comment,
+  CommentTranslation,
   PostLike,
   CommentLike,
   Subscription,

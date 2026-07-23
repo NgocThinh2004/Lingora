@@ -6,7 +6,7 @@ import { LocaleService } from '../../../../core/locale/locale.service';
 import { ToastService } from '../../../../core/notifications/toast.service';
 import { translateCategory } from '../../../categories/models/category.model';
 import { Post, getPostTranslation } from '../../models/post.model';
-import { PostLikesService } from '../../services/post-likes.service';
+import { LikeService } from '../../services/like.service';
 
 @Component({
   selector: 'app-post-card',
@@ -17,7 +17,7 @@ import { PostLikesService } from '../../services/post-likes.service';
 })
 export class PostCardComponent {
   private readonly languageService = inject(LocaleService);
-  private readonly likeService = inject(PostLikesService);
+  private readonly likeService = inject(LikeService);
   private readonly toast = inject(ToastService);
   private readonly authService = inject(AuthService);
 
@@ -42,7 +42,7 @@ export class PostCardComponent {
       return;
     }
 
-    this.likeService.toggle(this.post.id).subscribe((status) => {
+    this.likeService.togglePostLike(this.post.id).subscribe((status) => {
       this.post = { ...this.post, liked: status.liked, likeCount: status.likeCount };
     });
   }

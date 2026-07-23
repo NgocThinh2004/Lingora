@@ -40,4 +40,10 @@ export class FeedPostsService {
       .pipe(map((res) => res.data));
   }
 
+  getRelated(id: number): Observable<Post[]> {
+    return this.http
+      .get<ApiResponse<Post[]>>(`${this.baseUrl}/${id}/related`)
+      .pipe(map((res) => res.data));
+  }
+
 }

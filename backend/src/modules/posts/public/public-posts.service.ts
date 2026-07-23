@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Op } from 'sequelize';
+import { col, fn, Op } from 'sequelize';
 import { Post } from '../models/post.model';
 import { PostTranslation } from '../models/post-translation.model';
 import { User } from '../../users/models/user.model';
 import { Category } from '../../categories/models/category.model';
 import { CategoryTranslation } from '../../categories/models/category-translation.model';
 import { Language } from '../../languages/models/language.model';
+import { Comment } from '../../comments/models/comment.model';
+import { PostLike } from '../../likes/models/post-like.model';
 import { PublicPostsQueryDto } from './dto/public-posts.dto';
 
 @Injectable()
@@ -20,6 +22,8 @@ export class PublicPostsService {
     @InjectModel(CategoryTranslation)
     private readonly categoryTranslationModel: typeof CategoryTranslation,
     @InjectModel(Language) private readonly languageModel: typeof Language,
+    @InjectModel(Comment) private readonly commentModel: typeof Comment,
+    @InjectModel(PostLike) private readonly postLikeModel: typeof PostLike,
   ) {}
 
   async listFeed(query: PublicPostsQueryDto, postId?: number) {
@@ -98,7 +102,7 @@ export class PublicPostsService {
     const authorIds = [...new Set(posts.map((p) => Number(p.author_id)))];
     const categoryIds = [...new Set(posts.map((p) => p.category_id).filter(Boolean))] as number[];
 
-    const [translations, authors, categories, categoryTranslations] = await Promise.all([
+    const [translations, authors, categories, categoryTranslations, commentCountRows, likeCountRows] = await Promise.all([
       this.postTranslationModel.findAll({
         where: { post_id: postIds },
       }),
@@ -107,7 +111,20 @@ export class PublicPostsService {
       categoryIds.length
         ? this.categoryTranslationModel.findAll({ where: { category_id: categoryIds } })
         : [],
+      this.commentModel.findAll({
+        attributes: ['post_id', [fn('COUNT', col('Comment.id')), 'count']],
+        where: { post_id: postIds, status: 'approved' },
+        group: ['post_id'],
+      }),
+      this.postLikeModel.findAll({
+        attributes: ['post_id', [fn('COUNT', col('PostLike.id')), 'count']],
+        where: { post_id: postIds },
+        group: ['post_id'],
+      }),
     ]);
+
+    const commentCounts = new Map(commentCountRows.map(row => [String(row.post_id), Number(row.getDataValue('count'))]));
+    const likeCounts = new Map(likeCountRows.map(row => [String(row.post_id), Number(row.getDataValue('count'))]));
 
     const authorMap = new Map<any, User>();
     authors.forEach((u) => {
@@ -151,6 +168,9 @@ export class PublicPostsService {
         imageUrl: post.image_url || null,
         status: post.status,
         viewCount: post.view_count || 0,
+        commentCount: commentCounts.get(String(post.id)) || 0,
+        likeCount: likeCounts.get(String(post.id)) || 0,
+        liked: false,
         author: {
           id: Number(postAuthor?.id || post.author_id),
           name: postAuthor?.display_name || postAuthor?.username || 'Tác giả',
@@ -209,5 +229,18 @@ export class PublicPostsService {
     const found = result.items.find((p) => p.id === Number(id));
     if (!found) throw new NotFoundException('Post details not found');
     return found;
+  }
+
+  async getRelated(id: number) {
+    const post = await this.postModel.findOne({ where: { id, deleted_at: null, status: 'published' } });
+    if (!post) throw new NotFoundException('Post not found');
+
+    const query = post.category_id ? { category: String(post.category_id), limit: 4 } : { limit: 4 };
+    const sameCategory = await this.listFeed(query);
+    const related = sameCategory.items.filter(item => item.id !== Number(id)).slice(0, 3);
+    if (related.length) return related;
+
+    const newest = await this.listFeed({ limit: 4 });
+    return newest.items.filter(item => item.id !== Number(id)).slice(0, 3);
   }
 }

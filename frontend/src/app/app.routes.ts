@@ -37,11 +37,15 @@ export const routes: Routes = [
   },
   {
     path: 'post-detail',
-    loadComponent: () => import('./features/posts/post-detail.component').then(m => m.PostDetailComponent),
+    loadComponent: () => import('./features/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent),
   },
   {
     path: 'post/:id',
-    loadComponent: () => import('./features/posts/post-detail.component').then(m => m.PostDetailComponent),
+    loadComponent: () => import('./features/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent),
+  },
+  {
+    path: 'posts/:id',
+    loadComponent: () => import('./features/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent),
   },
   {
     path: 'auth/login',
