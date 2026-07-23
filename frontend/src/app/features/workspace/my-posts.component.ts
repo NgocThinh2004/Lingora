@@ -8,6 +8,7 @@ import { LocaleService, UiTranslationKey } from '../../core/locale/locale.servic
 import { AuthorPost, PaginationMeta, PostStatus, PostTranslation } from '../posts/models/post.model';
 import { AuthorPostsService } from '../posts/services/author-posts.service';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
+import { ToastService } from '../../core/notifications/toast.service';
 
 type AuthorAction = 'submit' | 'archive' | 'restore' | 'trash' | 'restore-trash';
 type ConfirmationAction = 'trash' | 'delete-permanent';
@@ -22,6 +23,7 @@ type ConfirmationAction = 'trash' | 'delete-permanent';
 export class MyPostsComponent implements OnInit {
   private readonly postsService = inject(AuthorPostsService);
   private readonly locale = inject(LocaleService);
+  private readonly toast = inject(ToastService);
 
   readonly statuses: Array<PostStatus | 'all'> = [
     'all',
@@ -48,8 +50,6 @@ export class MyPostsComponent implements OnInit {
   trash = false;
   loading = false;
   busyKey = '';
-  notice = '';
-  error = '';
   selectedPostIds = new Set<string>();
   categoryOptions: Array<{ id: number; label: string }> = [];
   languageOptions: Array<{ id: number; code: string; label: string; nativeLabel: string; flagCode: string | null }> = [];
@@ -71,8 +71,6 @@ export class MyPostsComponent implements OnInit {
 
   loadPosts(): void {
     this.loading = true;
-    this.notice = '';
-    this.error = '';
 
     this.postsService
       .listAuthorPosts({
@@ -93,7 +91,7 @@ export class MyPostsComponent implements OnInit {
           }
         },
         error: (error: unknown) => {
-          this.error = this.formatError(error);
+          this.toast.showError(this.formatError(error));
           this.loading = false;
         },
       });
@@ -101,8 +99,6 @@ export class MyPostsComponent implements OnInit {
 
   runAction(post: AuthorPost, action: AuthorAction): void {
     this.busyKey = `${post.id}:${action}`;
-    this.error = '';
-    this.notice = '';
 
     const request$ =
       action === 'submit'
@@ -117,13 +113,15 @@ export class MyPostsComponent implements OnInit {
 
     request$.subscribe({
       next: (updatedPost) => {
-        this.notice = `Bài #${updatedPost.id} đã chuyển sang ${updatedPost.deletedAt ? 'trash' : updatedPost.status}.`;
+        this.toast.showSuccess(
+          `Bài #${updatedPost.id} đã chuyển sang ${updatedPost.deletedAt ? 'thùng rác' : updatedPost.status}.`,
+        );
         this.busyKey = '';
         this.loadPostCounts();
         this.loadPosts();
       },
       error: (error: unknown) => {
-        this.error = this.formatError(error);
+        this.toast.showError(this.formatError(error));
         this.busyKey = '';
       },
     });
@@ -344,9 +342,13 @@ export class MyPostsComponent implements OnInit {
       : this.postsService.deleteAuthorPostPermanently(id));
 
     this.confirmationBusy = true;
-    this.error = '';
     forkJoin(requests).subscribe({
       next: () => {
+        this.toast.showSuccess(
+          action === 'trash'
+            ? `Đã chuyển ${ids.length} bài vào thùng rác.`
+            : `Đã xóa vĩnh viễn ${ids.length} bài.`,
+        );
         this.confirmationBusy = false;
         this.confirmationAction = null;
         this.confirmationPostIds = [];
@@ -355,7 +357,7 @@ export class MyPostsComponent implements OnInit {
         this.loadPosts();
       },
       error: (error: unknown) => {
-        this.error = this.formatError(error);
+        this.toast.showError(this.formatError(error));
         this.confirmationBusy = false;
       },
     });

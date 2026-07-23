@@ -4,24 +4,3 @@
     border: 1px solid #000000 !important;
     box-shadow: inset 0 0 0 1px #000000 !important;
   }
-
-.editor-feedback {
-  position: fixed;
-  z-index: 3000;
-  top: 72px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: min(560px, calc(100vw - 32px));
-  padding: 10px 16px;
-  border: 1px solid #86b7a2;
-  border-radius: 10px;
-  background: #ecf8f1;
-  color: #155d3b;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-.editor-feedback.is-error {
-  border-color: #e3a4aa;
-  background: #fff0f1;
-  color: #9d2230;
-}

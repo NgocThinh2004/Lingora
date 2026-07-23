@@ -16,8 +16,8 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
           return { data };
         }
 
-        // If data object already contains both `data` and optional `meta`
-        if ('data' in data && 'meta' in data && Object.keys(data).length <= 2) {
+        // Controllers may already return the application's { data, meta? } envelope.
+        if ('data' in data) {
           return data;
         }
 
