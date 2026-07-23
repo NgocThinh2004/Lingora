@@ -1,9 +1,9 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../../environments/environment';
 import { PaginatedResult, Post } from '../models/post.model';
-import { ApiResponse } from '../models/api-response.model';
+import { ApiResponse } from '../../../core/models/api-response.model';
 
 export interface PostQuery {
   lang?: string;

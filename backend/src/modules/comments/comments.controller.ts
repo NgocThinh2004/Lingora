@@ -27,15 +27,7 @@ export class CommentsController {
     return this.commentsService.getCommentsByPost(postId, page, limit);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Post(':commentId/like')
-  like(
-    @Param('commentId') commentId: string,
-    @Req() req: any,
-  ) {
-    const userId = req.user.id;
-    return this.commentsService.likeComment(commentId, userId);
-  }
+
 
   @UseGuards(JwtAuthGuard)
   @Put(':commentId')

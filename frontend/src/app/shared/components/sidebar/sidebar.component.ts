@@ -12,7 +12,7 @@ interface NavItem {
 }
 
 @Component({
-  selector: 'app-sidebar',
+  selector: 'aside[app-sidebar], app-sidebar',
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './sidebar.component.html',
@@ -40,6 +40,12 @@ export class SidebarComponent {
   readonly currentUser = computed(() => this.authService.currentUser());
   readonly themeMode = computed(() => this.themeService.mode());
   readonly currentLang = computed(() => this.languageService.current());
+
+  readonly currentFlag = computed(() => {
+    const code = this.currentLang();
+    const found = this.languages.find((l) => l.code === code);
+    return found ? found.flag : 'vn';
+  });
 
   toggleTheme() {
     this.themeService.toggle();

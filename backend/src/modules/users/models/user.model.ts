@@ -1,6 +1,6 @@
 import { Column, DataType, Model, Table, HasMany } from 'sequelize-typescript';
 import { Comment } from '../../comments/models/comment.model';
-import { CommentLike } from '../../comments/models/comment-like.model';
+import { CommentLike } from '../../likes/models/comment-like.model';
 
 export type UserStatus = 'active' | 'inactive' | 'banned';
 

@@ -1,13 +1,8 @@
 :host {
-  display: block;
-  height: 100%;
-}
-
-.sidebar-inner {
-  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  height: 100%;
   padding: 1.5rem 1.25rem 1.5rem 0.5rem;
 }
 
@@ -114,6 +109,13 @@
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-main);
+
+  .flag-icon {
+    width: 22px;
+    height: 16px;
+    border-radius: 3px;
+    object-fit: cover;
+  }
 }
 
 .dropdown-wrap {
@@ -187,9 +189,41 @@
   align-items: center;
   gap: 0.5rem;
   width: 100%;
-  padding: 0.5rem;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
   background: transparent;
   border: none;
-  color: var(--text-main);
+  outline: none;
+  color: #0d6efd;
+  font-family: inherit;
+  font-size: 16px;
   font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: none;
+  transition: all var(--transition-speed) ease;
+
+  i {
+    font-size: 1.25rem;
+    color: #0d6efd;
+    line-height: 1;
+  }
+
+  span {
+    color: #0d6efd;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background-color: rgba(13, 110, 253, 0.08);
+    color: #0d6efd;
+    outline: none;
+    box-shadow: none;
+
+    i,
+    span {
+      color: #0d6efd;
+    }
+  }
 }

@@ -1,7 +1,7 @@
 import { Column, DataType, Model, Table, BelongsTo, HasMany, ForeignKey } from 'sequelize-typescript';
 import { User } from '../../users/models/user.model';
 import { Post } from '../../posts/models/post.model';
-import { CommentLike } from './comment-like.model';
+import { CommentLike } from '../../likes/models/comment-like.model';
 import { CommentTranslation } from './comment-translation.model';
 import { Language } from '../../languages/models/language.model';
 

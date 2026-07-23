@@ -1,9 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, map, shareReplay } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../../environments/environment';
 import { Category } from '../models/category.model';
-import { ApiResponse } from '../models/api-response.model';
+import { ApiResponse } from '../../../core/models/api-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class CategoryService {

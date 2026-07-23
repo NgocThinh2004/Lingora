@@ -1,12 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  ViewChild,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PostService } from '../../core/services/post.service';
-import { CategoryService } from '../../core/services/category.service';
+import { PostService } from '../posts/services/post.service';
+import { CategoryService } from '../categories/services/category.service';
 import { LanguageService } from '../../core/services/language.service';
 import { PostCardComponent } from '../../shared/components/post-card/post-card.component';
-import { Post } from '../../core/models/post.model';
-import { Category, translateCategory } from '../../core/models/category.model';
+import { Post } from '../posts/models/post.model';
+import { Category, translateCategory } from '../categories/models/category.model';
 
 @Component({
   selector: 'app-feed',
@@ -15,10 +25,12 @@ import { Category, translateCategory } from '../../core/models/category.model';
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
-export class HomeComponent {
+export class HomeComponent implements AfterViewInit, OnDestroy {
   private readonly postService = inject(PostService);
   private readonly categoryService = inject(CategoryService);
   private readonly languageService = inject(LanguageService);
+
+  @ViewChild('sentinel') sentinelRef?: ElementRef<HTMLDivElement>;
 
   readonly posts = signal<Post[]>([]);
   readonly categories = signal<Category[]>([]);
@@ -27,6 +39,8 @@ export class HomeComponent {
   readonly selectedCategorySlug = signal<string>('');
   readonly page = signal(1);
   readonly totalPages = signal(1);
+
+  private observer?: IntersectionObserver;
 
   readonly currentLang = computed(() => this.languageService.current());
 
@@ -43,11 +57,42 @@ export class HomeComponent {
       error: () => this.categories.set([]),
     });
 
-    // Tải lại feed mỗi khi ngôn ngữ hiển thị thay đổi.
-    effect(() => {
-      this.currentLang();
-      this.loadFeed(1);
-    }, { allowSignalWrites: true });
+    // Tải lại feed mỗi khi ngôn ngữ hiển thị hoặc danh mục thay đổi.
+    effect(
+      () => {
+        this.currentLang();
+        this.selectedCategorySlug();
+        this.loadFeed(1);
+      },
+      { allowSignalWrites: true }
+    );
+  }
+
+  ngAfterViewInit() {
+    this.setupIntersectionObserver();
+  }
+
+  private setupIntersectionObserver() {
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          this.triggerInfiniteScroll();
+        }
+      },
+      { rootMargin: '300px' }
+    );
+
+    if (this.sentinelRef?.nativeElement) {
+      this.observer.observe(this.sentinelRef.nativeElement);
+    }
+  }
+
+  private triggerInfiniteScroll() {
+    if (!this.loading() && !this.loadingMore() && this.page() < this.totalPages()) {
+      this.loadMore();
+    }
   }
 
   private loadFeed(page: number) {
@@ -69,6 +114,7 @@ export class HomeComponent {
           this.totalPages.set(res?.meta?.totalPages || 1);
           this.loading.set(false);
           this.loadingMore.set(false);
+          this.reobserveSentinel();
         },
         error: () => {
           this.loading.set(false);
@@ -77,17 +123,30 @@ export class HomeComponent {
       });
   }
 
+  private reobserveSentinel() {
+    setTimeout(() => {
+      if (this.observer && this.sentinelRef?.nativeElement) {
+        this.observer.disconnect();
+        this.observer.observe(this.sentinelRef.nativeElement);
+      }
+    }, 100);
+  }
+
   selectCategory(slug: string) {
     this.selectedCategorySlug.set(slug);
   }
 
   loadMore() {
-    if (this.page() < this.totalPages()) {
+    if (this.page() < this.totalPages() && !this.loadingMore()) {
       this.loadFeed(this.page() + 1);
     }
   }
 
   translateCategoryName(category: Category) {
     return translateCategory(category, this.currentLang());
+  }
+
+  ngOnDestroy() {
+    this.observer?.disconnect();
   }
 }

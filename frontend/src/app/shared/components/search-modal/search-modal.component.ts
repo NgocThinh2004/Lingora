@@ -3,12 +3,12 @@ import { Component, ElementRef, HostListener, ViewChild, computed, effect, injec
 import { Router } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { SearchModalService } from '../../../core/services/search-modal.service';
-import { PostService } from '../../../core/services/post.service';
-import { CategoryService } from '../../../core/services/category.service';
+import { PostService } from '../../../features/posts/services/post.service';
+import { CategoryService } from '../../../features/categories/services/category.service';
 import { LanguageService } from '../../../core/services/language.service';
-import { Post, getPostTranslation } from '../../../core/models/post.model';
-import { Category, translateCategory } from '../../../core/models/category.model';
-import { User } from '../../../core/models/user.model';
+import { Post, getPostTranslation } from '../../../features/posts/models/post.model';
+import { Category, translateCategory } from '../../../features/categories/models/category.model';
+import { User } from '../../../features/users/models/user.model';
 
 @Component({
   selector: 'app-search-modal',

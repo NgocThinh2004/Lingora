@@ -5,7 +5,6 @@ import { User } from '../users/models/user.model';
 import { Post } from '../posts/models/post.model';
 import { Language } from '../languages/models/language.model';
 import { CommentTranslation } from './models/comment-translation.model';
-import { CommentLike } from './models/comment-like.model';
 import { CreateCommentDto } from './dto/create-comment.dto';
 
 @Injectable()
@@ -16,7 +15,6 @@ export class CommentsService {
     @InjectModel(Post) private postModel: typeof Post,
     @InjectModel(Language) private languageModel: typeof Language,
     @InjectModel(CommentTranslation) private commentTranslationModel: typeof CommentTranslation,
-    @InjectModel(CommentLike) private commentLikeModel: typeof CommentLike,
   ) {}
 
   async create(postId: string, userId: string, dto: CreateCommentDto): Promise<Comment | null> {
@@ -173,27 +171,7 @@ export class CommentsService {
     };
   }
 
-  async likeComment(commentId: string, userId: string) {
-    const comment = await this.commentModel.findByPk(commentId);
-    if (!comment) throw new NotFoundException('Comment not found');
 
-    const existingLike = await this.commentLikeModel.findOne({
-      where: { comment_id: commentId, user_id: userId },
-    });
-
-    if (existingLike) {
-      await existingLike.destroy();
-    } else {
-      await this.commentLikeModel.create({ 
-        comment_id: commentId, 
-        user_id: userId,
-        created_at: new Date()
-      });
-    }
-
-    const likeCount = await this.commentLikeModel.count({ where: { comment_id: commentId } });
-    return { liked: !existingLike, likeCount };
-  }
 
   async update(commentId: string, userId: string, content: string) {
     const comment = await this.commentModel.findByPk(commentId);

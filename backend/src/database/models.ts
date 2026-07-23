@@ -8,7 +8,7 @@ import { Post } from '../modules/posts/models/post.model';
 import { Role } from '../modules/users/models/role.model';
 import { User } from '../modules/users/models/user.model';
 import { Comment } from '../modules/comments/models/comment.model';
-import { CommentLike } from '../modules/comments/models/comment-like.model';
+import { CommentLike } from '../modules/likes/models/comment-like.model';
 import { CommentTranslation } from '../modules/comments/models/comment-translation.model';
 import { PostLike } from '../modules/likes/models/post-like.model';
 

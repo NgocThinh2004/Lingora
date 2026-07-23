@@ -1,5 +1,5 @@
-import { User } from './user.model';
-import { Category } from './category.model';
+import { User } from '../../users/models/user.model';
+import { Category } from '../../categories/models/category.model';
 
 export interface PostTranslation {
   id: number;
@@ -16,8 +16,8 @@ export interface Post {
   authorId: number;
   categoryId: number | null;
   originalLanguage: string;
-  coverImageUrl?: string | null;
-  coverVideoUrl?: string | null;
+  imageUrl?: string | null;
+  videoUrl?: string | null;
   status: PostStatus;
   viewCount: number;
   likeCount?: number;

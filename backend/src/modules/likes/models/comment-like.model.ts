@@ -1,6 +1,6 @@
 import { Column, DataType, Model, Table, BelongsTo, ForeignKey } from 'sequelize-typescript';
 import { User } from '../../users/models/user.model';
-import { Comment } from './comment.model';
+import { Comment } from '../../comments/models/comment.model';
 
 @Table({
   tableName: 'comment_likes',
