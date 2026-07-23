@@ -8,9 +8,3 @@ export interface CurrentUser {
   avatarUrl?: string;
   role?: UserRole;
 }
-
-export interface AuthSession {
-  accessToken: string;
-  refreshToken?: string;
-  user: CurrentUser;
-}
