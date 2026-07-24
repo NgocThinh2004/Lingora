@@ -97,9 +97,9 @@
 .locale__option {
   display: flex;
   min-height: 2.55rem;
-  padding: 0 0.55rem;
+  padding: 0 0.65rem;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.65rem;
   border: 0;
   border-radius: 0.5rem;
   background: transparent;
@@ -107,6 +107,7 @@
   font-size: 0.82rem;
   font-weight: 500;
   text-align: left;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -161,14 +162,16 @@
 }
 
 .locale--compact .locale__menu {
-  width: 7.5rem;
+  min-width: 10.5rem;
+  width: max-content;
   border-radius: 0.75rem;
 }
 
 .locale--compact .locale__option {
-  min-height: 2.25rem;
-  padding-inline: 0.45rem;
-  gap: 0.5rem;
+  min-height: 2.4rem;
+  padding-inline: 0.6rem;
+  gap: 0.6rem;
+  white-space: nowrap;
 }
 
 .locale--compact .locale__option .locale__flag {
