@@ -13,7 +13,7 @@
 }
 
 @if (post(); as p) {
-  <a [routerLink]="authorPreview() ? '/workspace/posts' : '/'"
+  <a href="#" (click)="$event.preventDefault(); goBack()"
     class="text-decoration-none text-muted mb-4 d-inline-flex align-items-center fw-medium mt-3 ms-2">
     <i class="bi bi-arrow-left me-2"></i>
     <span>{{ authorPreview() ? 'Back to My Articles' : 'Back to Feed' }}</span>
@@ -51,6 +51,24 @@
           <app-author-tooltip [user]="p.author"></app-author-tooltip>
         </div>
       </div>
+
+      @if (availableTranslations().length > 1) {
+        <div class="translation-switcher mb-4" aria-label="Article language">
+          @for (translation of availableTranslations(); track translation.id) {
+            <button
+              type="button"
+              class="btn btn-sm translation-option"
+              [class.is-active]="displayedTranslation()?.id === translation.id"
+              (click)="selectTranslation(translation.languageCode)"
+            >
+              {{ translation.languageCode | uppercase }}
+              @if (translation.source === 'machine') {
+                <span class="translation-provider-label">AI</span>
+              }
+            </button>
+          }
+        </div>
+      }
 
       <div class="substack-post-content post-content mt-4 text-main" style="line-height: 1.8;">
         <!-- Binding the translated HTML securely -->

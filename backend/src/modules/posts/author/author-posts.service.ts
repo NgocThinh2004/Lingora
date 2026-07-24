@@ -172,7 +172,9 @@ export class AuthorPostsService {
       deleted_at: query.trash ? { [Op.ne]: null } : null,
     };
 
-    if (query.status && query.status !== 'all') {
+    if (query.status === 'public') {
+      where.status = { [Op.in]: ['approved', 'published'] };
+    } else if (query.status && query.status !== 'all') {
       where.status = query.status;
     }
 
@@ -230,8 +232,9 @@ export class AuthorPostsService {
     authorId: string,
     postId: string,
     transaction?: Transaction,
+    includeDeleted = false,
   ): Promise<AuthorPostResponse> {
-    const post = await this.findAuthorPostOrThrow(authorId, postId, transaction);
+    const post = await this.findAuthorPostOrThrow(authorId, postId, transaction, includeDeleted);
     const translations = await this.findTranslations(post.id, transaction);
 
     return this.toAuthorPostResponse(post, translations);
@@ -405,8 +408,12 @@ export class AuthorPostsService {
     });
   }
 
-  async getAuthorPreview(authorId: string, postId: string): Promise<AuthorPostResponse> {
-    return this.getAuthorPost(authorId, postId);
+  async getAuthorPreview(
+    authorId: string,
+    postId: string,
+    includeDeleted = false,
+  ): Promise<AuthorPostResponse> {
+    return this.getAuthorPost(authorId, postId, undefined, includeDeleted);
   }
 
   private async moveAuthorPost(

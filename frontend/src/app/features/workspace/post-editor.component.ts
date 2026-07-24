@@ -20,6 +20,8 @@ import { EditorMediaType } from './models/editor-upload.model';
 import { AuthorPostsService } from '../posts/services/author-posts.service';
 import { EditorUploadsService } from './services/editor-uploads.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { TranslationsService } from '../posts/services/translations.service';
+import { LocaleService } from '../../core/locale/locale.service';
 
 type SaveMode = 'draft' | 'submit';
 type BaselineFormat = 'normal' | 'superscript' | 'subscript';
@@ -47,18 +49,20 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly authService = inject(AuthService);
   private readonly toast = inject(ToastService);
+  private readonly translationsService = inject(TranslationsService);
+  private readonly localeService = inject(LocaleService);
   private savedRange: Range | null = null;
   private activeBaselineFormat: BaselineFormat = 'normal';
   private navigateAfterSave = false;
   private activeLinkElement: HTMLAnchorElement | null = null;
   private editingLinkElement: HTMLAnchorElement | null = null;
   private readonly codeProtectedCommands = new Set(['bold', 'italic', 'strikeThrough']);
-  private previousTheme: string | null = null;
   private currentPostId: string | null = null;
   private autosaveTimer: number | null = null;
   private autosaveDirty = false;
   private autosaveState: AutosaveState = 'idle';
   private readonly autosaveDelayMs = 500;
+  private restoredAutosave = false;
   readonly titleWordLimit = 20;
   readonly bodyWordLimit = 3000;
 
@@ -99,6 +103,9 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   showDraftConfirm = false;
   previewMode: 'desktop' | 'mobile' = 'desktop';
   previewLanguageId = 1;
+  previewTranslatedTitle: string | null = null;
+  previewTranslatedContent: string | null = null;
+  previewTranslationLoading = false;
   linkText = '';
   linkUrl = '';
   linkModalTop = 150;
@@ -115,23 +122,28 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     document.body.classList.add('editor-page');
     this.updateBodyModalClasses();
+    const postId = this.route.snapshot.paramMap.get('id');
+    this.currentPostId = postId;
+
     this.postsService.getPostOptions().subscribe({
       next: options => {
         this.languageOptions = options.languages;
         this.categoryOptions = options.categories;
+        if (!this.currentPostId && !this.restoredAutosave) {
+          this.useSelectedLocaleAsOriginalLanguage();
+        }
       },
       error: () => {
         // Language fallbacks remain available; an empty category list safely saves as uncategorized.
       },
     });
 
-    const postId = this.route.snapshot.paramMap.get('id');
-    this.currentPostId = postId;
     if (postId) {
       this.loadPost(postId);
     } else {
       const snapshot = this.readAutosaveSnapshot(null);
       if (snapshot) {
+        this.restoredAutosave = true;
         this.applyAutosaveSnapshot(snapshot);
       }
     }
@@ -145,16 +157,18 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.flushAutosave();
-    if (this.previousTheme) {
-      document.documentElement.setAttribute('data-bs-theme', this.previousTheme);
-    } else {
-      document.documentElement.removeAttribute('data-bs-theme');
-    }
     document.body.classList.remove('editor-page', 'preview-modal-open', 'publish-modal-open', 'draft-modal-open');
   }
 
   get contentPreview(): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(this.buildPreviewHtml(this.draft.content || '<p>No content yet.</p>'));
+    const content = this.previewTranslatedContent ?? this.draft.content;
+    return this.sanitizer.bypassSecurityTrustHtml(
+      this.buildPreviewHtml(content || '<p>No content yet.</p>'),
+    );
+  }
+
+  get previewTitle(): string {
+    return (this.previewTranslatedTitle ?? this.draft.title) || 'Untitled post';
   }
 
   get saveStateLabel(): string {
@@ -288,9 +302,47 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   openPreview(languageId = this.draft.originalLanguageId): void {
     this.syncContentFromEditor();
     this.previewLanguageId = languageId;
+    this.previewTranslatedTitle = null;
+    this.previewTranslatedContent = null;
     this.shareLabel = 'Share';
     this.showPreview = true;
     this.updateBodyModalClasses();
+
+    if (languageId === this.draft.originalLanguageId) {
+      return;
+    }
+
+    const stored = this.createdPost?.translations.find(
+      translation =>
+        translation.languageId === languageId &&
+        translation.translationStatus === 'completed' &&
+        Boolean(translation.title && translation.content),
+    );
+    if (stored?.title && stored.content) {
+      this.previewTranslatedTitle = stored.title;
+      this.previewTranslatedContent = stored.content;
+      return;
+    }
+
+    this.previewTranslationLoading = true;
+    this.translationsService.preview({
+      title: this.draft.title,
+      content: this.draft.content,
+      sourceLanguageId: this.draft.originalLanguageId,
+      targetLanguageId: languageId,
+    }).subscribe({
+      next: translation => {
+        if (this.previewLanguageId === languageId) {
+          this.previewTranslatedTitle = translation.title;
+          this.previewTranslatedContent = translation.content;
+        }
+        this.previewTranslationLoading = false;
+      },
+      error: error => {
+        this.previewTranslationLoading = false;
+        this.toast.showError(this.formatError(error));
+      },
+    });
   }
 
   closePreview(): void {
@@ -303,7 +355,12 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   copyPreview(): void {
-    const text = [this.draft.title || 'Untitled post', this.editorTextContent()].filter(Boolean).join('\n\n');
+    const text = [
+      this.previewTitle,
+      this.previewTranslatedContent
+        ? this.htmlTextContent(this.previewTranslatedContent)
+        : this.editorTextContent(),
+    ].filter(Boolean).join('\n\n');
     void navigator.clipboard
       ?.writeText(text)
       .then(() => {
@@ -486,7 +543,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    void this.router.navigateByUrl('/workspace/posts');
+    void this.router.navigateByUrl(this.myPostsReturnUrl());
   }
 
   private shouldConfirmDraftOnExit(): boolean {
@@ -653,7 +710,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.clearAutosaveSnapshots();
     this.showDraftConfirm = false;
     this.updateBodyModalClasses();
-    void this.router.navigateByUrl('/workspace/posts');
+    void this.router.navigateByUrl(this.myPostsReturnUrl());
   }
 
   saveDraftAndLeave(): void {
@@ -872,13 +929,20 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private navigateToMyPosts(successMessage: string): void {
     this.toast.showSuccess(successMessage);
-    void this.router.navigateByUrl('/workspace/posts')
+    void this.router.navigateByUrl(this.myPostsReturnUrl())
       .then(navigated => {
         if (!navigated) {
           this.toast.showError('Không thể mở trang bài viết của tôi.');
         }
       })
       .catch(() => this.toast.showError('Không thể mở trang bài viết của tôi.'));
+  }
+
+  private myPostsReturnUrl(): string {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    return returnUrl && /^\/workspace\/posts(?:\?|$)/.test(returnUrl)
+      ? returnUrl
+      : '/workspace/posts';
   }
 
   private buildPayload(): CreatePostPayload {
@@ -897,6 +961,23 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     );
 
     return [...new Set(ids)];
+  }
+
+  private useSelectedLocaleAsOriginalLanguage(): void {
+    const selectedLanguage = this.languageOptions.find(
+      language => language.code.toLowerCase() === this.localeService.selectedLocale().toLowerCase(),
+    );
+    if (!selectedLanguage || selectedLanguage.id === this.draft.originalLanguageId) {
+      return;
+    }
+
+    const previousOriginalLanguageId = this.draft.originalLanguageId;
+    if (previousOriginalLanguageId > 0) {
+      this.allowedTargetLanguageIds.add(previousOriginalLanguageId);
+    }
+    this.allowedTargetLanguageIds.delete(selectedLanguage.id);
+    this.draft.originalLanguageId = selectedLanguage.id;
+    this.syncTargetInput();
   }
 
   private buildMediaHtml(mediaType: EditorMediaType, url: string, filename: string): string {
@@ -1241,6 +1322,12 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private editorTextContent(): string {
     const editor = this.editorElement();
     return (editor?.textContent || this.draft.content.replace(/<[^>]*>/g, ' ')).trim();
+  }
+
+  private htmlTextContent(html: string): string {
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    return (container.textContent ?? '').replace(/\u00a0/g, ' ').trim();
   }
 
   private hasDraftContent(): boolean {

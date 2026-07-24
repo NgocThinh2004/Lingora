@@ -24,8 +24,14 @@ export class AuthorPostsController {
   }
 
   @Get(':id')
-  async get(@CurrentUser('id') userId: string, @Param('id') postId: string) {
-    return { data: await this.postsService.getAuthorPost(userId, postId) };
+  async get(
+    @CurrentUser('id') userId: string,
+    @Param('id') postId: string,
+    @Query('trash') trash?: string,
+  ) {
+    return {
+      data: await this.postsService.getAuthorPost(userId, postId, undefined, trash === 'true'),
+    };
   }
 
   @Patch(':id')
@@ -68,7 +74,13 @@ export class AuthorPostsController {
   }
 
   @Get(':id/preview')
-  async preview(@CurrentUser('id') userId: string, @Param('id') postId: string) {
-    return { data: await this.postsService.getAuthorPreview(userId, postId) };
+  async preview(
+    @CurrentUser('id') userId: string,
+    @Param('id') postId: string,
+    @Query('trash') trash?: string,
+  ) {
+    return {
+      data: await this.postsService.getAuthorPreview(userId, postId, trash === 'true'),
+    };
   }
 }

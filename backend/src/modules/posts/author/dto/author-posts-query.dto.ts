@@ -5,8 +5,8 @@ import { POST_STATUSES, PostStatus } from '../../posts.constants';
 
 export class AuthorPostsQueryDto {
   @IsOptional()
-  @IsIn(['all', ...POST_STATUSES])
-  status?: PostStatus | 'all';
+  @IsIn(['all', 'public', ...POST_STATUSES])
+  status?: PostStatus | 'all' | 'public';
 
   @IsOptional()
   @IsString()

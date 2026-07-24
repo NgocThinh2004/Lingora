@@ -10,6 +10,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { LikesModule } from './modules/likes/likes.module';
+import { TranslationsModule } from './modules/translations/translations.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { LikesModule } from './modules/likes/likes.module';
     SubscriptionsModule,
     CommentsModule,
     LikesModule,
+    TranslationsModule,
   ],
   controllers: [],
   providers: [],
