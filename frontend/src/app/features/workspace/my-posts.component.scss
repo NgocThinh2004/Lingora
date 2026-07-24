@@ -985,8 +985,8 @@
 }
 
 .confirmation-cancel {
-  color: #111827;
-  background: #ffffff;
+  color: var(--text-main);
+  background: var(--bg-panel);
 }
 
 .confirmation-submit {

@@ -1,4 +1,5 @@
-:root {
+:root,
+[data-bs-theme="light"] {
   --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-family-serif: 'Lora', 'Merriweather', 'Spectral', 'Playfair Display', Georgia, 'Times New Roman', serif;
   --font-size-base: 16px;
@@ -7,7 +8,7 @@
   --font-size-lg: 1.125rem;
   --font-size-xl: 1.25rem;
 
-  /* Substack Palette */
+  /* Substack Light Palette */
   --bg-body: #ffffff;
   --bg-sidebar: #ffffff;
   --bg-panel: #ffffff;
@@ -30,7 +31,23 @@
   --accent-button-bg: rgba(255, 103, 25, 0.08);
   --accent-button-text: #FF6719;
 
-  --transition-speed: 0.15s;
+  --transition-speed: 0.25s;
+
+  /* Sync Bootstrap 5 Variables */
+  --bs-body-bg: #ffffff;
+  --bs-body-color: #1a1a1a;
+  --bs-tertiary-bg: #ffffff;
+  --bs-secondary-bg: #f7f7f8;
+  --bs-border-color: #f0f0f0;
+  --bs-border-color-translucent: rgba(0, 0, 0, 0.08);
+  --bs-heading-color: #1a1a1a;
+  --bs-link-color: #1a1a1a;
+  --bs-dropdown-bg: #ffffff;
+  --bs-dropdown-link-color: #1a1a1a;
+  --bs-dropdown-border-color: #f0f0f0;
+  --bs-modal-bg: #ffffff;
+  --bs-modal-color: #1a1a1a;
+  --bs-modal-border-color: #f0f0f0;
 }
 
 [data-bs-theme="dark"] {
@@ -49,4 +66,20 @@
 
   --accent-button-bg: rgba(255, 103, 25, 0.15);
   --accent-button-text: #FF6719;
+
+  /* Sync Bootstrap 5 Variables */
+  --bs-body-bg: #111111;
+  --bs-body-color: #f5f5f5;
+  --bs-tertiary-bg: #181818;
+  --bs-secondary-bg: #1a1a1c;
+  --bs-border-color: #2a2a2a;
+  --bs-border-color-translucent: rgba(255, 255, 255, 0.1);
+  --bs-heading-color: #f5f5f5;
+  --bs-link-color: #f5f5f5;
+  --bs-dropdown-bg: #181818;
+  --bs-dropdown-link-color: #f5f5f5;
+  --bs-dropdown-border-color: #2a2a2a;
+  --bs-modal-bg: #181818;
+  --bs-modal-color: #f5f5f5;
+  --bs-modal-border-color: #2a2a2a;
 }

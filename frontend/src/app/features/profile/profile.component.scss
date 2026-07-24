@@ -7,39 +7,24 @@ app-profile {
 }
 
 .feature-page-profile {
-  --bg: #ffffff;
-  --panel: #ffffff;
-  --panel-soft: #f7f7f7;
-  --line: #e2e2e2;
-  --line-soft: #f0f0f0;
-  --text: #1a1a1a;
-  --muted: #757575;
-  --muted-2: #9e9e9e;
+  --bg: var(--bg-body);
+  --panel: var(--bg-panel);
+  --panel-soft: var(--bg-secondary);
+  --line: var(--border-color);
+  --line-soft: var(--border-light);
+  --text: var(--text-main);
+  --muted: var(--text-muted);
+  --muted-2: var(--text-muted);
+  --accent: var(--primary-color);
   --teal: #00866b;
-  --picker-bg: #ffffff;
-  --picker-line: #e2e2e2;
-  --picker-soft: #f7f7f7;
-  --picker-text: #1a1a1a;
-  --picker-muted: #757575;
+  --picker-bg: var(--bg-panel);
+  --picker-line: var(--border-color);
+  --picker-soft: var(--bg-secondary);
+  --picker-text: var(--text-main);
+  --picker-muted: var(--text-muted);
   min-height: 100vh;
   color: var(--text);
   background: var(--bg);
-}
-
-[data-bs-theme="dark"] .feature-page-profile {
-  --bg: #141616;
-  --panel: #181a1a;
-  --panel-soft: #222525;
-  --line: #303333;
-  --line-soft: #252828;
-  --text: #f4f4f4;
-  --muted: #a4a6a8;
-  --muted-2: #7e8284;
-  --picker-bg: #151620;
-  --picker-line: #2c3041;
-  --picker-soft: #242633;
-  --picker-text: #f3f4f8;
-  --picker-muted: #b8bbc8;
 }
 
 .profile-app {

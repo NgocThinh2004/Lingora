@@ -7,7 +7,6 @@ import { finalize, forkJoin, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { BrandingService } from '../../core/theme/branding.service';
-import { PageShellService } from '../../core/ui/page-shell.service';
 import { AuthorPost } from '../posts/models/post.model';
 import { AuthorPostsService } from '../posts/services/author-posts.service';
 import { SubscriptionsService } from '../subscriptions/services/subscriptions.service';
@@ -21,11 +20,11 @@ import { SidebarComponent } from '../../shared/components/sidebar/sidebar.compon
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
   encapsulation: ViewEncapsulation.None,
+  host: { class: 'feature-page-profile' },
 })
 export class ProfileComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private postsService = inject(AuthorPostsService);
-  private ui = inject(PageShellService);
   private router = inject(Router);
   private subscriptionsService = inject(SubscriptionsService);
   private uploadsService = inject(EditorUploadsService);
@@ -69,8 +68,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   passwordFieldType = 'password';
 
   ngOnInit() {
-    this.ui.mount('Profile - Lingora', 'feature-page-profile');
-
     const currentUser = this.user();
     this.setProfileForm(currentUser);
     this.loadBranding();
@@ -125,7 +122,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.clearBrandingVariables();
-    this.ui.unmount();
   }
 
   get initial(): string {

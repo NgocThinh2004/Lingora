@@ -113,8 +113,6 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly allowedTargetLanguageIds = new Set<number>([2, 3]);
 
   ngOnInit(): void {
-    this.previousTheme = document.documentElement.getAttribute('data-bs-theme');
-    document.documentElement.setAttribute('data-bs-theme', 'light');
     document.body.classList.add('editor-page');
     this.updateBodyModalClasses();
     this.postsService.getPostOptions().subscribe({

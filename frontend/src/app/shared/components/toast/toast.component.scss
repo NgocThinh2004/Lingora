@@ -3,10 +3,17 @@
   top: 1.25rem;
   right: 1.25rem;
   z-index: 12000;
-  pointer-events: none;
+  pointer-events: none !important;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  display: block;
 }
 
 .app-toast {
+  position: absolute;
+  top: 0;
+  right: 0;
   display: grid;
   width: min(25rem, calc(100vw - 2rem));
   min-height: 3.5rem;
@@ -22,12 +29,12 @@
   box-shadow: 0 1rem 2.8rem rgb(15 23 42 / 20%);
   opacity: 0;
   visibility: hidden;
-  transform: translateY(0.5rem);
+  pointer-events: none !important;
+  transform: translateY(-0.75rem);
   transition:
     opacity 180ms ease,
     transform 180ms ease,
     visibility 0s linear 180ms;
-  pointer-events: none;
 }
 
 .app-toast--visible {
@@ -35,7 +42,7 @@
   visibility: visible;
   transform: translateY(0);
   transition-delay: 0s;
-  pointer-events: auto;
+  pointer-events: auto !important;
 }
 
 .app-toast--error {
@@ -66,6 +73,7 @@
   border-radius: 0.5rem;
   background: transparent;
   color: var(--text-muted);
+  cursor: pointer;
 }
 
 .app-toast__close:hover {
