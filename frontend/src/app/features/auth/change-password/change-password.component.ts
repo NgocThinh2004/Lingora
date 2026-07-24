@@ -1,6 +1,4 @@
-
-import { Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
-import { PageShellService } from '../../../core/ui/page-shell.service';
+import { Component, ViewEncapsulation } from '@angular/core';
 
 @Component({
   selector: 'app-change-password',
@@ -9,9 +7,7 @@ import { PageShellService } from '../../../core/ui/page-shell.service';
   styleUrl: './change-password.component.scss',
   encapsulation: ViewEncapsulation.None,
 })
-export class ChangePasswordComponent implements OnInit, OnDestroy {
-  private readonly ui = inject(PageShellService);
-
+export class ChangePasswordComponent {
   currentVisible = false;
   newVisible = false;
   confirmVisible = false;
@@ -20,14 +16,6 @@ export class ChangePasswordComponent implements OnInit, OnDestroy {
   confirmError = '';
   message = '';
   formValid = false;
-
-  ngOnInit(): void {
-    this.ui.mount('Change password - Lingora');
-  }
-
-  ngOnDestroy(): void {
-    this.ui.unmount();
-  }
 
   validate(event: Event): void {
     const form = event.currentTarget as HTMLFormElement;

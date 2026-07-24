@@ -140,6 +140,7 @@
 .account-status-card strong { color: var(--text-main); font-size: .82rem; }
 .account-status-card span { color: var(--text-muted); font-size: .75rem; }
 .admin-protection-notice { margin-top: 1rem; padding: .75rem; border: 1px solid #ffe69c; border-radius: .5rem; color: #997404; background: #fff3cd; font-size: .8rem; }
+[data-bs-theme="dark"] .admin-protection-notice { color: #ffd56a; border-color: #7a5b13; background: rgb(181 113 0 / 18%); }
 
 @media (max-width: 767.98px) {
   .admin-container { padding: 1rem .75rem 2rem; }

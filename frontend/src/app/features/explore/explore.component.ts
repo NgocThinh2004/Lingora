@@ -5,7 +5,6 @@ import { FeedPostsService } from '../posts/services/feed-posts.service';
 import { UsersService } from '../users/services/users.service';
 import { CategoriesService } from '../categories/services/categories.service';
 import { translateCategory, Category } from '../categories/models/category.model';
-import { PageShellService } from '../../core/ui/page-shell.service';
 import { CommonModule } from '@angular/common';
 import { PostCardComponent } from '../posts/components/post-card/post-card.component';
 import { User } from '../users/models/user.model';
@@ -23,20 +22,19 @@ import { AuthorTooltipComponent } from '../../shared/components/author-tooltip/a
 export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('stickyHeader') stickyHeaderRef!: ElementRef<HTMLElement>;
   private observer?: IntersectionObserver;
-  
-  private readonly ui = inject(PageShellService);
+
   private readonly postsService = inject(FeedPostsService);
   private readonly userService = inject(UsersService);
   private readonly categoryService = inject(CategoriesService);
 
   query = '';
   tab: 'top' | 'posts' | 'publications' | 'people' = 'top';
-  
+
   // Results
   topPosts: Post[] = [];
   featuredPeople: User[] = [];
   featuredPublications: Category[] = [];
-  
+
   posts: Post[] = [];
   people: User[] = [];
   publications: Category[] = [];
@@ -64,20 +62,18 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.ui.mount('Lingora - Explore');
     this.searchSubscription = this.searchSubject.pipe(
       debounceTime(300),
       distinctUntilChanged()
     ).subscribe(() => {
       this.executeSearch();
     });
-    
+
     this.executeSearch();
   }
 
   ngOnDestroy(): void {
     this.observer?.disconnect();
-    this.ui.unmount();
     this.searchSubscription?.unsubscribe();
   }
 

@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
 
 body.editor-page {
-& {
   --bg: #f4f5f3;
   --surface: #ffffff;
   --surface-soft: #f0f1ef;
@@ -23,7 +22,10 @@ body.editor-page {
   --shadow: 0 18px 40px rgba(24, 27, 28, 0.08);
   --radius: 8px;
   --sidebar-width: 284px;
-}
+
+  background-color: #f4f5f3 !important;
+  color: #17191a !important;
+  color-scheme: light !important;
 
 * {
   box-sizing: border-box;
