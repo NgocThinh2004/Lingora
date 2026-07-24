@@ -21,13 +21,6 @@ Enum translation_status {
   failed
 }
 
-Enum translation_attempt_status {
-  success
-  failed
-  rate_limited
-  timeout
-}
-
 Enum comment_status {
   pending
   approved
@@ -128,24 +121,6 @@ Table post_translations {
   }
 }
 
-Table translation_attempts {
-  id bigint [primary key, increment]
-  post_translation_id bigint [not null]
-  provider varchar(50) [not null]
-  attempt_order integer [not null, default: 1]
-  status translation_attempt_status [not null]
-  error_message text
-  char_count integer
-  started_at timestamp [not null]
-  finished_at timestamp
-
-  indexes {
-    post_translation_id
-    provider
-    status
-  }
-}
-
 Table comments {
   id bigint [primary key, increment]
   post_id bigint [not null]
@@ -226,7 +201,7 @@ Ref: posts.category_id > categories.id [delete: set null]
 Ref: posts.original_language_id > languages.id
 Ref: post_translations.post_id > posts.id [delete: cascade]
 Ref: post_translations.language_id > languages.id [delete: cascade]
-Ref: translation_attempts.post_translation_id > post_translations.id [delete: cascade]
+
 Ref: comments.post_id > posts.id [delete: cascade]
 Ref: comments.user_id > users.id [delete: cascade]
 Ref: comments.parent_id > comments.id [delete: cascade]

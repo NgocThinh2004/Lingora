@@ -72,6 +72,7 @@ export class PublicPostsService {
       const keyword = `%${query.q.trim()}%`;
       const matchedTranslations = await this.postTranslationModel.findAll({
         where: {
+          translation_status: 'completed',
           [Op.or]: [
             { title: { [Op.like]: keyword } },
             { content: { [Op.like]: keyword } },
@@ -106,7 +107,10 @@ export class PublicPostsService {
 
     const [translations, authors, categories, categoryTranslations, commentCountRows, likeCountRows] = await Promise.all([
       this.postTranslationModel.findAll({
-        where: { post_id: postIds },
+        where: {
+          post_id: postIds,
+          translation_status: 'completed',
+        },
       }),
       this.userModel.findAll({ where: { id: authorIds } }),
       categoryIds.length ? this.categoryModel.findAll({ where: { id: categoryIds } }) : [],
@@ -157,7 +161,13 @@ export class PublicPostsService {
             languageCode: langCode,
             title: t.title || '',
             contentHtml: t.content || '',
-            source: (langCode === origLangCode ? 'original' : 'human') as 'original' | 'human' | 'machine',
+            source: (
+              langCode === origLangCode
+                ? 'original'
+                : t.translation_provider
+                  ? 'machine'
+                  : 'human'
+            ) as 'original' | 'human' | 'machine',
           };
         });
 

@@ -108,3 +108,26 @@
   border-right-color: #353938;
   color: #858c8a;
 }
+
+.translation-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.translation-option {
+  border: 1px solid var(--border-color, #343434);
+  color: var(--text-muted, #9ca3af);
+  min-width: 3.25rem;
+}
+
+.translation-option.is-active {
+  border-color: var(--accent-color, #ff6719);
+  color: var(--accent-color, #ff6719);
+}
+
+.translation-provider-label {
+  font-size: 0.65rem;
+  margin-left: 0.25rem;
+  opacity: 0.75;
+}

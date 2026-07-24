@@ -29,9 +29,14 @@ export class AuthorPostsService {
       .pipe(map(response => this.unwrapItem(response)));
   }
 
-  getAuthorPost(postId: string | number): Observable<AuthorPost> {
+  getAuthorPost(postId: string | number, includeDeleted = false): Observable<AuthorPost> {
+    const params = includeDeleted ? new HttpParams().set('trash', 'true') : undefined;
+
     return this.http
-      .get<ApiItemResponse<AuthorPost | ApiItemResponse<AuthorPost>>>(`${this.baseUrl}/author/posts/${postId}`)
+      .get<ApiItemResponse<AuthorPost | ApiItemResponse<AuthorPost>>>(
+        `${this.baseUrl}/author/posts/${postId}`,
+        { params },
+      )
       .pipe(map(response => this.unwrapItem(response)));
   }
 

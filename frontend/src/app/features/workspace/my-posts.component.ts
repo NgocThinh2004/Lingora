@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { LocaleService, UiTranslationKey } from '../../core/locale/locale.service';
 import { AuthorPost, PaginationMeta, PostListParams, PostStatus, PostTranslation } from '../posts/models/post.model';
@@ -24,6 +24,8 @@ export class MyPostsComponent implements OnInit {
   private readonly postsService = inject(AuthorPostsService);
   private readonly locale = inject(LocaleService);
   private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly statuses: Array<PostStatus | 'all'> = [
     'all',
@@ -40,10 +42,11 @@ export class MyPostsComponent implements OnInit {
   readonly pageSize = 10;
   allCount = 0;
   draftCount = 0;
+  pendingCount = 0;
   publishedCount = 0;
   trashCount = 0;
   page = 1;
-  status: PostStatus | 'all' = 'all';
+  status: PostStatus | 'all' | 'public' = 'all';
   search = '';
   languageFilter = 'all';
   dateFilter = 'all';
@@ -65,14 +68,16 @@ export class MyPostsComponent implements OnInit {
 
   ngOnInit(): void {
     this.locale.load();
+    this.restoreListState();
     this.postsService.getPostOptions().subscribe({
       next: options => {
         this.categoryOptions = options.categories;
         this.languageOptions = options.languages;
+        this.loadPosts();
       },
+      error: () => this.loadPosts(),
     });
     this.loadPostCounts();
-    this.loadPosts();
   }
 
   loadPosts(): void {
@@ -84,6 +89,7 @@ export class MyPostsComponent implements OnInit {
         next: (response) => {
           if (this.page > response.meta.totalPages) {
             this.page = response.meta.totalPages;
+            this.syncListState();
             this.loadPosts();
             return;
           }
@@ -266,9 +272,20 @@ export class MyPostsComponent implements OnInit {
   }
 
   postDetailLink(post: AuthorPost): string[] {
-    return post.status === 'published'
+    return !this.trash && (post.status === 'approved' || post.status === 'published')
       ? ['/post', post.id]
       : ['/workspace/posts', post.id, 'view'];
+  }
+
+  postDetailQueryParams(): Record<string, string> {
+    return {
+      ...(this.trash ? { trash: 'true' } : {}),
+      returnUrl: this.listReturnUrl(),
+    };
+  }
+
+  editQueryParams(): Record<string, string> {
+    return { returnUrl: this.listReturnUrl() };
   }
 
   postTitle(post: AuthorPost): string {
@@ -498,20 +515,23 @@ export class MyPostsComponent implements OnInit {
   applySearch(): void {
     this.selectedPostIds.clear();
     this.page = 1;
+    this.syncListState();
     this.loadPosts();
   }
 
   applyFilters(): void {
     this.selectedPostIds.clear();
     this.page = 1;
+    this.syncListState();
     this.loadPosts();
   }
 
-  setPostFilter(status: PostStatus | 'all', trash: boolean): void {
+  setPostFilter(status: PostStatus | 'all' | 'public', trash: boolean): void {
     this.status = status;
     this.trash = trash;
     this.selectedPostIds.clear();
     this.page = 1;
+    this.syncListState();
     this.loadPosts();
   }
 
@@ -521,6 +541,7 @@ export class MyPostsComponent implements OnInit {
       return;
     }
     this.page = page;
+    this.syncListState();
     this.loadPosts();
   }
 
@@ -528,6 +549,7 @@ export class MyPostsComponent implements OnInit {
     forkJoin({
       all: this.postsService.listAuthorPosts({ status: 'all', limit: 1 }),
       drafts: this.postsService.listAuthorPosts({ status: 'draft', limit: 1 }),
+      pending: this.postsService.listAuthorPosts({ status: 'pending_review', limit: 1 }),
       approved: this.postsService.listAuthorPosts({ status: 'approved', limit: 1 }),
       published: this.postsService.listAuthorPosts({ status: 'published', limit: 1 }),
       trash: this.postsService.listAuthorPosts({ status: 'all', trash: true, limit: 1 }),
@@ -535,6 +557,7 @@ export class MyPostsComponent implements OnInit {
       next: response => {
         this.allCount = response.all.meta.total;
         this.draftCount = response.drafts.meta.total;
+        this.pendingCount = response.pending.meta.total;
         this.publishedCount = response.approved.meta.total + response.published.meta.total;
         this.trashCount = response.trash.meta.total;
       },
@@ -598,6 +621,51 @@ export class MyPostsComponent implements OnInit {
       updatedMonth: this.dateFilter === 'all' ? undefined : this.dateFilter,
       page,
       limit,
+    };
+  }
+
+  private restoreListState(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const requestedStatus = params.get('status');
+    const allowedStatuses = new Set<string>([...this.statuses, 'public']);
+    const requestedPage = Number(params.get('page'));
+
+    this.status = requestedStatus && allowedStatuses.has(requestedStatus)
+      ? requestedStatus as PostStatus | 'all' | 'public'
+      : 'all';
+    this.trash = params.get('trash') === 'true';
+    this.page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    this.search = params.get('search') ?? '';
+    this.languageFilter = params.get('language') ?? 'all';
+    this.dateFilter = params.get('date') ?? 'all';
+    this.categoryFilter = params.get('category') ?? 'all';
+  }
+
+  private syncListState(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: this.listStateQueryParams(),
+      replaceUrl: true,
+    });
+  }
+
+  private listReturnUrl(): string {
+    return this.router.serializeUrl(
+      this.router.createUrlTree(['/workspace/posts'], {
+        queryParams: this.listStateQueryParams(),
+      }),
+    );
+  }
+
+  private listStateQueryParams(): Record<string, string | number | boolean | null> {
+    return {
+      page: this.page > 1 ? this.page : null,
+      status: this.status !== 'all' ? this.status : null,
+      trash: this.trash || null,
+      search: this.search.trim() || null,
+      language: this.languageFilter !== 'all' ? this.languageFilter : null,
+      date: this.dateFilter !== 'all' ? this.dateFilter : null,
+      category: this.categoryFilter !== 'all' ? this.categoryFilter : null,
     };
   }
 

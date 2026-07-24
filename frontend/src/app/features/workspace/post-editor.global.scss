@@ -2747,15 +2747,22 @@ button {
 
 /* Facebook style tweaks for publish modal */
 .fb-style-modal {
+  --modal-surface: #ffffff;
+  --modal-surface-soft: #f5f6f4;
+  --modal-border: #d9ddd8;
+  --modal-text: #17191a;
+  --modal-muted: #626868;
   border-radius: 8px;
   max-width: 500px;
   overflow: hidden;
-  background: var(--surface);
+  background: var(--modal-surface);
+  color: var(--modal-text);
 }
 
 .fb-style-modal .publish-modal-header {
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--modal-border);
+  background: var(--modal-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2767,6 +2774,7 @@ button {
   font-weight: 700;
   text-align: center;
   flex-grow: 1;
+  color: var(--modal-text);
 }
 
 .fb-style-modal .publish-modal-close {
@@ -2774,7 +2782,7 @@ button {
   right: 16px;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--surface-soft);
+  background: var(--modal-surface-soft);
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -2785,7 +2793,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-soft);
+  color: var(--modal-muted);
   line-height: 0;
   overflow: hidden;
 }
@@ -2816,11 +2824,13 @@ button {
 }
 
 .fb-style-modal .publish-modal-close:hover {
-  background: var(--border);
+  background: var(--modal-border);
 }
 
 .fb-style-modal .publish-modal-body {
   padding: 20px;
+  background: var(--modal-surface);
+  color: var(--modal-text);
 }
 
 .fb-modal-heading {
@@ -2828,6 +2838,35 @@ button {
   font-weight: 600;
   margin-top: 0;
   margin-bottom: 8px;
+  color: var(--modal-text);
+}
+
+.fb-style-modal .category-select,
+.fb-style-modal .original-language-readonly {
+  border-color: var(--modal-border);
+  background: var(--modal-surface);
+  color: var(--modal-text);
+}
+
+.fb-style-modal .publish-language-row {
+  border-color: var(--modal-border) !important;
+  background: var(--modal-surface) !important;
+  color: var(--modal-text);
+}
+
+.fb-style-modal .publish-checkbox-label {
+  color: var(--modal-text);
+}
+
+.fb-style-modal .publish-language-row .btn-outline-primary {
+  border-color: var(--accent-border-color, var(--primary-color, #ff6719));
+  color: var(--accent-ui-color, var(--primary-color, #ff6719));
+  background: var(--modal-surface);
+}
+
+.fb-style-modal .publish-language-row .btn-outline-primary:hover {
+  color: var(--accent-contrast, #ffffff);
+  background: var(--primary-color, #ff6719);
 }
 
 .fb-style-modal .publish-modal-footer {
@@ -2836,6 +2875,7 @@ button {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  background: var(--modal-surface);
 }
 
 .fb-style-modal .publish-modal-footer-centered {

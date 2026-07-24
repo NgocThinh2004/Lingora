@@ -38,8 +38,11 @@
                   <button class="status-tab" [class.is-active]="status === 'draft' && !trash" type="button"
                     (click)="setPostFilter('draft', false)"><span>{{ translate('drafts') }}</span>
                     (<span>{{ draftCount }}</span>)</button>
-                  <button class="status-tab" [class.is-active]="status === 'published' && !trash" type="button"
-                    (click)="setPostFilter('published', false)"><span>{{ translate('published') }}</span>
+                  <button class="status-tab" [class.is-active]="status === 'pending_review' && !trash" type="button"
+                    (click)="setPostFilter('pending_review', false)"><span>{{ translate('status_pending') }}</span>
+                    (<span>{{ pendingCount }}</span>)</button>
+                  <button class="status-tab" [class.is-active]="status === 'public' && !trash" type="button"
+                    (click)="setPostFilter('public', false)"><span>{{ translate('published') }}</span>
                     (<span>{{ publishedCount }}</span>)</button>
                   <button class="status-tab" [class.is-active]="trash" type="button"
                     (click)="setPostFilter('all', true)"><span>{{ translate('trash') }}</span>
@@ -164,10 +167,12 @@
                     <td>{{ post.viewCount }}</td>
                     <td>
                       <div class="action-group">
-                        <a class="action-btn" [routerLink]="postDetailLink(post)" title="Open"><i
+                        <a class="action-btn" [routerLink]="postDetailLink(post)"
+                          [queryParams]="postDetailQueryParams()" title="Open"><i
                             class="bi bi-box-arrow-up-right"></i></a>
                         <a *ngIf="!trash && canEdit(post)" class="action-btn"
-                          [routerLink]="['/workspace/posts', post.id, 'edit']" title="Edit"><i class="bi bi-pencil"></i></a>
+                          [routerLink]="['/workspace/posts', post.id, 'edit']"
+                          [queryParams]="editQueryParams()" title="Edit"><i class="bi bi-pencil"></i></a>
                         <span *ngIf="!trash && !canEdit(post)" class="action-btn is-disabled" title="Edit unavailable"
                           aria-disabled="true"><i class="bi bi-pencil"></i></span>
                         <a *ngIf="!trash" class="action-btn text-danger" href="#" title="Trash"

@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { FeedPostsService } from '../services/feed-posts.service';
 import { AuthorPost, Post, PostOptions, getPostTranslation } from '../models/post.model';
@@ -25,6 +25,7 @@ import { AuthorTooltipComponent } from '../../../shared/components/author-toolti
 })
 export class PostDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly postService = inject(FeedPostsService);
   private readonly authorPostsService = inject(AuthorPostsService);
   private localeService = inject(LocaleService);
@@ -39,12 +40,27 @@ export class PostDetailComponent implements OnInit {
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
   authorPreview = signal(false);
+  selectedLanguageCode = signal<string | null>(null);
+
+  goBack(): void {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    const destination = returnUrl && /^\/workspace\/posts(?:\?|$)/.test(returnUrl)
+      ? returnUrl
+      : this.authorPreview()
+        ? '/workspace/posts'
+        : '/';
+
+    void this.router.navigateByUrl(destination);
+  }
 
   // Computed signal to automatically update translation when language changes
   displayedTranslation = computed(() => {
     const currentPost = this.post();
     if (!currentPost) return null;
-    const trans = getPostTranslation(currentPost, this.localeService.selectedLocale());
+    const trans = getPostTranslation(
+      currentPost,
+      this.selectedLanguageCode() ?? this.localeService.selectedLocale(),
+    );
     if (!trans) return null;
     
     return {
@@ -54,6 +70,12 @@ export class PostDetailComponent implements OnInit {
       )
     };
   });
+
+  availableTranslations = computed(() => this.post()?.translations ?? []);
+
+  selectTranslation(languageCode: string): void {
+    this.selectedLanguageCode.set(languageCode);
+  }
 
   ngOnInit(): void {
     this.authorPreview.set(Boolean(this.route.snapshot.data['authorPreview']));
@@ -101,9 +123,10 @@ export class PostDetailComponent implements OnInit {
   private loadAuthorPost(id: number): void {
     this.loading.set(true);
     this.error.set(null);
+    const includeDeleted = this.route.snapshot.queryParamMap.get('trash') === 'true';
 
     forkJoin({
-      post: this.authorPostsService.getAuthorPost(id),
+      post: this.authorPostsService.getAuthorPost(id, includeDeleted),
       options: this.authorPostsService.getPostOptions(),
     }).subscribe({
       next: ({ post, options }) => {

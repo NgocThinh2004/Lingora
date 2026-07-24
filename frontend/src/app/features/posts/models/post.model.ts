@@ -17,9 +17,21 @@ export type TranslationStatus =
   | 'failed';
 
 export interface TranslationMatrixItem {
+  id?: string;
+  postId?: string;
   languageId: number;
+  title?: string | null;
+  slug?: string | null;
+  content?: string | null;
   status: TranslationStatus;
   provider: string | null;
+  updatedAt?: string;
+}
+
+export interface TranslationPreview {
+  title: string;
+  content: string;
+  provider: string;
 }
 
 export interface PostTranslation {
@@ -89,7 +101,7 @@ export interface CreatePostPayload {
 export type UpdatePostPayload = Partial<CreatePostPayload>;
 
 export interface PostListParams {
-  status?: PostStatus | 'all';
+  status?: PostStatus | 'all' | 'public';
   search?: string;
   authorId?: string;
   categoryId?: number;

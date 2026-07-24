@@ -9,7 +9,6 @@ import { PostLike } from '../modules/likes/models/post-like.model';
 import { PostTranslation } from '../modules/posts/models/post-translation.model';
 import { Post } from '../modules/posts/models/post.model';
 import { Subscription } from '../modules/subscriptions/models/subscription.model';
-import { TranslationAttempt } from '../modules/translations/models/translation-attempt.model';
 import { Role } from '../modules/users/models/role.model';
 import { User } from '../modules/users/models/user.model';
 
@@ -26,7 +25,6 @@ export {
   RefreshToken,
   Role,
   Subscription,
-  TranslationAttempt,
   User,
 };
 
@@ -38,7 +36,6 @@ export const databaseModels = [
   CategoryTranslation,
   Post,
   PostTranslation,
-  TranslationAttempt,
   Comment,
   CommentTranslation,
   PostLike,

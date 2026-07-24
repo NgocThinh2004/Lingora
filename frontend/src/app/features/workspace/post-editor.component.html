@@ -569,7 +569,7 @@
               </nav>
             </header>
             <article class="preview-article">
-              <h1 data-preview-title="">{{ draft.title || 'Untitled post' }}</h1>
+              <h1 data-preview-title="">{{ previewTitle }}</h1>
               <div class="preview-author-row">
                 <span class="preview-avatar" data-preview-avatar="">{{ authorInitial }}</span>
                 <div class="preview-author-meta">
@@ -577,7 +577,11 @@
                   <time data-preview-date="">JUL 07, 2026</time>
                 </div>
               </div>
-              <div class="preview-post-body" data-preview-body="" [innerHTML]="contentPreview"></div>
+              @if (previewTranslationLoading) {
+                <div class="preview-translation-loading" role="status">Translating...</div>
+              } @else {
+                <div class="preview-post-body" data-preview-body="" [innerHTML]="contentPreview"></div>
+              }
               <div aria-hidden="true" class="preview-engagement-row">
                 <button aria-label="Like" class="preview-action-btn" type="button">
                   <svg viewbox="0 0 24 24">
@@ -640,8 +644,8 @@
         <div class="publish-form-group">
           <h3 class="fb-modal-heading" data-i18n="allowed_translations">Allowed Translations</h3>
           <div class="publish-checkbox-group d-flex flex-column gap-2" style="max-height: 165px; overflow-y: auto; padding-right: 4px;">
-            <div *ngFor="let language of languageOptions" class="d-flex align-items-center justify-content-between p-2 rounded-2 border"
-              style="background: var(--bg-body, #fff);">
+            <div *ngFor="let language of languageOptions"
+              class="publish-language-row d-flex align-items-center justify-content-between p-2 rounded-2 border">
               <label class="publish-checkbox-label mb-0" style="cursor: pointer;"><input type="checkbox"
                   name="allow_translate" [value]="language.code" [checked]="isTargetLanguageEnabled(language.id)" [disabled]="language.id === draft.originalLanguageId" (change)="toggleTargetLanguage(language.id, $any($event.target).checked)"> {{ languageNativeLabel(language.id) }}</label>
               <a href="#" class="btn btn-sm btn-outline-primary px-3 rounded-pill"
