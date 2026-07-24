@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LocaleService } from '../../../core/locale/locale.service';
@@ -27,6 +27,7 @@ export class AdminSidebarComponent implements OnInit {
   @Input() isOpen = false;
   @Output() close = new EventEmitter<void>();
 
+  readonly moreMenuOpen = signal(false);
   readonly currentUser = this.authService.currentUser;
   readonly localeOptions = this.localeService.options;
   readonly selectedLocale = this.localeService.selectedLocale;
@@ -42,6 +43,24 @@ export class AdminSidebarComponent implements OnInit {
     this.localeService.load();
   }
 
+  toggleMoreMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.moreMenuOpen.update(v => !v);
+  }
+
+  closeMoreMenu(): void {
+    this.moreMenuOpen.set(false);
+    this.closeMenu();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('[data-admin-more]')) {
+      this.moreMenuOpen.set(false);
+    }
+  }
+
   closeMenu(): void {
     this.close.emit();
   }
@@ -51,6 +70,7 @@ export class AdminSidebarComponent implements OnInit {
   }
 
   logout(): void {
+    this.closeMoreMenu();
     this.authService.logout().subscribe({
       complete: () => void this.router.navigate(['/auth/login']),
     });
