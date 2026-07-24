@@ -31,13 +31,17 @@
   visibility: hidden;
   pointer-events: none !important;
   transform: translateY(-0.75rem);
-  transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    visibility 0s linear 180ms;
 }
 
 .app-toast--visible {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
+  transition-delay: 0s;
   pointer-events: auto !important;
 }
 

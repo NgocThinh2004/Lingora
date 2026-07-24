@@ -56,7 +56,9 @@ export class PublicPostsService {
 
     const where: any = {
       deleted_at: null,
-      status: 'published',
+      // `approved` is retained for posts approved before approval began publishing
+      // immediately. This keeps legacy public links and profile posts available.
+      status: { [Op.in]: ['approved', 'published'] },
     };
     if (postId !== undefined) {
       where.id = postId;
@@ -166,7 +168,9 @@ export class PublicPostsService {
         originalLanguage: languageMap.get(post.original_language_id) || 'en',
         coverImageUrl: post.image_url || null,
         imageUrl: post.image_url || null,
-        status: post.status,
+        // Legacy `approved` rows are public, so expose the public API contract
+        // consistently instead of leaking the old workflow state.
+        status: 'published',
         viewCount: post.view_count || 0,
         commentCount: commentCounts.get(String(post.id)) || 0,
         likeCount: likeCounts.get(String(post.id)) || 0,
@@ -232,7 +236,9 @@ export class PublicPostsService {
   }
 
   async getRelated(id: number) {
-    const post = await this.postModel.findOne({ where: { id, deleted_at: null, status: 'published' } });
+    const post = await this.postModel.findOne({
+      where: { id, deleted_at: null, status: { [Op.in]: ['approved', 'published'] } },
+    });
     if (!post) throw new NotFoundException('Post not found');
 
     const query = post.category_id ? { category: String(post.category_id), limit: 4 } : { limit: 4 };

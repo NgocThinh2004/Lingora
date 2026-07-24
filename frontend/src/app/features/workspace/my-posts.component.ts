@@ -1,11 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { LocaleService, UiTranslationKey } from '../../core/locale/locale.service';
-import { AuthorPost, PaginationMeta, PostStatus, PostTranslation } from '../posts/models/post.model';
+import { AuthorPost, PaginationMeta, PostListParams, PostStatus, PostTranslation } from '../posts/models/post.model';
 import { AuthorPostsService } from '../posts/services/author-posts.service';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -37,6 +37,7 @@ export class MyPostsComponent implements OnInit {
 
   posts: AuthorPost[] = [];
   meta: PaginationMeta | null = null;
+  readonly pageSize = 10;
   allCount = 0;
   draftCount = 0;
   publishedCount = 0;
@@ -51,11 +52,16 @@ export class MyPostsComponent implements OnInit {
   loading = false;
   busyKey = '';
   selectedPostIds = new Set<string>();
+  selectingAll = false;
+  bulkActionBusy = false;
   categoryOptions: Array<{ id: number; label: string }> = [];
   languageOptions: Array<{ id: number; code: string; label: string; nativeLabel: string; flagCode: string | null }> = [];
   confirmationAction: ConfirmationAction | null = null;
   confirmationPostIds: string[] = [];
   confirmationBusy = false;
+  translationMenuPost: AuthorPost | null = null;
+  translationMenuTop = 0;
+  translationMenuLeft = 0;
 
   ngOnInit(): void {
     this.locale.load();
@@ -73,18 +79,18 @@ export class MyPostsComponent implements OnInit {
     this.loading = true;
 
     this.postsService
-      .listAuthorPosts({
-        status: this.status,
-        trash: this.trash,
-        search: this.search.trim() || undefined,
-        page: this.page,
-        limit: 50,
-      })
+      .listAuthorPosts(this.buildListParams(this.page, this.pageSize))
       .subscribe({
         next: (response) => {
+          if (this.page > response.meta.totalPages) {
+            this.page = response.meta.totalPages;
+            this.loadPosts();
+            return;
+          }
+
           this.posts = response.data;
           this.meta = response.meta;
-          this.selectedPostIds.clear();
+          this.closeTranslationMenu();
           this.loading = false;
           if (!this.trash && this.status === 'all' && !this.search.trim()) {
             this.allCount = response.meta.total;
@@ -196,28 +202,73 @@ export class MyPostsComponent implements OnInit {
     return post.translationMatrix.filter((translation) => translation.languageId !== post.originalLanguageId);
   }
 
+  remainingTargetMatrix(post: AuthorPost) {
+    return this.targetMatrix(post).slice(1);
+  }
+
+  toggleTranslationMenu(post: AuthorPost, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (this.translationMenuPost?.id === post.id) {
+      this.closeTranslationMenu();
+      return;
+    }
+
+    const trigger = event.currentTarget as HTMLElement;
+    const triggerRect = trigger.getBoundingClientRect();
+    const itemCount = Math.max(1, this.remainingTargetMatrix(post).length);
+    const menuWidth = 90;
+    const estimatedMenuHeight = 16 + itemCount * 38;
+    const viewportMargin = 8;
+    const gap = 6;
+    const opensAbove = triggerRect.bottom + gap + estimatedMenuHeight > window.innerHeight - viewportMargin;
+
+    this.translationMenuTop = opensAbove
+      ? Math.max(viewportMargin, triggerRect.top - estimatedMenuHeight - gap)
+      : triggerRect.bottom + gap;
+    this.translationMenuLeft = Math.min(
+      Math.max(viewportMargin, triggerRect.right - menuWidth),
+      window.innerWidth - menuWidth - viewportMargin,
+    );
+    this.translationMenuPost = post;
+  }
+
+  closeTranslationMenu(): void {
+    this.translationMenuPost = null;
+  }
+
+  isTranslationMenuOpen(post: AuthorPost): boolean {
+    return this.translationMenuPost?.id === post.id;
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.closeTranslationMenu();
+  }
+
+  @HostListener('document:keydown.escape')
+  @HostListener('window:resize')
+  closeTranslationMenuFromViewportChange(): void {
+    this.closeTranslationMenu();
+  }
+
   visiblePosts(): AuthorPost[] {
     if (this.loading) {
       return [];
     }
 
-    const searchTerm = this.search.trim().toLowerCase();
-
-    return this.posts.filter((post) => {
-      const source = this.primaryTranslation(post);
-      const text = `${source?.title ?? ''} ${source?.content ?? ''}`.toLowerCase();
-      const languageMatches =
-        this.languageFilter === 'all' || this.languageCode(post.originalLanguageId).toLowerCase() === this.languageFilter;
-      const dateMatches = this.dateFilter === 'all' || post.updatedAt.startsWith(this.dateFilter);
-      const categoryMatches =
-        this.categoryFilter === 'all' || String(post.categoryId ?? '').toLowerCase() === this.categoryFilter;
-
-      return (!searchTerm || text.includes(searchTerm)) && languageMatches && dateMatches && categoryMatches;
-    });
+    return this.posts;
   }
 
   postSearchText(post: AuthorPost): string {
     return this.postTitle(post);
+  }
+
+  postDetailLink(post: AuthorPost): string[] {
+    return post.status === 'published'
+      ? ['/post', post.id]
+      : ['/workspace/posts', post.id, 'view'];
   }
 
   postTitle(post: AuthorPost): string {
@@ -260,8 +311,29 @@ export class MyPostsComponent implements OnInit {
   }
 
   visibleItemsLabel(): string {
-    const count = this.visiblePosts().length;
+    const count = this.meta?.total ?? this.visiblePosts().length;
     return `${count} ${this.translate(count === 1 ? 'item' : 'items')}`;
+  }
+
+  paginationPages(): number[] {
+    const totalPages = this.meta?.totalPages ?? 1;
+    let startPage = Math.max(1, this.page - 2);
+    const endPage = Math.min(totalPages, startPage + 4);
+
+    if (endPage - startPage < 4) {
+      startPage = Math.max(1, endPage - 4);
+    }
+
+    return Array.from({ length: endPage - startPage + 1 }, (_, index) => startPage + index);
+  }
+
+  hasPreviousPageGap(): boolean {
+    return (this.paginationPages()[0] ?? 1) > 1;
+  }
+
+  hasNextPageGap(): boolean {
+    const pages = this.paginationPages();
+    return (pages[pages.length - 1] ?? 1) < (this.meta?.totalPages ?? 1);
   }
 
   trackPost(_index: number, post: AuthorPost): string {
@@ -285,23 +357,55 @@ export class MyPostsComponent implements OnInit {
   }
 
   toggleVisibleSelection(checked: boolean): void {
-    const posts = this.visiblePosts();
-    if (checked) {
-      posts.forEach((post) => this.selectedPostIds.add(post.id));
+    if (!checked) {
+      this.selectedPostIds.clear();
       return;
     }
 
-    posts.forEach((post) => this.selectedPostIds.delete(post.id));
+    this.selectAllMatchingPosts();
   }
 
   areAllVisibleSelected(): boolean {
-    const posts = this.visiblePosts();
-    return posts.length > 0 && posts.every((post) => this.selectedPostIds.has(post.id));
+    const total = this.meta?.total ?? 0;
+    return total > 0 && this.selectedPostIds.size === total;
+  }
+
+  isSelectionIndeterminate(): boolean {
+    const total = this.meta?.total ?? 0;
+    return this.selectedPostIds.size > 0 && this.selectedPostIds.size < total;
   }
 
   runBulkAction(action: AuthorAction): void {
-    const selected = this.posts.filter((post) => this.selectedPostIds.has(post.id));
-    selected.forEach((post) => this.runAction(post, action));
+    const ids = [...this.selectedPostIds];
+    if (!ids.length || this.bulkActionBusy) {
+      return;
+    }
+
+    const requests = ids.map(id =>
+      action === 'submit'
+        ? this.postsService.submitAuthorPost(id)
+        : action === 'archive'
+          ? this.postsService.archiveAuthorPost(id)
+          : action === 'restore'
+            ? this.postsService.restoreAuthorPost(id)
+            : action === 'trash'
+              ? this.postsService.trashAuthorPost(id)
+              : this.postsService.restoreAuthorPostFromTrash(id),
+    );
+
+    this.bulkActionBusy = true;
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.bulkActionBusy = false;
+        this.selectedPostIds.clear();
+        this.loadPostCounts();
+        this.loadPosts();
+      },
+      error: (error: unknown) => {
+        this.bulkActionBusy = false;
+        this.toast.showError(this.formatError(error));
+      },
+    });
   }
 
   requestTrash(post: AuthorPost): void {
@@ -313,12 +417,12 @@ export class MyPostsComponent implements OnInit {
   }
 
   requestBulkDelete(): void {
-    const selected = this.posts.filter(post => this.selectedPostIds.has(post.id));
-    if (!selected.length) {
+    const ids = [...this.selectedPostIds];
+    if (!ids.length) {
       return;
     }
 
-    this.openConfirmation(this.trash ? 'delete-permanent' : 'trash', selected);
+    this.openConfirmationIds(this.trash ? 'delete-permanent' : 'trash', ids);
   }
 
   closeConfirmation(): void {
@@ -392,6 +496,21 @@ export class MyPostsComponent implements OnInit {
   }
 
   applySearch(): void {
+    this.selectedPostIds.clear();
+    this.page = 1;
+    this.loadPosts();
+  }
+
+  applyFilters(): void {
+    this.selectedPostIds.clear();
+    this.page = 1;
+    this.loadPosts();
+  }
+
+  setPostFilter(status: PostStatus | 'all', trash: boolean): void {
+    this.status = status;
+    this.trash = trash;
+    this.selectedPostIds.clear();
     this.page = 1;
     this.loadPosts();
   }
@@ -422,9 +541,73 @@ export class MyPostsComponent implements OnInit {
     });
   }
 
+  private selectAllMatchingPosts(): void {
+    if (this.selectingAll) {
+      return;
+    }
+
+    const batchSize = 50;
+    this.selectingAll = true;
+    this.postsService.listAuthorPosts(this.buildListParams(1, batchSize)).subscribe({
+      next: firstPage => {
+        const remainingPages = Array.from(
+          { length: Math.max(0, firstPage.meta.totalPages - 1) },
+          (_, index) => index + 2,
+        );
+
+        if (!remainingPages.length) {
+          this.finishSelectAll([firstPage.data]);
+          return;
+        }
+
+        forkJoin(
+          remainingPages.map(page => this.postsService.listAuthorPosts(this.buildListParams(page, batchSize))),
+        ).subscribe({
+          next: responses => this.finishSelectAll([
+            firstPage.data,
+            ...responses.map(response => response.data),
+          ]),
+          error: (error: unknown) => this.failSelectAll(error),
+        });
+      },
+      error: (error: unknown) => this.failSelectAll(error),
+    });
+  }
+
+  private finishSelectAll(postPages: AuthorPost[][]): void {
+    this.selectedPostIds = new Set(postPages.flat().map(post => post.id));
+    this.selectingAll = false;
+  }
+
+  private failSelectAll(error: unknown): void {
+    this.selectingAll = false;
+    this.toast.showError(this.formatError(error));
+  }
+
+  private buildListParams(page: number, limit: number): PostListParams {
+    const selectedLanguage = this.languageOptions.find(
+      language => language.code.toLowerCase() === this.languageFilter,
+    );
+
+    return {
+      status: this.status,
+      trash: this.trash,
+      search: this.search.trim() || undefined,
+      originalLanguageId: selectedLanguage?.id,
+      categoryId: this.categoryFilter === 'all' ? undefined : Number(this.categoryFilter),
+      updatedMonth: this.dateFilter === 'all' ? undefined : this.dateFilter,
+      page,
+      limit,
+    };
+  }
+
   private openConfirmation(action: ConfirmationAction, posts: AuthorPost[]): void {
+    this.openConfirmationIds(action, posts.map(post => post.id));
+  }
+
+  private openConfirmationIds(action: ConfirmationAction, ids: string[]): void {
     this.confirmationAction = action;
-    this.confirmationPostIds = posts.map(post => post.id);
+    this.confirmationPostIds = ids;
   }
 
   private formatError(error: unknown): string {

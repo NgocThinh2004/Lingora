@@ -176,6 +176,21 @@ export class AuthorPostsService {
       where.status = query.status;
     }
 
+    if (query.categoryId) {
+      where.category_id = query.categoryId;
+    }
+
+    if (query.originalLanguageId) {
+      where.original_language_id = query.originalLanguageId;
+    }
+
+    if (query.updatedMonth) {
+      const [year, month] = query.updatedMonth.split('-').map(Number);
+      const start = new Date(Date.UTC(year, month - 1, 1));
+      const end = new Date(Date.UTC(year, month, 1));
+      where.updated_at = { [Op.gte]: start, [Op.lt]: end };
+    }
+
     const posts = await this.postModel.findAll({
       where,
       order: [['updated_at', 'DESC']],
@@ -622,6 +637,7 @@ export class AuthorPostsService {
         'h1',
         'h2',
         'h3',
+        'div',
         'span',
       ],
       allowedAttributes: {
@@ -632,9 +648,32 @@ export class AuthorPostsService {
         video: ['src', 'controls', 'playsinline', 'preload', 'poster', 'title', 'width', 'height'],
         source: ['src', 'type'],
         track: ['default', 'kind', 'label', 'src', 'srclang'],
+        div: ['class'],
         span: ['class'],
         code: ['class'],
         pre: ['class'],
+      },
+      allowedClasses: {
+        div: [
+          'editor-code-block',
+          'editor-code-toolbar',
+          'editor-code-language-menu',
+          'editor-media-wrapper',
+        ],
+        pre: ['editor-code-body'],
+        code: ['editor-inline-code-font'],
+        span: ['code-line', 'line-number', 'line-content'],
+      },
+      exclusiveFilter: (frame) => {
+        const classes = frame.attribs.class?.split(/\s+/) ?? [];
+        return classes.some((className) =>
+          [
+            'editor-code-toolbar',
+            'editor-code-delete',
+            'editor-code-language-menu',
+            'editor-media-delete',
+          ].includes(className),
+        );
       },
       transformTags: {
         a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer' }, true),

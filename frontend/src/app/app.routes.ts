@@ -54,12 +54,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent),
       },
       {
+        path: 'workspace/posts/:id/view',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent),
+        data: { authorPreview: true },
+      },
+      {
         path: 'profile',
         title: 'Profile - Lingora',
         canActivate: [authGuard],
         loadComponent: () =>
           import('./features/profile/profile.component').then(m => m.ProfileComponent),
-        data: { showRightPanel: false },
+        data: { showRightPanel: false, contentMaxWidth: '100%' },
       },
       {
         path: 'profile/:id',
@@ -67,7 +73,7 @@ export const routes: Routes = [
         canActivate: [authGuard],
         loadComponent: () =>
           import('./features/profile/profile.component').then(m => m.ProfileComponent),
-        data: { showRightPanel: false },
+        data: { showRightPanel: false, contentMaxWidth: '100%' },
       },
     ],
   },

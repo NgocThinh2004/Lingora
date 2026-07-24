@@ -143,8 +143,9 @@
 @if (dialog()) {
   <button class="dialog-backdrop" type="button" aria-label="Close language panel" (click)="closeDialog()"></button>
   <aside
-    class="language-panel"
+    class="language-panel side-panel-modal"
     [class.is-open]="dialogVisible()"
+    [class.show]="dialogVisible()"
     role="dialog"
     aria-modal="true"
     [attr.aria-labelledby]="dialog() === 'add' ? 'addLanguageTitle' : 'editLanguageTitle'">

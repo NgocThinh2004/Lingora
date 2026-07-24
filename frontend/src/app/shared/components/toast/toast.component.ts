@@ -15,6 +15,7 @@ export class ToastComponent implements OnInit, OnDestroy {
   isVisible = false;
   private subscription!: Subscription;
   private dismissTimer?: ReturnType<typeof setTimeout>;
+  private removalTimer?: ReturnType<typeof setTimeout>;
 
   constructor(private toastService: ToastService) {}
 
@@ -23,13 +24,15 @@ export class ToastComponent implements OnInit, OnDestroy {
       this.toastData = toast;
       this.isVisible = true;
       clearTimeout(this.dismissTimer);
+      clearTimeout(this.removalTimer);
       this.dismissTimer = setTimeout(() => this.dismiss(), 4000);
     });
   }
 
   dismiss(): void {
     this.isVisible = false;
-    setTimeout(() => {
+    clearTimeout(this.removalTimer);
+    this.removalTimer = setTimeout(() => {
       if (!this.isVisible) {
         this.toastData = null;
       }
@@ -38,6 +41,7 @@ export class ToastComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     clearTimeout(this.dismissTimer);
+    clearTimeout(this.removalTimer);
     if (this.subscription) {
       this.subscription.unsubscribe();
     }

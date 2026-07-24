@@ -102,6 +102,7 @@ img {
 
 .bg-primary {
   background-color: var(--primary-color) !important;
+  color: var(--accent-contrast, #ffffff) !important;
 }
 
 .bg-primary-subtle {

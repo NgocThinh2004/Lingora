@@ -94,6 +94,7 @@ export interface PostListParams {
   authorId?: string;
   categoryId?: number;
   originalLanguageId?: number;
+  updatedMonth?: string;
   trash?: boolean;
   page?: number;
   limit?: number;

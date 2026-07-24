@@ -53,7 +53,7 @@
   border: 1px solid transparent !important;
   border-radius: 50rem !important;
   background: var(--primary-color) !important;
-  color: #ffffff !important;
+  color: var(--accent-contrast, #ffffff) !important;
   font-size: 0.82rem !important;
   font-weight: 600 !important;
   white-space: nowrap;

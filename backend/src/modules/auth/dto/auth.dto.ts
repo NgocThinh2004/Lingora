@@ -85,4 +85,12 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(2000)
   bio?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  @Matches(/^\/uploads\/[a-zA-Z0-9._%-]+$/, {
+    message: 'avatarUrl must be a valid uploaded image path',
+  })
+  avatarUrl?: string;
 }

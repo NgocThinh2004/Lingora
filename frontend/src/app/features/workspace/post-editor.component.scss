@@ -4,3 +4,17 @@
     border: 1px solid #000000 !important;
     box-shadow: inset 0 0 0 1px #000000 !important;
   }
+
+.editor-topbar [data-publish-button] {
+  position: relative;
+  z-index: 1;
+  border: 1px solid #000000 !important;
+  box-shadow: inset 0 0 0 1px #000000;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+[data-publish-action='publish'] {
+  border: 1px solid #000000 !important;
+  box-shadow: inset 0 0 0 1px #000000;
+}

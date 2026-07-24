@@ -112,6 +112,7 @@ export class AuthService {
           username: username ?? user.username,
           display_name: dto.displayName === undefined ? user.display_name : dto.displayName.trim(),
           bio: dto.bio === undefined ? user.bio : dto.bio.trim() || null,
+          avatar: dto.avatarUrl === undefined ? user.avatar : dto.avatarUrl,
           updated_at: new Date(),
         },
         { transaction },

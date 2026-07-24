@@ -930,7 +930,7 @@ select.form-select-sm {
   transition: border-color .15s ease, background-color .15s ease, color .15s ease;
 }
 .admin-page-btn:hover:not(:disabled) { border-color: var(--primary-color); color: var(--primary-color); }
-.admin-page-btn.is-active { border-color: var(--primary-color); color: #fff; background: var(--primary-color); }
+.admin-page-btn.is-active { border-color: var(--primary-color); color: var(--accent-contrast, #fff); background: var(--primary-color); }
 .admin-page-btn:disabled { opacity: .42; cursor: not-allowed; }
 .admin-page-gap { min-width: 24px; color: var(--text-muted); text-align: center; }
 @media (max-width: 575px) {
@@ -1045,7 +1045,7 @@ app-admin-categories .confirm-dialog .confirm-delete { box-shadow: 0 8px 18px co
   border: 1px solid transparent !important;
   border-radius: 50rem !important;
   background: var(--primary-color) !important;
-  color: #ffffff !important;
+  color: var(--accent-contrast, #ffffff) !important;
   font-size: 0.82rem !important;
   font-weight: 600 !important;
   white-space: nowrap;

@@ -1,6 +1,15 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -14,6 +23,13 @@ import { ToastService } from '../../core/notifications/toast.service';
 
 type SaveMode = 'draft' | 'submit';
 type BaselineFormat = 'normal' | 'superscript' | 'subscript';
+type AutosaveState = 'idle' | 'saving' | 'saved';
+
+interface EditorAutosaveSnapshot {
+  version: 1;
+  savedAt: number;
+  draft: CreatePostPayload;
+}
 
 @Component({
   selector: 'app-post-editor',
@@ -22,11 +38,12 @@ type BaselineFormat = 'normal' | 'superscript' | 'subscript';
   templateUrl: './post-editor.component.html',
   styleUrl: './post-editor.component.scss',
 })
-export class PostEditorComponent implements OnInit, OnDestroy {
+export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly postsService = inject(AuthorPostsService);
   private readonly uploadsService = inject(EditorUploadsService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly location = inject(Location);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly authService = inject(AuthService);
   private readonly toast = inject(ToastService);
@@ -37,6 +54,11 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   private editingLinkElement: HTMLAnchorElement | null = null;
   private readonly codeProtectedCommands = new Set(['bold', 'italic', 'strikeThrough']);
   private previousTheme: string | null = null;
+  private currentPostId: string | null = null;
+  private autosaveTimer: number | null = null;
+  private autosaveDirty = false;
+  private autosaveState: AutosaveState = 'idle';
+  private readonly autosaveDelayMs = 500;
   readonly titleWordLimit = 20;
   readonly bodyWordLimit = 3000;
 
@@ -104,17 +126,45 @@ export class PostEditorComponent implements OnInit, OnDestroy {
     });
 
     const postId = this.route.snapshot.paramMap.get('id');
+    this.currentPostId = postId;
     if (postId) {
       this.loadPost(postId);
+    } else {
+      const snapshot = this.readAutosaveSnapshot(null);
+      if (snapshot) {
+        this.applyAutosaveSnapshot(snapshot);
+      }
+    }
+  }
+
+  ngAfterViewInit(): void {
+    if (!this.currentPostId && this.draft.content) {
+      queueMicrotask(() => this.hydrateEditorFromDraft());
     }
   }
 
   ngOnDestroy(): void {
+    this.flushAutosave();
+    if (this.previousTheme) {
+      document.documentElement.setAttribute('data-bs-theme', this.previousTheme);
+    } else {
+      document.documentElement.removeAttribute('data-bs-theme');
+    }
     document.body.classList.remove('editor-page', 'preview-modal-open', 'publish-modal-open', 'draft-modal-open');
   }
 
   get contentPreview(): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(this.buildPreviewHtml(this.draft.content || '<p>No content yet.</p>'));
+  }
+
+  get saveStateLabel(): string {
+    if (this.saveMode === 'draft' || this.autosaveState === 'saving') {
+      return 'Saving';
+    }
+    if (this.createdPost || this.autosaveState === 'saved') {
+      return 'Saved';
+    }
+    return 'Save';
   }
 
   get titleWordCount(): number {
@@ -165,16 +215,21 @@ export class PostEditorComponent implements OnInit, OnDestroy {
     this.draft.originalLanguageId = this.toRequiredNumber(value, 1);
     this.allowedTargetLanguageIds.delete(this.draft.originalLanguageId);
     this.syncTargetInput();
+    this.scheduleAutosave();
   }
 
   updateCategoryId(value: string | number): void {
     const parsed = Number(value);
     this.draft.categoryId = Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+    this.scheduleAutosave();
   }
 
   updateContentFromEditor(event: Event): void {
-    this.draft.content = (event.target as HTMLElement).innerHTML;
+    const editor = event.target as HTMLElement;
+    this.normalizeGeneratedBlockPlaceholders(editor);
+    this.draft.content = editor.innerHTML;
     this.saveEditorSelection();
+    this.scheduleAutosave();
   }
 
   autoResizeTitle(event: Event): void {
@@ -187,24 +242,35 @@ export class PostEditorComponent implements OnInit, OnDestroy {
     }
     textarea.style.height = 'auto';
     textarea.style.height = `${textarea.scrollHeight}px`;
+    this.scheduleAutosave();
   }
 
   saveDraft(): void {
     this.save('draft');
   }
 
-  openPublishOptions(): void {
+  openPublishOptions(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
     this.syncContentFromEditor();
-    if (this.isBodyOverLimit) {
+    if (this.isTitleOverLimit || this.isBodyOverLimit) {
+      this.toast.showError(
+        `Tiêu đề tối đa ${this.titleWordLimit} từ và nội dung tối đa ${this.bodyWordLimit} từ.`,
+      );
       return;
     }
+
+    this.closeToolbarMenus();
+    this.closeCodeLanguageMenus();
+    this.closeLinkModal();
+    this.closeLinkBubble();
     this.showPublishOptions = true;
     this.updateBodyModalClasses();
   }
 
   closePublishOptions(openDraftConfirm = false): void {
     this.showPublishOptions = false;
-    this.showDraftConfirm = openDraftConfirm;
+    this.showDraftConfirm = openDraftConfirm && this.shouldConfirmDraftOnExit();
     this.updateBodyModalClasses();
   }
 
@@ -414,13 +480,17 @@ export class PostEditorComponent implements OnInit, OnDestroy {
 
   goToMyPosts(): void {
     this.syncContentFromEditor();
-    if (this.hasDraftContent()) {
+    if (this.shouldConfirmDraftOnExit()) {
       this.showDraftConfirm = true;
       this.updateBodyModalClasses();
       return;
     }
 
     void this.router.navigateByUrl('/workspace/posts');
+  }
+
+  private shouldConfirmDraftOnExit(): boolean {
+    return this.createdPost?.status !== 'pending_review' && this.hasDraftContent();
   }
 
   languageLabel(languageId: number): string {
@@ -443,6 +513,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
     if (languageId === this.draft.originalLanguageId) {
       this.allowedTargetLanguageIds.delete(languageId);
       this.syncTargetInput();
+      this.scheduleAutosave();
       return;
     }
 
@@ -453,6 +524,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
     }
 
     this.syncTargetInput();
+    this.scheduleAutosave();
   }
 
   previewTranslation(languageId = this.draft.originalLanguageId): void {
@@ -578,6 +650,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   }
 
   discardDraft(): void {
+    this.clearAutosaveSnapshots();
     this.showDraftConfirm = false;
     this.updateBodyModalClasses();
     void this.router.navigateByUrl('/workspace/posts');
@@ -594,6 +667,11 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   onDocumentSelectionChange(): void {
     this.saveEditorSelection();
     this.updateToolbarState();
+  }
+
+  @HostListener('window:beforeunload')
+  onBeforeUnload(): void {
+    this.flushAutosave();
   }
 
   @HostListener('document:click', ['$event'])
@@ -694,6 +772,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
 
   private save(mode: SaveMode): void {
     this.syncContentFromEditor();
+    this.flushAutosave();
     const payload = this.buildPayload();
     if (!payload.title.trim() || !this.hasMeaningfulContent(payload.content)) {
       this.toast.showError('Tiêu đề và nội dung là bắt buộc.');
@@ -726,8 +805,15 @@ export class PostEditorComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (post) => {
+          const wasNewPost = !this.currentPostId;
           this.createdPost = post;
+          this.currentPostId = String(post.id);
+          this.clearAutosaveSnapshots(post.id);
           this.saveMode = null;
+          this.autosaveState = 'saved';
+          if (wasNewPost && mode === 'draft' && !this.navigateAfterSave) {
+            this.location.replaceState(`/workspace/posts/${post.id}/edit`);
+          }
           if (mode === 'submit') {
             this.navigateToMyPosts(`Bài #${post.id} đã được gửi duyệt.`);
             return;
@@ -753,7 +839,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
       next: post => {
         const source = post.translations.find(item => item.languageId === post.originalLanguageId) ?? post.translations[0];
         this.createdPost = post;
-        this.draft = {
+        const serverDraft: CreatePostPayload = {
           title: source?.title ?? '',
           categoryId: post.categoryId ?? undefined,
           originalLanguageId: post.originalLanguageId,
@@ -762,11 +848,18 @@ export class PostEditorComponent implements OnInit, OnDestroy {
             .map(item => item.languageId),
           content: source?.content ?? '',
         };
-        this.allowedTargetLanguageIds.clear();
-        this.draft.targetLanguageIds?.forEach(id => this.allowedTargetLanguageIds.add(id));
-        this.targetInput = this.draft.targetLanguageIds?.join(',') ?? '';
-        if (this.postBody?.nativeElement) {
-          this.postBody.nativeElement.innerHTML = this.draft.content;
+        const snapshot = this.readAutosaveSnapshot(postId);
+        const serverUpdatedAt = Date.parse(post.updatedAt);
+
+        if (snapshot && snapshot.savedAt > serverUpdatedAt) {
+          this.applyAutosaveSnapshot(snapshot);
+        } else {
+          this.draft = serverDraft;
+          this.syncLanguageSelectionFromDraft();
+          this.hydrateEditorFromDraft();
+          if (snapshot) {
+            this.removeAutosaveSnapshot(postId);
+          }
         }
         this.saveMode = null;
       },
@@ -824,7 +917,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
       `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
       `</svg>` +
       `</button>` +
-      `</div><p><br></p>`
+      `</div><p class="editor-after-block-placeholder"><br></p>`
     );
   }
 
@@ -873,7 +966,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
       sourceHtml = sourceHtml.replace(/\r\n/g, '\n');
 
       const lines = sourceHtml.split('\n');
-      if (lines.length > 1 && lines[lines.length - 1] === '') {
+      while (lines.length > 1 && this.isVisuallyEmptyCodeLine(lines[lines.length - 1])) {
         lines.pop();
       }
 
@@ -885,6 +978,13 @@ export class PostEditorComponent implements OnInit, OnDestroy {
         )
         .join('');
     });
+  }
+
+  private isVisuallyEmptyCodeLine(line: string): boolean {
+    return line
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;|&#160;|\u00a0/gi, '')
+      .trim() === '';
   }
 
   private normalizePreviewCodeLine(line: HTMLElement, index: number): void {
@@ -949,7 +1049,14 @@ export class PostEditorComponent implements OnInit, OnDestroy {
       const lastNode = fragment.lastChild;
       range.insertNode(fragment);
       if (lastNode) {
-        this.placeCaretAtNode(lastNode);
+        if (
+          lastNode instanceof HTMLElement &&
+          lastNode.classList.contains('editor-after-block-placeholder')
+        ) {
+          this.placeCaretInside(lastNode);
+        } else {
+          this.placeCaretAtNode(lastNode);
+        }
       }
     } else {
       editor.insertAdjacentHTML('beforeend', html);
@@ -1100,7 +1207,9 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   private syncContentFromEditor(): void {
     const editor = this.editorElement();
     if (editor) {
+      this.normalizeGeneratedBlockPlaceholders(editor);
       this.draft.content = editor.innerHTML;
+      this.scheduleAutosave();
     }
   }
 
@@ -1245,7 +1354,7 @@ export class PostEditorComponent implements OnInit, OnDestroy {
       '<button class="editor-code-delete" type="button" data-remove-code-block aria-label="Delete code block" title="Delete code block"><svg class="editor-code-delete-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg></button>' +
       '</div>' +
       '<pre class="editor-code-body" contenteditable="true" spellcheck="false"><code></code></pre>' +
-      '</div><p><br></p>'
+      '</div><p class="editor-after-block-placeholder"><br></p>'
     );
   }
 
@@ -1261,6 +1370,42 @@ export class PostEditorComponent implements OnInit, OnDestroy {
     if (nextNode?.tagName === 'P' && !nextNode.textContent?.trim()) {
       nextNode.remove();
     }
+  }
+
+  private normalizeGeneratedBlockPlaceholders(editor: HTMLElement): void {
+    editor.querySelectorAll<HTMLElement>('.editor-after-block-placeholder').forEach((paragraph) => {
+      if (!this.isVisuallyEmptyEditorNode(paragraph)) {
+        paragraph.classList.remove('editor-after-block-placeholder');
+      }
+    });
+
+    editor.querySelectorAll<HTMLElement>('.editor-code-block, .editor-media-wrapper').forEach((block) => {
+      const nextNode = this.nextMeaningfulSibling(block);
+      if (!(nextNode instanceof HTMLParagraphElement) || !this.isVisuallyEmptyEditorNode(nextNode)) {
+        return;
+      }
+
+      const nodeAfterPlaceholder = this.nextMeaningfulSibling(nextNode);
+      if (nodeAfterPlaceholder) {
+        nextNode.remove();
+        return;
+      }
+
+      nextNode.classList.add('editor-after-block-placeholder');
+    });
+  }
+
+  private nextMeaningfulSibling(node: Node): Node | null {
+    let sibling = node.nextSibling;
+    while (sibling?.nodeType === Node.TEXT_NODE && !sibling.textContent?.trim()) {
+      sibling = sibling.nextSibling;
+    }
+    return sibling;
+  }
+
+  private isVisuallyEmptyEditorNode(node: HTMLElement): boolean {
+    const text = (node.textContent ?? '').replace(/\u00a0/g, ' ').trim();
+    return !text && !node.querySelector('img, audio, video, hr, .editor-code-block');
   }
 
   private getInlineCodeWrapper(node: Node | null): HTMLElement | null {
@@ -1670,6 +1815,186 @@ export class PostEditorComponent implements OnInit, OnDestroy {
     document.body.classList.toggle('preview-modal-open', this.showPreview);
     document.body.classList.toggle('publish-modal-open', this.showPublishOptions);
     document.body.classList.toggle('draft-modal-open', this.showDraftConfirm);
+  }
+
+  private scheduleAutosave(): void {
+    this.autosaveDirty = true;
+    this.autosaveState = 'saving';
+    if (this.autosaveTimer !== null) {
+      window.clearTimeout(this.autosaveTimer);
+    }
+    this.autosaveTimer = window.setTimeout(() => this.persistAutosave(), this.autosaveDelayMs);
+  }
+
+  private flushAutosave(): void {
+    if (this.autosaveTimer !== null) {
+      window.clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = null;
+    }
+    if (this.autosaveDirty) {
+      this.persistAutosave();
+    }
+  }
+
+  private persistAutosave(): void {
+    this.autosaveTimer = null;
+    if (!this.autosaveDirty) {
+      return;
+    }
+
+    if (!this.hasAutosaveContent()) {
+      this.removeAutosaveSnapshot(this.currentPostId);
+      this.autosaveDirty = false;
+      this.autosaveState = 'idle';
+      return;
+    }
+
+    const snapshot: EditorAutosaveSnapshot = {
+      version: 1,
+      savedAt: Date.now(),
+      draft: {
+        title: this.draft.title,
+        categoryId: this.draft.categoryId,
+        originalLanguageId: this.draft.originalLanguageId,
+        targetLanguageIds: [...(this.draft.targetLanguageIds ?? [])],
+        content: this.draft.content,
+      },
+    };
+
+    try {
+      localStorage.setItem(this.autosaveStorageKey(this.currentPostId), JSON.stringify(snapshot));
+      this.autosaveState = 'saved';
+    } catch {
+      this.autosaveState = 'idle';
+    }
+    this.autosaveDirty = false;
+  }
+
+  private readAutosaveSnapshot(postId: string | null): EditorAutosaveSnapshot | null {
+    try {
+      const rawSnapshot = localStorage.getItem(this.autosaveStorageKey(postId));
+      if (!rawSnapshot) {
+        return null;
+      }
+      const snapshot = JSON.parse(rawSnapshot) as Partial<EditorAutosaveSnapshot>;
+      if (
+        snapshot.version !== 1 ||
+        typeof snapshot.savedAt !== 'number' ||
+        !snapshot.draft ||
+        typeof snapshot.draft.title !== 'string' ||
+        typeof snapshot.draft.content !== 'string'
+      ) {
+        this.removeAutosaveSnapshot(postId);
+        return null;
+      }
+
+      return {
+        version: 1,
+        savedAt: snapshot.savedAt,
+        draft: {
+          title: snapshot.draft.title,
+          categoryId: snapshot.draft.categoryId,
+          originalLanguageId: this.toRequiredNumber(snapshot.draft.originalLanguageId, 1),
+          targetLanguageIds: Array.isArray(snapshot.draft.targetLanguageIds)
+            ? snapshot.draft.targetLanguageIds.filter(id => Number.isInteger(id) && id > 0)
+            : [],
+          content: this.sanitizeLocalDraftHtml(snapshot.draft.content),
+        },
+      };
+    } catch {
+      this.removeAutosaveSnapshot(postId);
+      return null;
+    }
+  }
+
+  private applyAutosaveSnapshot(snapshot: EditorAutosaveSnapshot): void {
+    this.draft = snapshot.draft;
+    this.syncLanguageSelectionFromDraft();
+    this.hydrateEditorFromDraft();
+    this.autosaveDirty = false;
+    this.autosaveState = 'saved';
+  }
+
+  private hydrateEditorFromDraft(): void {
+    const editor = this.postBody?.nativeElement;
+    if (!editor) {
+      return;
+    }
+    editor.innerHTML = this.draft.content;
+    this.normalizeGeneratedBlockPlaceholders(editor);
+    this.draft.content = editor.innerHTML;
+    const title = document.getElementById('postTitle') as HTMLTextAreaElement | null;
+    if (title) {
+      title.style.height = 'auto';
+      title.style.height = `${title.scrollHeight}px`;
+    }
+  }
+
+  private syncLanguageSelectionFromDraft(): void {
+    this.allowedTargetLanguageIds.clear();
+    this.draft.targetLanguageIds?.forEach(id => {
+      if (id !== this.draft.originalLanguageId) {
+        this.allowedTargetLanguageIds.add(id);
+      }
+    });
+    this.targetInput = [...this.allowedTargetLanguageIds].join(',');
+  }
+
+  private hasAutosaveContent(): boolean {
+    return Boolean(
+      this.draft.title.trim() ||
+      this.hasMeaningfulContent(this.draft.content) ||
+      this.draft.categoryId,
+    );
+  }
+
+  private autosaveStorageKey(postId: string | number | null): string {
+    const userId = this.authService.currentUser()?.id ?? 'anonymous';
+    return `lingora:post-editor:${userId}:${postId ?? 'new'}`;
+  }
+
+  private removeAutosaveSnapshot(postId: string | number | null): void {
+    try {
+      localStorage.removeItem(this.autosaveStorageKey(postId));
+    } catch {
+      // Storage may be unavailable in privacy mode.
+    }
+  }
+
+  private clearAutosaveSnapshots(postId?: string | number): void {
+    if (this.autosaveTimer !== null) {
+      window.clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = null;
+    }
+    this.removeAutosaveSnapshot(null);
+    this.removeAutosaveSnapshot(this.currentPostId);
+    if (postId !== undefined) {
+      this.removeAutosaveSnapshot(postId);
+    }
+    this.autosaveDirty = false;
+  }
+
+  private sanitizeLocalDraftHtml(content: string): string {
+    const container = document.createElement('div');
+    container.innerHTML = content;
+    container
+      .querySelectorAll('script, style, iframe, object, embed, form, input, textarea, select, meta, link, base')
+      .forEach(element => element.remove());
+    container.querySelectorAll<HTMLElement>('*').forEach(element => {
+      Array.from(element.attributes).forEach(attribute => {
+        const name = attribute.name.toLowerCase();
+        const value = attribute.value.trim();
+        if (
+          name.startsWith('on') ||
+          name === 'srcdoc' ||
+          name === 'formaction' ||
+          ((name === 'href' || name === 'src') && /^(?:javascript|vbscript):/i.test(value))
+        ) {
+          element.removeAttribute(attribute.name);
+        }
+      });
+    });
+    return container.innerHTML;
   }
 
   private syncTargetInput(): void {

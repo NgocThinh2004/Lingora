@@ -93,7 +93,7 @@
 .user-cell { display: flex; min-width: 0; align-items: center; gap: .75rem; }
 .user-avatar { width: 38px; height: 38px; flex: 0 0 38px; border: 1px solid var(--border-color); border-radius: 50%; object-fit: cover; }
 .user-avatar--fallback,
-.detail-avatar--fallback { display: grid; place-items: center; color: #fff; background: var(--primary-color); font-weight: 700; }
+.detail-avatar--fallback { display: grid; place-items: center; color: var(--accent-contrast, #fff); background: var(--primary-color); font-weight: 700; }
 .user-cell-meta { min-width: 0; }
 .user-cell-name { overflow: hidden; color: var(--text-main); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .user-cell-id { color: var(--text-muted); font-size: .78rem; }

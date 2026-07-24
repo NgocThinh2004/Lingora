@@ -1,3 +1,11 @@
+app-profile {
+  display: block;
+  width: calc(100% + 5rem) !important;
+  max-width: none !important;
+  min-height: 100vh;
+  margin: -1.5rem -2.5rem 0;
+}
+
 .feature-page-profile {
   --bg: var(--bg-body);
   --panel: var(--bg-panel);
@@ -8,7 +16,6 @@
   --muted: var(--text-muted);
   --muted-2: var(--text-muted);
   --accent: var(--primary-color);
-  --accent-contrast: #ffffff;
   --teal: #00866b;
   --picker-bg: var(--bg-panel);
   --picker-line: var(--border-color);
@@ -45,8 +52,20 @@
 }
 
 @media (max-width: 991px) {
+  app-profile {
+    width: calc(100% + 2rem) !important;
+    margin: -1.25rem -1rem 0;
+  }
+
   .profile-app {
     display: block;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1200px) {
+  app-profile {
+    width: calc(100% + 4rem) !important;
+    margin: -1.5rem -2rem 0;
   }
 }
 

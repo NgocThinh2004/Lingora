@@ -27,3 +27,84 @@
   line-height: 1.5;
   text-align: center;
 }
+
+:host ::ng-deep .article-content .editor-code-block {
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border: 1px solid #dfe3e1;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+:host ::ng-deep .article-content .editor-code-toolbar,
+:host ::ng-deep .article-content .editor-code-delete,
+:host ::ng-deep .article-content .editor-code-language-menu,
+:host ::ng-deep .article-content .editor-media-delete {
+  display: none !important;
+}
+
+:host ::ng-deep .article-content .editor-code-body {
+  min-height: 4rem;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: auto;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: #252929 !important;
+  background: #ffffff !important;
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  white-space: pre;
+  tab-size: 2;
+}
+
+:host ::ng-deep .article-content .editor-code-body code {
+  display: block;
+  min-width: max-content;
+  padding: 1rem 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}
+
+:host ::ng-deep .article-content .editor-code-body .code-line {
+  display: flex;
+  min-height: 1.6em;
+}
+
+:host ::ng-deep .article-content .editor-code-body .line-number {
+  flex: 0 0 3.25rem;
+  padding: 0 0.75rem;
+  border-right: 1px solid #e3e6e5;
+  color: #8a9190;
+  text-align: right;
+  user-select: none;
+}
+
+:host ::ng-deep .article-content .editor-code-body .line-content {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  padding: 0 1rem;
+  white-space: pre;
+}
+
+:host-context([data-bs-theme='dark']) ::ng-deep .article-content .editor-code-block {
+  border-color: #303433;
+  background: #171918;
+}
+
+:host-context([data-bs-theme='dark']) ::ng-deep .article-content .editor-code-body {
+  color: #f0f2f1 !important;
+  background: #171918 !important;
+}
+
+:host-context([data-bs-theme='dark'])
+  ::ng-deep
+  .article-content
+  .editor-code-body
+  .line-number {
+  border-right-color: #353938;
+  color: #858c8a;
+}
