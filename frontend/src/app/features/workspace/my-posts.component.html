@@ -33,16 +33,16 @@
               <div class="toolbar-links-stack">
                 <div aria-label="Post status filters" class="status-tabs" role="tablist">
                   <button class="status-tab" [class.is-active]="status === 'all' && !trash" type="button"
-                    (click)="status = 'all'; trash = false; page = 1; loadPosts()"><span>{{ translate('all_posts_tab') }}</span>
+                    (click)="setPostFilter('all', false)"><span>{{ translate('all_posts_tab') }}</span>
                     (<span data-count-all="">{{ allCount }}</span>)</button>
                   <button class="status-tab" [class.is-active]="status === 'draft' && !trash" type="button"
-                    (click)="status = 'draft'; trash = false; page = 1; loadPosts()"><span>{{ translate('drafts') }}</span>
+                    (click)="setPostFilter('draft', false)"><span>{{ translate('drafts') }}</span>
                     (<span>{{ draftCount }}</span>)</button>
                   <button class="status-tab" [class.is-active]="status === 'published' && !trash" type="button"
-                    (click)="status = 'published'; trash = false; page = 1; loadPosts()"><span>{{ translate('published') }}</span>
+                    (click)="setPostFilter('published', false)"><span>{{ translate('published') }}</span>
                     (<span>{{ publishedCount }}</span>)</button>
                   <button class="status-tab" [class.is-active]="trash" type="button"
-                    (click)="trash = true; status = 'all'; page = 1; loadPosts()"><span>{{ translate('trash') }}</span>
+                    (click)="setPostFilter('all', true)"><span>{{ translate('trash') }}</span>
                     (<span>{{ trashCount }}</span>)</button>
                 </div>
               </div>
@@ -57,24 +57,26 @@
             <div class="toolbar-filter-row">
               <div class="filter-actions">
                 <select aria-label="Filter by language" class="filter-select" data-language-filter=""
-                  name="languageFilter" [(ngModel)]="languageFilter">
+                  name="languageFilter" [(ngModel)]="languageFilter" (ngModelChange)="applyFilters()">
                   <option value="all">{{ translate('all_languages') }}</option>
                   <option *ngFor="let language of languageOptions" [value]="language.code.toLowerCase()">
                     {{ language.nativeLabel || language.label }}
                   </option>
                 </select>
-                <select aria-label="Filter by date" class="filter-select" name="dateFilter" [(ngModel)]="dateFilter">
+                <select aria-label="Filter by date" class="filter-select" name="dateFilter" [(ngModel)]="dateFilter"
+                  (ngModelChange)="applyFilters()">
                   <option value="all">{{ translate('all_dates') }}</option>
                   <option value="2026-07">July 2026</option>
                   <option value="2026-06">June 2026</option>
                 </select>
                 <select aria-label="Filter by category" class="filter-select" data-category-filter=""
-                  name="categoryFilter" [(ngModel)]="categoryFilter">
+                  name="categoryFilter" [(ngModel)]="categoryFilter" (ngModelChange)="applyFilters()">
                   <option value="all">{{ translate('all_categories') }}</option>
                   <option *ngFor="let category of categoryOptions" [value]="category.id">{{ category.label }}</option>
                 </select>
                 <div class="filter-actions-bottom d-flex align-items-center flex-grow-1" style="min-width: 0;">
                   <button type="button" class="list-control-btn d-lg-none" id="mobileSelectAllBtn"
+                    [disabled]="selectingAll"
                     (click)="toggleVisibleSelection(!areAllVisibleSelected())"><span>{{ translate('select_all') }}</span></button>
 
                   <!-- Spacer to push the rest to the right -->
@@ -90,11 +92,11 @@
                         <span>&nbsp;{{ translate('selected') }}</span></span>
                       <div class="bulk-actions d-flex gap-2">
                         <button class="command-btn btn-sm text-success" [hidden]="!trash" id="bulkRestoreBtn"
-                          type="button" (click)="runBulkAction('restore-trash')"><i
+                          type="button" [disabled]="bulkActionBusy" (click)="runBulkAction('restore-trash')"><i
                             class="bi bi-arrow-counterclockwise"></i> <span
                             class="d-none d-sm-inline">{{ translate('restore_selected') }}</span></button>
                         <button class="command-btn btn-sm text-danger" id="bulkDeleteBtn" type="button"
-                          (click)="requestBulkDelete()"><i class="bi bi-trash"></i> <span
+                          [disabled]="bulkActionBusy || selectingAll" (click)="requestBulkDelete()"><i class="bi bi-trash"></i> <span
                             class="d-none d-sm-inline">{{ translate('delete_selected') }}</span></button>
                       </div>
                     </div>
@@ -111,6 +113,7 @@
                   <tr>
                     <th class="select-col" scope="col"><input aria-label="Select all posts" class="row-check"
                         data-select-all="" type="checkbox" [checked]="areAllVisibleSelected()"
+                        [indeterminate]="isSelectionIndeterminate()" [disabled]="loading || selectingAll"
                         (change)="toggleVisibleSelection($any($event.target).checked)" /></th>
                     <th scope="col">{{ translate('title_label') }}</th>
                     <th scope="col">{{ translate('status_label') }}</th>
@@ -145,14 +148,15 @@
                     <td><span class="language-badge"><img class="language-flag" [src]="flagUrl(post.originalLanguageId)" alt="">
                         {{ languageCode(post.originalLanguageId) }}</span></td>
                     <td>
-                      <div class="d-flex flex-wrap align-items-center gap-1">
+                      <div class="translation-language-list">
                         <span *ngFor="let translation of targetMatrix(post).slice(0, 1); trackBy: trackMatrix"
-                          class="language-badge" style="background: rgba(13, 110, 253, 0.12); color: #0d6efd;"><img
+                          class="language-badge is-translated"><img
                             class="language-flag" [src]="flagUrl(translation.languageId)" alt=""> {{
                           languageCode(translation.languageId) }}</span>
-                        <span *ngIf="targetMatrix(post).length > 1" class="language-badge"
-                          style="background: rgba(13, 110, 253, 0.12); color: #0d6efd;">+{{ targetMatrix(post).length -
-                          1 }}</span>
+                        <button *ngIf="targetMatrix(post).length > 1" class="language-badge is-translated translation-more-trigger"
+                          type="button" [attr.aria-expanded]="isTranslationMenuOpen(post)"
+                          [attr.aria-label]="translate('translated_language') + ': +' + (targetMatrix(post).length - 1)"
+                          (click)="toggleTranslationMenu(post, $event)">+{{ targetMatrix(post).length - 1 }}</button>
                         <span *ngIf="targetMatrix(post).length === 0" class="text-muted small">-</span>
                       </div>
                     </td>
@@ -160,7 +164,7 @@
                     <td>{{ post.viewCount }}</td>
                     <td>
                       <div class="action-group">
-                        <a class="action-btn" routerLink="/post-detail" title="Open"><i
+                        <a class="action-btn" [routerLink]="postDetailLink(post)" title="Open"><i
                             class="bi bi-box-arrow-up-right"></i></a>
                         <a *ngIf="!trash && canEdit(post)" class="action-btn"
                           [routerLink]="['/workspace/posts', post.id, 'edit']" title="Edit"><i class="bi bi-pencil"></i></a>
@@ -184,6 +188,17 @@
               </table>
             </div>
           </div>
+
+          <ul *ngIf="translationMenuPost as menuPost" class="translation-overflow-menu"
+            [style.top.px]="translationMenuTop" [style.left.px]="translationMenuLeft"
+            (click)="$event.stopPropagation()">
+            <li *ngFor="let translation of remainingTargetMatrix(menuPost); trackBy: trackMatrix">
+              <span class="language-badge is-translated" [title]="languageCode(translation.languageId)">
+                <img class="language-flag" [src]="flagUrl(translation.languageId)" alt="">
+                {{ languageCode(translation.languageId) }}
+              </span>
+            </li>
+          </ul>
           <div class="empty-state" data-empty-state="" *ngIf="false">
             <i class="bi bi-search"></i>
             <strong data-i18n="no_posts_found">No posts match your filters.</strong>
@@ -191,14 +206,28 @@
           <div class="pagination-wrapper justify-content-end" *ngIf="(meta?.totalPages || 1) > 1">
             <ul class="pagination pagination-sm mb-0">
               <li class="page-item" [class.disabled]="page <= 1">
-                <a class="page-link" href="#" [attr.aria-disabled]="page <= 1" aria-label="Previous" (click)="$event.preventDefault(); goToPage(page - 1)">
-                  <i class="fi fi-rr-angle-small-left mt-1"></i>
+                <a class="page-link" href="#" [attr.aria-disabled]="page <= 1"
+                  [attr.tabindex]="page <= 1 ? -1 : null" aria-label="Previous"
+                  (click)="$event.preventDefault(); goToPage(page - 1)">
+                  <i class="bi bi-chevron-left"></i>
                 </a>
               </li>
-              <li class="page-item active" aria-current="page"><a class="page-link" href="#" (click)="$event.preventDefault()">{{ page }}</a></li>
-              <li class="page-item">
-                <a class="page-link" href="#" aria-label="Next" (click)="$event.preventDefault(); goToPage(page + 1)">
-                  <i class="fi fi-rr-angle-small-right mt-1"></i>
+              <li *ngIf="hasPreviousPageGap()" class="page-item disabled">
+                <span class="page-link pagination-ellipsis">...</span>
+              </li>
+              <li *ngFor="let pageNumber of paginationPages()" class="page-item"
+                [class.active]="pageNumber === page" [attr.aria-current]="pageNumber === page ? 'page' : null">
+                <a class="page-link" href="#" (click)="$event.preventDefault(); goToPage(pageNumber)">{{
+                  pageNumber }}</a>
+              </li>
+              <li *ngIf="hasNextPageGap()" class="page-item disabled">
+                <span class="page-link pagination-ellipsis">...</span>
+              </li>
+              <li class="page-item" [class.disabled]="page >= (meta?.totalPages || 1)">
+                <a class="page-link" href="#" [attr.aria-disabled]="page >= (meta?.totalPages || 1)"
+                  [attr.tabindex]="page >= (meta?.totalPages || 1) ? -1 : null" aria-label="Next"
+                  (click)="$event.preventDefault(); goToPage(page + 1)">
+                  <i class="bi bi-chevron-right"></i>
                 </a>
               </li>
             </ul>

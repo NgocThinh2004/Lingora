@@ -62,14 +62,23 @@ describe('AdminPostsService', () => {
     });
   });
 
-  it('approves a post and queues every unfinished target translation', async () => {
+  it('publishes an approved post and queues every unfinished target translation', async () => {
     const update = jest.fn();
-    postModel.findOne.mockResolvedValue({ id: '12', original_language_id: 1, update });
+    postModel.findOne.mockResolvedValue({
+      id: '12',
+      original_language_id: 1,
+      published_at: null,
+      update,
+    });
     jest.spyOn(service, 'findOne').mockResolvedValue({ id: '12' } as any);
 
     await service.review('12', { decision: 'approve' }, 'en');
 
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({ status: 'approved', review_note: null }), { transaction });
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'published',
+      review_note: null,
+      published_at: expect.any(Date),
+    }), { transaction });
     expect(translationModel.update).toHaveBeenCalledWith(
       expect.objectContaining({ translation_status: 'queued' }),
       expect.objectContaining({ transaction }),

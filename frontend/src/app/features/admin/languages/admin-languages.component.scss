@@ -47,7 +47,7 @@
 
 .admin-pagination { display: flex; margin-top: 1.25rem; justify-content: center; gap: .35rem; }
 .admin-pagination button { display: grid; min-width: 38px; height: 38px; padding: 0 .5rem; place-items: center; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); background: var(--bg-panel); }
-.admin-pagination button.is-active { border-color: var(--primary-color); color: #fff; background: var(--primary-color); }
+.admin-pagination button.is-active { border-color: var(--primary-color); color: var(--accent-contrast, #fff); background: var(--primary-color); }
 .admin-pagination button:disabled { cursor: not-allowed; opacity: .45; }
 
 .dialog-backdrop { position: fixed; inset: 0; z-index: 1070; border: 0; background: rgb(0 0 0 / 55%); }

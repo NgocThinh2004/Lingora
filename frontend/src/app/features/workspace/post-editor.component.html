@@ -5,11 +5,19 @@
       <span aria-hidden="true"></span>
     </a>
     <button aria-live="polite" class="save-state" id="saveButton" type="button" (click)="saveDraft()" [disabled]="saveMode !== null">
-      <span data-save-label="" data-i18n="btn_save">{{ saveMode === 'draft' ? 'Saving' : createdPost ? 'Saved' : 'Save' }}</span>
+      <span data-save-label="" data-i18n="btn_save">{{ saveStateLabel }}</span>
     </button>
     <div class="editor-topbar-spacer"></div>
     <button class="btn btn-light" data-preview-button="" type="button" data-i18n="btn_preview" (click)="openPreview()">Preview</button>
-    <button class="btn btn-accent" data-publish-button="" type="button" data-i18n="btn_continue" (click)="openPublishOptions()" [disabled]="isTitleOverLimit || isBodyOverLimit" [attr.aria-disabled]="isTitleOverLimit || isBodyOverLimit" [attr.title]="isTitleOverLimit || isBodyOverLimit ? 'The post exceeds its word limit.' : null">Continue</button>
+    <button
+      class="btn btn-accent"
+      data-publish-button=""
+      type="button"
+      data-i18n="btn_continue"
+      (click)="openPublishOptions($event)"
+      [disabled]="saveMode !== null"
+      [attr.aria-busy]="saveMode !== null"
+    >Continue</button>
   </header>
   <nav aria-label="Writing toolbar" class="editor-toolbar" (mousedown)="handleToolbarMouseDown($event)" (click)="handleToolbarClick($event)">
     <input accept="image/jpeg,image/png,image/webp,image/gif" class="hidden-file-input" id="editorImageInput" type="file" (change)="uploadMedia('image', $event)" />

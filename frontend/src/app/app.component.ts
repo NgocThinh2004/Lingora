@@ -3,6 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { ThemeService } from './core/theme/theme.service';
 import { SearchModalComponent } from './features/search/search-modal.component';
+import { BrandingService } from './core/theme/branding.service';
 
 @Component({
   selector: 'app-root',
@@ -14,8 +15,9 @@ import { SearchModalComponent } from './features/search/search-modal.component';
 export class AppComponent {
   title = 'Lingora';
 
-  constructor(themeService: ThemeService) {
+  constructor(themeService: ThemeService, brandingService: BrandingService) {
     // Instantiating the application-wide service restores the saved theme before routed views render.
     themeService.resolvedTheme();
+    brandingService.accent();
   }
 }

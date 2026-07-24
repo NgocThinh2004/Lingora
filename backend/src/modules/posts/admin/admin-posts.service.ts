@@ -72,8 +72,9 @@ export class AdminPostsService {
       }
       const now = new Date();
       await post.update({
-        status: dto.decision === 'approve' ? 'approved' : 'rejected',
+        status: dto.decision === 'approve' ? 'published' : 'rejected',
         review_note: dto.note?.trim() || null,
+        published_at: dto.decision === 'approve' ? (post.published_at ?? now) : post.published_at,
         updated_at: now,
       }, { transaction });
       await this.translationModel.update({

@@ -2,14 +2,17 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { FeedPostsService } from '../services/feed-posts.service';
-import { Post, getPostTranslation } from '../models/post.model';
+import { AuthorPost, Post, PostOptions, getPostTranslation } from '../models/post.model';
+import { AuthorPostsService } from '../services/author-posts.service';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { Title } from '@angular/platform-browser';
 import { CommentSectionComponent } from '../components/comment-section/comment-section.component';
 import { LikeService } from '../services/like.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../core/notifications/toast.service';
+import { preparePostDetailHtml } from './post-detail-html.util';
 
 import { AuthorTooltipComponent } from '../../../shared/components/author-tooltip/author-tooltip.component';
 
@@ -23,6 +26,7 @@ import { AuthorTooltipComponent } from '../../../shared/components/author-toolti
 export class PostDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private readonly postService = inject(FeedPostsService);
+  private readonly authorPostsService = inject(AuthorPostsService);
   private localeService = inject(LocaleService);
   private titleService = inject(Title);
   private likeService = inject(LikeService);
@@ -34,6 +38,7 @@ export class PostDetailComponent implements OnInit {
   relatedPosts = signal<Post[]>([]);
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
+  authorPreview = signal(false);
 
   // Computed signal to automatically update translation when language changes
   displayedTranslation = computed(() => {
@@ -44,15 +49,22 @@ export class PostDetailComponent implements OnInit {
     
     return {
       ...trans,
-      safeContentHtml: this.sanitizer.bypassSecurityTrustHtml(trans.contentHtml || '')
+      safeContentHtml: this.sanitizer.bypassSecurityTrustHtml(
+        preparePostDetailHtml(trans.contentHtml || ''),
+      )
     };
   });
 
   ngOnInit(): void {
+    this.authorPreview.set(Boolean(this.route.snapshot.data['authorPreview']));
     this.route.paramMap.subscribe(params => {
       const id = params.get('id') || this.route.snapshot.queryParamMap.get('id');
       if (id) {
-        this.loadPost(Number(id));
+        if (this.authorPreview()) {
+          this.loadAuthorPost(Number(id));
+        } else {
+          this.loadPost(Number(id));
+        }
       }
     });
   }
@@ -84,6 +96,91 @@ export class PostDetailComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  private loadAuthorPost(id: number): void {
+    this.loading.set(true);
+    this.error.set(null);
+
+    forkJoin({
+      post: this.authorPostsService.getAuthorPost(id),
+      options: this.authorPostsService.getPostOptions(),
+    }).subscribe({
+      next: ({ post, options }) => {
+        const previewPost = this.toPreviewPost(post, options);
+        this.post.set(previewPost);
+        this.relatedPosts.set([]);
+        this.loading.set(false);
+
+        const title = this.displayedTranslation()?.title;
+        if (title) {
+          this.titleService.setTitle(`${title} - Lingora`);
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+      error: (err) => {
+        console.error('Error loading author post preview:', err);
+        this.error.set('Could not load this article. It may have changed or been removed.');
+        this.loading.set(false);
+      },
+    });
+  }
+
+  private toPreviewPost(post: AuthorPost, options: PostOptions): Post {
+    const currentUser = this.authService.currentUser();
+    const originalLanguageCode =
+      options.languages.find(language => language.id === post.originalLanguageId)?.code ?? 'en';
+    const categoryOption = options.categories.find(category => category.id === post.categoryId);
+
+    return {
+      id: Number(post.id),
+      authorId: Number(post.authorId),
+      categoryId: post.categoryId,
+      originalLanguage: originalLanguageCode,
+      status: post.status === 'published' ? 'published' : 'draft',
+      viewCount: post.viewCount,
+      likeCount: 0,
+      commentCount: 0,
+      liked: false,
+      author: {
+        id: Number(currentUser?.id ?? post.authorId),
+        name: currentUser?.displayName || currentUser?.username || 'Author',
+        email: currentUser?.email,
+        handle: currentUser?.username || 'author',
+        avatarUrl: currentUser?.avatarUrl ?? null,
+        bio: currentUser?.bio ?? null,
+        role: currentUser?.role ?? 'member',
+        allowShowSubscribers: true,
+        allowShowFollowing: true,
+      },
+      category: categoryOption
+        ? {
+            id: categoryOption.id,
+            slug: categoryOption.label,
+            isActive: true,
+            translations: [{
+              id: categoryOption.id,
+              languageCode: originalLanguageCode,
+              name: categoryOption.label,
+            }],
+          }
+        : null,
+      translations: post.translations
+        .filter(translation => Boolean(translation.title || translation.content))
+        .map(translation => ({
+          id: Number(translation.id),
+          languageCode:
+            options.languages.find(language => language.id === translation.languageId)?.code ?? `l${translation.languageId}`,
+          title: translation.title || 'Untitled',
+          contentHtml: translation.content || '',
+          source: translation.languageId === post.originalLanguageId
+            ? 'original'
+            : translation.translationProvider
+              ? 'machine'
+              : 'human',
+        })),
+      createdAt: post.createdAt,
+    };
   }
 
   toggleLike(): void {

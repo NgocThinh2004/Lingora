@@ -21,14 +21,21 @@
   color: var(--text-main);
   box-shadow: 0 1rem 2.8rem rgb(15 23 42 / 20%);
   opacity: 0;
-  transform: translateY(-0.5rem);
-  transition: opacity 180ms ease, transform 180ms ease;
-  pointer-events: auto;
+  visibility: hidden;
+  transform: translateY(0.5rem);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    visibility 0s linear 180ms;
+  pointer-events: none;
 }
 
 .app-toast--visible {
   opacity: 1;
+  visibility: visible;
   transform: translateY(0);
+  transition-delay: 0s;
+  pointer-events: auto;
 }
 
 .app-toast--error {

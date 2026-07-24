@@ -13,8 +13,10 @@
 }
 
 @if (post(); as p) {
-  <a routerLink="/" class="text-decoration-none text-muted mb-4 d-inline-flex align-items-center fw-medium mt-3 ms-2">
-    <i class="bi bi-arrow-left me-2"></i> <span>Back to Feed</span>
+  <a [routerLink]="authorPreview() ? '/workspace/posts' : '/'"
+    class="text-decoration-none text-muted mb-4 d-inline-flex align-items-center fw-medium mt-3 ms-2">
+    <i class="bi bi-arrow-left me-2"></i>
+    <span>{{ authorPreview() ? 'Back to My Articles' : 'Back to Feed' }}</span>
   </a>
 
   <div id="postDetailContainer">
@@ -61,6 +63,7 @@
         </div>
       }
 
+      @if (!authorPreview()) {
       <div class="substack-post-footer mt-5 pt-3 border-top d-flex align-items-center gap-4">
         <button class="footer-action-item btn btn-link text-decoration-none text-secondary d-flex align-items-center gap-1 p-0"
                 [class.text-danger]="p.liked" (click)="toggleLike()">
@@ -73,9 +76,12 @@
           <i class="bi bi-eye"></i> <span>{{ p.viewCount }}</span>
         </span>
       </div>
+      }
     </article>
 
-    <app-comment-section [postId]="p.id" [postAuthorId]="p.authorId"></app-comment-section>
+    @if (!authorPreview()) {
+      <app-comment-section [postId]="p.id" [postAuthorId]="p.authorId"></app-comment-section>
+    }
 
     <!-- Related Posts Section (Same Category) -->
     @if (relatedPosts().length > 0) {

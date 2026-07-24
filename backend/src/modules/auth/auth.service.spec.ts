@@ -10,6 +10,7 @@ describe('AuthService session management', () => {
     findByEmailOrUsername: jest.Mock;
     findById: jest.Mock;
     findByIdForUpdate: jest.Mock;
+    findByUsername: jest.Mock;
     findByEmailForUpdate: jest.Mock;
     clearPasswordResetOtp: jest.Mock;
     getRoleById: jest.Mock;
@@ -47,6 +48,7 @@ describe('AuthService session management', () => {
       findByEmailOrUsername: jest.fn(),
       findById: jest.fn(),
       findByIdForUpdate: jest.fn(),
+      findByUsername: jest.fn(),
       findByEmailForUpdate: jest.fn(),
       clearPasswordResetOtp: jest.fn().mockResolvedValue(undefined),
       getRoleById: jest.fn().mockResolvedValue({ name: 'member' }),
@@ -81,6 +83,27 @@ describe('AuthService session management', () => {
       mailService as never,
       sequelize as never,
       refreshTokenModel as never,
+    );
+  });
+
+  it('persists an uploaded avatar path when updating the profile', async () => {
+    usersService.findByIdForUpdate.mockResolvedValue(user);
+    usersService.findByUsername.mockResolvedValue(null);
+
+    await expect(service.updateProfile(user.id, {
+      displayName: 'Updated Member',
+      username: 'updated_member',
+      bio: 'Updated bio',
+      avatarUrl: '/uploads/avatar-image.png',
+    })).resolves.toMatchObject({
+      avatarUrl: '/uploads/avatar-image.png',
+    });
+
+    expect(user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        avatar: '/uploads/avatar-image.png',
+      }),
+      { transaction },
     );
   });
 

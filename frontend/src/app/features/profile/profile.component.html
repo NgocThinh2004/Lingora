@@ -1,9 +1,4 @@
 <main class="profile-main">
-      @if (notice() || error()) {
-        <div class="alert mx-3 mt-3" [class.alert-success]="!!notice()" [class.alert-danger]="!!error()" role="status">
-          {{ error() || notice() }}
-        </div>
-      }
       @if (!isEditing()) {
       <section class="profile-page is-active" data-profile-view>
         <header class="profile-view-top">
@@ -53,7 +48,7 @@
               <span data-i18n="following">Following</span>
             </button>
             <span class="profile-stat">
-              <strong>{{ posts().length }}</strong>
+              <strong>{{ publicPostsCount() }}</strong>
               <span data-i18n="posts">Posts</span>
             </span>
           </div>
@@ -96,7 +91,7 @@
 
                   <span class="category-label">{{ categoryLabel(post) }}</span>
 
-                  <a class="post-link" routerLink="/post-detail" [queryParams]="{ id: post.id }">
+                  <a class="post-link" [routerLink]="['/posts', post.id]">
                     <h2 class="post-title">{{ postTitle(post) }}</h2>
                     <div class="substack-post-content post-content" [innerHTML]="postContent(post)"></div>
                   </a>
@@ -125,12 +120,13 @@
         <div class="edit-shell">
           <header class="edit-heading">
             <h1 data-i18n="profile_edit_title">Edit Profile</h1>
-            <button class="done-btn" type="button" (click)="saveProfile()" [disabled]="savingProfile()" data-i18n="profile_done">{{ savingProfile() ? 'Saving...' : 'Done' }}</button>
+            <button class="done-btn" type="button" (click)="saveProfile()" [disabled]="savingProfile() || uploadingAvatar()" data-i18n="profile_done">{{ savingProfile() ? 'Saving...' : 'Done' }}</button>
           </header>
 
           <form id="profileForm">
             <div class="edit-avatar-wrap">
-              <button class="edit-avatar-button" type="button" aria-label="Change avatar">
+              <button class="edit-avatar-button" type="button" aria-label="Change avatar"
+                (click)="avatarInput.click()" [disabled]="uploadingAvatar()">
                 <span class="profile-avatar" [class.has-image]="!!avatarUrl">
                   @if (avatarUrl) {
                     <img [src]="avatarUrl" [alt]="profileForm.displayName">
@@ -139,9 +135,11 @@
                   }
                 </span>
               </button>
-              <button class="edit-pencil" type="button" aria-label="Change avatar"><i
+              <button class="edit-pencil" type="button" aria-label="Change avatar"
+                (click)="avatarInput.click()" [disabled]="uploadingAvatar()"><i
                   class="bi bi-pencil" aria-hidden="true"></i></button>
-              <input class="hidden-file" id="avatarInput" type="file" accept="image/*">
+              <input #avatarInput class="hidden-file" id="avatarInput" type="file" accept="image/*"
+                (change)="onAvatarSelected($event)">
             </div>
 
             <div class="field-stack">
@@ -173,10 +171,13 @@
 
             <div class="brand-row">
               <label for="accentColor" data-i18n="profile_accent_color">Accent color</label>
-              <div class="color-field" data-color-picker="accent">
-                <span id="accentColorText">#FF6719</span>
+              <div class="color-field" data-color-picker="accent"
+                [class.is-open]="openColorPicker() === 'accent'"
+                (click)="handleColorFieldClick($event, 'accent')">
+                <span id="accentColorText">{{ accentColor() }}</span>
                 <button class="color-dot" id="accentColorButton" type="button"
-                  aria-label="Choose accent color"></button>
+                  aria-label="Choose accent color" [style.background]="accentColor()"
+                  (click)="toggleColorPicker('accent', $event)"></button>
                 <div class="color-popover" aria-label="Accent color palette">
                   <span class="color-popover-title" data-i18n="profile_accent_color">Accent color</span>
                   <div class="color-swatch-grid">
@@ -241,10 +242,14 @@
 
             <div class="brand-row">
               <label for="backgroundColor" data-i18n="profile_background_color">Background color</label>
-              <div class="color-field" data-color-picker="background">
-                <span id="backgroundColorText">None</span>
-                <button class="color-dot is-empty" id="backgroundColorButton" type="button"
-                  aria-label="Choose background color"></button>
+              <div class="color-field" data-color-picker="background"
+                [class.is-open]="openColorPicker() === 'background'"
+                (click)="handleColorFieldClick($event, 'background')">
+                <span id="backgroundColorText">{{ backgroundColor() || 'None' }}</span>
+                <button class="color-dot" id="backgroundColorButton" type="button"
+                  [class.is-empty]="!backgroundColor()" [style.background]="backgroundColor() || 'transparent'"
+                  aria-label="Choose background color"
+                  (click)="toggleColorPicker('background', $event)"></button>
                 <div class="color-popover" aria-label="Background color palette">
                   <span class="color-popover-title" data-i18n="profile_background_color">Background color</span>
                   <div class="color-swatch-grid">

@@ -69,7 +69,12 @@ export class AuthService {
     );
   }
 
-  updateProfile(payload: { displayName: string; username: string; bio: string }): Observable<CurrentUser> {
+  updateProfile(payload: {
+    displayName: string;
+    username: string;
+    bio: string;
+    avatarUrl?: string;
+  }): Observable<CurrentUser> {
     return this.http.patch<ApiResponse<CurrentUser>>(`${this.apiUrl}/me`, payload).pipe(
       map(response => response.data),
       tap(user => this.storeCurrentUser(user)),
