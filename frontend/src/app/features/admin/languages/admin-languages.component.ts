@@ -139,8 +139,10 @@ export class AdminLanguagesComponent implements OnInit {
 
   closeDialog(): void {
     this.dialogVisible.set(false);
-    this.dialog.set(null);
-    this.selectedLanguage.set(null);
+    setTimeout(() => {
+      this.dialog.set(null);
+      this.selectedLanguage.set(null);
+    }, 200);
   }
 
   private revealDialog(expectedDialog: Exclude<LanguageDialog, null>): void {

@@ -91,8 +91,6 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   private readonly allowedTargetLanguageIds = new Set<number>([2, 3]);
 
   ngOnInit(): void {
-    this.previousTheme = document.documentElement.getAttribute('data-bs-theme');
-    document.documentElement.setAttribute('data-bs-theme', 'light');
     document.body.classList.add('editor-page');
     this.updateBodyModalClasses();
     this.postsService.getPostOptions().subscribe({
@@ -112,11 +110,6 @@ export class PostEditorComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.previousTheme) {
-      document.documentElement.setAttribute('data-bs-theme', this.previousTheme);
-    } else {
-      document.documentElement.removeAttribute('data-bs-theme');
-    }
     document.body.classList.remove('editor-page', 'preview-modal-open', 'publish-modal-open', 'draft-modal-open');
   }
 

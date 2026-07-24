@@ -29,6 +29,11 @@ export class ToastComponent implements OnInit, OnDestroy {
 
   dismiss(): void {
     this.isVisible = false;
+    setTimeout(() => {
+      if (!this.isVisible) {
+        this.toastData = null;
+      }
+    }, 200);
   }
 
   ngOnDestroy() {

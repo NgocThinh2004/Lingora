@@ -1,5 +1,4 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { PageShellService } from '../../core/ui/page-shell.service';
+import { Component, OnInit, inject } from '@angular/core';
 import { SubscriptionsService } from './services/subscriptions.service';
 import { AuthorTooltipComponent } from '../../shared/components/author-tooltip/author-tooltip.component';
 
@@ -10,8 +9,7 @@ import { AuthorTooltipComponent } from '../../shared/components/author-tooltip/a
   templateUrl: './subscriptions.component.html',
   styleUrl: './subscriptions.component.scss'
 })
-export class SubscriptionsComponent implements OnInit, OnDestroy {
-  private readonly ui = inject(PageShellService);
+export class SubscriptionsComponent implements OnInit {
   private readonly subscriptionsService = inject(SubscriptionsService);
 
   tab: 'all' | 'manage' = 'all';
@@ -22,11 +20,8 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
   error = '';
 
   ngOnInit(): void {
-    this.ui.mount('Subscriptions - Lingora');
     this.loadSubscriptions();
   }
-
-  ngOnDestroy(): void { this.ui.unmount(); }
 
   get visiblePosts(): SubscriptionPostView[] {
     return this.posts.filter(post => !this.authorFilter || post.author === this.authorFilter);

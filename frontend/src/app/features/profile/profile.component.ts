@@ -1,10 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, OnDestroy, signal, inject, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, signal, inject, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-import { PageShellService } from '../../core/ui/page-shell.service';
 import { AuthorPost } from '../posts/models/post.model';
 import { AuthorPostsService } from '../posts/services/author-posts.service';
 import { SubscriptionsService } from '../subscriptions/services/subscriptions.service';
@@ -18,10 +17,9 @@ import { SidebarComponent } from '../../shared/components/sidebar/sidebar.compon
   styleUrl: './profile.component.scss',
   encapsulation: ViewEncapsulation.None,
 })
-export class ProfileComponent implements OnInit, OnDestroy {
+export class ProfileComponent implements OnInit {
   private authService = inject(AuthService);
   private postsService = inject(AuthorPostsService);
-  private ui = inject(PageShellService);
   private router = inject(Router);
   private subscriptionsService = inject(SubscriptionsService);
 
@@ -59,8 +57,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   passwordFieldType = 'password';
 
   ngOnInit() {
-    this.ui.mount('Profile - Lingora');
-
     const currentUser = this.user();
     this.setProfileForm(currentUser);
 
@@ -103,10 +99,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
       },
       error: err => this.error.set(this.formatError(err)),
     });
-  }
-
-  ngOnDestroy() {
-    this.ui.unmount();
   }
 
   get initial(): string {

@@ -143,10 +143,6 @@
   border-bottom-color: var(--primary-color, #ff6c1f);
 }
 
-[data-bs-theme="dark"] .explore-tab-btn.active {
-  border-bottom-color: #ffffff;
-}
-
 /* Explore People / Publication Cards */
 .explore-card-item {
   display: flex;
