@@ -7,7 +7,7 @@
 .explore-search-input-box {
   display: flex;
   align-items: center;
-  background-color: #f7f7f8 !important;
+  background-color: var(--bg-secondary) !important;
   border: 1px solid transparent !important;
   border-radius: 99px !important;
   padding: 0.7rem 1.5rem !important;
@@ -15,10 +15,6 @@
   height: 48px;
   width: 100%;
   transition: all var(--transition-speed, 0.2s) ease;
-}
-
-[data-bs-theme="dark"] .explore-search-input-box {
-  background-color: #1a1a1c !important;
 }
 
 .explore-search-input-box:focus-within {
