@@ -29,7 +29,7 @@ export class SubscriptionsService {
         avatarUrl: author.avatar,
         bio: author.bio,
       })),
-      posts: publicPosts.items.filter(post => authorIds.includes(String(post.authorId))),
+      posts: publicPosts.items.filter(post => authorIds.some(id => String(id) === String(post.authorId))),
     };
   }
 

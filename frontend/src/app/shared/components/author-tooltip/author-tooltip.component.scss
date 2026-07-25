@@ -41,6 +41,21 @@
   transition: opacity 0.25s ease 0.1s, transform 0.25s ease 0.1s;
 }
 
+/* Flipped state */
+.author-hover-card.flipped {
+  top: auto;
+  bottom: 100%;
+  transform: translateY(-10px) scale(0.95);
+  transform-origin: bottom left;
+}
+.author-hover-card.flipped::before {
+  top: auto;
+  bottom: -20px;
+}
+:host-context(.author-tooltip-container:hover) .author-hover-card.flipped {
+  transform: translateY(0) scale(1);
+}
+
 /* ── Subscribe / Follow Button (Premium Redesign) ── */
 .btn-subscribe {
   display: inline-flex;
@@ -90,7 +105,7 @@
 }
 
 /* Hide real text on hover, show unfollow label via data-attr */
-.btn-subscribe.subscribed:hover span {
+.btn-subscribe.subscribed:hover .btn-text {
   visibility: hidden;
 }
 .btn-subscribe.subscribed:hover::after {

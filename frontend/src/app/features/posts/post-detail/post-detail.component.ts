@@ -40,7 +40,6 @@ export class PostDetailComponent implements OnInit {
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
   authorPreview = signal(false);
-  selectedLanguageCode = signal<string | null>(null);
 
   goBack(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
@@ -59,7 +58,7 @@ export class PostDetailComponent implements OnInit {
     if (!currentPost) return null;
     const trans = getPostTranslation(
       currentPost,
-      this.selectedLanguageCode() ?? this.localeService.selectedLocale(),
+      this.localeService.selectedLocale(),
     );
     if (!trans) return null;
     
@@ -71,11 +70,6 @@ export class PostDetailComponent implements OnInit {
     };
   });
 
-  availableTranslations = computed(() => this.post()?.translations ?? []);
-
-  selectTranslation(languageCode: string): void {
-    this.selectedLanguageCode.set(languageCode);
-  }
 
   ngOnInit(): void {
     this.authorPreview.set(Boolean(this.route.snapshot.data['authorPreview']));

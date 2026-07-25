@@ -1,14 +1,18 @@
 <!-- Authors Carousel & Feed (Visible when having subscriptions) -->
 <div id="subscriptionsContent">
   <!-- Authors Carousel without colored ring -->
-  <div class="authors-carousel-container" id="subscriptionsAuthorsCarousel">
-    <button class="author-carousel-item border-0 bg-transparent" [class.active]="!authorFilter" type="button" (click)="authorFilter = ''">
-      <span class="author-carousel-avatar-wrapper d-flex align-items-center justify-content-center"><i class="bi bi-people fs-4"></i></span>
+  <div class="carousel-wrapper position-relative">
+    <button class="carousel-control-prev" type="button" (click)="scrollCarousel('left')" aria-label="Cuộn trái"><i class="bi bi-chevron-left"></i></button>
+    <button class="carousel-control-next" type="button" (click)="scrollCarousel('right')" aria-label="Cuộn phải"><i class="bi bi-chevron-right"></i></button>
+    
+    <div class="authors-carousel-container" id="subscriptionsAuthorsCarousel" #carousel>
+    <button class="author-carousel-item border-0 sticky-all-authors" [class.active]="!authorFilter" type="button" (click)="selectAuthor('')">
+      <span class="author-carousel-avatar-wrapper d-flex align-items-center justify-content-center bg-body-tertiary"><i class="bi bi-people fs-4 text-main"></i></span>
       <span class="author-carousel-name">All Authors</span>
     </button>
     @for (author of authors; track author.name) {
       <div class="author-tooltip-container position-relative">
-        <button class="author-carousel-item border-0 bg-transparent w-100" [class.active]="authorFilter === author.name" type="button" (click)="authorFilter = author.name">
+        <button class="author-carousel-item border-0 bg-transparent w-100" [class.active]="authorFilter === author.name" type="button" (click)="authorFilter === author.name ? selectAuthor('') : selectAuthor(author.name)">
           <span class="author-carousel-avatar-wrapper"><img [src]="author.avatar" [alt]="author.name" class="author-carousel-avatar"></span>
           <span class="author-carousel-name">{{ author.name }}</span>
         </button>
@@ -19,35 +23,56 @@
       <span class="author-carousel-avatar-wrapper d-flex align-items-center justify-content-center"><i class="bi bi-plus-lg"></i></span>
       <span class="author-carousel-name">Find more</span>
     </a>
+    </div>
   </div>
 
   <!-- 3-Tabs Navigation for Subscriptions Feed -->
   <div class="subscriptions-tabs-nav">
-    <button class="subscriptions-tab-btn" [class.active]="tab === 'all'" data-tab="all" data-i18n="sub_tab_all" (click)="tab = 'all'">All Posts</button>
-    <button class="subscriptions-tab-btn" [class.active]="tab === 'manage'" data-tab="manage" data-i18n="sub_tab_manage" (click)="tab = 'manage'">Đang theo dõi</button>
+    <button class="subscriptions-tab-btn" [class.active]="tab === 'all'" data-tab="all" (click)="tab = 'all'">Tất cả bài viết</button>
+    <button class="subscriptions-tab-btn" [class.active]="tab === 'manage'" data-tab="manage" (click)="tab = 'manage'">Đang theo dõi</button>
   </div>
 
   <!-- Posts or Manage Grid Container -->
   <div id="postsFeedContainer" class="pb-5">
-    @if (tab === 'all') {
-      @for (post of visiblePosts; track post.id) {
-        <article class="substack-post">
-          <div class="substack-post-header"><strong class="author-name">{{ post.author }}</strong><span class="post-timestamp ms-2">{{ post.time }}</span></div>
-          <a [href]="'/post-detail?id=' + post.id" class="text-decoration-none text-reset d-block"><h2 class="post-title h4 fw-bold mt-3 mb-1">{{ post.title }}</h2></a>
-        </article>
-      } @empty {
-        <div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No matching posts found.</div>
-      }
+    @if (authors.length === 0 && !loading) {
+      <div class="text-center py-5 text-muted mt-5">
+        <i class="bi bi-mailbox fs-1 d-block mb-3 text-secondary"></i>
+        <h4 class="fw-bold text-main mb-2">Hộp thư của bạn đang trống!</h4>
+        <p class="mb-4">Hãy khám phá những tác giả tuyệt vời trên Lingora.</p>
+        <a href="/explore" class="btn btn-primary rounded-pill px-4 py-2 fw-medium">Đi tới Khám phá</a>
+      </div>
     } @else {
+      @if (tab === 'all') {
+        @for (post of visiblePosts; track post.id) {
+          <app-post-card [post]="post"></app-post-card>
+        } @empty {
+          <div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Không tìm thấy bài viết nào.</div>
+        }
+      } @else {
+      <div class="mb-4 position-relative" style="max-width: 400px;">
+        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+        <input type="text" class="form-control rounded-pill ps-5 bg-body-tertiary border-0" placeholder="Tìm kiếm tác giả..." [(ngModel)]="manageSearchQuery">
+      </div>
       <div class="row g-3">
-        @for (author of authors; track author.name) {
+        @for (author of visibleManageAuthors; track author.name) {
           <div class="col-12"><div class="manage-author-card">
-            <img [src]="author.avatar" [alt]="author.name" class="rounded-circle border" width="54" height="54">
-            <div class="flex-grow-1 ms-3"><h6 class="fw-bold mb-1">{{ author.name }}</h6><p class="text-muted small mb-0">{{ author.role }}</p></div>
-            <button class="btn btn-sm rounded-pill px-3 fw-medium subscribed btn-subscribe" type="button" (click)="unfollow(author.name)">Following</button>
+            <a [href]="'/profile/' + author.username" class="d-flex align-items-center text-decoration-none text-reset flex-grow-1">
+              <img [src]="author.avatar" [alt]="author.name" class="rounded-circle border" width="54" height="54" style="object-fit: cover;">
+              <div class="ms-3"><h6 class="fw-bold mb-1 text-main">{{ author.name }}</h6><p class="text-muted small mb-0">{{ author.role }}</p></div>
+            </a>
+            <button class="btn btn-sm rounded-pill px-3 fw-medium ms-2" 
+                    [class.btn-outline-secondary]="author.isUnfollowed" 
+                    [class.btn-subscribe]="!author.isUnfollowed" 
+                    type="button" 
+                    (click)="toggleSubscription(author)">
+              {{ author.isUnfollowed ? 'Theo dõi' : 'Đang theo dõi' }}
+            </button>
           </div></div>
+        } @empty {
+          <div class="text-center py-5 text-muted">Không tìm thấy tác giả nào khớp với từ khóa.</div>
         }
       </div>
+    }
     }
   </div>
 </div>
