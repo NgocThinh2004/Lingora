@@ -1,0 +1,33 @@
+.btn-subscribe {
+  padding: 0.35rem 1rem;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  background-color: var(--bs-primary);
+  color: #fff;
+  border: 1px solid var(--bs-primary);
+}
+
+.btn-subscribe:hover:not(:disabled) {
+  background-color: var(--bs-primary-hover, #0b5ed7);
+  border-color: var(--bs-primary-hover, #0a58ca);
+}
+
+.btn-subscribe.subscribed {
+  background-color: transparent;
+  color: var(--bs-body-color);
+  border: 1px solid var(--bs-border-color);
+}
+
+.btn-subscribe.subscribed:hover:not(:disabled) {
+  background-color: var(--bs-danger);
+  color: #fff;
+  border-color: var(--bs-danger);
+}
+
+.btn-subscribe.subscribed:hover .btn-text {
+  display: none;
+}
+
+.btn-subscribe.subscribed:hover::after {
+  content: 'Hủy theo dõi';
+}

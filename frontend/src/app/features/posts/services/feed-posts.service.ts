@@ -10,7 +10,7 @@ export interface PostQuery {
   category?: string;
   q?: string;
   authorId?: string | number;
-  sort?: 'top' | 'newest';
+  sort?: 'top' | 'newest' | 'trending';
   page?: number;
   limit?: number;
 }

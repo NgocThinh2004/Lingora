@@ -8,7 +8,8 @@ export interface CategoryTranslation {
 export interface Category {
   id: number;
   slug: string;
-  icon?: string;
+  postCount?: number;
+  icon?: string; // Optional icon for the category (e.g., 'bi-laptop')
   isActive: boolean;
   translations: CategoryTranslation[];
 }

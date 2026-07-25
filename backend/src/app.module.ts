@@ -11,6 +11,7 @@ import { SubscriptionsModule } from './modules/subscriptions/subscriptions.modul
 import { CommentsModule } from './modules/comments/comments.module';
 import { LikesModule } from './modules/likes/likes.module';
 import { TranslationsModule } from './modules/translations/translations.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { TranslationsModule } from './modules/translations/translations.module';
     PostsModule,
     UploadsModule,
     SubscriptionsModule,
+    SearchModule,
     CommentsModule,
     LikesModule,
     TranslationsModule,

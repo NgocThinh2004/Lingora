@@ -15,6 +15,10 @@ export class PublicPostsQueryDto {
   q?: string;
 
   @IsOptional()
+  @IsString()
+  sort?: string;
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)

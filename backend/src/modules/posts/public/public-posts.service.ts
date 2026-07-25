@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { col, fn, Op } from 'sequelize';
+import { col, fn, Op, literal } from 'sequelize';
 import { Post } from '../models/post.model';
 import { PostTranslation } from '../models/post-translation.model';
 import { User } from '../../users/models/user.model';
@@ -84,12 +84,26 @@ export class PublicPostsService {
       where.id = { [Op.in]: matchingPostIds.length ? matchingPostIds : [0] };
     }
 
+    const order: any = query.sort === 'trending'
+      ? [
+          [
+            literal(
+              `(view_count) + 
+               (SELECT COUNT(*) FROM post_likes WHERE post_likes.post_id = Post.id) * 5 + 
+               (SELECT COUNT(*) FROM comments WHERE comments.post_id = Post.id AND comments.status = 'approved') * 10`
+            ),
+            'DESC',
+          ],
+          ['published_at', 'DESC'],
+        ]
+      : [
+          ['published_at', 'DESC'],
+          ['created_at', 'DESC'],
+        ];
+
     const { rows: posts, count: total } = await this.postModel.findAndCountAll({
       where,
-      order: [
-        ['published_at', 'DESC'],
-        ['created_at', 'DESC'],
-      ],
+      order,
       limit,
       offset,
     });

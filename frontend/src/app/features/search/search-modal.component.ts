@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'rxjs';
 import { LocaleService } from '../../core/locale/locale.service';
 import { Category, translateCategory } from '../categories/models/category.model';
 import { CategoriesService } from '../categories/services/categories.service';
-import { Post, getPostTranslation } from '../posts/models/post.model';
-import { FeedPostsService } from '../posts/services/feed-posts.service';
 import { User } from '../users/models/user.model';
+import { UsersService } from '../users/services/users.service';
+import { SearchService, SearchResults } from './services/search.service';
 import { SearchModalService } from '../../core/ui/search-modal.service';
 import { AuthorTooltipComponent } from '../../shared/components/author-tooltip/author-tooltip.component';
 
@@ -22,13 +22,14 @@ export class SearchModalComponent {
   @ViewChild('searchInput') searchInputRef?: ElementRef<HTMLInputElement>;
 
   readonly modalService = inject(SearchModalService);
-  private readonly postService = inject(FeedPostsService);
+  private readonly globalSearchService = inject(SearchService);
   private readonly categoryService = inject(CategoriesService);
+  private readonly userService = inject(UsersService);
   private readonly languageService = inject(LocaleService);
   private readonly router = inject(Router);
 
   readonly query = signal('');
-  readonly results = signal<Post[]>([]);
+  readonly results = signal<SearchResults>({ users: [], categories: [], posts: [] });
   readonly searching = signal(false);
   readonly trendingAuthors = signal<User[]>([]);
   readonly trendingCategories = signal<Category[]>([]);
@@ -50,12 +51,17 @@ export class SearchModalComponent {
             return [];
           }
           this.searching.set(true);
-          return this.postService.list({ q, lang: this.currentLang(), limit: 6 });
+          return this.globalSearchService.globalSearch(q).pipe(
+            catchError(() => {
+              this.searching.set(false);
+              return of({ users: [], categories: [], posts: [] });
+            })
+          );
         }),
       )
       .subscribe((res) => {
         this.searching.set(false);
-        if (res) this.results.set(res.items || []);
+        if (res && !Array.isArray(res)) this.results.set(res);
       });
 
     // Focus input + tải dữ liệu trending mỗi khi modal được mở.
@@ -65,7 +71,7 @@ export class SearchModalComponent {
         if (!this.trendingLoaded) this.loadTrending();
       } else {
         this.query.set('');
-        this.results.set([]);
+        this.results.set({ users: [], categories: [], posts: [] });
       }
     }, { allowSignalWrites: true });
   }
@@ -73,20 +79,12 @@ export class SearchModalComponent {
   private loadTrending() {
     this.trendingLoaded = true;
 
-    this.postService.list({ sort: 'top', limit: 8 }).subscribe((res) => {
-      const seen = new Set<number>();
-      const authors: User[] = [];
-      for (const post of res.items) {
-        if (!seen.has(post.author.id)) {
-          seen.add(post.author.id);
-          authors.push(post.author);
-        }
-      }
+    this.userService.getRecommended().subscribe((authors) => {
       this.trendingAuthors.set(authors.slice(0, 6));
     });
 
     this.categoryService.findAll().subscribe((categories) => {
-      this.trendingCategories.set(categories.slice(0, 6));
+      this.trendingCategories.set(categories.filter(c => (c.postCount || 0) > 0).slice(0, 6));
     });
   }
 
@@ -97,7 +95,7 @@ export class SearchModalComponent {
 
   clear() {
     this.query.set('');
-    this.results.set([]);
+    this.results.set({ users: [], categories: [], posts: [] });
   }
 
   close() {
@@ -111,10 +109,6 @@ export class SearchModalComponent {
 
   translateCategoryName(category: Category) {
     return translateCategory(category, this.currentLang());
-  }
-
-  resultTitle(post: Post) {
-    return getPostTranslation(post, this.currentLang())?.title ?? '';
   }
 
   goToPost(postId: number) {
