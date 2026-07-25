@@ -6,6 +6,8 @@ import { Post } from '../posts/models/post.model';
 import { Language } from '../languages/models/language.model';
 import { CommentTranslation } from './models/comment-translation.model';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { ConfigService } from '@nestjs/config';
+import { TranslationProviderService } from '../translations/translation-provider.service';
 
 @Injectable()
 export class CommentsService {
@@ -15,6 +17,8 @@ export class CommentsService {
     @InjectModel(Post) private postModel: typeof Post,
     @InjectModel(Language) private languageModel: typeof Language,
     @InjectModel(CommentTranslation) private commentTranslationModel: typeof CommentTranslation,
+    private configService: ConfigService,
+    private translationProvider: TranslationProviderService,
   ) {}
 
   async create(postId: string, userId: string, dto: CreateCommentDto): Promise<Comment | null> {
@@ -66,62 +70,22 @@ export class CommentsService {
       updated_at: new Date(),
     });
 
-    if (originalLanguageId) {
-      // Background translation job
-      this.triggerBackgroundTranslation(comment.id, originalLanguageId, dto.content);
-    }
-
     return this.commentModel.findByPk(comment.id, {
       include: [{ model: User, as: 'author', attributes: ['id', 'username', 'display_name', 'avatar'] }],
     });
   }
 
-  private async triggerBackgroundTranslation(commentId: string, originalLanguageId: number, content: string) {
-    try {
-      const targetLanguages = await this.languageModel.findAll({
-        where: { is_active: true }
-      });
 
-      const translationsToCreate = targetLanguages
-        .filter(lang => lang.id !== originalLanguageId)
-        .map(lang => ({
-          comment_id: commentId,
-          language_id: lang.id,
-          content: content, // Temporary content
-          translation_status: 'queued' as const,
-        }));
-
-      if (translationsToCreate.length > 0) {
-        await this.commentTranslationModel.bulkCreate(translationsToCreate);
-
-        // Simulate background processing
-        setTimeout(async () => {
-          for (const target of translationsToCreate) {
-            try {
-              // Simulated translation (mock)
-              const translatedText = `[Translated to lang ${target.language_id}]: ${content}`;
-              await this.commentTranslationModel.update(
-                { content: translatedText, translation_status: 'completed' },
-                { where: { comment_id: commentId, language_id: target.language_id } }
-              );
-            } catch (e) {
-              await this.commentTranslationModel.update(
-                { translation_status: 'failed' },
-                { where: { comment_id: commentId, language_id: target.language_id } }
-              );
-            }
-          }
-        }, 3000); // 3 seconds simulated delay
-      }
-    } catch (error) {
-      console.error('Background translation failed to trigger', error);
-    }
-  }
 
   async getCommentsByPost(postId: string, page: number = 1, limit: number = 20) {
     const offset = (page - 1) * limit;
 
     // Fetch root comments
+    // Count all comments for this post (including replies) to return the true total
+    const totalCommentsCount = await this.commentModel.count({
+      where: { post_id: postId }
+    });
+
     const rootComments = await this.commentModel.findAndCountAll({
       where: { post_id: postId, parent_id: null },
       order: [['created_at', 'DESC']],
@@ -164,7 +128,7 @@ export class CommentsService {
 
     return {
       items,
-      total: rootComments.count,
+      total: totalCommentsCount,
       page,
       limit,
       totalPages: Math.ceil(rootComments.count / limit),
@@ -183,16 +147,11 @@ export class CommentsService {
 
     await comment.update({ content, updated_at: new Date() });
 
-    // Set translations back to queued
+    // Set translations back to queued so they can be re-translated if someone clicks "Translate" again
     await this.commentTranslationModel.update(
       { translation_status: 'queued' },
       { where: { comment_id: commentId } }
     );
-
-    // Retrigger background translation for queued
-    if (comment.original_language_id) {
-      this.triggerBackgroundTranslation(comment.id, comment.original_language_id, content);
-    }
 
     return comment;
   }
@@ -238,15 +197,43 @@ export class CommentsService {
 
     if (translation.translation_status === 'failed' || translation.translation_status === 'not_started' || translation.translation_status === 'queued') {
       await translation.update({ translation_status: 'processing' });
-      // Simulate translation
-      setTimeout(async () => {
-        try {
-          const translatedText = `[Manual Translation to ${languageCode}]: ${comment.content}`;
+      try {
+        const sourceLanguage = comment.original_language_id 
+          ? await this.languageModel.findByPk(comment.original_language_id)
+          : null;
+        const sourceLanguageCode = sourceLanguage ? sourceLanguage.code : 'en';
+
+        const request = {
+          title: '', // Comments don't have titles
+          content: comment.content,
+          sourceLanguageCode: sourceLanguageCode,
+          targetLanguageCode: languageCode,
+        };
+
+        const providerOrderStr = this.configService.get<string>('TRANSLATION_PROVIDER_ORDER') ||
+                                 this.configService.get<string>('TRANSLATION_PROVIDER') || 'google,libretranslate,deepl';
+        const providers = providerOrderStr.split(',').map(p => p.trim()).filter(Boolean);
+
+        let success = false;
+        let translatedText = '';
+
+        for (const provider of providers) {
+          const result = await this.translationProvider.translate(provider, request);
+          if (result.ok) {
+            translatedText = result.content;
+            success = true;
+            break;
+          }
+        }
+
+        if (success) {
           await translation.update({ content: translatedText, translation_status: 'completed' });
-        } catch (e) {
+        } else {
           await translation.update({ translation_status: 'failed' });
         }
-      }, 2000);
+      } catch (e) {
+        await translation.update({ translation_status: 'failed' });
+      }
     }
 
     return this.commentTranslationModel.findByPk(translation.id, { include: [Language] });

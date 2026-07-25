@@ -27,7 +27,7 @@
   </div>
 
   <div id="commentsListContainer" class="comments-list mt-4">
-    @if (loading()) {
+    @if (loading() && currentPage() === 1) {
       <div class="d-flex justify-content-center py-4">
         <div class="spinner-border text-primary" role="status"></div>
       </div>
@@ -39,6 +39,9 @@
               <img [src]="comment.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=32&h=32'"
                    class="rounded-circle border" style="width:36px;height:36px;object-fit:cover;" [alt]="comment.author.name">
               <span class="fw-bold fs-6 text-main">{{ comment.author.name }}</span>
+              @if (isPostAuthor(comment)) {
+                <span class="badge bg-primary text-white rounded-pill px-2 py-1" style="font-size: 0.65rem; margin-top: 1px;">Author</span>
+              }
               <app-author-tooltip [user]="comment.author"></app-author-tooltip>
             </div>
             <span class="text-muted small ms-auto">{{ comment.created_at | date:'short' }}</span>
@@ -51,14 +54,10 @@
                 <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">Cancel</button>
               </div>
             } @else {
-              @if (getTranslation(comment); as trans) {
-                @if (trans.translation_status === 'completed') {
-                  {{ trans.content }}
-                } @else if (trans.translation_status === 'processing') {
-                  <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> Translating...</span>
-                } @else {
-                  {{ comment.content }}
-                }
+              @if (isTranslating(comment)) {
+                <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> Translating...</span>
+              } @else if (isShowingTranslation(comment) && getTranslation(comment)) {
+                <span [innerHTML]="getTranslation(comment).content"></span>
               } @else {
                 {{ comment.content }}
               }
@@ -72,11 +71,12 @@
             <button class="btn-reply" (click)="setReplyTarget(comment)">
               <i class="bi bi-chat"></i>
             </button>
-            @if (!getTranslation(comment) || getTranslation(comment)?.translation_status === 'failed' || getTranslation(comment)?.translation_status === 'not_started') {
-              <button class="btn-reply btn-translate-toggle" (click)="translateComment(comment)">
-                <i class="bi bi-translate"></i>
-              </button>
-            }
+            
+            <button class="btn-reply btn-translate-toggle" (click)="toggleTranslate(comment)">
+              <i class="bi" [class.bi-translate]="!isShowingTranslation(comment)" [class.bi-arrow-counterclockwise]="isShowingTranslation(comment)"></i>
+              @if (isShowingTranslation(comment)) { <span class="small ms-1">Original</span> }
+            </button>
+            
             @if (canEdit(comment)) {
               <button class="btn-reply text-secondary ms-2" (click)="startEdit(comment)">
                 <i class="bi bi-pencil-square"></i>
@@ -112,6 +112,9 @@
                       <img [src]="reply.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=32&h=32'"
                            class="rounded-circle border" style="width:28px;height:28px;object-fit:cover;" [alt]="reply.author.name">
                       <span class="fw-bold fs-6 text-main">{{ reply.author.name }}</span>
+                      @if (isPostAuthor(reply)) {
+                        <span class="badge bg-primary text-white rounded-pill px-2 py-1" style="font-size: 0.65rem; margin-top: 1px;">Author</span>
+                      }
                       <app-author-tooltip [user]="reply.author"></app-author-tooltip>
                     </div>
                     <span class="text-muted small ms-auto">{{ reply.created_at | date:'short' }}</span>
@@ -123,18 +126,14 @@
                     @if (editingCommentId() === reply.id) {
                       <textarea class="form-control mb-2 mt-1" rows="2" [(ngModel)]="editingCommentText"></textarea>
                       <div class="d-flex gap-2 mb-2">
-                        <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(reply)">Save</button>
+                        <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(reply, comment)">Save</button>
                         <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">Cancel</button>
                       </div>
                     } @else {
-                      @if (getTranslation(reply); as trans) {
-                        @if (trans.translation_status === 'completed') {
-                          {{ trans.content }}
-                        } @else if (trans.translation_status === 'processing') {
-                          <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> Translating...</span>
-                        } @else {
-                          {{ reply.content }}
-                        }
+                      @if (isTranslating(reply)) {
+                        <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> Translating...</span>
+                      } @else if (isShowingTranslation(reply) && getTranslation(reply)) {
+                        <span [innerHTML]="getTranslation(reply).content"></span>
                       } @else {
                         {{ reply.content }}
                       }
@@ -148,18 +147,19 @@
                     <button class="btn-reply" (click)="setReplyTarget(reply)">
                       <i class="bi bi-chat"></i>
                     </button>
-                    @if (!getTranslation(reply) || getTranslation(reply)?.translation_status === 'failed' || getTranslation(reply)?.translation_status === 'not_started') {
-                      <button class="btn-reply btn-translate-toggle" (click)="translateComment(reply)">
-                        <i class="bi bi-translate"></i>
-                      </button>
-                    }
+                    
+                    <button class="btn-reply btn-translate-toggle" (click)="toggleTranslate(reply)">
+                      <i class="bi" [class.bi-translate]="!isShowingTranslation(reply)" [class.bi-arrow-counterclockwise]="isShowingTranslation(reply)"></i>
+                      @if (isShowingTranslation(reply)) { <span class="small ms-1">Original</span> }
+                    </button>
+                    
                     @if (canEdit(reply)) {
                       <button class="btn-reply text-secondary ms-2" (click)="startEdit(reply)">
                         <i class="bi bi-pencil-square"></i>
                       </button>
                     }
                     @if (canDelete(reply)) {
-                      <button class="btn-reply text-danger ms-1" (click)="deleteComment(reply)">
+                      <button class="btn-reply text-danger ms-1" (click)="deleteComment(reply, comment)">
                         <i class="bi bi-trash"></i>
                       </button>
                     }
@@ -181,6 +181,19 @@
               }
             </div>
           }
+        </div>
+      }
+
+      @if (hasMore()) {
+        <div class="d-flex justify-content-center mt-4">
+          <button class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-medium"
+                  (click)="loadMore()" [disabled]="loading()">
+            @if (loading()) {
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Loading...
+            } @else {
+              Load More Comments
+            }
+          </button>
         </div>
       }
     }

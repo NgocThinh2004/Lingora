@@ -88,23 +88,24 @@ export class PostDetailComponent implements OnInit {
   private loadPost(id: number): void {
     this.loading.set(true);
     this.error.set(null);
-    this.postService.getById(id).subscribe({
-      next: (data) => {
-        this.post.set(data);
+    
+    forkJoin({
+      post: this.postService.getById(id),
+      related: this.postService.getRelated(id)
+    }).subscribe({
+      next: ({ post, related }) => {
+        this.post.set(post);
+        this.relatedPosts.set(related);
         this.loading.set(false);
+        
         const title = this.displayedTranslation()?.title;
         if (title) this.titleService.setTitle(`${title} - Lingora`);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        // Fetch related posts
-        this.postService.getRelated(id).subscribe({
-          next: (relatedData) => {
-            this.relatedPosts.set(relatedData);
-          },
-          error: (err) => {
-            console.error('Error loading related posts:', err);
-          }
-        });
+        
+        // Scroll the center-feed container to top
+        const scrollContainer = document.querySelector('.center-feed');
+        if (scrollContainer) {
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       },
       error: (err) => {
         console.error('Error loading post:', err);
@@ -133,7 +134,12 @@ export class PostDetailComponent implements OnInit {
         if (title) {
           this.titleService.setTitle(`${title} - Lingora`);
         }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Scroll the center-feed container to top
+        const scrollContainer = document.querySelector('.center-feed');
+        if (scrollContainer) {
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       },
       error: (err) => {
         console.error('Error loading author post preview:', err);

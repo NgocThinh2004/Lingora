@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CommentService } from '../../services/comment.service';
@@ -16,7 +16,7 @@ import { AuthorTooltipComponent } from '../../../../shared/components/author-too
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss']
 })
-export class CommentSectionComponent implements OnInit {
+export class CommentSectionComponent implements OnInit, OnChanges {
   @Input({ required: true }) postId!: number;
   @Input({ required: true }) postAuthorId!: number;
 
@@ -28,6 +28,9 @@ export class CommentSectionComponent implements OnInit {
   comments = signal<Comment[]>([]);
   totalComments = signal<number>(0);
   loading = signal<boolean>(false);
+  
+  currentPage = signal<number>(1);
+  hasMore = signal<boolean>(false);
 
   newCommentText = signal<string>('');
   isSubmitting = signal<boolean>(false);
@@ -37,23 +40,44 @@ export class CommentSectionComponent implements OnInit {
 
   editingCommentId = signal<string | null>(null);
   editingCommentText = signal<string>('');
+  
+  translatingIds = signal<Set<string>>(new Set());
+  showingTranslationIds = signal<Set<string>>(new Set());
 
   ngOnInit(): void {
-    this.loadComments();
+    this.loadComments(1);
   }
 
-  loadComments(): void {
-    this.loading.set(true);
-    this.commentService.getCommentsByPost(this.postId.toString()).subscribe({
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['postId'] && !changes['postId'].isFirstChange()) {
+      this.comments.set([]);
+      this.loadComments(1);
+    }
+  }
+
+  loadComments(page: number = 1): void {
+    if (page === 1) this.loading.set(true);
+    this.commentService.getCommentsByPost(this.postId.toString(), page).subscribe({
       next: (res) => {
-        this.comments.set(res.items);
+        if (page === 1) {
+          this.comments.set(res.items);
+        } else {
+          this.comments.update(prev => [...prev, ...res.items]);
+        }
         this.totalComments.set(res.meta.total);
+        this.currentPage.set(res.meta.page);
+        this.hasMore.set(res.meta.page < res.meta.totalPages);
         this.loading.set(false);
       },
       error: () => {
         this.loading.set(false);
       }
     });
+  }
+
+  loadMore(): void {
+    if (!this.hasMore() || this.loading()) return;
+    this.loadComments(this.currentPage() + 1);
   }
 
   setReplyTarget(comment: Comment): void {
@@ -73,10 +97,11 @@ export class CommentSectionComponent implements OnInit {
     this.isSubmitting.set(true);
 
     this.commentService.createComment(this.postId.toString(), content).subscribe({
-      next: () => {
+      next: (newComment) => {
         this.isSubmitting.set(false);
         this.newCommentText.set('');
-        this.loadComments();
+        this.comments.update(prev => [newComment, ...prev]);
+        this.totalComments.update(t => t + 1);
       },
       error: () => {
         this.isSubmitting.set(false);
@@ -91,11 +116,24 @@ export class CommentSectionComponent implements OnInit {
     this.isSubmitting.set(true);
 
     this.commentService.createComment(this.postId.toString(), content, target.id).subscribe({
-      next: () => {
+      next: (newComment) => {
         this.isSubmitting.set(false);
         this.replyingToText.set('');
         this.replyingToCommentId.set(null);
-        this.loadComments();
+        
+        // Mutate array
+        this.comments.update(prev => {
+          const arr = [...prev];
+          const parentId = target.parent_id || target.id;
+          const parentIdx = arr.findIndex(c => c.id === parentId);
+          if (parentIdx > -1) {
+            arr[parentIdx] = { ...arr[parentIdx] };
+            if (!arr[parentIdx].replies) arr[parentIdx].replies = [];
+            arr[parentIdx].replies.push(newComment);
+          }
+          return arr;
+        });
+        this.totalComments.update(t => t + 1);
       },
       error: () => {
         this.isSubmitting.set(false);
@@ -111,10 +149,24 @@ export class CommentSectionComponent implements OnInit {
     });
   }
 
-  deleteComment(comment: Comment): void {
+  deleteComment(comment: Comment, parent?: Comment): void {
     if (!confirm('Are you sure you want to delete this comment?')) return;
     this.commentService.deleteComment(this.postId.toString(), comment.id).subscribe(() => {
-      this.loadComments();
+      this.comments.update(prev => {
+        if (parent) {
+          const arr = [...prev];
+          const parentIdx = arr.findIndex(c => c.id === parent.id);
+          if (parentIdx > -1) {
+            arr[parentIdx] = { ...arr[parentIdx] };
+            if (arr[parentIdx].replies) {
+              arr[parentIdx].replies = arr[parentIdx].replies.filter((r: any) => r.id !== comment.id);
+            }
+          }
+          return arr;
+        }
+        return prev.filter(c => c.id !== comment.id);
+      });
+      this.totalComments.update(t => t - 1);
     });
   }
 
@@ -128,16 +180,33 @@ export class CommentSectionComponent implements OnInit {
     this.editingCommentText.set('');
   }
 
-  saveEdit(comment: Comment): void {
+  saveEdit(comment: Comment, parent?: Comment): void {
     const text = this.editingCommentText().trim();
     if (!text || text === comment.content) {
       this.cancelEdit();
       return;
     }
     this.commentService.updateComment(this.postId.toString(), comment.id, text).subscribe({
-      next: () => {
+      next: (updatedComment) => {
         this.cancelEdit();
-        this.loadComments();
+        this.comments.update(prev => {
+          if (parent) {
+            const arr = [...prev];
+            const pIdx = arr.findIndex(c => c.id === parent.id);
+            if (pIdx > -1) {
+              arr[pIdx] = { ...arr[pIdx] };
+              if (arr[pIdx].replies) {
+                const rIdx = arr[pIdx].replies.findIndex((r: any) => r.id === comment.id);
+                if (rIdx > -1) arr[pIdx].replies[rIdx] = updatedComment;
+              }
+            }
+            return arr;
+          }
+          const arr = [...prev];
+          const idx = arr.findIndex(c => c.id === comment.id);
+          if (idx > -1) arr[idx] = updatedComment;
+          return arr;
+        });
       }
     });
   }
@@ -148,6 +217,11 @@ export class CommentSectionComponent implements OnInit {
     return userId !== undefined && String(userId) === String(authorId);
   }
 
+  isPostAuthor(comment: Comment): boolean {
+    const authorId = comment.author?.id || comment.user_id;
+    return String(authorId) === String(this.postAuthorId);
+  }
+
   canDelete(comment: Comment): boolean {
     const userId = this.authService.currentUser()?.id;
     if (userId === undefined) return false;
@@ -155,15 +229,52 @@ export class CommentSectionComponent implements OnInit {
     return String(userId) === String(authorId) || String(userId) === String(this.postAuthorId);
   }
 
-  translateComment(comment: Comment): void {
+  toggleTranslate(comment: Comment): void {
     const currentLangCode = this.localeService.selectedLocale();
-    this.commentService.translateComment(this.postId.toString(), comment.id, currentLangCode).subscribe((res) => {
-      if (!comment.translations) comment.translations = [];
-      const idx = comment.translations.findIndex(t => t.language_id === res.language_id);
-      if (idx > -1) {
-        comment.translations[idx] = res;
-      } else {
-        comment.translations.push(res);
+    
+    // Check if already showing, then just toggle off
+    if (this.isShowingTranslation(comment)) {
+      this.showingTranslationIds.update(set => {
+        const newSet = new Set(set);
+        newSet.delete(comment.id);
+        return newSet;
+      });
+      return;
+    }
+
+    // Check if already in cache
+    const existingTrans = this.getTranslation(comment);
+    if (existingTrans) {
+      this.showingTranslationIds.update(set => new Set(set).add(comment.id));
+      return;
+    }
+
+    // Call API
+    this.translatingIds.update(set => new Set(set).add(comment.id));
+    this.commentService.translateComment(this.postId.toString(), comment.id, currentLangCode).subscribe({
+      next: (res) => {
+        if (!comment.translations) comment.translations = [];
+        const idx = comment.translations.findIndex(t => t.language_id === res.language_id);
+        if (idx > -1) {
+          comment.translations[idx] = res;
+        } else {
+          comment.translations.push(res);
+        }
+        
+        this.translatingIds.update(set => {
+          const newSet = new Set(set);
+          newSet.delete(comment.id);
+          return newSet;
+        });
+        
+        this.showingTranslationIds.update(set => new Set(set).add(comment.id));
+      },
+      error: () => {
+        this.translatingIds.update(set => {
+          const newSet = new Set(set);
+          newSet.delete(comment.id);
+          return newSet;
+        });
       }
     });
   }
@@ -172,5 +283,13 @@ export class CommentSectionComponent implements OnInit {
     if (!comment.translations || comment.translations.length === 0) return null;
     const currentLang = this.localeService.selectedLocale();
     return comment.translations.find(t => t.language?.code === currentLang);
+  }
+  
+  isShowingTranslation(comment: Comment): boolean {
+    return this.showingTranslationIds().has(comment.id);
+  }
+  
+  isTranslating(comment: Comment): boolean {
+    return this.translatingIds().has(comment.id);
   }
 }
