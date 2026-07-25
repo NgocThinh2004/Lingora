@@ -16,7 +16,6 @@
             <i class="bi bi-x-lg"></i>
           </button>
         }
-        <span class="search-kbd-badge">ESC</span>
       </div>
 
       <div class="search-modal-body">
@@ -55,38 +54,66 @@
           }
         } @else {
           <div>
-            <div class="search-section-title">
-              @if (searching()) {
-                Đang tìm kiếm...
+            @if (searching()) {
+              <div class="search-section-title">Đang tìm kiếm...</div>
+            } @else {
+              @if (results().users.length === 0 && results().categories.length === 0 && results().posts.length === 0) {
+                <div class="search-empty">Không tìm thấy kết quả phù hợp.</div>
               } @else {
-                Kết quả tìm kiếm
-              }
-            </div>
-
-            @if (!searching() && results().length === 0) {
-              <div class="search-empty">Không tìm thấy kết quả phù hợp.</div>
-            }
-
-            <div class="search-results-list">
-              @for (post of results(); track post.id) {
-                <button type="button" class="search-result-item" (click)="goToPost(post.id)">
-                  <div class="author-tooltip-container position-relative">
-                    <img
-                      [src]="post.author.avatarUrl || 'assets/images/default-avatar.png'"
-                      [alt]="post.author.name"
-                      class="search-result-avatar"
-                    />
-                    <app-author-tooltip [user]="post.author"></app-author-tooltip>
-                  </div>
-                  <div class="search-result-content">
-                    <div class="search-result-title">{{ resultTitle(post) }}</div>
-                    <div class="search-result-meta">
-                      <span>{{ post.author.name }}</span>
+                
+                @if (results().users.length > 0) {
+                  <div class="mb-4">
+                    <div class="search-section-title">TÁC GIẢ</div>
+                    <div class="search-avatar-scroll">
+                      @for (author of results().users; track author.id) {
+                        <button type="button" class="search-avatar-item author-tooltip-container position-relative" (click)="goToAuthor(author.id)">
+                          <img [src]="author.avatarUrl || 'assets/images/default-avatar.png'" [alt]="author.name" class="search-avatar-img" />
+                          <span class="search-avatar-label">{{ author.name }}</span>
+                          <app-author-tooltip [user]="author"></app-author-tooltip>
+                        </button>
+                      }
                     </div>
                   </div>
-                </button>
+                }
+
+                @if (results().categories.length > 0) {
+                  <div class="mb-4">
+                    <div class="search-section-title">CHUYÊN MỤC</div>
+                    <div class="search-trending-list">
+                      @for (cat of results().categories; track cat.id) {
+                        <button type="button" class="search-trending-item" (click)="goToCategory(cat.slug)">
+                          <i class="bi bi-hash"></i>
+                          <span>{{ $any(cat).name }}</span>
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+
+                @if (results().posts.length > 0) {
+                  <div class="mb-4">
+                    <div class="search-section-title">BÀI VIẾT</div>
+                    <div class="search-results-list">
+                      @for (post of results().posts; track post.id) {
+                        <button type="button" class="search-result-item" (click)="goToPost(post.id)">
+                          <div class="author-tooltip-container position-relative">
+                            <img [src]="post.author?.avatarUrl || 'assets/images/default-avatar.png'" [alt]="post.author?.name" class="search-result-avatar" />
+                            <app-author-tooltip [user]="$any(post.author)"></app-author-tooltip>
+                          </div>
+                          <div class="search-result-content">
+                            <div class="search-result-title">{{ post.title }}</div>
+                            <div class="search-result-meta">
+                              <span>{{ post.author.name }}</span>
+                            </div>
+                          </div>
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+
               }
-            </div>
+            }
           </div>
         }
       </div>

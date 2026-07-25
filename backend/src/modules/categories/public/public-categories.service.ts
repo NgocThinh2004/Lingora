@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Category } from '../models/category.model';
 import { CategoryTranslation } from '../models/category-translation.model';
 import { Language } from '../../languages/models/language.model';
+import { literal } from 'sequelize';
 
 @Injectable()
 export class PublicCategoriesService {
@@ -14,8 +15,18 @@ export class PublicCategoriesService {
   ) {}
 
   async findActive() {
+    const postCountSubquery = `(SELECT COUNT(*) FROM posts WHERE category_id = Category.id AND status IN ('published', 'approved') AND deleted_at IS NULL)`;
+    
     const categories = await this.categoryModel.findAll({
       where: { status: 'active' },
+      attributes: {
+        include: [
+          [literal(postCountSubquery), 'postCount']
+        ]
+      },
+      order: [
+        [literal(postCountSubquery), 'DESC']
+      ]
     });
 
     if (!categories.length) return [];
@@ -31,6 +42,7 @@ export class PublicCategoriesService {
     return categories.map((category) => ({
       id: category.id,
       slug: category.slug,
+      postCount: Number(category.get('postCount')) || 0,
       isActive: true,
       translations: translations
         .filter((t) => t.category_id === category.id)

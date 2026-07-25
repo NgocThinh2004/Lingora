@@ -29,10 +29,12 @@ export class PostCardComponent implements OnInit {
 
   readonly currentLang = computed(() => this.languageService.current());
   
-  readonly safeContentHtml = computed(() => {
+  readonly excerpt = computed(() => {
     const translation = getPostTranslation(this.post, this.currentLang());
     if (translation?.contentHtml) {
-      return this.sanitizer.bypassSecurityTrustHtml(translation.contentHtml);
+      // Strip HTML tags and decode common entities for a clean text excerpt
+      let stripped = translation.contentHtml.replace(/<[^>]*>?/gm, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+      return stripped.length > 200 ? stripped.substring(0, 200) + '...' : stripped;
     }
     return '';
   });

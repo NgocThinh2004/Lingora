@@ -28,9 +28,19 @@
   </div>
 </div>
 
+<!-- Selected Category Filter Header -->
+@if (selectedCategory && tab === 'posts') {
+  <div id="exploreCategoryHeader" class="mb-3 text-muted small mt-4 px-2">
+    <span>Đang xem chuyên mục </span><strong class="text-main">"{{ translateCategoryName(selectedCategory) }}"</strong>
+    <a (click)="clearCategory()" class="ms-1 text-decoration-none text-danger" style="cursor: pointer;" title="Bỏ lọc">
+      <i class="bi bi-x fs-5"></i>
+    </a>
+  </div>
+}
+
 <!-- Search Query Header / Results Count -->
 @if (query) {
-  <div id="exploreQueryHeader" class="mb-3 text-muted small mt-4">
+  <div id="exploreQueryHeader" class="mb-3 text-muted small mt-4 px-2">
     <span>Kết quả cho </span><strong class="text-main">"{{ query }}"</strong>
   </div>
 }
@@ -38,9 +48,30 @@
 <!-- Results Feed Container -->
 <div id="exploreResultsContainer" class="explore-results-list pb-5 mt-4" [style.opacity]="loading ? 0.3 : 1" style="transition: opacity 0.15s ease-in-out">
   
+  <!-- SKELETON LOADING -->
+  @if (loading) {
+    <div class="px-2">
+      <div class="skeleton-line mb-3 w-50" style="height: 24px; border-radius: 4px;"></div>
+      <div class="d-flex align-items-center mb-4">
+        <div class="skeleton-circle me-3" style="width: 50px; height: 50px;"></div>
+        <div class="flex-grow-1">
+          <div class="skeleton-line mb-2 w-75"></div>
+          <div class="skeleton-line w-50"></div>
+        </div>
+      </div>
+      <div class="d-flex align-items-center mb-4">
+        <div class="skeleton-circle me-3" style="width: 50px; height: 50px;"></div>
+        <div class="flex-grow-1">
+          <div class="skeleton-line mb-2 w-75"></div>
+          <div class="skeleton-line w-50"></div>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- TOP TAB -->
-  @if (tab === 'top') {
-    @if (!loading && topPosts.length === 0 && featuredPeople.length === 0 && featuredPublications.length === 0) {
+  @if (tab === 'top' && !loading) {
+    @if (topPosts.length === 0 && featuredPeople.length === 0 && featuredPublications.length === 0) {
       <div class="text-center py-5 text-muted">
         <i class="bi bi-search fs-1 d-block mb-2"></i>
         <span>Không tìm thấy kết quả phù hợp.</span>
@@ -49,7 +80,7 @@
 
     <!-- Tác giả nổi bật / People matching -->
     @if (featuredPeople.length > 0) {
-      <div class="mb-4">
+      <div class="mb-4 explore-section">
         <h6 class="fw-bold text-main mb-3 d-flex align-items-center gap-2">
           @if (query) {
             <i class="bi bi-people text-primary"></i><span>Tác giả khớp với "{{ query }}"</span>
@@ -59,19 +90,21 @@
         </h6>
         @for (person of featuredPeople; track person.id) {
           <div class="explore-card-item align-items-center">
-            <div class="author-tooltip-container position-relative flex-grow-1">
-              <a [routerLink]="['/profile', person.id]" class="explore-card-left text-decoration-none text-reset align-items-center w-100">
-                <img [src]="person.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=80&h=80'" class="explore-card-avatar" [alt]="person.name">
-                <div class="explore-card-info">
-                  <div class="explore-card-title fw-bold fs-6 mb-1">{{ person.name }}</div>
-                  <div class="text-muted small"><i class="bi bi-journal-text me-1"></i>{{ person.handle ? '@'+person.handle : '0 bài viết' }}</div>
-                </div>
-              </a>
-              <app-author-tooltip [user]="person"></app-author-tooltip>
+            <div class="flex-grow-1 d-flex align-items-center">
+              <div class="author-tooltip-container position-relative">
+                <a [routerLink]="['/profile', person.id]" class="d-flex align-items-center text-decoration-none text-reset gap-3">
+                  <img [src]="person.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=80&h=80'" class="explore-card-avatar" [alt]="person.name">
+                  <div class="explore-card-info">
+                    <div class="explore-card-title fw-bold fs-6 mb-1">{{ person.name }}</div>
+                    <div class="text-muted small"><i class="bi bi-journal-text me-1"></i>{{ person.handle ? '@'+person.handle : '0 bài viết' }}</div>
+                  </div>
+                </a>
+                <app-author-tooltip [user]="person"></app-author-tooltip>
+              </div>
             </div>
             <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
               <a [routerLink]="['/profile', person.id]" class="btn-profile-unified" data-i18n="view_profile">Xem hồ sơ</a>
-              <button class="btn rounded-pill fw-medium btn-subscribe" data-i18n="btn_follow"><span class="btn-subscribe-label">Đang theo dõi</span></button>
+              <app-subscribe-button [authorId]="person.id"></app-subscribe-button>
             </div>
           </div>
         }
@@ -80,18 +113,18 @@
 
     <!-- Chuyên mục / Publications matching -->
     @if (featuredPublications.length > 0) {
-      <div class="mb-4">
+      <div class="mb-4 explore-section">
         <h6 class="fw-bold text-main mb-3 d-flex align-items-center gap-2">
           <i class="bi bi-journal-text text-primary"></i>
           <span>Chuyên mục @if (query) { khớp với "{{ query }}" }</span>
         </h6>
         @for (pub of featuredPublications; track pub.id) {
-          <a [routerLink]="['/']" [queryParams]="{ category: pub.slug }" class="explore-card-item text-decoration-none text-reset d-flex">
+          <a (click)="selectCategory(pub)" style="cursor: pointer" class="explore-card-item text-decoration-none text-reset d-flex">
             <div class="explore-card-left">
               <div class="explore-card-pub-icon"><i class="bi" [class]="pub.icon || 'bi-folder'"></i></div>
               <div class="explore-card-info">
                 <div class="explore-card-title">{{ translateCategoryName(pub) }}</div>
-                <div class="explore-card-sub text-muted small mt-1"><i class="bi bi-file-earmark-text me-1"></i>0 bài viết</div>
+                <div class="explore-card-sub text-muted small mt-1"><i class="bi bi-file-earmark-text me-1"></i>{{ pub.postCount || 0 }} bài viết</div>
               </div>
             </div>
           </a>
@@ -117,52 +150,64 @@
   }
 
   <!-- POSTS TAB -->
-  @if (tab === 'posts') {
-    @if (!loading && posts.length === 0) {
+  @if (tab === 'posts' && !loading) {
+    @if (posts.length === 0) {
       <div class="text-center py-5 text-muted">Không tìm thấy bài viết.</div>
     }
     @for (post of posts; track post.id) {
       <app-post-card [post]="post"></app-post-card>
     }
+    
+    <!-- Infinite scroll trigger -->
+    <div #infiniteScrollTrigger style="height: 10px; width: 100%;"></div>
+    
+    @if (loadingMore) {
+      <div class="text-center py-3 text-muted small">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        Đang tải thêm...
+      </div>
+    }
   }
 
   <!-- PEOPLE TAB -->
-  @if (tab === 'people') {
-    @if (!loading && people.length === 0) {
+  @if (tab === 'people' && !loading) {
+    @if (people.length === 0) {
       <div class="text-center py-5 text-muted">Không tìm thấy tác giả.</div>
     }
     @for (person of people; track person.id) {
       <div class="explore-card-item align-items-center">
-        <div class="author-tooltip-container position-relative flex-grow-1">
-          <a [routerLink]="['/profile', person.id]" class="explore-card-left text-decoration-none text-reset align-items-center w-100">
-            <img [src]="person.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=80&h=80'" class="explore-card-avatar" [alt]="person.name">
-            <div class="explore-card-info">
-              <div class="explore-card-title fw-bold fs-6 mb-1">{{ person.name }}</div>
-              <div class="text-muted small"><i class="bi bi-journal-text me-1"></i>{{ person.handle ? '@'+person.handle : '0 bài viết' }}</div>
-            </div>
-          </a>
-          <app-author-tooltip [user]="person"></app-author-tooltip>
+        <div class="flex-grow-1 d-flex align-items-center">
+          <div class="author-tooltip-container position-relative">
+            <a [routerLink]="['/profile', person.id]" class="d-flex align-items-center text-decoration-none text-reset gap-3">
+              <img [src]="person.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=80&h=80'" class="explore-card-avatar" [alt]="person.name">
+              <div class="explore-card-info">
+                <div class="explore-card-title fw-bold fs-6 mb-1">{{ person.name }}</div>
+                <div class="text-muted small"><i class="bi bi-journal-text me-1"></i>{{ person.handle ? '@'+person.handle : '0 bài viết' }}</div>
+              </div>
+            </a>
+            <app-author-tooltip [user]="person"></app-author-tooltip>
+          </div>
         </div>
         <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
           <a [routerLink]="['/profile', person.id]" class="btn-profile-unified" data-i18n="view_profile">Xem hồ sơ</a>
-          <button class="btn rounded-pill fw-medium btn-subscribe"><span class="btn-subscribe-label">Đang theo dõi</span></button>
+          <app-subscribe-button [authorId]="person.id"></app-subscribe-button>
         </div>
       </div>
     }
   }
 
   <!-- PUBLICATIONS TAB -->
-  @if (tab === 'publications') {
-    @if (!loading && publications.length === 0) {
+  @if (tab === 'publications' && !loading) {
+    @if (publications.length === 0) {
       <div class="text-center py-5 text-muted">Không tìm thấy chuyên mục.</div>
     }
     @for (pub of publications; track pub.id) {
-      <a [routerLink]="['/']" [queryParams]="{ category: pub.slug }" class="explore-card-item text-decoration-none text-reset d-flex">
+      <a (click)="selectCategory(pub)" style="cursor: pointer" class="explore-card-item text-decoration-none text-reset d-flex">
         <div class="explore-card-left">
           <div class="explore-card-pub-icon"><i class="bi" [class]="pub.icon || 'bi-folder'"></i></div>
           <div class="explore-card-info">
             <div class="explore-card-title">{{ translateCategoryName(pub) }}</div>
-            <div class="explore-card-sub text-muted small mt-1"><i class="bi bi-file-earmark-text me-1"></i>0 bài viết</div>
+            <div class="explore-card-sub text-muted small mt-1"><i class="bi bi-file-earmark-text me-1"></i>{{ pub.postCount || 0 }} bài viết</div>
           </div>
         </div>
       </a>

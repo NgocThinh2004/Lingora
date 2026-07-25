@@ -33,7 +33,7 @@
         {{ displayedTranslation()?.title }}
       </h1>
 
-      <div class="substack-post-header mb-4 pb-3 border-bottom d-flex align-items-center justify-content-between">
+      <div class="substack-post-header mb-3 pb-3 border-bottom d-flex align-items-center justify-content-between">
         <div class="author-badge-group d-flex align-items-center position-relative author-tooltip-container" style="z-index: 2;">
           <a [routerLink]="['/profile', p.author.id]" class="d-flex align-items-center text-decoration-none">
             <img [src]="p.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=48&h=48'"
@@ -52,17 +52,16 @@
         </div>
       </div>
 
-
-      <div class="substack-post-content post-content mt-4 text-main" style="line-height: 1.8;">
-        <!-- Binding the translated HTML securely -->
-        <div class="article-content" [innerHTML]="displayedTranslation()?.safeContentHtml"></div>
-      </div>
-
       @if (p.imageUrl) {
-        <div class="post-image-embed mb-4 mt-4" style="max-height: none; height: auto; border: none; background: transparent; overflow: visible;">
+        <div class="post-image-embed mb-4 mt-3" style="max-height: none; height: auto; border: none; background: transparent; overflow: visible;">
           <img [src]="p.imageUrl" alt="Cover" class="w-100 rounded-4 shadow-sm" style="max-height: 500px; object-fit: cover;">
         </div>
       }
+
+      <div class="substack-post-content post-content mt-2 text-main" style="line-height: 1.8;">
+        <!-- Binding the translated HTML securely -->
+        <div class="article-content" [innerHTML]="displayedTranslation()?.safeContentHtml"></div>
+      </div>
 
       @if (!authorPreview()) {
       <div class="substack-post-footer mt-5 pt-3 border-top d-flex align-items-center gap-4">

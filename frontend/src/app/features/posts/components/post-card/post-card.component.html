@@ -18,7 +18,7 @@
 
   <a [routerLink]="['/post', post.id]" class="post-body-link">
     <h2 class="post-title">{{ translation?.title }}</h2>
-    <div class="post-excerpt" [innerHTML]="safeContentHtml()"></div>
+    <div class="post-excerpt text-muted mb-3">{{ excerpt() }}</div>
 
     @if (post.coverImageUrl) {
       <div class="post-media">

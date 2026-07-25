@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { literal } from 'sequelize';
 import { User } from '../models/user.model';
 
 @Injectable()
@@ -9,7 +10,10 @@ export class PublicUsersService {
   async getRecommended() {
     const users = await this.userModel.findAll({
       where: { status: 'active', deleted_at: null },
-      limit: 5,
+      order: [
+        [literal(`(SELECT COUNT(*) FROM subscriptions WHERE author_id = User.id)`), 'DESC']
+      ],
+      limit: 10,
     });
 
     return users.map((u) => ({
