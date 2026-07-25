@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, Input, OnInit, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SubscriptionsService } from '../../../features/subscriptions/services/subscriptions.service';
@@ -12,15 +12,21 @@ import { User } from '../../../features/users/models/user.model';
   templateUrl: './author-tooltip.component.html',
   styleUrl: './author-tooltip.component.scss'
 })
-export class AuthorTooltipComponent implements OnInit {
+export class AuthorTooltipComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() user?: User | any; // Accept different formats
 
   isSubscribed = false;
   loading = false;
+  isFlipped = false;
+
+  @ViewChild('hoverCard') hoverCard!: ElementRef<HTMLDivElement>;
 
   private readonly subscriptionsService = inject(SubscriptionsService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly el = inject(ElementRef);
+  
+  private mouseEnterListener: (() => void) | null = null;
 
   ngOnInit(): void {
     this.checkSubscriptionStatus();
@@ -73,6 +79,37 @@ export class AuthorTooltipComponent implements OnInit {
     event.preventDefault();
     if (this.user?.id) {
       this.router.navigate(['/profile', this.user.id]);
+    }
+  }
+
+  ngAfterViewInit(): void {
+    const parent = this.el.nativeElement.parentElement;
+    if (parent) {
+      this.mouseEnterListener = () => this.checkPosition();
+      parent.addEventListener('mouseenter', this.mouseEnterListener);
+    }
+  }
+
+  ngOnDestroy(): void {
+    const parent = this.el.nativeElement.parentElement;
+    if (parent && this.mouseEnterListener) {
+      parent.removeEventListener('mouseenter', this.mouseEnterListener);
+    }
+  }
+
+  private checkPosition(): void {
+    if (!this.hoverCard) return;
+    const parentRect = this.el.nativeElement.parentElement.getBoundingClientRect();
+    
+    // Estimate card height since it might be hidden when calculating
+    const estimatedCardHeight = 220; 
+    const spaceBelow = window.innerHeight - parentRect.bottom;
+    
+    // If not enough space below, but enough space above, flip it up
+    if (spaceBelow < estimatedCardHeight && parentRect.top > estimatedCardHeight) {
+      this.isFlipped = true;
+    } else {
+      this.isFlipped = false;
     }
   }
 }

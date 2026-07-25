@@ -9,6 +9,56 @@
 
 /* Subscriptions Page Tabs */
 
+/* Carousel Navigation Arrows */
+.carousel-wrapper {
+  position: relative;
+  
+  @media (min-width: 992px) {
+    padding: 0 40px; /* Make room for arrows */
+  }
+  &:hover .carousel-control-prev, &:hover .carousel-control-next {
+    opacity: 1;
+  }
+}
+.carousel-control-prev, .carousel-control-next {
+  position: absolute;
+  top: 40%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: none; /* hidden on mobile */
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  color: var(--text-main);
+  
+  @media (min-width: 992px) {
+    display: flex;
+  }
+
+  &:hover {
+    background: var(--bg-secondary);
+  }
+}
+.carousel-control-prev { left: 0; }
+.carousel-control-next { right: 0; }
+
+.sticky-all-authors {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background-color: var(--bg-body); /* Must match body background to hide scrolled items behind it */
+  padding-left: 0.25rem;
+  padding-right: 0.5rem;
+}
+
 .subscriptions-tabs-nav {
   display: flex;
   gap: 1rem;
