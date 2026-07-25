@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -18,6 +20,14 @@ import { SearchModule } from './modules/search/search.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 300000, // 5 minutes default
+    }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // 1 minute
+      limit: 60, // 60 requests per minute
+    }]),
     DatabaseModule,
     UsersModule,
     AuthModule,
