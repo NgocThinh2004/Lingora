@@ -14,6 +14,6 @@ import { TranslationsService } from './translations.service';
   ],
   controllers: [TranslationsController],
   providers: [TranslationsService, TranslationProviderService, RolesGuard],
-  exports: [TranslationsService],
+  exports: [TranslationsService, TranslationProviderService],
 })
 export class TranslationsModule {}

@@ -97,7 +97,7 @@
                       @for (post of results().posts; track post.id) {
                         <button type="button" class="search-result-item" (click)="goToPost(post.id)">
                           <div class="author-tooltip-container position-relative">
-                            <img [src]="post.author?.avatarUrl || 'assets/images/default-avatar.png'" [alt]="post.author?.name" class="search-result-avatar" />
+                            <img [src]="post.author.avatarUrl || 'assets/images/default-avatar.png'" [alt]="post.author.name" class="search-result-avatar rounded-circle border object-fit-cover" />
                             <app-author-tooltip [user]="$any(post.author)"></app-author-tooltip>
                           </div>
                           <div class="search-result-content">
