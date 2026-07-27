@@ -32,7 +32,7 @@
         <div class="comment-card py-3 border-bottom border-light-subtle">
           <div class="d-flex align-items-center gap-2 mb-2">
             <div class="d-inline-flex align-items-center gap-2 author-tooltip-container position-relative" style="cursor: pointer;">
-              <img [src]="comment.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=32&h=32'"
+              <img [appAssetImage]="comment.author.avatarUrl"
                    class="rounded-circle border" style="width:36px;height:36px;object-fit:cover;" [alt]="comment.author.name">
               <span class="fw-bold fs-6 text-main">{{ comment.author.name }}</span>
               @if (isPostAuthor(comment)) {
@@ -105,7 +105,7 @@
                 <div class="comment-reply-card py-2 border-bottom border-light-subtle">
                   <div class="d-flex align-items-center gap-2 mb-1">
                     <div class="d-inline-flex align-items-center gap-2 author-tooltip-container position-relative" style="cursor: pointer;">
-                      <img [src]="reply.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=32&h=32'"
+                      <img [appAssetImage]="reply.author.avatarUrl"
                            class="rounded-circle border" style="width:28px;height:28px;object-fit:cover;" [alt]="reply.author.name">
                       <span class="fw-bold fs-6 text-main">{{ reply.author.name }}</span>
                       @if (isPostAuthor(reply)) {

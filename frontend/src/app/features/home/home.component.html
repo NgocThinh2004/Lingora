@@ -1,6 +1,9 @@
 <div class="home-page">
   <a routerLink="/create-post" class="quick-draft-card">
-    <img [src]="quickDraftAvatar()" alt="Avatar" class="quick-draft-avatar" />
+    <img
+      [appAssetImage]="quickDraftAvatar()"
+      alt="Avatar"
+      class="quick-draft-avatar" />
     <span class="quick-draft-placeholder">Bạn đang nghĩ gì?</span>
   </a>
 

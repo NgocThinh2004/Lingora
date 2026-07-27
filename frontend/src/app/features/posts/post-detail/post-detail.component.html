@@ -36,7 +36,7 @@
       <div class="substack-post-header mb-3 pb-3 border-bottom d-flex align-items-center justify-content-between">
         <div class="author-badge-group d-flex align-items-center position-relative author-tooltip-container" style="z-index: 2;">
           <a [routerLink]="['/profile', p.author.id]" class="d-flex align-items-center text-decoration-none">
-            <img [src]="p.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=48&h=48'"
+            <img [appAssetImage]="p.author.avatarUrl"
                  [alt]="p.author.name"
                  class="author-avatar me-3 rounded-circle border"
                  style="width:48px;height:48px;object-fit:cover;">
@@ -101,7 +101,7 @@
               </h5>
               <div class="d-flex align-items-center gap-2 text-muted small mt-3">
                 <div class="author-tooltip-container position-relative d-flex align-items-center gap-2">
-                  <img [src]="rel.author.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=24&h=24'"
+                  <img [appAssetImage]="rel.author.avatarUrl"
                        class="rounded-circle" width="24" height="24" style="object-fit:cover;" [alt]="rel.author.name">
                   <span class="fw-medium text-main">{{ rel.author.name }}</span>
                   <app-author-tooltip [user]="rel.author"></app-author-tooltip>

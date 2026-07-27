@@ -10,11 +10,12 @@ import { AdminCategory } from '../categories/models/admin-category.model';
 import { AdminCategoriesService } from '../categories/services/admin-categories.service';
 import { AdminPost, AdminPostTranslation } from './models/admin-post.model';
 import { AdminPostsService } from './services/admin-posts.service';
+import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-admin-posts',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UiStateComponent],
+  imports: [CommonModule, ReactiveFormsModule, UiStateComponent, AssetImageDirective],
   templateUrl: './admin-posts.component.html',
   styleUrl: './admin-posts.component.scss',
 })

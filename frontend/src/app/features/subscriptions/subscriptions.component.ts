@@ -4,11 +4,12 @@ import { AuthorTooltipComponent } from '../../shared/components/author-tooltip/a
 import { PostCardComponent } from '../posts/components/post-card/post-card.component';
 import { FormsModule } from '@angular/forms';
 import { Post } from '../posts/models/post.model';
+import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-subscriptions',
   standalone: true,
-  imports: [AuthorTooltipComponent, PostCardComponent, FormsModule],
+  imports: [AuthorTooltipComponent, PostCardComponent, FormsModule, AssetImageDirective],
   templateUrl: './subscriptions.component.html',
   styleUrl: './subscriptions.component.scss'
 })

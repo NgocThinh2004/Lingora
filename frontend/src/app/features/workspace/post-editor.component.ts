@@ -327,7 +327,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.previewTranslationLoading = true;
     this.translationsService.preview({
       title: this.draft.title,
-      content: this.draft.content,
+      content: this.stripEditorOnlyMarkup(this.draft.content),
       sourceLanguageId: this.draft.originalLanguageId,
       targetLanguageId: languageId,
     }).subscribe({
@@ -1004,9 +1004,36 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private buildPreviewHtml(html: string): string {
     const container = document.createElement('div');
-    container.innerHTML = html;
+    container.innerHTML = this.stripEditorOnlyMarkup(html);
     this.numberPreviewCodeBlocks(container);
     container.querySelectorAll('[contenteditable]').forEach((node) => node.removeAttribute('contenteditable'));
+    return container.innerHTML;
+  }
+
+  private stripEditorOnlyMarkup(html: string): string {
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    container
+      .querySelectorAll(
+        '.editor-media-delete, [data-remove-media], .editor-media-wrapper button, .editor-media-wrapper svg',
+      )
+      .forEach(node => node.remove());
+
+    container.querySelectorAll<HTMLElement>('.editor-after-block-placeholder').forEach(node => {
+      const hasVisibleContent = Boolean(node.textContent?.replace(/\u00a0/g, ' ').trim());
+      const hasEmbeddedContent = Boolean(node.querySelector('img, audio, video, iframe'));
+      if (!hasVisibleContent && !hasEmbeddedContent) {
+        node.remove();
+      } else {
+        node.classList.remove('editor-after-block-placeholder');
+      }
+    });
+
+    container.querySelectorAll('[contenteditable]').forEach(node => {
+      node.removeAttribute('contenteditable');
+    });
+
     return container.innerHTML;
   }
 

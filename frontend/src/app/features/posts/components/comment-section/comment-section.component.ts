@@ -10,11 +10,13 @@ import { RouterModule } from '@angular/router';
 import { AuthorTooltipComponent } from '../../../../shared/components/author-tooltip/author-tooltip.component';
 import { AuthModalService } from '../../../../shared/components/auth-modal/auth-modal.service';
 import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
+import { AssetImageDirective } from '../../../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-comment-section',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, AuthorTooltipComponent, CompactNumberPipe],
+  imports: [CommonModule, FormsModule, RouterModule, AuthorTooltipComponent, AssetImageDirective],
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss']
 })

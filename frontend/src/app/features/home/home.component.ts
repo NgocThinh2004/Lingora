@@ -8,11 +8,12 @@ import { PostCardComponent } from '../posts/components/post-card/post-card.compo
 import { Post } from '../posts/models/post.model';
 import { FeedPostsService } from '../posts/services/feed-posts.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, PostCardComponent],
+  imports: [CommonModule, RouterLink, PostCardComponent, AssetImageDirective],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
@@ -49,9 +50,9 @@ export class HomeComponent implements OnDestroy {
   readonly totalPages = signal(1);
 
   readonly currentLang = computed(() => this.languageService.current());
-  readonly quickDraftAvatar = computed(() =>
-    this.authService.currentUser()?.avatarUrl || 'assets/images/default-avatar.svg',
-  );
+  readonly quickDraftAvatar = computed(() => {
+    return this.authService.currentUser()?.avatarUrl ?? 'assets/images/lingora-mark.svg';
+  });
 
   readonly selectedCategoryLabel = computed(() => {
     const slug = this.selectedCategorySlug();

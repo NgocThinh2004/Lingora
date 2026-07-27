@@ -59,8 +59,46 @@ export class SubscriptionsService {
     return { followers, following };
   }
 
+  async listFollowers(userId: string) {
+    const subscriptions = await this.subscriptionModel.findAll({
+      where: { author_id: userId },
+      order: [['created_at', 'DESC']],
+    });
+    return this.listActiveUsers(subscriptions.map(item => item.subscriber_id));
+  }
+
+  async listFollowing(userId: string) {
+    const subscriptions = await this.subscriptionModel.findAll({
+      where: { subscriber_id: userId },
+      order: [['created_at', 'DESC']],
+    });
+    return this.listActiveUsers(subscriptions.map(item => item.author_id));
+  }
+
   async checkSubscription(subscriberId: string, authorId: string) {
     const sub = await this.subscriptionModel.findOne({ where: { subscriber_id: subscriberId, author_id: authorId } });
     return { subscribed: !!sub };
+  }
+
+  private async listActiveUsers(userIds: string[]) {
+    if (!userIds.length) {
+      return [];
+    }
+
+    const users = await this.userModel.findAll({
+      where: { id: userIds, status: 'active', deleted_at: null },
+    });
+    const usersById = new Map(users.map(user => [String(user.id), user]));
+
+    return userIds
+      .map(id => usersById.get(String(id)))
+      .filter((user): user is User => Boolean(user))
+      .map(user => ({
+        id: user.id,
+        username: user.username,
+        displayName: user.display_name,
+        avatarUrl: user.avatar,
+        bio: user.bio,
+      }));
   }
 }

@@ -32,6 +32,18 @@ export class SubscriptionsService {
       .pipe(map(response => response.data));
   }
 
+  followers(): Observable<SubscriptionAuthor[]> {
+    return this.http
+      .get<ApiItemResponse<SubscriptionAuthor[]>>(`${this.baseUrl}/followers`)
+      .pipe(map(response => response.data));
+  }
+
+  following(): Observable<SubscriptionAuthor[]> {
+    return this.http
+      .get<ApiItemResponse<SubscriptionAuthor[]>>(`${this.baseUrl}/following`)
+      .pipe(map(response => response.data));
+  }
+
   unsubscribe(authorId: string | number): Observable<unknown> {
     return this.http.delete(`${this.baseUrl}/${authorId}`);
   }
