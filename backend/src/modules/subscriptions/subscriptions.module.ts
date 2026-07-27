@@ -9,5 +9,6 @@ import { SubscriptionsService } from './subscriptions.service';
   imports: [SequelizeModule.forFeature([Subscription, User]), PostsModule],
   controllers: [SubscriptionsController],
   providers: [SubscriptionsService],
+  exports: [SubscriptionsService],
 })
 export class SubscriptionsModule {}
