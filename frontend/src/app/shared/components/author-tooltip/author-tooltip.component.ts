@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { SubscriptionsService } from '../../../features/subscriptions/services/subscriptions.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { User } from '../../../features/users/models/user.model';
+import { AuthModalService } from '../auth-modal/auth-modal.service';
 
 @Component({
   selector: 'app-author-tooltip',
@@ -25,6 +26,7 @@ export class AuthorTooltipComponent implements OnInit, AfterViewInit, OnDestroy 
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly el = inject(ElementRef);
+  private readonly authModalService = inject(AuthModalService);
   
   private mouseEnterListener: (() => void) | null = null;
 
@@ -50,7 +52,7 @@ export class AuthorTooltipComponent implements OnInit, AfterViewInit, OnDestroy 
     if (!this.user?.id) return;
 
     if (!this.authService.isAuthenticated()) {
-      // Need login
+      this.authModalService.open();
       return;
     }
 

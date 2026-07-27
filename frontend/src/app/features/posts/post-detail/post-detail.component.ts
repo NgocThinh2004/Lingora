@@ -11,8 +11,8 @@ import { Title } from '@angular/platform-browser';
 import { CommentSectionComponent } from '../components/comment-section/comment-section.component';
 import { LikeService } from '../services/like.service';
 import { AuthService } from '../../../core/auth/auth.service';
-import { ToastService } from '../../../core/notifications/toast.service';
 import { preparePostDetailHtml } from './post-detail-html.util';
+import { AuthModalService } from '../../../shared/components/auth-modal/auth-modal.service';
 
 import { AuthorTooltipComponent } from '../../../shared/components/author-tooltip/author-tooltip.component';
 
@@ -32,8 +32,8 @@ export class PostDetailComponent implements OnInit {
   private titleService = inject(Title);
   private likeService = inject(LikeService);
   private authService = inject(AuthService);
-  private toast = inject(ToastService);
   private sanitizer = inject(DomSanitizer);
+  private authModalService = inject(AuthModalService);
 
   post = signal<Post | null>(null);
   relatedPosts = signal<Post[]>([]);
@@ -211,7 +211,7 @@ export class PostDetailComponent implements OnInit {
     if (!p) return;
 
     if (!this.authService.isAuthenticated()) {
-      this.toast.show('Vui lòng đăng nhập để thích bài viết');
+      this.authModalService.open();
       return;
     }
 
