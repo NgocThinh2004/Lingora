@@ -13,13 +13,14 @@ import { LikeService } from '../services/like.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { preparePostDetailHtml } from './post-detail-html.util';
 import { AuthModalService } from '../../../shared/components/auth-modal/auth-modal.service';
-
 import { AuthorTooltipComponent } from '../../../shared/components/author-tooltip/author-tooltip.component';
+import { CompactNumberPipe } from '../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-post-detail',
   standalone: true,
+  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, CompactNumberPipe],
   imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, AssetImageDirective],
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
@@ -210,14 +211,37 @@ export class PostDetailComponent implements OnInit {
   toggleLike(): void {
     const p = this.post();
     if (!p) return;
+    if (p.isLiking) return; // Throttling: prevent spam clicks
 
     if (!this.authService.isAuthenticated()) {
       this.authModalService.open();
       return;
     }
 
-    this.likeService.togglePostLike(p.id).subscribe((status) => {
-      this.post.set({ ...p, liked: status.liked, likeCount: status.likeCount });
+    // Optimistic UI update
+    const previousLiked = p.liked;
+    const previousLikeCount = p.likeCount || 0;
+    const nextLiked = !previousLiked;
+    const nextLikeCount = nextLiked ? previousLikeCount + 1 : Math.max(0, previousLikeCount - 1);
+
+    this.post.set({ ...p, liked: nextLiked, likeCount: nextLikeCount, isLiking: true });
+
+    this.likeService.togglePostLike(p.id).subscribe({
+      next: (status) => {
+        // Sync with server state
+        const updatedPost = this.post();
+        if (updatedPost && updatedPost.id === p.id) {
+          this.post.set({ ...updatedPost, liked: status.liked, likeCount: status.likeCount, isLiking: false });
+        }
+      },
+      error: (err) => {
+        console.error('Error toggling like:', err);
+        // Rollback on error
+        const currentPost = this.post();
+        if (currentPost && currentPost.id === p.id) {
+          this.post.set({ ...currentPost, liked: previousLiked, likeCount: previousLikeCount, isLiking: false });
+        }
+      }
     });
   }
 

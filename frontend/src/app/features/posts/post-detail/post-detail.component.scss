@@ -128,4 +128,28 @@
   color: #858c8a;
 }
 
+.footer-action-item {
+  color: var(--text-muted) !important;
+  transition: color 0.2s ease;
+
+  span {
+    font-variant-numeric: tabular-nums;
+    min-width: 1.2ch;
+    display: inline-block;
+  }
+
+  i {
+    width: 1.15em;
+    text-align: center;
+  }
+
+  &:hover {
+    color: var(--text-main) !important;
+  }
+
+  &.liked {
+    color: var(--primary-color) !important;
+  }
+}
+
 

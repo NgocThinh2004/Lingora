@@ -6,6 +6,7 @@ import { Category } from '../categories/models/category.model';
 import { CategoryTranslation } from '../categories/models/category-translation.model';
 import { Post } from '../posts/models/post.model';
 import { PostTranslation } from '../posts/models/post-translation.model';
+import { Subscription } from '../subscriptions/models/subscription.model';
 
 @Injectable()
 export class SearchService {
@@ -15,9 +16,10 @@ export class SearchService {
     @InjectModel(CategoryTranslation) private readonly categoryTranslationModel: typeof CategoryTranslation,
     @InjectModel(Post) private readonly postModel: typeof Post,
     @InjectModel(PostTranslation) private readonly postTranslationModel: typeof PostTranslation,
+    @InjectModel(Subscription) private readonly subscriptionModel: typeof Subscription,
   ) {}
 
-  async globalSearch(q: string) {
+  async globalSearch(q: string, userId?: number) {
     if (!q || !q.trim()) return { data: { users: [], categories: [], posts: [] } };
     const keyword = `%${q.trim()}%`;
 
@@ -80,13 +82,21 @@ export class SearchService {
       attributes: ['id', 'display_name', 'username', 'avatar']
     }) : [];
 
+    const allUserIds = [...new Set([...users.map(u => Number(u.id)), ...postAuthorIds])];
+    const followingRows = userId && allUserIds.length ? await this.subscriptionModel.findAll({
+      where: { subscriber_id: userId, author_id: allUserIds },
+      attributes: ['author_id']
+    }) : [];
+    const followingSet = new Set(followingRows.map(r => String(r.author_id)));
+
     return {
       data: {
         users: users.map(u => ({
           id: Number(u.id),
           name: u.display_name || u.username,
           handle: u.username,
-          avatarUrl: u.avatar
+          avatarUrl: u.avatar,
+          isFollowing: followingSet.has(String(u.id))
         })),
         categories: categories.map(c => {
           const trans = allCatTranslations.find(t => Number(t.category_id) === Number(c.id));

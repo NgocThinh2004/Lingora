@@ -137,6 +137,7 @@ export interface Post {
   likeCount?: number;
   commentCount?: number;
   liked?: boolean;
+  isLiking?: boolean;
   author: User;
   category?: Category | null;
   translations: FeedPostTranslation[];

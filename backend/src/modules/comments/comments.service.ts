@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
 import { Comment } from './models/comment.model';
 import { User } from '../users/models/user.model';
 import { Post } from '../posts/models/post.model';
 import { Language } from '../languages/models/language.model';
 import { CommentTranslation } from './models/comment-translation.model';
+import { CommentLike } from '../likes/models/comment-like.model';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { ConfigService } from '@nestjs/config';
 import { TranslationProviderService } from '../translations/translation-provider.service';
@@ -17,6 +19,7 @@ export class CommentsService {
     @InjectModel(Post) private postModel: typeof Post,
     @InjectModel(Language) private languageModel: typeof Language,
     @InjectModel(CommentTranslation) private commentTranslationModel: typeof CommentTranslation,
+    @InjectModel(CommentLike) private commentLikeModel: typeof CommentLike,
     private configService: ConfigService,
     private translationProvider: TranslationProviderService,
   ) {}
@@ -70,6 +73,8 @@ export class CommentsService {
       updated_at: new Date(),
     });
 
+    await this.postModel.increment('comment_count', { by: 1, where: { id: postId } });
+
     return this.commentModel.findByPk(comment.id, {
       include: [{ model: User, as: 'author', attributes: ['id', 'username', 'display_name', 'avatar'] }],
     });
@@ -77,7 +82,7 @@ export class CommentsService {
 
 
 
-  async getCommentsByPost(postId: string, page: number = 1, limit: number = 20) {
+  async getCommentsByPost(postId: string, page: number = 1, limit: number = 20, userId?: number) {
     const offset = (page - 1) * limit;
 
     // Fetch root comments
@@ -109,19 +114,38 @@ export class CommentsService {
       ],
     });
 
+    const allCommentIds = [...rootCommentIds, ...replies.map(r => r.id)];
+    
+    // Batch query user likes (if logged in)
+    let userLikes = new Set<string>();
+    if (userId && allCommentIds.length) {
+      const userLikeRows = await this.commentLikeModel.findAll({
+        where: { user_id: userId, comment_id: allCommentIds },
+        attributes: ['comment_id'],
+      });
+      userLikes = new Set(userLikeRows.map((row: any) => String(row.comment_id)));
+    }
+
+    const processComment = (comment: Comment) => {
+      const json = comment.toJSON() as any;
+      json.likeCount = comment.like_count || 0;
+      json.liked = userLikes.has(String(comment.id));
+      return json;
+    };
+
     // Group replies by parent_id
-    const repliesMap = new Map<string, Comment[]>();
+    const repliesMap = new Map<string, any[]>();
     replies.forEach((reply) => {
       const parentId = reply.parent_id!;
       if (!repliesMap.has(parentId)) {
         repliesMap.set(parentId, []);
       }
-      repliesMap.get(parentId)!.push(reply);
+      repliesMap.get(parentId)!.push(processComment(reply));
     });
 
     // Attach replies to root comments
     const items = rootComments.rows.map((comment) => {
-      const commentJson = comment.toJSON();
+      const commentJson = processComment(comment);
       commentJson.replies = repliesMap.get(comment.id) || [];
       return commentJson;
     });
@@ -171,6 +195,9 @@ export class CommentsService {
     }
 
     await comment.destroy();
+    
+    await this.postModel.decrement('comment_count', { by: 1, where: { id: comment.post_id } });
+
     return { success: true };
   }
 

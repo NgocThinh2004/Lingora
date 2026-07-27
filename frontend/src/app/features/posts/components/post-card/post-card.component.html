@@ -33,17 +33,17 @@
   <footer class="post-footer">
     <button type="button" class="footer-action" [class.liked]="post.liked" (click)="toggleLike($event)">
       <i class="bi" [class.bi-heart-fill]="post.liked" [class.bi-heart]="!post.liked"></i>
-      <span>{{ post.likeCount ?? 0 }}</span>
+      <span>{{ post.likeCount | compactNumber }}</span>
     </button>
 
     <a [routerLink]="['/post', post.id]" class="footer-action" fragment="comments">
       <i class="bi bi-chat"></i>
-      <span>{{ post.commentCount ?? 0 }}</span>
+      <span>{{ post.commentCount | compactNumber }}</span>
     </a>
 
     <span class="footer-action muted">
       <i class="bi bi-eye"></i>
-      <span>{{ post.viewCount }}</span>
+      <span>{{ post.viewCount | compactNumber }}</span>
     </span>
   </footer>
 </article>
