@@ -16,8 +16,7 @@ import { AssetImageDirective } from '../../../../shared/directives/asset-image.d
 @Component({
   selector: 'app-post-card',
   standalone: true,
-  imports: [CommonModule, RouterLink, AuthorTooltipComponent, CompactNumberPipe],
-  imports: [CommonModule, RouterLink, AuthorTooltipComponent, AssetImageDirective],
+  imports: [CommonModule, RouterLink, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective],
   templateUrl: './post-card.component.html',
   styleUrl: './post-card.component.scss',
 })

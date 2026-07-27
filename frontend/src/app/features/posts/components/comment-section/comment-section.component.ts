@@ -15,8 +15,7 @@ import { AssetImageDirective } from '../../../../shared/directives/asset-image.d
 @Component({
   selector: 'app-comment-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AuthorTooltipComponent, CompactNumberPipe],
-  imports: [CommonModule, FormsModule, RouterModule, AuthorTooltipComponent, AssetImageDirective],
+  imports: [CommonModule, FormsModule, RouterModule, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective],
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss']
 })
