@@ -7,6 +7,13 @@ import { User } from '../../users/models/user.model';
   timestamps: false,
   underscored: true,
   freezeTableName: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['post_id', 'user_id'],
+      name: 'post_likes_post_id_user_id_unique',
+    },
+  ],
 })
 export class PostLike extends Model {
   @Column({ type: DataType.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true })

@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { literal } from 'sequelize';
-import { User } from '../models/user.model';
 import { Subscription } from '../../subscriptions/models/subscription.model';
+import { User } from '../models/user.model';
 
 @Injectable()
 export class PublicUsersService {
@@ -11,19 +11,27 @@ export class PublicUsersService {
     @InjectModel(Subscription) private readonly subscriptionModel: typeof Subscription,
   ) {}
 
-  async getRecommended() {
+  async getRecommended(userId?: string | number) {
     const users = await this.userModel.findAll({
       where: { status: 'active', deleted_at: null },
       order: [
-        [literal(`(SELECT COUNT(*) FROM subscriptions WHERE author_id = User.id)`), 'DESC']
+        [literal('(SELECT COUNT(*) FROM subscriptions WHERE author_id = User.id)'), 'DESC'],
       ],
       limit: 10,
     });
 
-    return users.map(user => this.serializeUser(user));
+    const followingSet = await this.getFollowingSet(
+      userId,
+      users.map(user => String(user.id)),
+    );
+
+    return users.map(user => ({
+      ...this.serializeUser(user),
+      isFollowing: followingSet.has(String(user.id)),
+    }));
   }
 
-  async getProfile(id: number) {
+  async getProfile(id: number, viewerId?: string | number) {
     const user = await this.userModel.findOne({
       where: { id, status: 'active', deleted_at: null },
     });
@@ -31,15 +39,17 @@ export class PublicUsersService {
       throw new NotFoundException('Profile not found');
     }
 
-    const [followersCount, followingCount] = await Promise.all([
+    const [followersCount, followingCount, followingSet] = await Promise.all([
       this.subscriptionModel.count({ where: { author_id: String(id) } }),
       this.subscriptionModel.count({ where: { subscriber_id: String(id) } }),
+      this.getFollowingSet(viewerId, [String(id)]),
     ]);
 
     return {
       ...this.serializeUser(user),
       followersCount,
       followingCount,
+      isFollowing: followingSet.has(String(id)),
     };
   }
 
@@ -59,10 +69,29 @@ export class PublicUsersService {
     return this.listUsers(subscriptions.map(item => item.author_id));
   }
 
+  private async getFollowingSet(
+    viewerId: string | number | undefined,
+    authorIds: string[],
+  ): Promise<Set<string>> {
+    if (!viewerId || authorIds.length === 0) {
+      return new Set();
+    }
+
+    const rows = await this.subscriptionModel.findAll({
+      where: {
+        subscriber_id: String(viewerId),
+        author_id: authorIds,
+      },
+      attributes: ['author_id'],
+    });
+    return new Set(rows.map(row => String(row.author_id)));
+  }
+
   private async listUsers(ids: string[]) {
     if (!ids.length) {
       return [];
     }
+
     const users = await this.userModel.findAll({
       where: { id: ids, status: 'active', deleted_at: null },
     });

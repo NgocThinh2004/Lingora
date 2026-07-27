@@ -9,12 +9,13 @@ import { LocaleService } from '../../../../core/locale/locale.service';
 import { RouterModule } from '@angular/router';
 import { AuthorTooltipComponent } from '../../../../shared/components/author-tooltip/author-tooltip.component';
 import { AuthModalService } from '../../../../shared/components/auth-modal/auth-modal.service';
+import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-comment-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AuthorTooltipComponent, AssetImageDirective],
+  imports: [CommonModule, FormsModule, RouterModule, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective],
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss']
 })
@@ -84,8 +85,19 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   setReplyTarget(comment: Comment): void {
+    if (!this.authService.isAuthenticated()) {
+      this.authModalService.open();
+      return;
+    }
     this.replyingToCommentId.set(comment.id);
     this.replyingToText.set('');
+  }
+
+  handleCommentFocus(event: FocusEvent): void {
+    if (!this.authService.isAuthenticated()) {
+      (event.target as HTMLElement).blur();
+      this.authModalService.open();
+    }
   }
 
   cancelReply(): void {
@@ -153,13 +165,34 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   toggleLike(comment: Comment): void {
+    if (comment.isLiking) return;
+
     if (!this.authService.isAuthenticated()) {
       this.authModalService.open();
       return;
     }
-    this.likeService.toggleCommentLike(this.postId, Number(comment.id)).subscribe((res) => {
-      comment.liked = res.liked;
-      comment.likeCount = res.likeCount;
+
+    const previousLiked = comment.liked;
+    const previousLikeCount = comment.likeCount || 0;
+    const nextLiked = !previousLiked;
+    const nextLikeCount = nextLiked ? previousLikeCount + 1 : Math.max(0, previousLikeCount - 1);
+
+    comment.liked = nextLiked;
+    comment.likeCount = nextLikeCount;
+    comment.isLiking = true;
+
+    this.likeService.toggleCommentLike(this.postId, Number(comment.id)).subscribe({
+      next: (res) => {
+        comment.liked = res.liked;
+        comment.likeCount = res.likeCount;
+        comment.isLiking = false;
+      },
+      error: (err) => {
+        console.error('Error toggling comment like:', err);
+        comment.liked = previousLiked;
+        comment.likeCount = previousLikeCount;
+        comment.isLiking = false;
+      }
     });
   }
 

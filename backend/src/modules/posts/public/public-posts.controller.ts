@@ -1,7 +1,8 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthorPostsService } from '../author/author-posts.service';
 import { PublicPostsService } from './public-posts.service';
 import { PublicPostsQueryDto } from './dto/public-posts.dto';
+import { OptionalJwtAuthGuard } from '../../auth/optional-jwt-auth.guard';
 
 @Controller('posts')
 export class PublicPostsController {
@@ -16,17 +17,20 @@ export class PublicPostsController {
   }
 
   @Get()
-  listFeed(@Query() query: PublicPostsQueryDto) {
-    return this.postsService.listFeed(query);
+  @UseGuards(OptionalJwtAuthGuard)
+  listFeed(@Query() query: PublicPostsQueryDto, @Req() req: any) {
+    return this.postsService.listFeed(query, undefined, req.user?.id);
   }
 
   @Get(':id/related')
-  getRelated(@Param('id', ParseIntPipe) id: number) {
-    return this.postsService.getRelated(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  getRelated(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.postsService.getRelated(id, req.user?.id);
   }
 
   @Get(':id')
-  getById(@Param('id', ParseIntPipe) id: number) {
-    return this.postsService.getById(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  getById(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.postsService.getById(id, req.user?.id);
   }
 }

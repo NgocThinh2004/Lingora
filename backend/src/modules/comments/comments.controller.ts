@@ -2,6 +2,7 @@ import { Controller, Post, Get, Put, Delete, Body, Param, Query, UseGuards, Req,
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 
 @Controller('posts/:postId/comments')
 export class CommentsController {
@@ -19,12 +20,14 @@ export class CommentsController {
   }
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   findAll(
     @Param('postId') postId: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Req() req: any,
   ) {
-    return this.commentsService.getCommentsByPost(postId, page, limit);
+    return this.commentsService.getCommentsByPost(postId, page, limit, req.user?.id);
   }
 
 
