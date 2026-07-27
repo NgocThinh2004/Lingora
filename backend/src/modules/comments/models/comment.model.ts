@@ -77,6 +77,9 @@ export class Comment extends Model {
   @Column({ type: DataType.DATE, allowNull: false })
   declare updated_at: Date;
 
+  @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false, defaultValue: 0 })
+  declare like_count: number;
+
   @HasMany(() => CommentLike)
   declare likes: CommentLike[];
 

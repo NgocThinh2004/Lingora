@@ -6,14 +6,10 @@
   <div class="mb-4">
     <textarea id="newCommentInput" class="form-control mb-2" rows="3"
       placeholder="Write a comment..."
-      [disabled]="!authService.isAuthenticated() || isSubmitting()"
+      [disabled]="isSubmitting()"
+      (focus)="handleCommentFocus($event)"
       [(ngModel)]="newCommentText"></textarea>
-    <div class="d-flex justify-content-between align-items-center">
-      @if (!authService.isAuthenticated()) {
-        <small class="text-danger">You must be logged in to comment.</small>
-      } @else {
-        <span></span>
-      }
+    <div class="d-flex justify-content-end align-items-center">
       <button id="submitCommentBtn" class="btn btn-primary px-4 rounded-pill fw-medium"
         [disabled]="!authService.isAuthenticated() || isSubmitting() || !newCommentText().trim()"
         (click)="submitComment()">
@@ -65,8 +61,8 @@
           </div>
           <div class="d-flex align-items-center gap-1 mt-2">
             <button class="btn-reply d-flex align-items-center gap-1"
-                    [class.text-danger]="comment.liked" (click)="toggleLike(comment)">
-              <i class="bi" [class.bi-heart]="!comment.liked" [class.bi-heart-fill]="comment.liked"></i> <span class="like-count">{{ comment.likeCount || 0 }}</span>
+                    [class.liked]="comment.liked" (click)="toggleLike(comment)">
+              <i class="bi" [class.bi-heart]="!comment.liked" [class.bi-heart-fill]="comment.liked"></i> <span class="like-count">{{ comment.likeCount | compactNumber }}</span>
             </button>
             <button class="btn-reply" (click)="setReplyTarget(comment)">
               <i class="bi bi-chat"></i>
@@ -141,8 +137,8 @@
                   </div>
                   <div class="d-flex align-items-center gap-1 mt-2">
                     <button class="btn-reply d-flex align-items-center gap-1"
-                            [class.text-danger]="reply.liked" (click)="toggleLike(reply)">
-                      <i class="bi" [class.bi-heart]="!reply.liked" [class.bi-heart-fill]="reply.liked"></i> <span class="like-count">{{ reply.likeCount || 0 }}</span>
+                            [class.liked]="reply.liked" (click)="toggleLike(reply)">
+                      <i class="bi" [class.bi-heart]="!reply.liked" [class.bi-heart-fill]="reply.liked"></i> <span class="like-count">{{ reply.likeCount | compactNumber }}</span>
                     </button>
                     <button class="btn-reply" (click)="setReplyTarget(reply)">
                       <i class="bi bi-chat"></i>

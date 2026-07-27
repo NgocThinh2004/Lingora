@@ -1,16 +1,20 @@
-import { Controller, Get, UseInterceptors } from '@nestjs/common';
-import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
+import { Controller, Get, UseGuards, Req, Param } from '@nestjs/common';
 import { PublicUsersService } from './public-users.service';
+import { OptionalJwtAuthGuard } from '../../auth/optional-jwt-auth.guard';
 
 @Controller('users')
 export class PublicUsersController {
   constructor(private readonly usersService: PublicUsersService) {}
 
   @Get('recommended')
-  @UseInterceptors(CacheInterceptor)
-  @CacheKey('users_recommended')
-  @CacheTTL(300000) // 5 minutes
-  getRecommended() {
-    return this.usersService.getRecommended();
+  @UseGuards(OptionalJwtAuthGuard)
+  getRecommended(@Req() req: any) {
+    return this.usersService.getRecommended(req.user?.id);
+  }
+
+  @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
+  getById(@Param('id') id: string, @Req() req: any) {
+    return this.usersService.getById(id, req.user?.id);
   }
 }

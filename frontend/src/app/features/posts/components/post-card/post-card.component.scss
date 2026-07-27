@@ -131,4 +131,15 @@
   &.muted {
     cursor: default;
   }
+
+  span {
+    font-variant-numeric: tabular-nums;
+    min-width: 1.2ch;
+    display: inline-block;
+  }
+
+  i {
+    width: 1.15em;
+    text-align: center;
+  }
 }

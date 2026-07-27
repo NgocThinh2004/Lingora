@@ -16,5 +16,6 @@ export interface Comment {
   replies?: Comment[];
   likeCount?: number;
   liked?: boolean;
+  isLiking?: boolean;
   translations?: any[];
 }

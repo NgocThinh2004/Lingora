@@ -10,11 +10,12 @@ import { Post, getPostTranslation } from '../../models/post.model';
 import { LikeService } from '../../services/like.service';
 import { AuthModalService } from '../../../../shared/components/auth-modal/auth-modal.service';
 import { AuthorTooltipComponent } from '../../../../shared/components/author-tooltip/author-tooltip.component';
+import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
 
 @Component({
   selector: 'app-post-card',
   standalone: true,
-  imports: [CommonModule, RouterLink, AuthorTooltipComponent],
+  imports: [CommonModule, RouterLink, AuthorTooltipComponent, CompactNumberPipe],
   templateUrl: './post-card.component.html',
   styleUrl: './post-card.component.scss',
 })
@@ -55,13 +56,28 @@ export class PostCardComponent implements OnInit {
     event.preventDefault();
     event.stopPropagation();
 
+    if (this.post.isLiking) return;
+
     if (!this.authService.isAuthenticated()) {
       this.authModalService.open();
       return;
     }
 
-    this.likeService.togglePostLike(this.post.id).subscribe((status) => {
-      this.post = { ...this.post, liked: status.liked, likeCount: status.likeCount };
+    const previousLiked = this.post.liked;
+    const previousLikeCount = this.post.likeCount || 0;
+    const nextLiked = !previousLiked;
+    const nextLikeCount = nextLiked ? previousLikeCount + 1 : Math.max(0, previousLikeCount - 1);
+
+    this.post = { ...this.post, liked: nextLiked, likeCount: nextLikeCount, isLiking: true };
+
+    this.likeService.togglePostLike(this.post.id).subscribe({
+      next: (status) => {
+        this.post = { ...this.post, liked: status.liked, likeCount: status.likeCount, isLiking: false };
+      },
+      error: (err) => {
+        console.error('Error toggling like:', err);
+        this.post = { ...this.post, liked: previousLiked, likeCount: previousLikeCount, isLiking: false };
+      }
     });
   }
 }

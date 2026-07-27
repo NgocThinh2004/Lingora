@@ -7,6 +7,7 @@ import { Category } from '../categories/models/category.model';
 import { CategoryTranslation } from '../categories/models/category-translation.model';
 import { Post } from '../posts/models/post.model';
 import { PostTranslation } from '../posts/models/post-translation.model';
+import { Subscription } from '../subscriptions/models/subscription.model';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { PostTranslation } from '../posts/models/post-translation.model';
       CategoryTranslation,
       Post,
       PostTranslation,
+      Subscription,
     ]),
   ],
   controllers: [SearchController],

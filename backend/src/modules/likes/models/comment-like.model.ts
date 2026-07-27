@@ -7,6 +7,13 @@ import { Comment } from '../../comments/models/comment.model';
   timestamps: false,
   underscored: true,
   freezeTableName: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['comment_id', 'user_id'],
+      name: 'comment_likes_comment_id_user_id_unique',
+    },
+  ],
 })
 export class CommentLike extends Model {
   @Column({ type: DataType.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true })
