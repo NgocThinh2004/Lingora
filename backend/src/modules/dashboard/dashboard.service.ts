@@ -32,7 +32,7 @@ export class DashboardService {
         totalUsers: users.total,
         totalArticles: posts.total,
         totalComments: comments.total,
-        totalLikes: likes.total,
+        totalLikes: likes.postLikes,
       },
       users,
       posts,
@@ -43,6 +43,7 @@ export class DashboardService {
         commentLikes: likes.commentLikes,
         totalLikes: likes.total,
         follows: follows.total,
+        topFollowedUsers: follows.topUsers,
       },
       translations,
     };

@@ -89,16 +89,30 @@
         }
       </article>
 
-      <article class="admin-card operations-card">
-        <h2>Operational Overview</h2>
-        <div class="metric-list">
-          <div><span><i class="bi bi-eye"></i> Total views</span><strong>{{ formatNumber(data.posts.totalViews) }}</strong></div>
-          <div><span><i class="bi bi-hourglass-split"></i> Pending review</span><strong>{{ formatNumber(data.posts.pendingReview) }}</strong></div>
-          <div><span><i class="bi bi-person-plus"></i> Follow relationships</span><strong>{{ formatNumber(data.social.follows) }}</strong></div>
-          <div><span><i class="bi bi-translate"></i> Failed translations</span><strong>{{ formatNumber(data.translations['failed'] || 0) }}</strong></div>
-          <div><span><i class="bi bi-heart"></i> Post likes</span><strong>{{ formatNumber(data.social.postLikes) }}</strong></div>
-          <div><span><i class="bi bi-chat-heart"></i> Comment likes</span><strong>{{ formatNumber(data.social.commentLikes) }}</strong></div>
-        </div>
+      <article class="admin-card followers-card">
+        <header class="featured-header">
+          <span><h2>Top Followed Users</h2><p>Ranked by number of followers</p></span>
+          <span class="featured-icon" aria-hidden="true"><i class="bi bi-people"></i></span>
+        </header>
+        @if (data.social.topFollowedUsers.length) {
+          <ol class="follower-list">
+            @for (user of data.social.topFollowedUsers; track user.id; let index = $index) {
+              <li>
+                <a [routerLink]="['/profile', user.id]" [attr.aria-label]="'Open profile: ' + (user.displayName || user.username)">
+                  <span class="follower-rank">{{ index + 1 }}</span>
+                  <span class="follower-avatar">
+                    @if (user.avatarUrl) { <img [src]="user.avatarUrl" [alt]="user.displayName || user.username" /> }
+                    @else { <i class="bi bi-person-fill" aria-hidden="true"></i> }
+                  </span>
+                  <span class="follower-copy"><strong>{{ user.displayName || user.username }}</strong><small>&#64;{{ user.username }}</small></span>
+                  <span class="follower-count"><strong>{{ formatNumber(user.followerCount) }}</strong><small>followers</small></span>
+                </a>
+              </li>
+            }
+          </ol>
+        } @else {
+          <p class="card-empty">No follow relationships yet.</p>
+        }
       </article>
     </section>
     }

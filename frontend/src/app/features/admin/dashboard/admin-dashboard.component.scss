@@ -367,41 +367,93 @@
   background: var(--primary-color);
 }
 
-.growth-card {
-  min-height: 21rem;
-}
-
-.metric-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.metric-list > div {
-  display: flex;
-  min-width: 0;
-  padding: 0.85rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-}
-
-.metric-list span {
-  color: var(--text-muted);
-  font-size: 0.75rem;
-}
-
-.metric-list i {
-  margin-right: 0.35rem;
-  color: var(--primary-color);
-}
-
 .card-empty {
   margin: 2rem 0;
   color: var(--text-muted);
   text-align: center;
+}
+
+.follower-list {
+  display: grid;
+  margin: 1rem 0 0;
+  padding: 0;
+  gap: 0.45rem;
+  list-style: none;
+}
+
+.follower-list a {
+  display: grid;
+  padding: 0.45rem;
+  grid-template-columns: 1.25rem 2.25rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  border-radius: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.follower-list a:hover,
+.follower-list a:focus-visible {
+  background: var(--accent-button-bg);
+  outline: none;
+}
+
+.follower-rank {
+  color: var(--primary-color);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.follower-avatar {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-button-bg);
+  color: var(--primary-color);
+}
+
+.follower-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.follower-copy,
+.follower-count {
+  min-width: 0;
+}
+
+.follower-copy strong,
+.follower-copy small,
+.follower-count strong,
+.follower-count small {
+  display: block;
+}
+
+.follower-copy strong {
+  overflow: hidden;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.follower-copy small,
+.follower-count small {
+  color: var(--text-muted);
+  font-size: 0.67rem;
+}
+
+.follower-count {
+  text-align: right;
+}
+
+.follower-count strong {
+  color: var(--primary-color);
+  font-size: 0.78rem;
 }
 
 @media (max-width: 991.98px) {
@@ -427,10 +479,6 @@
 
   .admin-header {
     align-items: flex-start;
-  }
-
-  .metric-list {
-    grid-template-columns: 1fr;
   }
 
   .chart-box {

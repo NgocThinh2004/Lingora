@@ -16,6 +16,14 @@ export interface DashboardCategory {
   percentage: number;
 }
 
+export interface DashboardFollowedUser {
+  id: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  followerCount: number;
+}
+
 export interface AdminDashboardOverview {
   summary: {
     totalUsers: number;
@@ -44,6 +52,7 @@ export interface AdminDashboardOverview {
     commentLikes: number;
     totalLikes: number;
     follows: number;
+    topFollowedUsers: DashboardFollowedUser[];
   };
   translations: Record<string, number>;
 }

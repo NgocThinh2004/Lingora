@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { col, fn } from 'sequelize';
 import { Subscription, User } from '../../database/models';
 import { PublicPostsService } from '../posts/public/public-posts.service';
 
@@ -81,7 +82,44 @@ export class SubscriptionsService {
   }
 
   async getDashboardMetrics() {
-    return { total: await this.subscriptionModel.count() };
+    const [total, followerGroups] = await Promise.all([
+      this.subscriptionModel.count(),
+      this.subscriptionModel.findAll({
+        attributes: [
+          'author_id',
+          [fn('COUNT', col('id')), 'followerCount'],
+        ],
+        group: ['author_id'],
+        order: [[fn('COUNT', col('id')), 'DESC'], ['author_id', 'ASC']],
+        raw: true,
+      }),
+    ]);
+
+    const rankedAuthors = followerGroups as unknown as Array<{
+      author_id: string;
+      followerCount: string | number;
+    }>;
+    const authorIds = rankedAuthors.map(item => item.author_id);
+    const authors = authorIds.length
+      ? await this.userModel.findAll({
+          where: { id: authorIds, status: 'active', deleted_at: null },
+        })
+      : [];
+    const authorsById = new Map(authors.map(author => [String(author.id), author]));
+
+    const topUsers = rankedAuthors
+      .map(item => ({ item, user: authorsById.get(String(item.author_id)) }))
+      .filter((entry): entry is { item: typeof entry.item; user: User } => Boolean(entry.user))
+      .slice(0, 5)
+      .map(({ item, user }) => ({
+        id: user.id,
+        username: user.username,
+        displayName: user.display_name,
+        avatarUrl: user.avatar,
+        followerCount: Number(item.followerCount),
+      }));
+
+    return { total, topUsers };
   }
 
   private async listActiveUsers(userIds: string[]) {
