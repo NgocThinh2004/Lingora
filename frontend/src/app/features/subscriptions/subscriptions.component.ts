@@ -4,12 +4,13 @@ import { AuthorTooltipComponent } from '../../shared/components/author-tooltip/a
 import { PostCardComponent } from '../posts/components/post-card/post-card.component';
 import { FormsModule } from '@angular/forms';
 import { Post } from '../posts/models/post.model';
+import { SubscribeButtonComponent } from '../../shared/components/subscribe-button/subscribe-button.component';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-subscriptions',
   standalone: true,
-  imports: [AuthorTooltipComponent, PostCardComponent, FormsModule, AssetImageDirective],
+  imports: [AuthorTooltipComponent, PostCardComponent, FormsModule, SubscribeButtonComponent, AssetImageDirective],
   templateUrl: './subscriptions.component.html',
   styleUrl: './subscriptions.component.scss'
 })
@@ -43,25 +44,6 @@ export class SubscriptionsComponent implements OnInit {
     return str ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase() : '';
   }
 
-  toggleSubscription(author: SubscriptionAuthorView): void {
-    if (author.isUnfollowed) {
-      this.subscriptionsService.subscribe(author.id).subscribe({
-        next: () => {
-          author.isUnfollowed = false;
-        },
-        error: () => this.error = 'Unable to update this subscription.',
-      });
-    } else {
-      this.subscriptionsService.unsubscribe(author.id).subscribe({
-        next: () => {
-          author.isUnfollowed = true;
-          if (this.authorFilter === author.name) this.authorFilter = '';
-        },
-        error: () => this.error = 'Unable to update this subscription.',
-      });
-    }
-  }
-
   scrollCarousel(direction: 'left' | 'right'): void {
     if (this.carousel) {
       const scrollAmount = 300; // Adjust scroll distance as needed
@@ -88,7 +70,7 @@ export class SubscriptionsComponent implements OnInit {
           name: author.displayName || author.username,
           role: author.bio || `@${author.username}`,
           avatar: author.avatarUrl || '/assets/images/default-avatar.svg',
-          isUnfollowed: false
+          isFollowing: true
         }));
         this.posts = data.posts;
         this.loading = false;
@@ -101,4 +83,4 @@ export class SubscriptionsComponent implements OnInit {
   }
 }
 
-interface SubscriptionAuthorView { id: string; username: string; name: string; role: string; avatar: string; isUnfollowed: boolean; }
+interface SubscriptionAuthorView { id: string; username: string; name: string; role: string; avatar: string; isFollowing: boolean; }

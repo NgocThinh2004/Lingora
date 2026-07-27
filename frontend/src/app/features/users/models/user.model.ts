@@ -12,5 +12,6 @@ export interface User {
   followingCount?: number;
   allowShowSubscribers: boolean;
   allowShowFollowing: boolean;
+  isFollowing?: boolean;
   createdAt?: string;
 }

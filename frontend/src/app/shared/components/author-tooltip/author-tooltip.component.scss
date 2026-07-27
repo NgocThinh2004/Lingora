@@ -97,7 +97,7 @@
 }
 
 /* Subscribed hover → Twitter/X "Unfollow" red hint */
-.btn-subscribe.subscribed:hover {
+.btn-subscribe.subscribed:not(.edit-profile):hover {
   border-color: #dc2626 !important;
   color: #dc2626 !important;
   background: rgba(220, 38, 38, 0.08) !important;
@@ -105,10 +105,10 @@
 }
 
 /* Hide real text on hover, show unfollow label via data-attr */
-.btn-subscribe.subscribed:hover .btn-text {
+.btn-subscribe.subscribed:not(.edit-profile):hover .btn-text {
   visibility: hidden;
 }
-.btn-subscribe.subscribed:hover::after {
+.btn-subscribe.subscribed:not(.edit-profile):hover::after {
   content: "Unfollow";
   position: absolute;
   inset: 0;

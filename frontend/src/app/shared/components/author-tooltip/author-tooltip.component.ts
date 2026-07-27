@@ -1,4 +1,5 @@
-import { Component, Input, OnInit, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, ElementRef, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SubscriptionsService } from '../../../features/subscriptions/services/subscriptions.service';
@@ -14,37 +15,50 @@ import { AssetImageDirective } from '../../directives/asset-image.directive';
   templateUrl: './author-tooltip.component.html',
   styleUrl: './author-tooltip.component.scss'
 })
-export class AuthorTooltipComponent implements OnInit, AfterViewInit, OnDestroy {
+export class AuthorTooltipComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @Input() user?: User | any; // Accept different formats
 
   isSubscribed = false;
   loading = false;
   isFlipped = false;
-
-  @ViewChild('hoverCard') hoverCard!: ElementRef<HTMLDivElement>;
+  isSelf = false;
 
   private readonly subscriptionsService = inject(SubscriptionsService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly el = inject(ElementRef);
   private readonly authModalService = inject(AuthModalService);
+  private readonly cdr = inject(ChangeDetectorRef);
   
   private mouseEnterListener: (() => void) | null = null;
+  private subChangeSub?: Subscription;
 
   ngOnInit(): void {
-    this.checkSubscriptionStatus();
+    this.updateSelfStatus();
+    if (this.user?.id) {
+      this.subChangeSub = this.subscriptionsService.isFollowingState(this.user.id).subscribe(isSub => {
+        this.isSubscribed = isSub;
+        this.cdr.markForCheck();
+      });
+    }
   }
 
-  checkSubscriptionStatus(): void {
-    if (!this.user?.id || !this.authService.isAuthenticated()) return;
-    
-    this.subscriptionsService.checkSubscription(this.user.id).subscribe({
-      next: (res) => {
-        this.isSubscribed = res.subscribed;
-      },
-      error: () => {}
-    });
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['user']) {
+      this.updateSelfStatus();
+    }
   }
+
+  private updateSelfStatus(): void {
+    const currentUser = this.authService.currentUser();
+    if (currentUser && this.user?.id && String(currentUser.id) === String(this.user.id)) {
+      this.isSelf = true;
+    } else {
+      this.isSelf = false;
+    }
+  }
+
+
 
   toggleSubscribe(event: Event): void {
     event.stopPropagation(); // Prevent navigating to the post when clicking follow
@@ -63,16 +77,18 @@ export class AuthorTooltipComponent implements OnInit, AfterViewInit, OnDestroy 
         next: () => {
           this.isSubscribed = false;
           this.loading = false;
+          this.cdr.markForCheck();
         },
-        error: () => { this.loading = false; }
+        error: () => { this.loading = false; this.cdr.markForCheck(); }
       });
     } else {
       this.subscriptionsService.subscribe(this.user.id).subscribe({
         next: () => {
           this.isSubscribed = true;
           this.loading = false;
+          this.cdr.markForCheck();
         },
-        error: () => { this.loading = false; }
+        error: () => { this.loading = false; this.cdr.markForCheck(); }
       });
     }
   }
@@ -83,6 +99,12 @@ export class AuthorTooltipComponent implements OnInit, AfterViewInit, OnDestroy 
     if (this.user?.id) {
       this.router.navigate(['/profile', this.user.id]);
     }
+  }
+
+  editProfile(event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.router.navigate(['/profile']);
   }
 
   ngAfterViewInit(): void {
@@ -102,10 +124,12 @@ export class AuthorTooltipComponent implements OnInit, AfterViewInit, OnDestroy 
     if (parent && this.mouseEnterListener) {
       parent.removeEventListener('mouseenter', this.mouseEnterListener);
     }
+    if (this.subChangeSub) {
+      this.subChangeSub.unsubscribe();
+    }
   }
 
   private checkPosition(): void {
-    if (!this.hoverCard) return;
     const parentRect = this.el.nativeElement.parentElement.getBoundingClientRect();
     
     // Estimate card height since it might be hidden when calculating
