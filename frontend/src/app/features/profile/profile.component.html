@@ -14,7 +14,7 @@
               <div class="profile-chip">
                 <span class="profile-avatar avatar-badge" [class.has-image]="!!avatarUrl">
                   @if (avatarUrl) {
-                    <img [src]="avatarUrl" [alt]="profileForm.displayName">
+                    <img [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
                   } @else {
                     <span>{{ initial }}</span>
                   }
@@ -26,7 +26,7 @@
             <div class="profile-avatar-column d-flex flex-column align-items-center gap-3">
               <div class="profile-avatar hero-avatar m-0" [class.has-image]="!!avatarUrl">
                 @if (avatarUrl) {
-                  <img [src]="avatarUrl" [alt]="profileForm.displayName">
+                  <img [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
                 } @else {
                   <span>{{ initial }}</span>
                 }
@@ -39,11 +39,11 @@
           </section>
 
           <div class="profile-stats" aria-label="Profile statistics">
-            <a class="profile-stat" href="#" (click)="showSubscribersModal.set(true); $event.preventDefault()">
+            <button class="profile-stat" type="button" (click)="openPeopleModal('followers', $event)">
               <strong>{{ followersCount() }}</strong>
               <span data-i18n="followers">Followers</span>
-            </a>
-            <button class="profile-stat" type="button">
+            </button>
+            <button class="profile-stat" type="button" (click)="openPeopleModal('following', $event)">
               <strong>{{ followingCount() }}</strong>
               <span data-i18n="following">Following</span>
             </button>
@@ -58,16 +58,24 @@
               <span data-i18n="create">Create</span> <i class="bi bi-caret-down-fill"></i>
             </a>
             <button class="profile-action" type="button" (click)="toggleEdit(true)" data-i18n="profile_edit_profile">Edit profile</button>
-            <div class="profile-more dropdown">
-              <button class="profile-action is-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">...</button>
-              <ul class="dropdown-menu shadow border-light-subtle">
-                <li>
-                  <button class="dropdown-item py-2" type="button" (click)="showPasswordModal.set(true)">
-                    <i class="bi bi-shield-lock me-2"></i>
-                    <span data-i18n="change_password">Change password</span>
-                  </button>
-                </li>
-              </ul>
+            <div class="profile-more">
+              <button
+                class="profile-action is-icon"
+                type="button"
+                aria-label="More"
+                aria-haspopup="menu"
+                [attr.aria-expanded]="profileMoreOpen()"
+                (click)="toggleProfileMore($event)">...</button>
+              <div class="profile-more-menu" role="menu" [hidden]="!profileMoreOpen()">
+                <button
+                  class="profile-more-item"
+                  type="button"
+                  role="menuitem"
+                  (click)="openPasswordModal($event)">
+                  <i class="bi bi-shield-lock"></i>
+                  <span data-i18n="change_password">Change password</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -78,7 +86,7 @@
                   <div class="substack-post-header">
                     <div class="author-badge-group">
                       @if (avatarUrl) {
-                        <img class="author-avatar" [src]="avatarUrl" [alt]="profileForm.displayName">
+                        <img class="author-avatar" [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
                       } @else {
                         <span class="author-avatar author-avatar-fallback">{{ initial }}</span>
                       }
@@ -129,7 +137,7 @@
                 (click)="avatarInput.click()" [disabled]="uploadingAvatar()">
                 <span class="profile-avatar" [class.has-image]="!!avatarUrl">
                   @if (avatarUrl) {
-                    <img [src]="avatarUrl" [alt]="profileForm.displayName">
+                    <img [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
                   } @else {
                     <span>{{ initial }}</span>
                   }
@@ -377,11 +385,11 @@
   </div>
 
   <div class="password-modal" [hidden]="!showPasswordModal()">
-    <div class="password-modal-backdrop" (click)="showPasswordModal.set(false)"></div>
+    <div class="password-modal-backdrop" (click)="closePasswordModal()"></div>
     <section class="password-modal-panel" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
       <header class="password-modal-head">
         <div class="password-modal-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></div>
-        <button class="password-modal-close" type="button" (click)="showPasswordModal.set(false)" aria-label="Close">&times;</button>
+        <button class="password-modal-close" type="button" (click)="closePasswordModal()" aria-label="Close">&times;</button>
         <h2 class="password-modal-title" id="passwordModalTitle" data-i18n="change_password">Change password</h2>
         <p class="password-modal-copy" data-i18n="password_description_short">Update the password for your Lingora
           account.</p>
@@ -421,7 +429,7 @@
         </div>
 
         <div class="password-actions">
-          <button class="password-cancel" type="button" (click)="showPasswordModal.set(false)" data-i18n="cancel">Cancel</button>
+          <button class="password-cancel" type="button" (click)="closePasswordModal()" data-i18n="cancel">Cancel</button>
           <button class="password-submit" type="submit" data-i18n="update_password" [disabled]="savingPassword() || !passwordForm.current || passwordForm.new.length < 8 || passwordForm.new !== passwordForm.confirm">{{ savingPassword() ? 'Updating...' : 'Update password' }}</button>
         </div>
       </form>
@@ -429,23 +437,55 @@
   </div>
 
   <!-- Subscribers Modal -->
-  <div class="password-modal" id="subscribersModal" hidden style="align-items: flex-start; padding-top: 15vh;">
-    <div class="password-modal-backdrop" id="closeSubscribersModalBg"></div>
+  <div class="password-modal" id="subscribersModal" [hidden]="!showSubscribersModal()"
+    style="align-items: flex-start; padding-top: 15vh;">
+    <div class="password-modal-backdrop" (click)="closePeopleModal()"></div>
     <section class="password-modal-panel" role="dialog" aria-modal="true" aria-labelledby="subscribersModalTitle">
       <header class="password-modal-head" style="padding-bottom: 12px;">
-        <button class="password-modal-close" type="button" id="closeSubscribersModalBtn"
+        <button class="password-modal-close" type="button" (click)="closePeopleModal()"
           aria-label="Close">&times;</button>
-        <h2 class="password-modal-title" id="subscribersModalTitle" data-i18n="subscribers">Người đăng ký</h2>
+        <h2 class="password-modal-title" id="subscribersModalTitle">{{ peopleModalTitle() }}</h2>
         <div class="mt-3">
           <div class="right-search-box w-100" id="subscribersSearchWrap">
             <i class="bi bi-search"></i>
-            <input type="text" id="subscribersSearchInput" placeholder="Tìm kiếm người đăng ký..."
-              data-i18n="search_subscribers_placeholder">
+            <input
+              type="text"
+              id="subscribersSearchInput"
+              [placeholder]="peopleSearchPlaceholder()"
+              [ngModel]="peopleSearch()"
+              (ngModelChange)="peopleSearch.set($event)">
           </div>
         </div>
       </header>
       <div id="subscribersListContainer" style="padding: 16px 24px; max-height: 400px; overflow-y: auto;">
-        <!-- Subscribers list will be injected here -->
+        @if (peopleLoading()) {
+          <div class="people-state">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            <span>Loading...</span>
+          </div>
+        } @else {
+          @for (person of filteredPeople(); track person.id) {
+            <a class="profile-person-row" [routerLink]="['/profile', person.id]" (click)="closePeopleModal()">
+              <img
+                class="profile-person-avatar"
+                [appAssetImage]="personAvatar(person)"
+                [alt]="personDisplayName(person)"
+                (error)="handlePeopleAvatarError(person.id)">
+              <span class="profile-person-copy">
+                <strong>{{ personDisplayName(person) }}</strong>
+                <span>&#64;{{ person.username }}</span>
+                @if (person.bio) {
+                  <small>{{ person.bio }}</small>
+                }
+              </span>
+              <i class="bi bi-chevron-right" aria-hidden="true"></i>
+            </a>
+          } @empty {
+            <div class="people-state">
+              {{ peopleModalMode() === 'followers' ? 'No followers found.' : 'No followed authors found.' }}
+            </div>
+          }
+        }
       </div>
     </section>
   </div>

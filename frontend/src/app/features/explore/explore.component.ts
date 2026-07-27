@@ -12,11 +12,12 @@ import { Post } from '../posts/models/post.model';
 import { FormsModule } from '@angular/forms';
 import { AuthorTooltipComponent } from '../../shared/components/author-tooltip/author-tooltip.component';
 import { SubscribeButtonComponent } from '../../shared/components/subscribe-button/subscribe-button.component';
+import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [CommonModule, RouterLink, PostCardComponent, FormsModule, AuthorTooltipComponent, SubscribeButtonComponent],
+  imports: [CommonModule, RouterLink, PostCardComponent, FormsModule, AuthorTooltipComponent, SubscribeButtonComponent, AssetImageDirective],
   templateUrl: './explore.component.html',
   styleUrl: './explore.component.scss'
 })

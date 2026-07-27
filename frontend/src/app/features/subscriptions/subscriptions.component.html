@@ -13,7 +13,7 @@
     @for (author of authors; track author.name) {
       <div class="author-tooltip-container position-relative">
         <button class="author-carousel-item border-0 bg-transparent w-100" [class.active]="authorFilter === author.name" type="button" (click)="authorFilter === author.name ? selectAuthor('') : selectAuthor(author.name)">
-          <span class="author-carousel-avatar-wrapper"><img [src]="author.avatar" [alt]="author.name" class="author-carousel-avatar"></span>
+          <span class="author-carousel-avatar-wrapper"><img [appAssetImage]="author.avatar" [alt]="author.name" class="author-carousel-avatar"></span>
           <span class="author-carousel-name">{{ author.name }}</span>
         </button>
         <app-author-tooltip [user]="author"></app-author-tooltip>
@@ -57,7 +57,7 @@
         @for (author of visibleManageAuthors; track author.name) {
           <div class="col-12"><div class="manage-author-card">
             <a [href]="'/profile/' + author.username" class="d-flex align-items-center text-decoration-none text-reset flex-grow-1">
-              <img [src]="author.avatar" [alt]="author.name" class="rounded-circle border" width="54" height="54" style="object-fit: cover;">
+              <img [appAssetImage]="author.avatar" [alt]="author.name" class="rounded-circle border" width="54" height="54" style="object-fit: cover;">
               <div class="ms-3"><h6 class="fw-bold mb-1 text-main">{{ author.name }}</h6><p class="text-muted small mb-0">{{ author.role }}</p></div>
             </a>
             <button class="btn btn-sm rounded-pill px-3 fw-medium ms-2" 

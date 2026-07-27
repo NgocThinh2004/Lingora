@@ -4,11 +4,12 @@ import { RouterLink, Router } from '@angular/router';
 import { SearchModalService } from '../../../../core/ui/search-modal.service';
 import { User } from '../../../../features/users/models/user.model';
 import { UsersService } from '../../../../features/users/services/users.service';
+import { AssetImageDirective } from '../../../directives/asset-image.directive';
 
 @Component({
   selector: 'app-right-panel',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, AssetImageDirective],
   templateUrl: './right-panel.component.html',
   styleUrl: './right-panel.component.scss',
 })
@@ -30,7 +31,7 @@ export class RightPanelComponent implements OnInit {
   }
 
   userAvatar(user: User): string {
-    return user.avatarUrl || 'assets/images/lingora-mark.svg';
+    return user.avatarUrl ?? 'assets/images/lingora-mark.svg';
   }
 
   get isExplorePage(): boolean {

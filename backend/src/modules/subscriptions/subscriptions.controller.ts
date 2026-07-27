@@ -18,6 +18,16 @@ export class SubscriptionsController {
     return { data: await this.subscriptionsService.stats(userId) };
   }
 
+  @Get('followers')
+  async followers(@CurrentUser('id') userId: string) {
+    return { data: await this.subscriptionsService.listFollowers(userId) };
+  }
+
+  @Get('following')
+  async following(@CurrentUser('id') userId: string) {
+    return { data: await this.subscriptionsService.listFollowing(userId) };
+  }
+
   @Post(':authorId')
   async subscribe(@CurrentUser('id') userId: string, @Param('authorId') authorId: string) {
     return { data: await this.subscriptionsService.subscribe(userId, authorId) };

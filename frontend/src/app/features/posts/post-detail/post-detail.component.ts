@@ -15,11 +15,12 @@ import { preparePostDetailHtml } from './post-detail-html.util';
 import { AuthModalService } from '../../../shared/components/auth-modal/auth-modal.service';
 
 import { AuthorTooltipComponent } from '../../../shared/components/author-tooltip/author-tooltip.component';
+import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-post-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent],
+  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, AssetImageDirective],
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
 })
