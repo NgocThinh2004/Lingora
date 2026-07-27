@@ -20,8 +20,7 @@ import { AssetImageDirective } from '../../../shared/directives/asset-image.dire
 @Component({
   selector: 'app-post-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, CompactNumberPipe],
-  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, AssetImageDirective],
+  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective],
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
 })
