@@ -80,6 +80,10 @@ export class SubscriptionsService {
     return { subscribed: !!sub };
   }
 
+  async getDashboardMetrics() {
+    return { total: await this.subscriptionModel.count() };
+  }
+
   private async listActiveUsers(userIds: string[]) {
     if (!userIds.length) {
       return [];

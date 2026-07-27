@@ -1,6 +1,13 @@
-import { Controller, Get, UseGuards, Req, Param } from '@nestjs/common';
-import { PublicUsersService } from './public-users.service';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { OptionalJwtAuthGuard } from '../../auth/optional-jwt-auth.guard';
+import { PublicUsersService } from './public-users.service';
 
 @Controller('users')
 export class PublicUsersController {
@@ -12,9 +19,22 @@ export class PublicUsersController {
     return this.usersService.getRecommended(req.user?.id);
   }
 
+  @Get(':id/followers')
+  async getFollowers(@Param('id', ParseIntPipe) id: number) {
+    return { data: await this.usersService.getFollowers(id) };
+  }
+
+  @Get(':id/following')
+  async getFollowing(@Param('id', ParseIntPipe) id: number) {
+    return { data: await this.usersService.getFollowing(id) };
+  }
+
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
-  getById(@Param('id') id: string, @Req() req: any) {
-    return this.usersService.getById(id, req.user?.id);
+  async getProfile(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
+  ) {
+    return { data: await this.usersService.getProfile(id, req.user?.id) };
   }
 }

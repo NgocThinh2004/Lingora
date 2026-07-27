@@ -15,6 +15,7 @@ import { CommentsModule } from './modules/comments/comments.module';
 import { LikesModule } from './modules/likes/likes.module';
 import { TranslationsModule } from './modules/translations/translations.module';
 import { SearchModule } from './modules/search/search.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { SearchModule } from './modules/search/search.module';
     CommentsModule,
     LikesModule,
     TranslationsModule,
+    DashboardModule,
   ],
   controllers: [],
   providers: [

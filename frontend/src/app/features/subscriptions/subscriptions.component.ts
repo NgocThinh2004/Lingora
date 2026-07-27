@@ -69,7 +69,7 @@ export class SubscriptionsComponent implements OnInit {
           username: author.username,
           name: author.displayName || author.username,
           role: author.bio || `@${author.username}`,
-          avatar: author.avatarUrl || '/assets/images/lingora-mark.svg',
+          avatar: author.avatarUrl || '/assets/images/default-avatar.svg',
           isFollowing: true
         }));
         this.posts = data.posts;

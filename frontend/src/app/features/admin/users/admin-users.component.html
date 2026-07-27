@@ -71,11 +71,7 @@
                 [attr.aria-label]="'Open details for ' + userName(user)">
                 <td data-label="User">
                   <div class="user-cell">
-                    @if (user.avatarUrl) {
-                      <img class="user-avatar" [appAssetImage]="user.avatarUrl" width="38" height="38" alt="">
-                    } @else {
-                      <span class="user-avatar user-avatar--fallback" aria-hidden="true">{{ initials(user) }}</span>
-                    }
+                    <img class="user-avatar" [appAssetImage]="user.avatarUrl" width="38" height="38" alt="">
                     <div class="user-cell-meta">
                       <div class="user-cell-name">
                         {{ userName(user) }}
@@ -160,11 +156,7 @@
         <div class="offcanvas-body">
         <form id="userEditForm" [formGroup]="editForm" (ngSubmit)="saveUser()">
           <div class="detail-profile">
-            @if (user.avatarUrl) {
-              <img class="detail-avatar" [appAssetImage]="user.avatarUrl" width="76" height="76" alt="">
-            } @else {
-              <span class="detail-avatar detail-avatar--fallback" aria-hidden="true">{{ initials(user) }}</span>
-            }
+            <img class="detail-avatar" [appAssetImage]="user.avatarUrl" width="76" height="76" alt="">
             <div>
               <strong>{{ userName(user) }}</strong>
               <span>#{{ user.id }} · Joined {{ user.createdAt | date:'MMM dd, y' }}</span>

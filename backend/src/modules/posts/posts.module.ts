@@ -44,6 +44,6 @@ import { PublicPostsService } from './public/public-posts.service';
     PublicPostsService,
     RolesGuard,
   ],
-  exports: [PublicPostsService],
+  exports: [PublicPostsService, AdminPostsService],
 })
 export class PostsModule {}

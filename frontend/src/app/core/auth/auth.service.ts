@@ -74,6 +74,8 @@ export class AuthService {
     username: string;
     bio: string;
     avatarUrl?: string;
+    accentColor?: string;
+    backgroundColor?: string;
   }): Observable<CurrentUser> {
     return this.http.patch<ApiResponse<CurrentUser>>(`${this.apiUrl}/me`, payload).pipe(
       map(response => response.data),

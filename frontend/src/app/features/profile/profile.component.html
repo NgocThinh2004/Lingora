@@ -12,29 +12,25 @@
               <div class="profile-handle">{{ profileForm.username }}</div>
               <p class="profile-bio">{{ profileForm.bio || 'No bio provided.' }}</p>
               <div class="profile-chip">
-                <span class="profile-avatar avatar-badge" [class.has-image]="!!avatarUrl">
-                  @if (avatarUrl) {
-                    <img [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
-                  } @else {
-                    <span>{{ initial }}</span>
-                  }
+                <span class="profile-avatar avatar-badge has-image">
+                  <img [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
                 </span>
                 <span>{{ profileForm.displayName }}</span>
               </div>
             </div>
 
             <div class="profile-avatar-column d-flex flex-column align-items-center gap-3">
-              <div class="profile-avatar hero-avatar m-0" [class.has-image]="!!avatarUrl">
-                @if (avatarUrl) {
-                  <img [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
-                } @else {
-                  <span>{{ initial }}</span>
-                }
+              <div class="profile-avatar hero-avatar m-0 has-image">
+                <img [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
               </div>
-              <button class="profile-action is-primary btn-subscribe d-none m-0"
-                style="min-height: 44px; padding: 0 24px; width: auto;" type="button">
-                <i class="bi bi-plus-lg me-1"></i> <span data-i18n="subscribe">Theo dõi</span>
+              @if (!isOwnProfile()) {
+              <button class="profile-action is-primary btn-subscribe m-0"
+                style="min-height: 44px; padding: 0 24px; width: auto;" type="button"
+                [disabled]="subscriptionLoading()" (click)="toggleSubscription()">
+                <i class="bi" [class.bi-plus-lg]="!isSubscribed()" [class.bi-check-lg]="isSubscribed()"></i>
+                <span>{{ isSubscribed() ? 'Following' : 'Follow' }}</span>
               </button>
+              }
             </div>
           </section>
 
@@ -53,6 +49,7 @@
             </span>
           </div>
 
+          @if (isOwnProfile()) {
           <div class="action-row">
             <a class="profile-action is-primary" routerLink="/workspace/create">
               <span data-i18n="create">Create</span> <i class="bi bi-caret-down-fill"></i>
@@ -78,6 +75,7 @@
               </div>
             </div>
           </div>
+          }
 
           <div id="profilePostsContainer" class="mt-5">
             @if (posts().length > 0) {
@@ -85,14 +83,10 @@
                 <article class="substack-post">
                   <div class="substack-post-header">
                     <div class="author-badge-group">
-                      @if (avatarUrl) {
-                        <img class="author-avatar" [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
-                      } @else {
-                        <span class="author-avatar author-avatar-fallback">{{ initial }}</span>
-                      }
+                      <img class="author-avatar" [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
                       <div class="author-meta-info">
                         <span class="author-name">{{ profileForm.displayName }}</span>
-                        <span class="post-timestamp">{{ post.updatedAt | date:'shortDate' }}</span>
+                        <span class="post-timestamp">{{ postDate(post) | date:'shortDate' }}</span>
                       </div>
                     </div>
                   </div>
@@ -135,12 +129,8 @@
             <div class="edit-avatar-wrap">
               <button class="edit-avatar-button" type="button" aria-label="Change avatar"
                 (click)="avatarInput.click()" [disabled]="uploadingAvatar()">
-                <span class="profile-avatar" [class.has-image]="!!avatarUrl">
-                  @if (avatarUrl) {
-                    <img [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
-                  } @else {
-                    <span>{{ initial }}</span>
-                  }
+                <span class="profile-avatar has-image">
+                  <img [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
                 </span>
               </button>
               <button class="edit-pencil" type="button" aria-label="Change avatar"
@@ -383,6 +373,52 @@
       </div>
     </section>
   </div>
+
+  @if (avatarCropOpen()) {
+    <div class="avatar-crop-backdrop" role="presentation" (click)="cancelAvatarCrop()">
+      <section class="avatar-crop-dialog" role="dialog" aria-modal="true" aria-labelledby="avatarCropTitle"
+        (click)="$event.stopPropagation()">
+        <header class="avatar-crop-header">
+          <div>
+            <h2 id="avatarCropTitle">Adjust profile photo</h2>
+            <p>Drag and zoom the image to choose what appears in the circle.</p>
+          </div>
+          <button type="button" class="avatar-crop-close" aria-label="Close" (click)="cancelAvatarCrop()">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+        </header>
+
+        <div class="avatar-crop-stage">
+          <div class="avatar-crop-viewport"
+            (pointerdown)="beginAvatarCropDrag($event)"
+            (pointermove)="moveAvatarCrop($event)"
+            (pointerup)="endAvatarCrop($event)"
+            (pointercancel)="endAvatarCrop($event)">
+            <img
+              class="avatar-crop-image"
+              [src]="cropImageUrl()"
+              [style.width.px]="cropDisplayWidth()"
+              [style.height.px]="cropDisplayHeight()"
+              [style.transform]="cropTransform()"
+              alt=""
+              draggable="false">
+          </div>
+        </div>
+
+        <label class="avatar-crop-zoom">
+          <i class="bi bi-image" aria-hidden="true"></i>
+          <input type="range" min="1" max="3" step="0.01" [ngModel]="cropZoom()"
+            (ngModelChange)="updateCropZoom($event)" aria-label="Zoom image">
+          <i class="bi bi-image-fill" aria-hidden="true"></i>
+        </label>
+
+        <footer class="avatar-crop-actions">
+          <button type="button" class="avatar-crop-cancel" (click)="cancelAvatarCrop()">Cancel</button>
+          <button type="button" class="avatar-crop-confirm" (click)="confirmAvatarCrop()">Use photo</button>
+        </footer>
+      </section>
+    </div>
+  }
 
   <div class="password-modal" [hidden]="!showPasswordModal()">
     <div class="password-modal-backdrop" (click)="closePasswordModal()"></div>

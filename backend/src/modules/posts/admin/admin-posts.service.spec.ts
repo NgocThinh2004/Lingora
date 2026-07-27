@@ -104,4 +104,29 @@ describe('AdminPostsService', () => {
       expect.objectContaining({ transaction }),
     );
   });
+
+  it('ranks only public posts with a completed translation in the selected language', async () => {
+    postModel.findAll.mockResolvedValue([
+      { id: '1', category_id: null, status: 'published', view_count: 900 },
+      { id: '2', category_id: null, status: 'published', view_count: 700 },
+      { id: '3', category_id: null, status: 'published', view_count: 500 },
+    ]);
+    languageModel.findAll.mockResolvedValue([
+      { id: 1, code: 'en', is_default: true, is_active: true },
+      { id: 2, code: 'vi', is_default: false, is_active: true },
+    ]);
+    translationModel.findAll.mockResolvedValue([
+      { post_id: '1', language_id: 1, title: 'Highest English', content: 'Body', translation_status: 'completed' },
+      { post_id: '2', language_id: 2, title: 'BÃ i tiáº¿ng Viá»‡t', content: 'Ná»™i dung', translation_status: 'completed' },
+      { post_id: '3', language_id: 2, title: 'ChÆ°a xong', content: 'Ná»™i dung', translation_status: 'processing' },
+    ]);
+    categoryModel.findAll.mockResolvedValue([]);
+    categoryTranslationModel.findAll.mockResolvedValue([]);
+
+    const result = await service.getDashboardMetrics('vi');
+
+    expect(result.topArticles).toEqual([
+      { id: '2', title: 'BÃ i tiáº¿ng Viá»‡t', viewCount: 700 },
+    ]);
+  });
 });

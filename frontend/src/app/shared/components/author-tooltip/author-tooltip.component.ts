@@ -116,7 +116,7 @@ export class AuthorTooltipComponent implements OnInit, OnChanges, AfterViewInit,
   }
 
   get avatarUrl(): string {
-    return this.user?.avatarUrl || this.user?.avatar || 'assets/images/lingora-mark.svg';
+    return this.user?.avatarUrl || this.user?.avatar || 'assets/images/default-avatar.svg';
   }
 
   ngOnDestroy(): void {

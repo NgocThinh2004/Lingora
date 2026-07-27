@@ -78,4 +78,12 @@ export class LikesService {
       return { liked, likeCount: comment.like_count };
     });
   }
+
+  async getDashboardMetrics() {
+    const [postLikes, commentLikes] = await Promise.all([
+      this.postLikeModel.count(),
+      this.commentLikeModel.count(),
+    ]);
+    return { postLikes, commentLikes, total: postLikes + commentLikes };
+  }
 }

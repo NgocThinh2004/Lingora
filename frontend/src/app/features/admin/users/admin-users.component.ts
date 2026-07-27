@@ -203,10 +203,6 @@ export class AdminUsersComponent implements OnInit {
     return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index);
   }
 
-  initials(user: AdminUser): string {
-    return this.userName(user).slice(0, 2).toUpperCase();
-  }
-
   userName(user: AdminUser): string {
     return user.displayName?.trim() || user.username;
   }

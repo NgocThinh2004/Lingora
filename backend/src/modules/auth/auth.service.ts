@@ -113,6 +113,10 @@ export class AuthService {
           display_name: dto.displayName === undefined ? user.display_name : dto.displayName.trim(),
           bio: dto.bio === undefined ? user.bio : dto.bio.trim() || null,
           avatar: dto.avatarUrl === undefined ? user.avatar : dto.avatarUrl,
+          accent_color: dto.accentColor === undefined ? user.accent_color : dto.accentColor.toUpperCase(),
+          background_color: dto.backgroundColor === undefined
+            ? user.background_color
+            : dto.backgroundColor.toUpperCase() || null,
           updated_at: new Date(),
         },
         { transaction },
@@ -398,6 +402,8 @@ export class AuthService {
         username: user.username,
         displayName: user.display_name,
         avatarUrl: user.avatar,
+        accentColor: user.accent_color,
+        backgroundColor: user.background_color,
         role: role?.name,
         bio: user.bio,
       }
@@ -411,6 +417,8 @@ export class AuthService {
       username: user.username,
       displayName: user.display_name,
       avatarUrl: user.avatar,
+      accentColor: user.accent_color,
+      backgroundColor: user.background_color,
       bio: user.bio,
       role,
     };

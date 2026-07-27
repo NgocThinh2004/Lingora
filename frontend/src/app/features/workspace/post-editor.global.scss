@@ -3462,15 +3462,13 @@ button {
 }
 
 .preview-avatar {
-  display: grid;
-  place-items: center;
+  display: block;
   width: 48px;
   height: 48px;
   border-radius: 999px;
-  color: #ffffff;
-  background: #00866b;
-  font-weight: 700;
-  font-size: 1.2rem;
+  border: 1px solid #dee2e6;
+  background: #ffffff;
+  object-fit: cover;
 }
 
 .preview-author-meta {

@@ -21,6 +21,18 @@ export class UsersService {
       .pipe(map((res) => res.data));
   }
 
+  getFollowers(id: number): Observable<User[]> {
+    return this.http
+      .get<ApiResponse<User[]>>(`${environment.apiUrl}/users/${id}/followers`)
+      .pipe(map((res) => res.data));
+  }
+
+  getFollowing(id: number): Observable<User[]> {
+    return this.http
+      .get<ApiResponse<User[]>>(`${environment.apiUrl}/users/${id}/following`)
+      .pipe(map((res) => res.data));
+  }
+
   updateMe(payload: Partial<User>): Observable<User> {
     return this.http
       .patch<ApiResponse<User>>(`${environment.apiUrl}/users/me`, payload)
