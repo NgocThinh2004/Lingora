@@ -8,6 +8,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { LocaleService } from '../../../../core/locale/locale.service';
 import { RouterModule } from '@angular/router';
 import { AuthorTooltipComponent } from '../../../../shared/components/author-tooltip/author-tooltip.component';
+import { AuthModalService } from '../../../../shared/components/auth-modal/auth-modal.service';
 
 @Component({
   selector: 'app-comment-section',
@@ -24,6 +25,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   private likeService = inject(LikeService);
   public localeService = inject(LocaleService);
   public authService = inject(AuthService);
+  private authModalService = inject(AuthModalService);
 
   comments = signal<Comment[]>([]);
   totalComments = signal<number>(0);
@@ -92,7 +94,11 @@ export class CommentSectionComponent implements OnInit, OnChanges {
 
   submitComment(): void {
     const content = this.newCommentText().trim();
-    if (!content || !this.authService.isAuthenticated()) return;
+    if (!content) return;
+    if (!this.authService.isAuthenticated()) {
+      this.authModalService.open();
+      return;
+    }
 
     this.isSubmitting.set(true);
 
@@ -111,7 +117,11 @@ export class CommentSectionComponent implements OnInit, OnChanges {
 
   submitReply(target: Comment): void {
     const content = this.replyingToText().trim();
-    if (!content || !this.authService.isAuthenticated()) return;
+    if (!content) return;
+    if (!this.authService.isAuthenticated()) {
+      this.authModalService.open();
+      return;
+    }
 
     this.isSubmitting.set(true);
 
@@ -142,7 +152,10 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   toggleLike(comment: Comment): void {
-    if (!this.authService.isAuthenticated()) return;
+    if (!this.authService.isAuthenticated()) {
+      this.authModalService.open();
+      return;
+    }
     this.likeService.toggleCommentLike(this.postId, Number(comment.id)).subscribe((res) => {
       comment.liked = res.liked;
       comment.likeCount = res.likeCount;

@@ -51,7 +51,6 @@ export class CommentsController {
     return this.commentsService.remove(commentId, userId, role);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post(':commentId/translate')
   translate(
     @Param('commentId') commentId: string,

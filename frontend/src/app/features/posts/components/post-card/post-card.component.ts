@@ -8,7 +8,7 @@ import { ToastService } from '../../../../core/notifications/toast.service';
 import { translateCategory } from '../../../categories/models/category.model';
 import { Post, getPostTranslation } from '../../models/post.model';
 import { LikeService } from '../../services/like.service';
-
+import { AuthModalService } from '../../../../shared/components/auth-modal/auth-modal.service';
 import { AuthorTooltipComponent } from '../../../../shared/components/author-tooltip/author-tooltip.component';
 
 @Component({
@@ -23,6 +23,7 @@ export class PostCardComponent implements OnInit {
   private readonly likeService = inject(LikeService);
   private readonly toast = inject(ToastService);
   private readonly authService = inject(AuthService);
+  private readonly authModalService = inject(AuthModalService);
   private readonly sanitizer = inject(DomSanitizer);
 
   @Input({ required: true }) post!: Post;
@@ -55,7 +56,7 @@ export class PostCardComponent implements OnInit {
     event.stopPropagation();
 
     if (!this.authService.isAuthenticated()) {
-      this.toast.show('Vui lòng đăng nhập để thích bài viết');
+      this.authModalService.open();
       return;
     }
 

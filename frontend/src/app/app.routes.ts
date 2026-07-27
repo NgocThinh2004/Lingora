@@ -70,7 +70,6 @@ export const routes: Routes = [
       {
         path: 'profile/:id',
         title: 'Profile - Lingora',
-        canActivate: [authGuard],
         loadComponent: () =>
           import('./features/profile/profile.component').then(m => m.ProfileComponent),
         data: { showRightPanel: false, contentMaxWidth: '100%' },

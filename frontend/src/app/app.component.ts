@@ -3,12 +3,13 @@ import { RouterOutlet } from '@angular/router';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { ThemeService } from './core/theme/theme.service';
 import { SearchModalComponent } from './features/search/search-modal.component';
+import { AuthModalComponent } from './shared/components/auth-modal/auth-modal.component';
 import { BrandingService } from './core/theme/branding.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, ToastComponent, SearchModalComponent],
+  imports: [RouterOutlet, ToastComponent, SearchModalComponent, AuthModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
+import { AuthModalService } from '../../shared/components/auth-modal/auth-modal.service';
 
 const isPublicAuthRequest = (url: string): boolean =>
   [
@@ -16,6 +17,7 @@ const isPublicAuthRequest = (url: string): boolean =>
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);
+  const authModalService = inject(AuthModalService);
   const router = inject(Router);
   const accessToken = authService.getToken();
   const authenticatedRequest = accessToken && !isPublicAuthRequest(request.url)
@@ -30,6 +32,9 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
         Boolean(authService.getRefreshToken());
 
       if (!canRefresh) {
+        if (error.status === 401 && !isPublicAuthRequest(request.url)) {
+          authModalService.open();
+        }
         return throwError(() => error);
       }
 
@@ -41,9 +46,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
         ),
         catchError(refreshError => {
           authService.expireSession();
-          void router.navigate(['/auth/login'], {
-            queryParams: { sessionExpired: 'true' },
-          });
+          authModalService.open();
           return throwError(() => refreshError);
         }),
       );

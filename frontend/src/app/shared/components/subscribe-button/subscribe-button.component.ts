@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { SubscriptionsService } from '../../../features/subscriptions/services/subscriptions.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Router } from '@angular/router';
+import { AuthModalService } from '../auth-modal/auth-modal.service';
 
 @Component({
   selector: 'app-subscribe-button',
@@ -20,6 +21,7 @@ export class SubscribeButtonComponent implements OnInit {
   private readonly subscriptionsService = inject(SubscriptionsService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly authModalService = inject(AuthModalService);
 
   ngOnInit(): void {
     this.checkSubscriptionStatus();
@@ -43,7 +45,7 @@ export class SubscribeButtonComponent implements OnInit {
     if (!this.authorId) return;
 
     if (!this.authService.isAuthenticated()) {
-      this.router.navigate(['/auth/login']);
+      this.authModalService.open();
       return;
     }
 
