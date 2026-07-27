@@ -66,6 +66,9 @@ export class PublicPostsService {
     if (categoryId) {
       where.category_id = categoryId;
     }
+    if (query.authorId) {
+      where.author_id = query.authorId;
+    }
 
     // Filter by keyword search if provided
     if (query.q && query.q.trim()) {

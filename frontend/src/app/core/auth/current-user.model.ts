@@ -7,5 +7,7 @@ export interface CurrentUser {
   displayName: string;
   avatarUrl?: string;
   bio?: string | null;
+  accentColor?: string | null;
+  backgroundColor?: string | null;
   role?: UserRole;
 }

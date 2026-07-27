@@ -571,7 +571,7 @@
             <article class="preview-article">
               <h1 data-preview-title="">{{ previewTitle }}</h1>
               <div class="preview-author-row">
-                <span class="preview-avatar" data-preview-avatar="">{{ authorInitial }}</span>
+                <img class="preview-avatar" data-preview-avatar="" [appAssetImage]="authorAvatarUrl" [alt]="authorDisplayName">
                 <div class="preview-author-meta">
                   <strong data-preview-author="">{{ authorDisplayName }}</strong>
                   <time data-preview-date="">JUL 07, 2026</time>

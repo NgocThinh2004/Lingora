@@ -29,10 +29,10 @@ export class BrandingService {
     });
   }
 
-  setAccent(color: string): void {
+  setAccent(color: string, persist = true): void {
     const accent = this.normalizeHex(color) || DEFAULT_ACCENT;
     this.accentSignal.set(accent);
-    if (this.browser) {
+    if (this.browser && persist) {
       localStorage.setItem(ACCENT_STORAGE_KEY, accent);
     }
   }

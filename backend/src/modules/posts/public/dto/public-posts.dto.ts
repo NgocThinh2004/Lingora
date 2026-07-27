@@ -22,6 +22,12 @@ export class PublicPostsQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  authorId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   page?: number = 1;
 
   @IsOptional()

@@ -9,9 +9,10 @@ import { PublicUsersService } from './public/public-users.service';
 import { Role } from './models/role.model';
 import { User } from './models/user.model';
 import { UsersService } from './users.service';
+import { Subscription } from '../subscriptions/models/subscription.model';
 
 @Module({
-  imports: [SequelizeModule.forFeature([User, Role, RefreshToken])],
+  imports: [SequelizeModule.forFeature([User, Role, RefreshToken, Subscription])],
   controllers: [AdminUsersController, PublicUsersController],
   providers: [UsersService, AdminUsersService, PublicUsersService, RolesGuard],
   exports: [UsersService, PublicUsersService],
