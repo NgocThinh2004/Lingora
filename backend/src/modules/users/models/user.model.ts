@@ -32,6 +32,12 @@ export class User extends Model {
   @Column(DataType.TEXT)
   declare bio: string | null;
 
+  @Column(DataType.STRING(7))
+  declare accent_color: string | null;
+
+  @Column(DataType.STRING(7))
+  declare background_color: string | null;
+
   @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false })
   declare role_id: number;
 

@@ -31,7 +31,7 @@ export class RightPanelComponent implements OnInit {
   }
 
   userAvatar(user: User): string {
-    return user.avatarUrl ?? 'assets/images/lingora-mark.svg';
+    return user.avatarUrl ?? 'assets/images/default-avatar.svg';
   }
 
   get isExplorePage(): boolean {

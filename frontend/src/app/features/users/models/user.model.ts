@@ -6,8 +6,10 @@ export interface User {
   avatarUrl?: string | null;
   bio?: string | null;
   role: 'admin' | 'member';
-  accentColor?: string;
+  accentColor?: string | null;
   backgroundColor?: string | null;
+  followersCount?: number;
+  followingCount?: number;
   allowShowSubscribers: boolean;
   allowShowFollowing: boolean;
   createdAt?: string;

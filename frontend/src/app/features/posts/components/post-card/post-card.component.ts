@@ -54,7 +54,7 @@ export class PostCardComponent implements OnInit {
   }
 
   get authorAvatar(): string {
-    return this.post.author.avatarUrl ?? 'assets/images/lingora-mark.svg';
+    return this.post.author.avatarUrl ?? 'assets/images/default-avatar.svg';
   }
 
   toggleLike(event: Event) {

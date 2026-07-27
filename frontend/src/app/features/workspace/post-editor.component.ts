@@ -22,6 +22,7 @@ import { EditorUploadsService } from './services/editor-uploads.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TranslationsService } from '../posts/services/translations.service';
 import { LocaleService } from '../../core/locale/locale.service';
+import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 
 type SaveMode = 'draft' | 'submit';
 type BaselineFormat = 'normal' | 'superscript' | 'subscript';
@@ -36,7 +37,7 @@ interface EditorAutosaveSnapshot {
 @Component({
   selector: 'app-post-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AssetImageDirective],
   templateUrl: './post-editor.component.html',
   styleUrl: './post-editor.component.scss',
 })
@@ -71,8 +72,8 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     return user?.displayName?.trim() || user?.username || 'Lingora Author';
   }
 
-  get authorInitial(): string {
-    return this.authorDisplayName.charAt(0).toUpperCase();
+  get authorAvatarUrl(): string | null {
+    return this.authService.currentUser()?.avatarUrl ?? null;
   }
 
   @ViewChild('postBody') private readonly postBody?: ElementRef<HTMLElement>;
