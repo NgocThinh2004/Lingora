@@ -23,15 +23,10 @@
         <i class="bi bi-journal-text"></i><span>{{ translate('my_articles') }}</span>
       </a>
       <a routerLink="/profile" routerLinkActive="active" class="sidebar-nav-item" (click)="closeMenus()">
-        @if (profileAvatar) {
-          <img
-            class="sidebar-profile-avatar"
-            [appAssetImage]="profileAvatar"
-            alt=""
-            >
-        } @else {
-          <i class="bi bi-person"></i>
-        }
+        <img
+          class="sidebar-profile-avatar"
+          [appAssetImage]="profileAvatar"
+          alt="">
         <span>{{ translate('profile') }}</span>
       </a>
     </nav>

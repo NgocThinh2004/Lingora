@@ -51,7 +51,7 @@ export class HomeComponent implements OnDestroy {
 
   readonly currentLang = computed(() => this.languageService.current());
   readonly quickDraftAvatar = computed(() => {
-    return this.authService.currentUser()?.avatarUrl ?? 'assets/images/lingora-mark.svg';
+    return this.authService.currentUser()?.avatarUrl ?? 'assets/images/default-avatar.svg';
   });
 
   readonly selectedCategoryLabel = computed(() => {

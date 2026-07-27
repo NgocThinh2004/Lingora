@@ -2,17 +2,21 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostListener, OnInit, OnDestroy, computed, signal, inject, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { finalize, forkJoin, switchMap } from 'rxjs';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { finalize, forkJoin, Observable, Subscription, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { CurrentUser } from '../../core/auth/current-user.model';
 import { ToastService } from '../../core/notifications/toast.service';
 import { BrandingService } from '../../core/theme/branding.service';
-import { AuthorPost } from '../posts/models/post.model';
+import { AuthorPost, Post } from '../posts/models/post.model';
 import { AuthorPostsService } from '../posts/services/author-posts.service';
+import { FeedPostsService } from '../posts/services/feed-posts.service';
 import {
   SubscriptionAuthor,
   SubscriptionsService,
 } from '../subscriptions/services/subscriptions.service';
+import { User } from '../users/models/user.model';
+import { UsersService } from '../users/services/users.service';
 import { EditorUploadsService } from '../workspace/services/editor-uploads.service';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
@@ -29,13 +33,27 @@ import { AssetImageDirective } from '../../shared/directives/asset-image.directi
 export class ProfileComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private postsService = inject(AuthorPostsService);
+  private feedPostsService = inject(FeedPostsService);
+  private usersService = inject(UsersService);
+  private route = inject(ActivatedRoute);
   private router = inject(Router);
   private subscriptionsService = inject(SubscriptionsService);
   private uploadsService = inject(EditorUploadsService);
   private toast = inject(ToastService);
   private branding = inject(BrandingService);
 
-  user = this.authService.currentUser;
+  private routeSubscription?: Subscription;
+  private previousAccent = this.branding.accent();
+  private viewedUserId: string | null = null;
+  private cropSourceImage: HTMLImageElement | null = null;
+  private cropSourceFile: File | null = null;
+  private cropDragging = false;
+  private cropPointerX = 0;
+  private cropPointerY = 0;
+  user = signal<CurrentUser | null>(this.authService.currentUser());
+  isOwnProfile = signal(true);
+  isSubscribed = signal(false);
+  subscriptionLoading = signal(false);
 
   // Local profile state for editing
   profileForm = {
@@ -45,7 +63,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   };
 
   isEditing = signal(false);
-  posts = signal<AuthorPost[]>([]);
+  posts = signal<Array<AuthorPost | Post>>([]);
   publicPostsCount = signal(0);
   categoryOptions: Array<{ id: number; label: string }> = [];
   followersCount = signal(0);
@@ -54,6 +72,31 @@ export class ProfileComponent implements OnInit, OnDestroy {
   savingProfile = signal(false);
   savingPassword = signal(false);
   uploadingAvatar = signal(false);
+  avatarCropOpen = signal(false);
+  cropImageUrl = signal('');
+  cropZoom = signal(1);
+  cropOffsetX = signal(0);
+  cropOffsetY = signal(0);
+  cropNaturalWidth = signal(1);
+  cropNaturalHeight = signal(1);
+  readonly cropViewportSize = 260;
+  readonly cropDisplayWidth = computed(() => {
+    const baseScale = Math.max(
+      this.cropViewportSize / this.cropNaturalWidth(),
+      this.cropViewportSize / this.cropNaturalHeight(),
+    );
+    return this.cropNaturalWidth() * baseScale * this.cropZoom();
+  });
+  readonly cropDisplayHeight = computed(() => {
+    const baseScale = Math.max(
+      this.cropViewportSize / this.cropNaturalWidth(),
+      this.cropViewportSize / this.cropNaturalHeight(),
+    );
+    return this.cropNaturalHeight() * baseScale * this.cropZoom();
+  });
+  readonly cropTransform = computed(
+    () => `translate(-50%, -50%) translate(${this.cropOffsetX()}px, ${this.cropOffsetY()}px)`,
+  );
   accentColor = signal(this.branding.accent());
   backgroundColor = signal('');
   openColorPicker = signal<'accent' | 'background' | null>(null);
@@ -90,40 +133,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   passwordFieldType = 'password';
 
   ngOnInit() {
-    const currentUser = this.user();
-    this.setProfileForm(currentUser);
-    this.loadBranding();
-
-    this.authService.getMe().subscribe({
-      next: user => {
-        this.setProfileForm(user);
-        this.loadBranding();
-        this.loadingProfile.set(false);
-      },
-      error: err => {
-        this.toast.showError(this.formatError(err));
-        this.loadingProfile.set(false);
-      },
-    });
-
-    forkJoin([
-      this.postsService.listAuthorPosts({ status: 'published', limit: 100 }),
-      this.postsService.listAuthorPosts({ status: 'approved', limit: 100 }),
-    ]).subscribe({
-      next: responses => {
-        this.publicPostsCount.set(responses.reduce((total, response) => total + response.meta.total, 0));
-        const postsById = new Map(
-          responses.flatMap(response => response.data).map(post => [post.id, post]),
-        );
-        this.posts.set(
-          [...postsById.values()]
-            .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt))
-            .slice(0, 10),
-        );
-      },
-      error: err => this.toast.showError(this.formatError(err)),
-    });
-
     this.postsService.getPostOptions().subscribe({
       next: options => {
         this.categoryOptions = options.categories;
@@ -133,23 +142,19 @@ export class ProfileComponent implements OnInit, OnDestroy {
       },
     });
 
-    this.subscriptionsService.stats().subscribe({
-      next: stats => {
-        this.followersCount.set(stats.followers);
-        this.followingCount.set(stats.following);
-      },
-      error: err => this.toast.showError(this.formatError(err)),
+    this.routeSubscription = this.route.paramMap.subscribe(params => {
+      this.loadProfile(params.get('id'));
     });
   }
 
   ngOnDestroy() {
+    this.routeSubscription?.unsubscribe();
     this.clearBrandingVariables();
+    if (!this.isOwnProfile()) {
+      this.branding.setAccent(this.previousAccent, false);
+    }
     document.body.classList.remove('profile-modal-open');
-  }
-
-  get initial(): string {
-    const name = this.profileForm.displayName || 'U';
-    return name.charAt(0).toUpperCase();
+    this.releaseCropImage();
   }
 
   get avatarUrl(): string {
@@ -157,21 +162,59 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return url ? this.uploadsService.toAbsoluteUrl(url) : '';
   }
 
-  postTitle(post: AuthorPost): string {
+  postTitle(post: AuthorPost | Post): string {
+    if (this.isFeedPost(post)) {
+      return post.translations.find(translation => translation.title)?.title || 'Untitled';
+    }
     return post.translations.find(translation => translation.title)?.title || 'Untitled';
   }
 
-  postContent(post: AuthorPost): string {
+  postContent(post: AuthorPost | Post): string {
+    if (this.isFeedPost(post)) {
+      return post.translations.find(item => item.contentHtml)?.contentHtml || '';
+    }
     const translation = post.translations.find(item => item.content);
     return translation?.content || '';
   }
 
-  categoryLabel(post: AuthorPost): string {
+  categoryLabel(post: AuthorPost | Post): string {
+    if (this.isFeedPost(post)) {
+      return post.category?.translations?.find(item => item.name)?.name
+        || post.category?.slug
+        || 'General';
+    }
     if (post.categoryId === null) {
       return 'General';
     }
     return this.categoryOptions.find(category => category.id === post.categoryId)?.label
       || `Category ${post.categoryId}`;
+  }
+
+  postDate(post: AuthorPost | Post): string {
+    return this.isFeedPost(post) ? post.createdAt : post.updatedAt;
+  }
+
+  toggleSubscription(): void {
+    if (!this.viewedUserId || this.subscriptionLoading()) {
+      return;
+    }
+    if (!this.authService.isAuthenticated()) {
+      void this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    this.subscriptionLoading.set(true);
+    const request = this.isSubscribed()
+      ? this.subscriptionsService.unsubscribe(this.viewedUserId)
+      : this.subscriptionsService.subscribe(this.viewedUserId);
+    request.pipe(finalize(() => this.subscriptionLoading.set(false))).subscribe({
+      next: () => {
+        const subscribed = !this.isSubscribed();
+        this.isSubscribed.set(subscribed);
+        this.followersCount.update(count => Math.max(0, count + (subscribed ? 1 : -1)));
+      },
+      error: err => this.toast.showError(this.formatError(err)),
+    });
   }
 
   toggleEdit(editing: boolean) {
@@ -189,8 +232,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
       displayName: this.profileForm.displayName.trim(),
       username: this.normalizeUsername(this.profileForm.username),
       bio: this.profileForm.bio.trim(),
+      accentColor: this.accentColor(),
+      backgroundColor: this.backgroundColor(),
     }).subscribe({
       next: user => {
+        this.user.set(user);
         this.setProfileForm(user);
         this.persistBranding();
         this.toast.showSuccess('Profile updated successfully.');
@@ -217,6 +263,97 @@ export class ProfileComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.openAvatarCropper(file);
+  }
+
+  beginAvatarCropDrag(event: PointerEvent): void {
+    event.preventDefault();
+    this.cropDragging = true;
+    this.cropPointerX = event.clientX;
+    this.cropPointerY = event.clientY;
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  }
+
+  moveAvatarCrop(event: PointerEvent): void {
+    if (!this.cropDragging) {
+      return;
+    }
+
+    const nextX = this.cropOffsetX() + event.clientX - this.cropPointerX;
+    const nextY = this.cropOffsetY() + event.clientY - this.cropPointerY;
+    this.cropPointerX = event.clientX;
+    this.cropPointerY = event.clientY;
+    this.setCropOffsets(nextX, nextY);
+  }
+
+  endAvatarCrop(event?: PointerEvent): void {
+    this.cropDragging = false;
+    const target = event?.currentTarget as HTMLElement | undefined;
+    if (event && target?.hasPointerCapture(event.pointerId)) {
+      target.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  updateCropZoom(value: string | number): void {
+    this.cropZoom.set(Math.min(3, Math.max(1, Number(value) || 1)));
+    this.setCropOffsets(this.cropOffsetX(), this.cropOffsetY());
+  }
+
+  cancelAvatarCrop(): void {
+    this.avatarCropOpen.set(false);
+    this.cropDragging = false;
+    document.body.classList.remove('profile-modal-open');
+    this.releaseCropImage();
+  }
+
+  confirmAvatarCrop(): void {
+    const image = this.cropSourceImage;
+    const original = this.cropSourceFile;
+    if (!image || !original) {
+      return;
+    }
+
+    const outputSize = 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = outputSize;
+    canvas.height = outputSize;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      this.toast.showError('Unable to crop this image.');
+      return;
+    }
+
+    const displayScale = this.cropDisplayWidth() / this.cropNaturalWidth();
+    const sourceX = ((this.cropDisplayWidth() - this.cropViewportSize) / 2 - this.cropOffsetX()) / displayScale;
+    const sourceY = ((this.cropDisplayHeight() - this.cropViewportSize) / 2 - this.cropOffsetY()) / displayScale;
+    const sourceSize = this.cropViewportSize / displayScale;
+
+    context.fillStyle = '#FFFFFF';
+    context.fillRect(0, 0, outputSize, outputSize);
+    context.drawImage(
+      image,
+      sourceX,
+      sourceY,
+      sourceSize,
+      sourceSize,
+      0,
+      0,
+      outputSize,
+      outputSize,
+    );
+
+    canvas.toBlob(blob => {
+      if (!blob) {
+        this.toast.showError('Unable to crop this image.');
+        return;
+      }
+      const baseName = original.name.replace(/\.[^.]+$/, '') || 'avatar';
+      this.cancelAvatarCrop();
+      this.uploadAvatar(new File([blob], `${baseName}-avatar.jpg`, { type: 'image/jpeg' }));
+    }, 'image/jpeg', 0.92);
+  }
+
+  private uploadAvatar(file: File): void {
     this.uploadingAvatar.set(true);
     this.uploadsService.uploadEditorMedia('image', file).pipe(
       switchMap(upload => this.authService.updateProfile({
@@ -224,10 +361,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
         username: this.normalizeUsername(this.profileForm.username),
         bio: this.profileForm.bio.trim(),
         avatarUrl: upload.url,
+        accentColor: this.accentColor(),
+        backgroundColor: this.backgroundColor(),
       })),
       finalize(() => this.uploadingAvatar.set(false)),
     ).subscribe({
       next: user => {
+        this.user.set(user);
         this.setProfileForm(user);
         this.toast.showSuccess('Profile photo updated successfully.');
       },
@@ -311,13 +451,17 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.showSubscribersModal.set(true);
     document.body.classList.add('profile-modal-open');
 
-    const request = mode === 'followers'
-      ? this.subscriptionsService.followers()
-      : this.subscriptionsService.following();
+    const request: Observable<Array<SubscriptionAuthor | User>> = this.isOwnProfile()
+      ? (mode === 'followers'
+          ? this.subscriptionsService.followers()
+          : this.subscriptionsService.following())
+      : (mode === 'followers'
+          ? this.usersService.getFollowers(Number(this.viewedUserId))
+          : this.usersService.getFollowing(Number(this.viewedUserId)));
     request.subscribe({
       next: people => {
         if (this.showSubscribersModal() && this.peopleModalMode() === mode) {
-          this.people.set(people);
+          this.people.set(people.map(person => this.toSubscriptionAuthor(person)));
         }
         this.peopleLoading.set(false);
       },
@@ -351,7 +495,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   personAvatar(person: SubscriptionAuthor): string {
     return person.avatarUrl && !this.failedPeopleAvatarIds().has(person.id)
       ? this.uploadsService.toAbsoluteUrl(person.avatarUrl)
-      : 'assets/images/lingora-mark.svg';
+      : 'assets/images/default-avatar.svg';
   }
 
   handlePeopleAvatarError(personId: string): void {
@@ -405,9 +549,183 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.showHandleModal.set(false);
     this.closePasswordModal();
     this.closePeopleModal();
+    if (this.avatarCropOpen()) {
+      this.cancelAvatarCrop();
+    }
   }
 
-  private setProfileForm(user: ReturnType<AuthService['currentUser']>): void {
+  private openAvatarCropper(file: File): void {
+    this.releaseCropImage();
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      this.cropSourceFile = file;
+      this.cropSourceImage = image;
+      this.cropImageUrl.set(objectUrl);
+      this.cropNaturalWidth.set(image.naturalWidth || 1);
+      this.cropNaturalHeight.set(image.naturalHeight || 1);
+      this.cropZoom.set(1);
+      this.cropOffsetX.set(0);
+      this.cropOffsetY.set(0);
+      this.avatarCropOpen.set(true);
+      document.body.classList.add('profile-modal-open');
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      this.toast.showError('Unable to open this image.');
+    };
+    image.src = objectUrl;
+  }
+
+  private setCropOffsets(x: number, y: number): void {
+    const maxX = Math.max(0, (this.cropDisplayWidth() - this.cropViewportSize) / 2);
+    const maxY = Math.max(0, (this.cropDisplayHeight() - this.cropViewportSize) / 2);
+    this.cropOffsetX.set(Math.min(maxX, Math.max(-maxX, x)));
+    this.cropOffsetY.set(Math.min(maxY, Math.max(-maxY, y)));
+  }
+
+  private releaseCropImage(): void {
+    const objectUrl = this.cropImageUrl();
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+    }
+    this.cropImageUrl.set('');
+    this.cropSourceImage = null;
+    this.cropSourceFile = null;
+  }
+
+  private loadProfile(routeUserId: string | null): void {
+    const currentUser = this.authService.currentUser();
+    const ownProfile = !routeUserId || String(currentUser?.id) === routeUserId;
+    this.isOwnProfile.set(ownProfile);
+    this.viewedUserId = routeUserId || (currentUser ? String(currentUser.id) : null);
+    this.isEditing.set(false);
+    this.loadingProfile.set(true);
+    this.posts.set([]);
+    this.publicPostsCount.set(0);
+    this.followersCount.set(0);
+    this.followingCount.set(0);
+
+    if (ownProfile) {
+      this.user.set(currentUser);
+      this.setProfileForm(currentUser);
+      this.loadBranding();
+      this.loadOwnProfile();
+      return;
+    }
+
+    const publicUserId = Number(routeUserId);
+    if (!Number.isInteger(publicUserId) || publicUserId < 1) {
+      this.loadingProfile.set(false);
+      this.toast.showError('Profile not found.');
+      void this.router.navigate(['/home']);
+      return;
+    }
+
+    this.usersService.getPublicProfile(publicUserId).subscribe({
+      next: profile => {
+        const user: CurrentUser = {
+          id: String(profile.id),
+          email: '',
+          username: profile.handle,
+          displayName: profile.name,
+          avatarUrl: profile.avatarUrl || undefined,
+          bio: profile.bio,
+          accentColor: profile.accentColor,
+          backgroundColor: profile.backgroundColor,
+          role: profile.role,
+        };
+        this.user.set(user);
+        this.setProfileForm(user);
+        this.followersCount.set(profile.followersCount || 0);
+        this.followingCount.set(profile.followingCount || 0);
+        this.loadBranding();
+        this.loadingProfile.set(false);
+      },
+      error: err => {
+        this.loadingProfile.set(false);
+        this.toast.showError(this.formatError(err));
+      },
+    });
+
+    this.feedPostsService.list({ authorId: publicUserId, limit: 100 }).subscribe({
+      next: response => {
+        this.posts.set(response.items.slice(0, 10));
+        this.publicPostsCount.set(response.meta.total);
+      },
+      error: err => this.toast.showError(this.formatError(err)),
+    });
+
+    if (this.authService.isAuthenticated()) {
+      this.subscriptionsService.checkSubscription(publicUserId).subscribe({
+        next: result => this.isSubscribed.set(result.subscribed),
+        error: () => this.isSubscribed.set(false),
+      });
+    } else {
+      this.isSubscribed.set(false);
+    }
+  }
+
+  private loadOwnProfile(): void {
+    this.authService.getMe().subscribe({
+      next: user => {
+        this.user.set(user);
+        this.viewedUserId = String(user.id);
+        this.setProfileForm(user);
+        this.loadBranding();
+        this.loadingProfile.set(false);
+      },
+      error: err => {
+        this.toast.showError(this.formatError(err));
+        this.loadingProfile.set(false);
+      },
+    });
+
+    forkJoin([
+      this.postsService.listAuthorPosts({ status: 'published', limit: 100 }),
+      this.postsService.listAuthorPosts({ status: 'approved', limit: 100 }),
+    ]).subscribe({
+      next: responses => {
+        this.publicPostsCount.set(responses.reduce((total, response) => total + response.meta.total, 0));
+        const postsById = new Map(
+          responses.flatMap(response => response.data).map(post => [post.id, post]),
+        );
+        this.posts.set(
+          [...postsById.values()]
+            .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt))
+            .slice(0, 10),
+        );
+      },
+      error: err => this.toast.showError(this.formatError(err)),
+    });
+
+    this.subscriptionsService.stats().subscribe({
+      next: stats => {
+        this.followersCount.set(stats.followers);
+        this.followingCount.set(stats.following);
+      },
+      error: err => this.toast.showError(this.formatError(err)),
+    });
+  }
+
+  private isFeedPost(post: AuthorPost | Post): post is Post {
+    return 'author' in post;
+  }
+
+  private toSubscriptionAuthor(person: SubscriptionAuthor | User): SubscriptionAuthor {
+    if ('displayName' in person) {
+      return person;
+    }
+    return {
+      id: String(person.id),
+      username: person.handle,
+      displayName: person.name,
+      avatarUrl: person.avatarUrl || null,
+      bio: person.bio || null,
+    };
+  }
+
+  private setProfileForm(user: CurrentUser | null): void {
     if (!user) {
       return;
     }
@@ -427,13 +745,23 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   private loadBranding(): void {
+    const profile = this.user();
+    const serverAccent = this.normalizeHex(profile?.accentColor || '');
+    const serverBackground = this.normalizeHex(profile?.backgroundColor || '');
+    if (!this.isOwnProfile()) {
+      this.accentColor.set(serverAccent || '#FF6719');
+      this.backgroundColor.set(serverBackground);
+      this.applyBranding();
+      return;
+    }
+
     try {
       const stored = JSON.parse(localStorage.getItem(this.brandingStorageKey()) || '{}') as {
         accentColor?: string;
         backgroundColor?: string;
       };
-      this.accentColor.set(this.normalizeHex(stored.accentColor || '') || this.branding.accent());
-      this.backgroundColor.set(this.normalizeHex(stored.backgroundColor || ''));
+      this.accentColor.set(serverAccent || this.normalizeHex(stored.accentColor || '') || this.branding.accent());
+      this.backgroundColor.set(serverBackground || this.normalizeHex(stored.backgroundColor || ''));
     } catch {
       this.accentColor.set(this.branding.accent());
       this.backgroundColor.set('');
@@ -442,6 +770,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   private persistBranding(): void {
+    if (!this.isOwnProfile()) {
+      return;
+    }
     localStorage.setItem(this.brandingStorageKey(), JSON.stringify({
       accentColor: this.accentColor(),
       backgroundColor: this.backgroundColor(),
@@ -454,7 +785,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const background = this.backgroundColor();
     const isLightBackground = background ? this.isLightColor(background) : false;
 
-    this.branding.setAccent(accent);
+    this.branding.setAccent(accent, this.isOwnProfile());
 
     if (background) {
       const text = isLightBackground ? '#111111' : '#ffffff';

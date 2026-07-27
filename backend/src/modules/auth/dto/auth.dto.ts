@@ -93,4 +93,18 @@ export class UpdateProfileDto {
     message: 'avatarUrl must be a valid uploaded image path',
   })
   avatarUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^#[0-9A-Fa-f]{6}$/, {
+    message: 'accentColor must be a six-digit hex color',
+  })
+  accentColor?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^(?:#[0-9A-Fa-f]{6})?$/, {
+    message: 'backgroundColor must be empty or a six-digit hex color',
+  })
+  backgroundColor?: string;
 }
