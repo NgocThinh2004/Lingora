@@ -265,4 +265,13 @@ export class CommentsService {
 
     return this.commentTranslationModel.findByPk(translation.id, { include: [Language] });
   }
+
+  async getDashboardMetrics() {
+    const comments = await this.commentModel.findAll({ attributes: ['status'] });
+    const byStatus: Record<string, number> = {};
+    for (const comment of comments) {
+      byStatus[comment.status] = (byStatus[comment.status] ?? 0) + 1;
+    }
+    return { total: comments.length, byStatus };
+  }
 }

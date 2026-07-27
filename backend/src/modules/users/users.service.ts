@@ -76,4 +76,46 @@ export class UsersService {
   async create(userData: Partial<User>): Promise<User> {
     return this.userModel.create(userData as any);
   }
+
+  async getDashboardMetrics() {
+    const [users, roles] = await Promise.all([
+      this.userModel.findAll({
+        attributes: ['role_id', 'status', 'created_at'],
+        where: { deleted_at: null },
+      }),
+      this.roleModel.findAll({ attributes: ['id', 'name'] }),
+    ]);
+    const roleNames = new Map(roles.map(role => [role.id, role.name]));
+    const byRole: Record<string, number> = {};
+    const byStatus: Record<string, number> = {};
+
+    for (const user of users) {
+      const role = roleNames.get(user.role_id) ?? 'unknown';
+      byRole[role] = (byRole[role] ?? 0) + 1;
+      byStatus[user.status] = (byStatus[user.status] ?? 0) + 1;
+    }
+
+    return {
+      total: users.length,
+      byRole,
+      byStatus,
+      growth: this.buildDailySeries(users.map(user => user.created_at)),
+    };
+  }
+
+  private buildDailySeries(dates: Date[], numberOfDays = 7) {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const counts = new Map<string, number>();
+    for (const date of dates) {
+      const key = new Date(date).toISOString().slice(0, 10);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return Array.from({ length: numberOfDays }, (_, index) => {
+      const day = new Date(today);
+      day.setUTCDate(today.getUTCDate() - (numberOfDays - 1 - index));
+      const date = day.toISOString().slice(0, 10);
+      return { date, count: counts.get(date) ?? 0 };
+    });
+  }
 }

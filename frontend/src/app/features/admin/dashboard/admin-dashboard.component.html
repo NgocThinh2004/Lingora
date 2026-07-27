@@ -1,86 +1,106 @@
 <div class="admin-container">
   <header class="admin-header">
-    <h1>Admin Dashboard</h1>
-    <p>Overview of users, categories, translation metrics, and automated AI queues.</p>
+    <span>
+      <h1>Admin Dashboard</h1>
+      <p>Live platform, moderation, social, and translation statistics.</p>
+    </span>
   </header>
 
-  <section class="stats-grid" aria-label="Platform statistics">
-    @for (stat of stats; track stat.label) {
-      <article class="admin-card stat-card">
-        <span class="stat-icon" aria-hidden="true"><i class="bi {{ stat.icon }}"></i></span>
-        <span>
-          <small>{{ stat.label }}</small>
-          <strong aria-label="Data not connected">—</strong>
-        </span>
-      </article>
-    }
-  </section>
-
-  <section class="dashboard-primary-row">
-    <article class="admin-card chart-card">
-      <h2>Views over time</h2>
-      <div class="chart-box" aria-label="Views chart awaiting API data">
-        @for (height of viewsChart; track $index) {
-          <span class="chart-bar" [style.height.%]="height"></span>
+  @if (loading()) {
+    <app-ui-state kind="loading" title="Loading dashboard" description="Collecting the latest platform statistics." />
+  } @else if (error()) {
+    <app-ui-state kind="error" title="Dashboard unavailable" [description]="error()" actionLabel="Try again" (action)="loadOverview()" />
+  } @else {
+    @if (overview(); as data) {
+    <section class="stats-grid" aria-label="Platform statistics">
+      @for (stat of stats(); track stat.label) {
+        @if (stat.route) {
+          <a class="admin-card stat-card stat-card--link" [routerLink]="stat.route" [attr.aria-label]="'Open ' + stat.label + ' management'">
+            <span class="stat-icon" aria-hidden="true"><i class="bi {{ stat.icon }}"></i></span>
+            <span><small>{{ stat.label }}</small><strong>{{ formatNumber(stat.value) }}</strong></span>
+            <i class="bi bi-arrow-up-right stat-link-icon" aria-hidden="true"></i>
+          </a>
+        } @else {
+          <article class="admin-card stat-card">
+            <span class="stat-icon" aria-hidden="true"><i class="bi {{ stat.icon }}"></i></span>
+            <span><small>{{ stat.label }}</small><strong>{{ formatNumber(stat.value) }}</strong></span>
+          </article>
         }
-      </div>
-      <div class="chart-labels">
-        @for (day of days; track day) {
-          <span>{{ day }}</span>
-        }
-      </div>
-    </article>
+      }
+    </section>
 
-    <article class="admin-card featured-card">
-      <header class="featured-header">
-        <span>
-          <h2>Featured Articles</h2>
-          <p>Top 10 ranked by total views</p>
-        </span>
-        <span class="featured-icon" aria-hidden="true"><i class="bi bi-stars"></i></span>
-      </header>
-      <div class="featured-empty">
-        <i class="bi bi-journal-text" aria-hidden="true"></i>
-        <strong>No article metrics yet</strong>
-        <span>Featured articles will appear after the dashboard API is connected.</span>
-      </div>
-    </article>
-  </section>
-
-  <section class="dashboard-secondary-row">
-    <article class="admin-card categories-card">
-      <h2>Top Categories</h2>
-      <div class="category-list">
-        @for (category of categories; track category.name) {
-          <div class="category-item">
-            <div>
-              <span>{{ category.name }}</span>
-              <strong>{{ category.percentage }}%</strong>
-            </div>
-            <span class="progress-track">
-              <span
-                class="progress-value"
-                [style.width.%]="category.percentage"
-                [style.opacity]="category.opacity">
-              </span>
+    <section class="dashboard-primary-row">
+      <article class="admin-card chart-card">
+        <header class="card-heading">
+          <span><h2>New Users</h2><p>Registrations during the last 7 days</p></span>
+          <strong>{{ formatNumber(data.users.byStatus['active'] || 0) }} active</strong>
+        </header>
+        <div class="chart-box" aria-label="New user registrations over the last seven days">
+          @for (point of data.users.growth; track point.date; let index = $index) {
+            <span class="chart-column">
+              <span class="chart-value">{{ point.count }}</span>
+              <span class="chart-bar" [style.height.%]="growthChart()[index]"></span>
             </span>
-          </div>
-        }
-      </div>
-    </article>
+          }
+        </div>
+        <div class="chart-labels">
+          @for (point of data.users.growth; track point.date) { <span>{{ dayLabel(point.date) }}</span> }
+        </div>
+      </article>
 
-    <article class="admin-card chart-card growth-card">
-      <h2>New Users Growth</h2>
-      <div class="chart-box chart-box--compact" aria-label="User growth chart awaiting API data">
-        @for (height of growthChart; track $index) {
-          <span class="chart-bar" [style.height.%]="height"></span>
+      <article class="admin-card featured-card">
+        <header class="featured-header">
+          <span><h2>Top Articles</h2><p>Ranked by total views</p></span>
+          <span class="featured-icon" aria-hidden="true"><i class="bi bi-stars"></i></span>
+        </header>
+        @if (data.posts.topArticles.length) {
+          <ol class="article-list">
+            @for (article of data.posts.topArticles; track article.id; let index = $index) {
+              <li>
+                <a [routerLink]="['/post', article.id]" [attr.aria-label]="'Open article: ' + article.title">
+                  <span class="article-rank">{{ index + 1 }}</span>
+                  <span class="article-copy"><strong>{{ article.title }}</strong><small>{{ formatNumber(article.viewCount) }} views</small></span>
+                  <i class="bi bi-chevron-right article-link-icon" aria-hidden="true"></i>
+                  <span class="article-meter"><span [style.width.%]="articleChart()[index]"></span></span>
+                </a>
+              </li>
+            }
+          </ol>
+        } @else {
+          <div class="featured-empty"><i class="bi bi-journal-text"></i><strong>No articles yet</strong><span>Published articles will appear here.</span></div>
         }
-      </div>
-      <div class="chart-labels">
-        @for (day of days; track day) {
-          <span>{{ day }}</span>
+      </article>
+    </section>
+
+    <section class="dashboard-secondary-row">
+      <article class="admin-card categories-card">
+        <h2>Top Categories</h2>
+        @if (data.posts.topCategories.length) {
+          <div class="category-list">
+            @for (category of data.posts.topCategories; track category.id) {
+              <div class="category-item">
+                <div><span>{{ category.name }}</span><strong>{{ category.count }} ({{ category.percentage }}%)</strong></div>
+                <span class="progress-track"><span class="progress-value" [style.width.%]="category.percentage"></span></span>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="card-empty">No published article categories yet.</p>
         }
-      </div>
-    </article>
-  </section>
+      </article>
+
+      <article class="admin-card operations-card">
+        <h2>Operational Overview</h2>
+        <div class="metric-list">
+          <div><span><i class="bi bi-eye"></i> Total views</span><strong>{{ formatNumber(data.posts.totalViews) }}</strong></div>
+          <div><span><i class="bi bi-hourglass-split"></i> Pending review</span><strong>{{ formatNumber(data.posts.pendingReview) }}</strong></div>
+          <div><span><i class="bi bi-person-plus"></i> Follow relationships</span><strong>{{ formatNumber(data.social.follows) }}</strong></div>
+          <div><span><i class="bi bi-translate"></i> Failed translations</span><strong>{{ formatNumber(data.translations['failed'] || 0) }}</strong></div>
+          <div><span><i class="bi bi-heart"></i> Post likes</span><strong>{{ formatNumber(data.social.postLikes) }}</strong></div>
+          <div><span><i class="bi bi-chat-heart"></i> Comment likes</span><strong>{{ formatNumber(data.social.commentLikes) }}</strong></div>
+        </div>
+      </article>
+    </section>
+    }
+  }
 </div>
