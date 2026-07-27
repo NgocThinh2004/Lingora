@@ -60,13 +60,7 @@
               <img [appAssetImage]="author.avatar" [alt]="author.name" class="rounded-circle border" width="54" height="54" style="object-fit: cover;">
               <div class="ms-3"><h6 class="fw-bold mb-1 text-main">{{ author.name }}</h6><p class="text-muted small mb-0">{{ author.role }}</p></div>
             </a>
-            <button class="btn btn-sm rounded-pill px-3 fw-medium ms-2" 
-                    [class.btn-outline-secondary]="author.isUnfollowed" 
-                    [class.btn-subscribe]="!author.isUnfollowed" 
-                    type="button" 
-                    (click)="toggleSubscription(author)">
-              {{ author.isUnfollowed ? 'Theo dõi' : 'Đang theo dõi' }}
-            </button>
+            <app-subscribe-button [authorId]="$any(author.id)" class="ms-2"></app-subscribe-button>
           </div></div>
         } @empty {
           <div class="text-center py-5 text-muted">Không tìm thấy tác giả nào khớp với từ khóa.</div>

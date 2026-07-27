@@ -1,4 +1,5 @@
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, inject, ChangeDetectorRef } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { SubscriptionsService } from '../../../features/subscriptions/services/subscriptions.service';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -12,8 +13,8 @@ import { AuthModalService } from '../auth-modal/auth-modal.service';
   templateUrl: './subscribe-button.component.html',
   styleUrl: './subscribe-button.component.scss'
 })
-export class SubscribeButtonComponent implements OnInit {
-  @Input({ required: true }) authorId!: number;
+export class SubscribeButtonComponent implements OnInit, OnDestroy, OnChanges {
+  @Input({ required: true }) authorId!: number | string;
   
   isSubscribed = false;
   loading = false;
@@ -22,19 +23,48 @@ export class SubscribeButtonComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly authModalService = inject(AuthModalService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  
+  private subChangeSub?: Subscription;
 
   ngOnInit(): void {
-    this.checkSubscriptionStatus();
+    if (!this.authorId) return;
+    
+    // Use the robust global state for instant sync
+    this.subChangeSub = this.subscriptionsService.isFollowingState(this.authorId).subscribe(isSub => {
+      this.isSubscribed = isSub;
+      this.cdr.markForCheck();
+    });
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['authorId'] && !changes['authorId'].firstChange) {
+      if (this.subChangeSub) {
+        this.subChangeSub.unsubscribe();
+      }
+      this.subChangeSub = this.subscriptionsService.isFollowingState(this.authorId).subscribe(isSub => {
+        this.isSubscribed = isSub;
+        this.cdr.markForCheck();
+      });
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.subChangeSub) {
+      this.subChangeSub.unsubscribe();
+    }
+  }
+
+  // Legacy fallback (no longer used)
   private checkSubscriptionStatus(): void {
     if (!this.authorId || !this.authService.isAuthenticated()) return;
     
     this.subscriptionsService.checkSubscription(this.authorId).subscribe({
       next: (res) => {
         this.isSubscribed = res.subscribed;
+        this.cdr.markForCheck();
       },
-      error: () => {}
+      error: (err) => { console.error('Check sub error', err); }
     });
   }
 
@@ -55,16 +85,18 @@ export class SubscribeButtonComponent implements OnInit {
         next: () => {
           this.isSubscribed = false;
           this.loading = false;
+          this.cdr.markForCheck();
         },
-        error: () => { this.loading = false; }
+        error: () => { this.loading = false; this.cdr.markForCheck(); }
       });
     } else {
       this.subscriptionsService.subscribe(this.authorId).subscribe({
         next: () => {
           this.isSubscribed = true;
           this.loading = false;
+          this.cdr.markForCheck();
         },
-        error: () => { this.loading = false; }
+        error: () => { this.loading = false; this.cdr.markForCheck(); }
       });
     }
   }

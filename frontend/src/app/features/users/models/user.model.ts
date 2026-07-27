@@ -10,5 +10,6 @@ export interface User {
   backgroundColor?: string | null;
   allowShowSubscribers: boolean;
   allowShowFollowing: boolean;
+  isFollowing?: boolean;
   createdAt?: string;
 }

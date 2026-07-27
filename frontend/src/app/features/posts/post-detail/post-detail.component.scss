@@ -131,6 +131,9 @@
 .footer-action-item {
   color: var(--text-muted) !important;
   transition: color 0.2s ease;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem !important;
 
   span {
     font-variant-numeric: tabular-nums;

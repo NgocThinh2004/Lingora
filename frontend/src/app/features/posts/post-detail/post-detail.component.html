@@ -64,15 +64,15 @@
       </div>
 
       @if (!authorPreview()) {
-      <div class="substack-post-footer mt-5 pt-3 border-top d-flex align-items-center gap-4">
-        <button class="footer-action-item btn btn-link text-decoration-none d-flex align-items-center gap-1 p-0"
+      <div class="substack-post-footer mt-5 pt-3 border-top d-flex align-items-center" style="gap: 2rem;">
+        <button class="footer-action-item btn btn-link text-decoration-none d-flex align-items-center p-0"
                 [class.liked]="p.liked" (click)="toggleLike()">
           <i class="bi" [class.bi-heart]="!p.liked" [class.bi-heart-fill]="p.liked"></i> <span class="like-count">{{ p.likeCount | compactNumber }}</span>
         </button>
-        <button class="footer-action-item btn btn-link text-decoration-none d-flex align-items-center gap-1 p-0">
+        <button class="footer-action-item btn btn-link text-decoration-none d-flex align-items-center p-0">
           <i class="bi bi-chat"></i> <span id="footerCommentCount">{{ p.commentCount | compactNumber }}</span>
         </button>
-        <span class="footer-action-item d-flex align-items-center gap-1">
+        <span class="footer-action-item d-flex align-items-center muted">
           <i class="bi bi-eye"></i> <span>{{ p.viewCount | compactNumber }}</span>
         </span>
       </div>
