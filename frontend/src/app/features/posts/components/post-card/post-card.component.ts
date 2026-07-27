@@ -10,11 +10,12 @@ import { Post, getPostTranslation } from '../../models/post.model';
 import { LikeService } from '../../services/like.service';
 import { AuthModalService } from '../../../../shared/components/auth-modal/auth-modal.service';
 import { AuthorTooltipComponent } from '../../../../shared/components/author-tooltip/author-tooltip.component';
+import { AssetImageDirective } from '../../../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-post-card',
   standalone: true,
-  imports: [CommonModule, RouterLink, AuthorTooltipComponent],
+  imports: [CommonModule, RouterLink, AuthorTooltipComponent, AssetImageDirective],
   templateUrl: './post-card.component.html',
   styleUrl: './post-card.component.scss',
 })
@@ -49,6 +50,10 @@ export class PostCardComponent implements OnInit {
 
   get categoryLabel() {
     return translateCategory(this.post.category, this.currentLang());
+  }
+
+  get authorAvatar(): string {
+    return this.post.author.avatarUrl ?? 'assets/images/lingora-mark.svg';
   }
 
   toggleLike(event: Event) {

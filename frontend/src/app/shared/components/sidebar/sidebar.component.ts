@@ -11,11 +11,12 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LocaleService, UiTranslationKey } from '../../../core/locale/locale.service';
 import { ThemeService } from '../../../core/theme/theme.service';
+import { AssetImageDirective } from '../../directives/asset-image.directive';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, AssetImageDirective],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
   encapsulation: ViewEncapsulation.None,

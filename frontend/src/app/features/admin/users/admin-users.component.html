@@ -72,7 +72,7 @@
                 <td data-label="User">
                   <div class="user-cell">
                     @if (user.avatarUrl) {
-                      <img class="user-avatar" [src]="user.avatarUrl" width="38" height="38" alt="">
+                      <img class="user-avatar" [appAssetImage]="user.avatarUrl" width="38" height="38" alt="">
                     } @else {
                       <span class="user-avatar user-avatar--fallback" aria-hidden="true">{{ initials(user) }}</span>
                     }
@@ -161,7 +161,7 @@
         <form id="userEditForm" [formGroup]="editForm" (ngSubmit)="saveUser()">
           <div class="detail-profile">
             @if (user.avatarUrl) {
-              <img class="detail-avatar" [src]="user.avatarUrl" width="76" height="76" alt="">
+              <img class="detail-avatar" [appAssetImage]="user.avatarUrl" width="76" height="76" alt="">
             } @else {
               <span class="detail-avatar detail-avatar--fallback" aria-hidden="true">{{ initials(user) }}</span>
             }

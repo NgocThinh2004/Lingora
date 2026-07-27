@@ -9,11 +9,12 @@ import { LocaleService } from '../../../../core/locale/locale.service';
 import { RouterModule } from '@angular/router';
 import { AuthorTooltipComponent } from '../../../../shared/components/author-tooltip/author-tooltip.component';
 import { AuthModalService } from '../../../../shared/components/auth-modal/auth-modal.service';
+import { AssetImageDirective } from '../../../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-comment-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AuthorTooltipComponent],
+  imports: [CommonModule, FormsModule, RouterModule, AuthorTooltipComponent, AssetImageDirective],
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss']
 })

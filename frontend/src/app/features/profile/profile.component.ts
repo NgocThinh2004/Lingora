@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, HostListener, OnInit, OnDestroy, signal, inject, ViewEncapsulation } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy, computed, signal, inject, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -9,14 +9,18 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { BrandingService } from '../../core/theme/branding.service';
 import { AuthorPost } from '../posts/models/post.model';
 import { AuthorPostsService } from '../posts/services/author-posts.service';
-import { SubscriptionsService } from '../subscriptions/services/subscriptions.service';
+import {
+  SubscriptionAuthor,
+  SubscriptionsService,
+} from '../subscriptions/services/subscriptions.service';
 import { EditorUploadsService } from '../workspace/services/editor-uploads.service';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
+import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, SidebarComponent],
+  imports: [CommonModule, FormsModule, RouterModule, SidebarComponent, AssetImageDirective],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
   encapsulation: ViewEncapsulation.None,
@@ -58,6 +62,24 @@ export class ProfileComponent implements OnInit, OnDestroy {
   showPasswordModal = signal(false);
   showHandleModal = signal(false);
   showSubscribersModal = signal(false);
+  profileMoreOpen = signal(false);
+  peopleModalMode = signal<'followers' | 'following'>('followers');
+  people = signal<SubscriptionAuthor[]>([]);
+  peopleLoading = signal(false);
+  peopleSearch = signal('');
+  failedPeopleAvatarIds = signal<Set<string>>(new Set());
+  filteredPeople = computed(() => {
+    const query = this.peopleSearch().trim().toLowerCase();
+    if (!query) {
+      return this.people();
+    }
+
+    return this.people().filter(person =>
+      [person.displayName, person.username, person.bio]
+        .filter(Boolean)
+        .some(value => value!.toLowerCase().includes(query)),
+    );
+  });
 
   // Settings
   passwordForm = { current: '', new: '', confirm: '' };
@@ -122,6 +144,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.clearBrandingVariables();
+    document.body.classList.remove('profile-modal-open');
   }
 
   get initial(): string {
@@ -231,8 +254,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
       }).subscribe({
         next: () => {
           this.passwordForm = { current: '', new: '', confirm: '' };
-          this.showPasswordModal.set(false);
           this.savingPassword.set(false);
+          this.closePasswordModal();
           this.authService.expireSession();
           void this.router.navigate(['/auth/login'], {
             queryParams: { message: 'Password updated. Please sign in again.' },
@@ -250,6 +273,89 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   togglePasswordVisibility() {
     this.passwordFieldType = this.passwordFieldType === 'password' ? 'text' : 'password';
+  }
+
+  toggleProfileMore(event: Event): void {
+    event.stopPropagation();
+    this.openColorPicker.set(null);
+    this.profileMoreOpen.update(open => !open);
+  }
+
+  openPasswordModal(event?: Event): void {
+    event?.stopPropagation();
+    this.profileMoreOpen.set(false);
+    this.passwordForm = { current: '', new: '', confirm: '' };
+    this.passwordFieldType = 'password';
+    this.showPasswordModal.set(true);
+    document.body.classList.add('profile-modal-open');
+    queueMicrotask(() => document.getElementById('profileCurrentPassword')?.focus());
+  }
+
+  closePasswordModal(): void {
+    if (this.savingPassword()) {
+      return;
+    }
+
+    this.showPasswordModal.set(false);
+    this.passwordFieldType = 'password';
+    document.body.classList.remove('profile-modal-open');
+  }
+
+  openPeopleModal(mode: 'followers' | 'following', event?: Event): void {
+    event?.preventDefault();
+    this.peopleModalMode.set(mode);
+    this.peopleSearch.set('');
+    this.people.set([]);
+    this.failedPeopleAvatarIds.set(new Set());
+    this.peopleLoading.set(true);
+    this.showSubscribersModal.set(true);
+    document.body.classList.add('profile-modal-open');
+
+    const request = mode === 'followers'
+      ? this.subscriptionsService.followers()
+      : this.subscriptionsService.following();
+    request.subscribe({
+      next: people => {
+        if (this.showSubscribersModal() && this.peopleModalMode() === mode) {
+          this.people.set(people);
+        }
+        this.peopleLoading.set(false);
+      },
+      error: err => {
+        this.peopleLoading.set(false);
+        this.toast.showError(this.formatError(err));
+      },
+    });
+  }
+
+  closePeopleModal(): void {
+    this.showSubscribersModal.set(false);
+    this.peopleSearch.set('');
+    document.body.classList.remove('profile-modal-open');
+  }
+
+  peopleModalTitle(): string {
+    return this.peopleModalMode() === 'followers' ? 'Followers' : 'Following';
+  }
+
+  peopleSearchPlaceholder(): string {
+    return this.peopleModalMode() === 'followers'
+      ? 'Search followers...'
+      : 'Search following...';
+  }
+
+  personDisplayName(person: SubscriptionAuthor): string {
+    return person.displayName || person.username;
+  }
+
+  personAvatar(person: SubscriptionAuthor): string {
+    return person.avatarUrl && !this.failedPeopleAvatarIds().has(person.id)
+      ? this.uploadsService.toAbsoluteUrl(person.avatarUrl)
+      : 'assets/images/lingora-mark.svg';
+  }
+
+  handlePeopleAvatarError(personId: string): void {
+    this.failedPeopleAvatarIds.update(ids => new Set(ids).add(personId));
   }
 
   toggleColorPicker(type: 'accent' | 'background', event: Event): void {
@@ -284,9 +390,21 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return this.normalizeHex(color) === this.normalizeHex(selected);
   }
 
-  @HostListener('document:click')
-  closeColorPickers(): void {
+  @HostListener('document:click', ['$event'])
+  closeFloatingMenus(event: Event): void {
     this.openColorPicker.set(null);
+    if (!(event.target as HTMLElement | null)?.closest('.profile-more')) {
+      this.profileMoreOpen.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  closeProfileOverlays(): void {
+    this.openColorPicker.set(null);
+    this.profileMoreOpen.set(false);
+    this.showHandleModal.set(false);
+    this.closePasswordModal();
+    this.closePeopleModal();
   }
 
   private setProfileForm(user: ReturnType<AuthService['currentUser']>): void {

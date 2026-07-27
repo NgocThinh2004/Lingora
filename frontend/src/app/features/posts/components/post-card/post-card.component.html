@@ -2,7 +2,10 @@
   <header class="post-header">
     <div class="author-tooltip-container position-relative">
       <a [routerLink]="['/profile', post.author.id]" class="author-group text-decoration-none">
-        <img [src]="post.author.avatarUrl || 'assets/images/default-avatar.svg'" [alt]="post.author.name" class="author-avatar" />
+        <img
+          [appAssetImage]="authorAvatar"
+          [alt]="post.author.name"
+          class="author-avatar" />
         <div class="author-meta">
           <span class="author-name">{{ post.author.name }}</span>
           <span class="post-time">{{ post.createdAt | date: 'mediumDate' }}</span>

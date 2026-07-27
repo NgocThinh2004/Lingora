@@ -5,11 +5,12 @@ import { SubscriptionsService } from '../../../features/subscriptions/services/s
 import { AuthService } from '../../../core/auth/auth.service';
 import { User } from '../../../features/users/models/user.model';
 import { AuthModalService } from '../auth-modal/auth-modal.service';
+import { AssetImageDirective } from '../../directives/asset-image.directive';
 
 @Component({
   selector: 'app-author-tooltip',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AssetImageDirective],
   templateUrl: './author-tooltip.component.html',
   styleUrl: './author-tooltip.component.scss'
 })
@@ -90,6 +91,10 @@ export class AuthorTooltipComponent implements OnInit, AfterViewInit, OnDestroy 
       this.mouseEnterListener = () => this.checkPosition();
       parent.addEventListener('mouseenter', this.mouseEnterListener);
     }
+  }
+
+  get avatarUrl(): string {
+    return this.user?.avatarUrl || this.user?.avatar || 'assets/images/lingora-mark.svg';
   }
 
   ngOnDestroy(): void {

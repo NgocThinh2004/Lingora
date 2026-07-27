@@ -25,7 +25,10 @@
       @for (user of recommendedUsers(); track user.id) {
         <div class="featured-author-item">
           <a class="featured-author-info text-decoration-none" [routerLink]="['/profile', user.id]">
-            <img [src]="userAvatar(user)" [alt]="user.name" class="featured-author-avatar">
+            <img
+              [appAssetImage]="userAvatar(user)"
+              [alt]="user.name"
+              class="featured-author-avatar">
             <span class="featured-author-meta">
               <span class="featured-author-name">{{ user.name }}</span>
               <span class="featured-author-count">{{ user.bio || ('@' + user.handle) }}</span>

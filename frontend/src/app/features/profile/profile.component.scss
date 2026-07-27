@@ -933,6 +933,63 @@ app-profile {
         overflow-y: auto;
       }
 
+      .profile-person-row {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr) 20px;
+        gap: 12px;
+        align-items: center;
+        min-height: 72px;
+        padding: 10px 4px;
+        border-bottom: 1px solid var(--line-soft);
+        color: var(--text);
+        text-decoration: none;
+      }
+
+      .profile-person-row:hover,
+      .profile-person-row:focus-visible {
+        color: var(--text);
+        background: var(--panel-soft);
+        outline: none;
+      }
+
+      .profile-person-avatar {
+        width: 48px;
+        height: 48px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      .profile-person-copy {
+        display: grid;
+        min-width: 0;
+        gap: 2px;
+      }
+
+      .profile-person-copy strong,
+      .profile-person-copy span,
+      .profile-person-copy small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .profile-person-copy span,
+      .profile-person-copy small,
+      .profile-person-row > i {
+        color: var(--muted);
+      }
+
+      .people-state {
+        min-height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--muted);
+        text-align: center;
+      }
+
       #subscribersSearchWrap {
         border: 1px solid var(--line) !important;
         border-radius: 999px;

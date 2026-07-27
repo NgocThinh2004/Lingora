@@ -1663,6 +1663,14 @@ button {
   display: flex;
 }
 
+.preview-post-body .editor-media-delete,
+.preview-post-body [data-remove-media],
+.preview-post-body .editor-media-wrapper button,
+.preview-post-body .editor-media-wrapper svg,
+.preview-post-body .editor-after-block-placeholder {
+  display: none !important;
+}
+
 .editor-code-toolbar {
   min-height: 58px;
   display: flex;

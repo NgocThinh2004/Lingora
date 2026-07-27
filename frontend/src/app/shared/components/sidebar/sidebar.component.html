@@ -24,7 +24,11 @@
       </a>
       <a routerLink="/profile" routerLinkActive="active" class="sidebar-nav-item" (click)="closeMenus()">
         @if (profileAvatar) {
-          <img class="sidebar-profile-avatar" [src]="profileAvatar" alt="">
+          <img
+            class="sidebar-profile-avatar"
+            [appAssetImage]="profileAvatar"
+            alt=""
+            >
         } @else {
           <i class="bi bi-person"></i>
         }

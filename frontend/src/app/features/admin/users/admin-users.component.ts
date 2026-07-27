@@ -9,11 +9,12 @@ import { ToastService } from '../../../core/notifications/toast.service';
 import { UiStateComponent } from '../../../shared/components/ui-state/ui-state.component';
 import { AdminUser, AdminUserRole, AdminUserStatus } from './models/admin-user.model';
 import { AdminUsersService } from './services/admin-users.service';
+import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
 
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UiStateComponent],
+  imports: [CommonModule, ReactiveFormsModule, UiStateComponent, AssetImageDirective],
   templateUrl: './admin-users.component.html',
   styleUrl: './admin-users.component.scss',
 })

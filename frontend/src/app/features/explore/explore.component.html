@@ -93,7 +93,7 @@
             <div class="flex-grow-1 d-flex align-items-center">
               <div class="author-tooltip-container position-relative">
                 <a [routerLink]="['/profile', person.id]" class="d-flex align-items-center text-decoration-none text-reset gap-3">
-                  <img [src]="person.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=80&h=80'" class="explore-card-avatar" [alt]="person.name">
+                  <img [appAssetImage]="person.avatarUrl" class="explore-card-avatar" [alt]="person.name">
                   <div class="explore-card-info">
                     <div class="explore-card-title fw-bold fs-6 mb-1">{{ person.name }}</div>
                     <div class="text-muted small"><i class="bi bi-journal-text me-1"></i>{{ person.handle ? '@'+person.handle : '0 bài viết' }}</div>
@@ -179,7 +179,7 @@
         <div class="flex-grow-1 d-flex align-items-center">
           <div class="author-tooltip-container position-relative">
             <a [routerLink]="['/profile', person.id]" class="d-flex align-items-center text-decoration-none text-reset gap-3">
-              <img [src]="person.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=80&h=80'" class="explore-card-avatar" [alt]="person.name">
+              <img [appAssetImage]="person.avatarUrl" class="explore-card-avatar" [alt]="person.name">
               <div class="explore-card-info">
                 <div class="explore-card-title fw-bold fs-6 mb-1">{{ person.name }}</div>
                 <div class="text-muted small"><i class="bi bi-journal-text me-1"></i>{{ person.handle ? '@'+person.handle : '0 bài viết' }}</div>
