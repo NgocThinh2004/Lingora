@@ -1,33 +1,11 @@
-<div class="angular-only">
-
-  <div class="app-wrapper">
-    <header class="app-header">
-      <div class="header-container">
-        <button aria-controls="mobileSidebar" class="btn btn-link d-lg-none me-2 text-reset p-0"
-          data-bs-target="#mobileSidebar" data-bs-toggle="offcanvas" type="button">
-          <i class="bi bi-list fs-3"></i>
-        </button>
-        <a class="d-flex align-items-center text-decoration-none" routerLink="/workspace/posts">
-          <i class="bi bi-feather fs-4 text-primary me-2"></i>
-          <span class="fs-5 fw-bold text-main">Lingora</span>
-        </a>
-        <div class="d-flex align-items-center ms-auto gap-2">
-          <a class="btn btn-primary btn-sm fw-medium px-3 rounded-pill" routerLink="/workspace/create"><i
-              class="bi bi-plus-lg me-1"></i> <span data-i18n="create">Create</span></a>
-          <a class="text-decoration-none" href="#">
-            <span class="rounded-circle border text-white fw-bold"
-              style="display: inline-grid; place-items: center; width: 32px; height: 32px; background: var(--primary-color);">A</span>
-          </a>
-        </div>
-      </div>
-    </header>
-    <main class="app-main-content no-right-panel">
-      <app-sidebar />
-      <div class="center-feed" style="max-width: 100%; align-items: stretch;">
-        <section class="my-posts-workspace">
-          <header class="my-posts-top">
-            <h1>{{ translate('my_posts_title') }}</h1>
-          </header>
+<section class="my-posts-workspace">
+  <header class="my-posts-top">
+    <h1>{{ translate('my_posts_title') }}</h1>
+    <a class="btn btn-primary btn-sm fw-medium px-3 rounded-pill" routerLink="/workspace/create" [queryParams]="{ fresh: '1' }">
+      <i class="bi bi-plus-lg me-1"></i>
+      <span data-i18n="create">Create</span>
+    </a>
+  </header>
           <div class="posts-toolbar">
             <div class="toolbar-main-row">
               <div class="toolbar-links-stack">
@@ -238,9 +216,6 @@
             </ul>
           </div>
         </section>
-      </div>
-    </main>
-  </div>
 
   <div *ngIf="confirmationAction" class="confirmation-backdrop" role="presentation"
     (click)="$event.target === $event.currentTarget && closeConfirmation()">
@@ -273,17 +248,3 @@
       </div>
     </section>
   </div>
-
-  <div aria-labelledby="mobileSidebarLabel" class="offcanvas offcanvas-start" id="mobileSidebar" tabindex="-1">
-    <div class="offcanvas-header border-bottom">
-      <span class="visually-hidden" id="mobileSidebarLabel">Navigation</span>
-      <button aria-label="Close" class="btn-close ms-auto" data-bs-dismiss="offcanvas" type="button"></button>
-    </div>
-    <app-sidebar />
-  </div>
-
-
-
-
-
-</div>

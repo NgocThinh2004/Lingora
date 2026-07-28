@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Op } from 'sequelize';
 import { Comment } from './models/comment.model';
 import { User } from '../users/models/user.model';
 import { Post } from '../posts/models/post.model';
@@ -15,7 +14,6 @@ import { TranslationProviderService } from '../translations/translation-provider
 export class CommentsService {
   constructor(
     @InjectModel(Comment) private commentModel: typeof Comment,
-    @InjectModel(User) private userModel: typeof User,
     @InjectModel(Post) private postModel: typeof Post,
     @InjectModel(Language) private languageModel: typeof Language,
     @InjectModel(CommentTranslation) private commentTranslationModel: typeof CommentTranslation,

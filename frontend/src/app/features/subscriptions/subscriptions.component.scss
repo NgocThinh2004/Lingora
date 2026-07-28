@@ -7,6 +7,83 @@
   }
 }
 
+.authors-carousel-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 0 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  border-bottom: 1px solid var(--border-color);
+  scrollbar-width: none;
+}
+
+.authors-carousel-container::-webkit-scrollbar {
+  display: none;
+}
+
+.author-carousel-item {
+  display: flex;
+  min-width: 72px;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.author-carousel-item:hover .author-carousel-avatar-wrapper {
+  border-color: var(--text-muted);
+}
+
+.author-carousel-avatar-wrapper {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  padding: 2px;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: transparent;
+  transition: border-color 0.2s ease;
+}
+
+.author-carousel-avatar-wrapper.has-new-update {
+  border-color: var(--border-color);
+  background: transparent;
+}
+
+.author-carousel-item.active .author-carousel-avatar-wrapper {
+  border: 2px solid var(--text-main);
+  background: var(--bg-secondary);
+}
+
+.author-carousel-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.author-carousel-name {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-main);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.author-carousel-item.active .author-carousel-name {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
 /* Subscriptions Page Tabs */
 
 /* Carousel Navigation Arrows */

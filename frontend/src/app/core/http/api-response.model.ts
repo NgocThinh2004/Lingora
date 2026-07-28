@@ -7,6 +7,15 @@ export interface ApiResponse<T> {
   };
 }
 
+export interface ApiItemResponse<T> {
+  data: T;
+}
+
+export interface ApiCollectionResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+
 export interface PaginationMeta {
   total: number;
   page: number;

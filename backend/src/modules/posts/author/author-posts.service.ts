@@ -625,11 +625,6 @@ export class AuthorPostsService {
     return [...new Set(targetLanguageIds ?? [])].filter((languageId) => languageId !== originalLanguageId);
   }
 
-  private normalizeNullableText(value: string | null | undefined): string | null {
-    const normalized = value?.trim();
-    return normalized ? normalized : null;
-  }
-
   private sanitizeContent(content: string): string {
     return sanitizeHtml(content, {
       allowedTags: [

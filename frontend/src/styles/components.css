@@ -1125,19 +1125,6 @@ app-admin-categories .confirm-dialog .confirm-delete { box-shadow: 0 8px 18px co
 }
 
 
-/* Carousel */
-.authors-carousel-container { display: flex; gap: 1.25rem; overflow-x: auto; padding-bottom: 1rem; padding-top: 0.5rem; scrollbar-width: none; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
-.authors-carousel-container::-webkit-scrollbar { display: none; }
-.author-carousel-item { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; text-decoration: none; min-width: 72px; cursor: pointer; transition: transform 0.2s ease; }
-.author-carousel-item:hover { transform: translateY(-2px); }
-.author-carousel-avatar-wrapper { width: 68px; height: 68px; border-radius: 50%; padding: 2px; position: relative; background: transparent; border: 1px solid var(--border-color); transition: border-color 0.2s ease; }
-.author-carousel-avatar-wrapper.has-new-update { background: transparent; border-color: var(--border-color); }
-.author-carousel-item.active .author-carousel-avatar-wrapper { border: 2px solid var(--text-main); background: var(--bg-secondary); }
-.author-carousel-avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-.author-carousel-name { font-size: 0.75rem; color: var(--text-main); font-weight: 500; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.author-carousel-item.active .author-carousel-name { font-weight: 700; color: var(--text-main); }
-
-
 /* Editor Code Block Styles */
 .editor-code-block,
 .post-content .editor-code-block,

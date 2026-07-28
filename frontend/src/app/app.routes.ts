@@ -1,23 +1,24 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from './core/auth/admin.guard';
 import { authGuard } from './core/auth/auth.guard';
-import { HomeComponent } from './features/home/home.component';
-import { MainLayoutComponent } from './shared/layouts/main-layout/main-layout.component';
 
 export const routes: Routes = [
   {
     path: '',
-    component: MainLayoutComponent,
+    loadComponent: () =>
+      import('./layouts/main-layout/main-layout.component').then(
+        ({ MainLayoutComponent }) => MainLayoutComponent,
+      ),
     children: [
       {
         path: '',
         title: 'Lingora',
-        component: HomeComponent,
+        loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent),
       },
       {
         path: 'home',
         title: 'Lingora',
-        component: HomeComponent,
+        loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent),
       },
       {
         path: 'settings',
@@ -74,6 +75,14 @@ export const routes: Routes = [
           import('./features/profile/profile.component').then(m => m.ProfileComponent),
         data: { showRightPanel: false, contentMaxWidth: '100%' },
       },
+      {
+        path: 'workspace/posts',
+        title: 'My Posts - Lingora',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/workspace/my-posts.component').then(m => m.MyPostsComponent),
+        data: { showRightPanel: false, contentMaxWidth: '100%', contentMode: 'workspace' },
+      },
     ],
   },
   {
@@ -118,13 +127,6 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
   {
-    path: 'workspace/posts',
-    title: 'My Posts - Lingora',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/workspace/my-posts.component').then(m => m.MyPostsComponent),
-  },
-  {
     path: 'workspace/posts/:id/edit',
     title: 'Edit Post - Lingora',
     canActivate: [authGuard],
@@ -136,7 +138,7 @@ export const routes: Routes = [
     title: 'Admin Panel - Lingora',
     canActivate: [adminGuard],
     loadComponent: () =>
-      import('./shared/layouts/admin-layout/admin-layout.component').then(m => m.AdminLayoutComponent),
+      import('./layouts/admin-layout/admin-layout.component').then(m => m.AdminLayoutComponent),
     children: [
       {
         path: '',

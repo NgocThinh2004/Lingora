@@ -7,8 +7,8 @@ import { LikeService } from '../../services/like.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { LocaleService } from '../../../../core/locale/locale.service';
 import { RouterModule } from '@angular/router';
-import { AuthorTooltipComponent } from '../../../../shared/components/author-tooltip/author-tooltip.component';
-import { AuthModalService } from '../../../../shared/components/auth-modal/auth-modal.service';
+import { AuthorTooltipComponent } from '../../../users/components/author-tooltip/author-tooltip.component';
+import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../../shared/directives/asset-image.directive';
 

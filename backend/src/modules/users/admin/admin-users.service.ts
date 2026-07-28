@@ -7,7 +7,6 @@ import { Role } from '../models/role.model';
 import { User } from '../models/user.model';
 import {
   AdminUsersQueryDto,
-  AdminUserStatus,
   UpdateAdminUserDto,
 } from './dto/admin-users.dto';
 

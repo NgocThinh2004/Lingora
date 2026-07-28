@@ -2,21 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map, Subject, tap, BehaviorSubject } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ApiItemResponse, Post } from '../../posts/models/post.model';
+import { ApiItemResponse } from '../../../core/http/api-response.model';
 import { AuthService } from '../../../core/auth/auth.service';
-
-export interface SubscriptionAuthor {
-  id: string;
-  username: string;
-  displayName: string | null;
-  avatarUrl: string | null;
-  bio: string | null;
-}
-
-export interface SubscriptionData {
-  authors: SubscriptionAuthor[];
-  posts: Post[];
-}
+import { SubscriptionAuthor, SubscriptionData } from '../models/subscription.model';
 
 @Injectable({ providedIn: 'root' })
 export class SubscriptionsService {

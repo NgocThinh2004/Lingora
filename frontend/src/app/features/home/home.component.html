@@ -1,5 +1,5 @@
 <div class="home-page">
-  <a routerLink="/create-post" class="quick-draft-card">
+  <a routerLink="/workspace/create" [queryParams]="{ fresh: '1' }" class="quick-draft-card">
     <img
       [appAssetImage]="quickDraftAvatar()"
       alt="Avatar"

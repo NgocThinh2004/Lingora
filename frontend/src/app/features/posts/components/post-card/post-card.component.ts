@@ -1,15 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, computed, inject } from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { LocaleService } from '../../../../core/locale/locale.service';
-import { ToastService } from '../../../../core/notifications/toast.service';
 import { translateCategory } from '../../../categories/models/category.model';
 import { Post, getPostTranslation } from '../../models/post.model';
 import { LikeService } from '../../services/like.service';
-import { AuthModalService } from '../../../../shared/components/auth-modal/auth-modal.service';
-import { AuthorTooltipComponent } from '../../../../shared/components/author-tooltip/author-tooltip.component';
+import { AuthModalService } from '../../../../core/auth/auth-modal.service';
+import { AuthorTooltipComponent } from '../../../users/components/author-tooltip/author-tooltip.component';
 import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../../shared/directives/asset-image.directive';
 
@@ -23,10 +21,8 @@ import { AssetImageDirective } from '../../../../shared/directives/asset-image.d
 export class PostCardComponent implements OnInit {
   private readonly languageService = inject(LocaleService);
   private readonly likeService = inject(LikeService);
-  private readonly toast = inject(ToastService);
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);
-  private readonly sanitizer = inject(DomSanitizer);
 
   @Input({ required: true }) post!: Post;
 
