@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal, ElementRef, ViewChild, OnDestroy } from '@angular/core';
+import { Component, computed, inject, signal, ElementRef, ViewChild, OnDestroy, HostListener } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LocaleService } from '../../core/locale/locale.service';
 import { Category, translateCategory } from '../categories/models/category.model';
@@ -30,6 +30,17 @@ export class HomeComponent implements OnDestroy {
         }, { rootMargin: '400px' });
       }
       this.observer.observe(el.nativeElement);
+    }
+  }
+
+  @ViewChild('dropdownWrap') dropdownWrap?: ElementRef<HTMLElement>;
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    if (this.isDropdownOpen() && this.dropdownWrap?.nativeElement) {
+      if (!this.dropdownWrap.nativeElement.contains(event.target as Node)) {
+        this.isDropdownOpen.set(false);
+      }
     }
   }
 
