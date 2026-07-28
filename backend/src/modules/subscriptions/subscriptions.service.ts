@@ -20,7 +20,12 @@ export class SubscriptionsService {
     const authors = authorIds.length
       ? await this.userModel.findAll({ where: { id: authorIds, status: 'active', deleted_at: null } })
       : [];
-    const publicPosts = await this.postsService.listFeed({ limit: 50 });
+
+    // Query posts directly by authorIds instead of fetching global feed and filtering
+    const posts = authorIds.length
+      ? await this.postsService.listFeedByAuthorIds(authorIds.map(String), { limit: 50 })
+      : [];
+
     return {
       authors: authors.map(author => ({
         id: author.id,
@@ -29,7 +34,7 @@ export class SubscriptionsService {
         avatarUrl: author.avatar,
         bio: author.bio,
       })),
-      posts: publicPosts.items.filter(post => authorIds.some(id => String(id) === String(post.authorId))),
+      posts,
     };
   }
 
@@ -51,13 +56,6 @@ export class SubscriptionsService {
     return { authorId, subscribed: false };
   }
 
-  async stats(userId: string) {
-    const [followers, following] = await Promise.all([
-      this.subscriptionModel.count({ where: { author_id: userId } }),
-      this.subscriptionModel.count({ where: { subscriber_id: userId } }),
-    ]);
-    return { followers, following };
-  }
 
   async listFollowers(userId: string) {
     const subscriptions = await this.subscriptionModel.findAll({
@@ -75,10 +73,6 @@ export class SubscriptionsService {
     return this.listActiveUsers(subscriptions.map(item => item.author_id));
   }
 
-  async checkSubscription(subscriberId: string, authorId: string) {
-    const sub = await this.subscriptionModel.findOne({ where: { subscriber_id: subscriberId, author_id: authorId } });
-    return { subscribed: !!sub };
-  }
 
   async getDashboardMetrics() {
     return { total: await this.subscriptionModel.count() };

@@ -3,7 +3,6 @@ import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { SubscriptionsService } from '../../../features/subscriptions/services/subscriptions.service';
 import { AuthService } from '../../../core/auth/auth.service';
-import { Router } from '@angular/router';
 import { AuthModalService } from '../auth-modal/auth-modal.service';
 
 @Component({
@@ -22,7 +21,6 @@ export class SubscribeButtonComponent implements OnInit, OnDestroy, OnChanges {
 
   private readonly subscriptionsService = inject(SubscriptionsService);
   private readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
   private readonly authModalService = inject(AuthModalService);
   private readonly cdr = inject(ChangeDetectorRef);
   
@@ -54,19 +52,6 @@ export class SubscribeButtonComponent implements OnInit, OnDestroy, OnChanges {
     if (this.subChangeSub) {
       this.subChangeSub.unsubscribe();
     }
-  }
-
-  // Legacy fallback (no longer used)
-  private checkSubscriptionStatus(): void {
-    if (!this.authorId || !this.authService.isAuthenticated()) return;
-    
-    this.subscriptionsService.checkSubscription(this.authorId).subscribe({
-      next: (res) => {
-        this.isSubscribed = res.subscribed;
-        this.cdr.markForCheck();
-      },
-      error: (err) => { console.error('Check sub error', err); }
-    });
   }
 
   toggleSubscribe(event: Event): void {

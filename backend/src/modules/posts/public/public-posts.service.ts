@@ -238,6 +238,30 @@ export class PublicPostsService {
     };
   }
 
+  async listFeedByAuthorIds(authorIds: string[], options: { limit?: number } = {}) {
+    if (!authorIds.length) return [];
+    const limit = options.limit || 50;
+
+    // Get matching post IDs ordered by date directly from DB
+    const posts = await this.postModel.findAll({
+      where: {
+        author_id: { [Op.in]: authorIds },
+        status: { [Op.in]: ['published', 'approved'] },
+        deleted_at: null,
+      },
+      attributes: ['id'],
+      order: [['published_at', 'DESC']],
+      limit,
+    });
+
+    if (!posts.length) return [];
+
+    // Fetch fully serialized posts using existing listFeed pipeline with postIds
+    const postIds = posts.map(p => Number(p.id));
+    const result = await this.listFeed({ limit });
+    return result.items.filter(p => postIds.includes(p.id));
+  }
+
   async getById(id: number, userId?: number) {
     const post = await this.postModel.findOne({
       where: { id, deleted_at: null },

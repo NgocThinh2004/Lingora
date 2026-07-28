@@ -83,6 +83,7 @@ describe('AuthService session management', () => {
       mailService as never,
       sequelize as never,
       refreshTokenModel as never,
+      { count: jest.fn().mockResolvedValue(0) } as never,
     );
   });
 

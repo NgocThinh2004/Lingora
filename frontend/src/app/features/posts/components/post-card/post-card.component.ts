@@ -1,10 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, computed, inject } from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Component, Input, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { LocaleService } from '../../../../core/locale/locale.service';
-import { ToastService } from '../../../../core/notifications/toast.service';
 import { translateCategory } from '../../../categories/models/category.model';
 import { Post, getPostTranslation } from '../../models/post.model';
 import { LikeService } from '../../services/like.service';
@@ -20,13 +18,11 @@ import { AssetImageDirective } from '../../../../shared/directives/asset-image.d
   templateUrl: './post-card.component.html',
   styleUrl: './post-card.component.scss',
 })
-export class PostCardComponent implements OnInit {
+export class PostCardComponent {
   private readonly languageService = inject(LocaleService);
   private readonly likeService = inject(LikeService);
-  private readonly toast = inject(ToastService);
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);
-  private readonly sanitizer = inject(DomSanitizer);
 
   @Input({ required: true }) post!: Post;
 
@@ -41,9 +37,6 @@ export class PostCardComponent implements OnInit {
     }
     return '';
   });
-
-  ngOnInit() {
-  }
 
   get translation() {
     return getPostTranslation(this.post, this.currentLang());
@@ -80,7 +73,6 @@ export class PostCardComponent implements OnInit {
         this.post = { ...this.post, liked: status.liked, likeCount: status.likeCount, isLiking: false };
       },
       error: (err) => {
-        console.error('Error toggling like:', err);
         this.post = { ...this.post, liked: previousLiked, likeCount: previousLikeCount, isLiking: false };
       }
     });

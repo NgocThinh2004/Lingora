@@ -35,11 +35,10 @@ export class LikesService {
         await this.postModel.decrement('like_count', { by: 1, where: { id: postId }, transaction });
         liked = false;
       } else {
-        await this.postLikeModel.findOrCreate({
-          where: { post_id: postId, user_id: userId },
-          defaults: { post_id: postId, user_id: userId },
-          transaction,
-        });
+        await this.postLikeModel.create(
+          { post_id: postId, user_id: userId },
+          { transaction },
+        );
         await this.postModel.increment('like_count', { by: 1, where: { id: postId }, transaction });
         liked = true;
       }
@@ -65,11 +64,10 @@ export class LikesService {
         await this.commentModel.decrement('like_count', { by: 1, where: { id: commentId }, transaction });
         liked = false;
       } else {
-        await this.commentLikeModel.findOrCreate({
-          where: { comment_id: commentId, user_id: userId },
-          defaults: { comment_id: commentId, user_id: userId, created_at: new Date() },
-          transaction,
-        });
+        await this.commentLikeModel.create(
+          { comment_id: commentId, user_id: userId, created_at: new Date() },
+          { transaction },
+        );
         await this.commentModel.increment('like_count', { by: 1, where: { id: commentId }, transaction });
         liked = true;
       }

@@ -54,8 +54,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private cropPointerY = 0;
   user = signal<CurrentUser | null>(this.authService.currentUser());
   isOwnProfile = signal(true);
-  isSubscribed = signal(false);
-  subscriptionLoading = signal(false);
   allowShowSubscribers = signal(true);
   allowShowFollowing = signal(true);
 
@@ -608,15 +606,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
       },
       error: err => this.toast.showError(this.formatError(err)),
     });
-
-    if (this.authService.isAuthenticated()) {
-      this.subscriptionsService.checkSubscription(publicUserId).subscribe({
-        next: result => this.isSubscribed.set(result.subscribed),
-        error: () => this.isSubscribed.set(false),
-      });
-    } else {
-      this.isSubscribed.set(false);
-    }
   }
 
   private loadOwnProfile(): void {
@@ -627,6 +616,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.setProfileForm(user);
         this.loadBranding();
         this.loadingProfile.set(false);
+
+        // Read counts directly from the getMe() response (no extra API call needed)
+        this.followersCount.set(user.followersCount ?? 0);
+        this.followingCount.set(user.followingCount ?? 0);
 
         this.feedPostsService.list({ authorId: user.id, limit: 100 }).subscribe({
           next: response => {
@@ -641,15 +634,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.loadingProfile.set(false);
       },
     });
-
-    this.subscriptionsService.stats().subscribe({
-      next: stats => {
-        this.followersCount.set(stats.followers);
-        this.followingCount.set(stats.following);
-      },
-      error: err => this.toast.showError(this.formatError(err)),
-    });
   }
+
 
 
 

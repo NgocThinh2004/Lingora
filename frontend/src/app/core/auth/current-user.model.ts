@@ -10,4 +10,6 @@ export interface CurrentUser {
   accentColor?: string | null;
   backgroundColor?: string | null;
   role?: UserRole;
+  followersCount?: number;
+  followingCount?: number;
 }
