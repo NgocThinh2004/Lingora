@@ -1,9 +1,8 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
-import { AuthModalService } from '../../shared/components/auth-modal/auth-modal.service';
+import { AuthModalService } from './auth-modal.service';
 
 const isPublicAuthRequest = (url: string): boolean =>
   [
@@ -18,7 +17,6 @@ const isPublicAuthRequest = (url: string): boolean =>
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);
   const authModalService = inject(AuthModalService);
-  const router = inject(Router);
   const accessToken = authService.getToken();
   const authenticatedRequest = accessToken && !isPublicAuthRequest(request.url)
     ? request.clone({ setHeaders: { Authorization: `Bearer ${accessToken}` } })

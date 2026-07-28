@@ -1,32 +1,29 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostListener, OnInit, OnDestroy, computed, signal, inject, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { finalize, forkJoin, Observable, Subscription, switchMap } from 'rxjs';
+import { finalize, Observable, Subscription, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { CurrentUser } from '../../core/auth/current-user.model';
 import { ToastService } from '../../core/notifications/toast.service';
 import { BrandingService } from '../../core/theme/branding.service';
-import { AuthorPost, Post } from '../posts/models/post.model';
+import { getApiErrorMessage } from '../../core/http/api-error.util';
+import { Post } from '../posts/models/post.model';
 import { AuthorPostsService } from '../posts/services/author-posts.service';
 import { FeedPostsService } from '../posts/services/feed-posts.service';
-import {
-  SubscriptionAuthor,
-  SubscriptionsService,
-} from '../subscriptions/services/subscriptions.service';
+import { SubscriptionAuthor } from '../subscriptions/models/subscription.model';
+import { SubscriptionsService } from '../subscriptions/services/subscriptions.service';
 import { User } from '../users/models/user.model';
 import { UsersService } from '../users/services/users.service';
 import { EditorUploadsService } from '../workspace/services/editor-uploads.service';
-import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
-import { SubscribeButtonComponent } from '../../shared/components/subscribe-button/subscribe-button.component';
+import { SubscribeButtonComponent } from '../subscriptions/components/subscribe-button/subscribe-button.component';
 import { PostCardComponent } from '../posts/components/post-card/post-card.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, SidebarComponent, AssetImageDirective, SubscribeButtonComponent, PostCardComponent],
+  imports: [CommonModule, FormsModule, RouterModule, AssetImageDirective, SubscribeButtonComponent, PostCardComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
   encapsulation: ViewEncapsulation.None,
@@ -785,10 +782,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   private formatError(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const message = error.error?.meta?.error?.message ?? error.error?.message;
-      return Array.isArray(message) ? message.join(' ') : message || error.message;
-    }
-    return 'Unable to complete the request. Please try again.';
+    return getApiErrorMessage(error, 'Unable to complete the request. Please try again.');
   }
 }

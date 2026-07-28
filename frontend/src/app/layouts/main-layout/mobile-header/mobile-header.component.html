@@ -1,0 +1,19 @@
+<header class="mobile-header">
+  <div class="header-container">
+    <button type="button" class="btn btn-link d-lg-none me-2 text-reset p-0" (click)="menuClick.emit()" aria-label="Mở menu">
+      <i class="bi bi-list fs-3"></i>
+    </button>
+    
+    <app-brand link="/" />
+    
+    <div class="d-flex align-items-center ms-auto gap-2">
+      <a routerLink="/workspace/create" [queryParams]="{ fresh: '1' }" class="btn btn-primary btn-sm fw-medium px-2 px-sm-3 rounded-pill d-inline-flex align-items-center me-1">
+        <i class="bi bi-plus-lg me-1"></i> <span>Viết bài</span>
+      </a>
+
+      <a routerLink="/profile" class="text-decoration-none">
+        <img [appAssetImage]="profileAvatar" class="rounded-circle border" width="32" height="32" alt="Avatar" style="object-fit: cover;" />
+      </a>
+    </div>
+  </div>
+</header>

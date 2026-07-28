@@ -49,7 +49,7 @@
 
           @if (isOwnProfile()) {
           <div class="action-row">
-            <a class="profile-action is-primary" routerLink="/workspace/create">
+            <a class="profile-action is-primary" routerLink="/workspace/create" [queryParams]="{ fresh: '1' }">
               <span data-i18n="create">Create</span> <i class="bi bi-caret-down-fill"></i>
             </a>
             <button class="profile-action" type="button" (click)="toggleEdit(true)" data-i18n="profile_edit_profile">Edit profile</button>

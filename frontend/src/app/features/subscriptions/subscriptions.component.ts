@@ -1,10 +1,10 @@
 import { Component, OnInit, inject, ViewChild, ElementRef } from '@angular/core';
 import { SubscriptionsService } from './services/subscriptions.service';
-import { AuthorTooltipComponent } from '../../shared/components/author-tooltip/author-tooltip.component';
+import { AuthorTooltipComponent } from '../users/components/author-tooltip/author-tooltip.component';
 import { PostCardComponent } from '../posts/components/post-card/post-card.component';
 import { FormsModule } from '@angular/forms';
 import { Post } from '../posts/models/post.model';
-import { SubscribeButtonComponent } from '../../shared/components/subscribe-button/subscribe-button.component';
+import { SubscribeButtonComponent } from './components/subscribe-button/subscribe-button.component';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 
 @Component({

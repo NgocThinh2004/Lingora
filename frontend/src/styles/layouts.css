@@ -2,12 +2,6 @@ body {
   background-color: var(--bg-body) !important;
 }
 
-.app-wrapper {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
 /* ======================================================== */
 /* HEADER / MOBILE NAVBAR CONFIGURATIONS */
 /* ======================================================== */
@@ -39,25 +33,6 @@ body {
   }
 }
 
-/* ======================================================== */
-/* MAIN THREE-COLUMN GRID (SUBSTACK DESIGN) */
-/* ======================================================== */
-.app-main-content {
-  display: grid;
-  grid-template-columns: 260px 1fr 340px;
-  width: 100%;
-  max-width: 100%;
-  margin: 0;
-  flex: 1;
-}
-
-/* Page layouts without right sidebar widgets (dashboard / editors) */
-.app-main-content.no-right-panel {
-  grid-template-columns: 260px 1fr;
-  width: 100%;
-  max-width: 100%;
-}
-
 /* Left Sidebar: Sticky, full screen height, logo on top, plus menu bottom */
 .left-sidebar {
   background-color: var(--bg-sidebar);
@@ -84,24 +59,6 @@ body {
 
 .left-sidebar:hover::-webkit-scrollbar-thumb {
   background: var(--border-color);
-}
-
-/* Center Feed: Pure white, clean reading column */
-.center-feed {
-  background-color: var(--bg-body);
-  padding: 1.5rem 2.5rem;
-  overflow-y: auto;
-  border-right: 1px solid var(--border-color);
-  transition: border-color var(--transition-speed) ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Restrict readable content width within center feed */
-.center-feed > * {
-  width: 100%;
-  max-width: 720px;
 }
 
 /* Right Panel: Sticky, search box on top, recommendations middle */
@@ -162,32 +119,12 @@ body {
 /* RESPONSIVE LAYOUTS */
 /* ======================================================== */
 @media (max-width: 1200px) {
-  .app-main-content {
-    grid-template-columns: 240px 1fr;
-    max-width: 960px;
-  }
-  .center-feed {
-    border-right: none;
-    padding: 2rem;
-  }
   .right-panel {
     display: none;
   }
 }
 
 @media (max-width: 991px) {
-  .app-main-content {
-    grid-template-columns: 1fr;
-    max-width: 100%;
-  }
-  .app-main-content.no-right-panel {
-    grid-template-columns: 1fr !important;
-  }
-  .center-feed {
-    border-left: none;
-    border-right: none;
-    padding: 1.5rem 1rem;
-  }
   .left-sidebar {
     display: none;
   }

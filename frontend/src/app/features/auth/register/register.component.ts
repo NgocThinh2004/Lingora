@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
-import { ToastService } from '../../../core/notifications/toast.service';
-import { AuthLayoutComponent } from '../../../shared/layouts/auth-layout/auth-layout.component';
+import { getApiErrorMessage } from '../../../core/http/api-error.util';
+import { AuthLayoutComponent } from '../../../layouts/auth-layout/auth-layout.component';
 
 @Component({
   selector: 'app-register',
@@ -23,7 +24,7 @@ export class RegisterComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private toastService: ToastService
+    private route: ActivatedRoute,
   ) {
     this.registerForm = this.fb.group({
       fullName: ['', [Validators.required, Validators.minLength(2)]],
@@ -33,17 +34,17 @@ export class RegisterComponent {
     }, { validators: this.passwordMatchValidator });
   }
 
-  togglePasswordVisibility(field: 'password' | 'confirm') {
+  togglePasswordVisibility(field: 'password' | 'confirm'): void {
     if (field === 'password') this.showPassword = !this.showPassword;
     if (field === 'confirm') this.showConfirmPassword = !this.showConfirmPassword;
   }
 
-  passwordMatchValidator(g: FormGroup) {
+  passwordMatchValidator(g: FormGroup): { mismatch: true } | null {
     return g.get('password')?.value === g.get('confirmPassword')?.value
       ? null : { mismatch: true };
   }
 
-  onSubmit() {
+  onSubmit(): void {
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
       return;
@@ -53,15 +54,20 @@ export class RegisterComponent {
     this.errorMessage = '';
 
     const { confirmPassword, ...payload } = this.registerForm.getRawValue();
-    this.authService.register(payload).subscribe({
+    this.authService.register(payload).pipe(
+      finalize(() => this.isSubmitting = false),
+    ).subscribe({
       next: () => {
-        this.isSubmitting = false;
-        // On successful registration, redirect to login page with a success query param
-        this.router.navigate(['/auth/login'], { queryParams: { registered: 'true' } });
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+        void this.router.navigate(['/auth/login'], {
+          queryParams: {
+            registered: 'true',
+            ...(returnUrl ? { returnUrl } : {}),
+          },
+        });
       },
-      error: (err) => {
-        this.isSubmitting = false;
-        this.errorMessage = err.error?.meta?.error?.message || 'Registration failed. Please try again.';
+      error: error => {
+        this.errorMessage = getApiErrorMessage(error, 'Registration failed. Please try again.');
       }
     });
   }

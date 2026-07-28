@@ -76,6 +76,9 @@
 
   <p class="text-center text-muted small mb-0">
     New to Lingora?
-    <a routerLink="/auth/register" class="text-primary fw-semibold">Create an account</a>
+    <a
+      routerLink="/auth/register"
+      [queryParams]="returnUrl ? { returnUrl } : null"
+      class="text-primary fw-semibold">Create an account</a>
   </p>
 </app-auth-layout>

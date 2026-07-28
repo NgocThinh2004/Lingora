@@ -4,7 +4,6 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/http/api-response.model';
 import { User } from '../../users/models/user.model';
-import { Category } from '../../categories/models/category.model';
 
 export interface SearchCategory {
   id: number;

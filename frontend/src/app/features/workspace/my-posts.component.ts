@@ -1,13 +1,13 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { LocaleService, UiTranslationKey } from '../../core/locale/locale.service';
-import { AuthorPost, PaginationMeta, PostListParams, PostStatus, PostTranslation } from '../posts/models/post.model';
+import { getApiErrorMessage } from '../../core/http/api-error.util';
+import { PaginationMeta } from '../../core/http/api-response.model';
+import { AuthorPost, PostListParams, PostStatus, PostTranslation } from '../posts/models/post.model';
 import { AuthorPostsService } from '../posts/services/author-posts.service';
-import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { ToastService } from '../../core/notifications/toast.service';
 
 type AuthorAction = 'submit' | 'archive' | 'restore' | 'trash' | 'restore-trash';
@@ -16,7 +16,7 @@ type ConfirmationAction = 'trash' | 'delete-permanent';
 @Component({
   selector: 'app-my-posts',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SidebarComponent],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './my-posts.component.html',
   styleUrl: './my-posts.component.scss',
 })
@@ -679,15 +679,6 @@ export class MyPostsComponent implements OnInit {
   }
 
   private formatError(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const message = error.error?.message as string | string[] | undefined;
-      if (Array.isArray(message)) {
-        return message.join(' ');
-      }
-
-      return message || error.message;
-    }
-
-    return 'Có lỗi xảy ra, hãy kiểm tra backend đang chạy.';
+    return getApiErrorMessage(error, 'Có lỗi xảy ra, hãy kiểm tra backend đang chạy.');
   }
 }
