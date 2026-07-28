@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, inject, ChangeDetectorRef } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { SubscriptionsService } from '../../../features/subscriptions/services/subscriptions.service';
@@ -15,6 +15,7 @@ import { AuthModalService } from '../auth-modal/auth-modal.service';
 })
 export class SubscribeButtonComponent implements OnInit, OnDestroy, OnChanges {
   @Input({ required: true }) authorId!: number | string;
+  @Output() followChange = new EventEmitter<boolean>();
   
   isSubscribed = false;
   loading = false;
@@ -85,6 +86,7 @@ export class SubscribeButtonComponent implements OnInit, OnDestroy, OnChanges {
         next: () => {
           this.isSubscribed = false;
           this.loading = false;
+          this.followChange.emit(false);
           this.cdr.markForCheck();
         },
         error: () => { this.loading = false; this.cdr.markForCheck(); }
@@ -94,6 +96,7 @@ export class SubscribeButtonComponent implements OnInit, OnDestroy, OnChanges {
         next: () => {
           this.isSubscribed = true;
           this.loading = false;
+          this.followChange.emit(true);
           this.cdr.markForCheck();
         },
         error: () => { this.loading = false; this.cdr.markForCheck(); }

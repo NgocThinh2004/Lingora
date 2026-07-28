@@ -20,11 +20,13 @@ import { UsersService } from '../users/services/users.service';
 import { EditorUploadsService } from '../workspace/services/editor-uploads.service';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
+import { SubscribeButtonComponent } from '../../shared/components/subscribe-button/subscribe-button.component';
+import { PostCardComponent } from '../posts/components/post-card/post-card.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, SidebarComponent, AssetImageDirective],
+  imports: [CommonModule, FormsModule, RouterModule, SidebarComponent, AssetImageDirective, SubscribeButtonComponent, PostCardComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
   encapsulation: ViewEncapsulation.None,
@@ -44,7 +46,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   private routeSubscription?: Subscription;
   private previousAccent = this.branding.accent();
-  private viewedUserId: string | null = null;
+  viewedUserId: string | null = null;
   private cropSourceImage: HTMLImageElement | null = null;
   private cropSourceFile: File | null = null;
   private cropDragging = false;
@@ -54,6 +56,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   isOwnProfile = signal(true);
   isSubscribed = signal(false);
   subscriptionLoading = signal(false);
+  allowShowSubscribers = signal(true);
+  allowShowFollowing = signal(true);
 
   // Local profile state for editing
   profileForm = {
@@ -63,7 +67,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   };
 
   isEditing = signal(false);
-  posts = signal<Array<AuthorPost | Post>>([]);
+  posts = signal<Post[]>([]);
   publicPostsCount = signal(0);
   categoryOptions: Array<{ id: number; label: string }> = [];
   followersCount = signal(0);
@@ -162,59 +166,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return url ? this.uploadsService.toAbsoluteUrl(url) : '';
   }
 
-  postTitle(post: AuthorPost | Post): string {
-    if (this.isFeedPost(post)) {
-      return post.translations.find(translation => translation.title)?.title || 'Untitled';
-    }
-    return post.translations.find(translation => translation.title)?.title || 'Untitled';
-  }
-
-  postContent(post: AuthorPost | Post): string {
-    if (this.isFeedPost(post)) {
-      return post.translations.find(item => item.contentHtml)?.contentHtml || '';
-    }
-    const translation = post.translations.find(item => item.content);
-    return translation?.content || '';
-  }
-
-  categoryLabel(post: AuthorPost | Post): string {
-    if (this.isFeedPost(post)) {
-      return post.category?.translations?.find(item => item.name)?.name
-        || post.category?.slug
-        || 'General';
-    }
-    if (post.categoryId === null) {
-      return 'General';
-    }
-    return this.categoryOptions.find(category => category.id === post.categoryId)?.label
-      || `Category ${post.categoryId}`;
-  }
-
-  postDate(post: AuthorPost | Post): string {
-    return this.isFeedPost(post) ? post.createdAt : post.updatedAt;
-  }
-
-  toggleSubscription(): void {
-    if (!this.viewedUserId || this.subscriptionLoading()) {
-      return;
-    }
-    if (!this.authService.isAuthenticated()) {
-      void this.router.navigate(['/auth/login']);
-      return;
-    }
-
-    this.subscriptionLoading.set(true);
-    const request = this.isSubscribed()
-      ? this.subscriptionsService.unsubscribe(this.viewedUserId)
-      : this.subscriptionsService.subscribe(this.viewedUserId);
-    request.pipe(finalize(() => this.subscriptionLoading.set(false))).subscribe({
-      next: () => {
-        const subscribed = !this.isSubscribed();
-        this.isSubscribed.set(subscribed);
-        this.followersCount.update(count => Math.max(0, count + (subscribed ? 1 : -1)));
-      },
-      error: err => this.toast.showError(this.formatError(err)),
-    });
+  onFollowChange(isSubscribed: boolean): void {
+    this.followersCount.update(count => Math.max(0, count + (isSubscribed ? 1 : -1)));
   }
 
   toggleEdit(editing: boolean) {
@@ -674,29 +627,19 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.setProfileForm(user);
         this.loadBranding();
         this.loadingProfile.set(false);
+
+        this.feedPostsService.list({ authorId: user.id, limit: 100 }).subscribe({
+          next: response => {
+            this.posts.set(response.items.slice(0, 10));
+            this.publicPostsCount.set(response.meta.total);
+          },
+          error: err => this.toast.showError(this.formatError(err)),
+        });
       },
       error: err => {
         this.toast.showError(this.formatError(err));
         this.loadingProfile.set(false);
       },
-    });
-
-    forkJoin([
-      this.postsService.listAuthorPosts({ status: 'published', limit: 100 }),
-      this.postsService.listAuthorPosts({ status: 'approved', limit: 100 }),
-    ]).subscribe({
-      next: responses => {
-        this.publicPostsCount.set(responses.reduce((total, response) => total + response.meta.total, 0));
-        const postsById = new Map(
-          responses.flatMap(response => response.data).map(post => [post.id, post]),
-        );
-        this.posts.set(
-          [...postsById.values()]
-            .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt))
-            .slice(0, 10),
-        );
-      },
-      error: err => this.toast.showError(this.formatError(err)),
     });
 
     this.subscriptionsService.stats().subscribe({
@@ -708,9 +651,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
 
-  private isFeedPost(post: AuthorPost | Post): post is Post {
-    return 'author' in post;
-  }
+
 
   private toSubscriptionAuthor(person: SubscriptionAuthor | User): SubscriptionAuthor {
     if ('displayName' in person) {
@@ -725,15 +666,21 @@ export class ProfileComponent implements OnInit, OnDestroy {
     };
   }
 
-  private setProfileForm(user: CurrentUser | null): void {
+  private setProfileForm(user: CurrentUser | User | null): void {
     if (!user) {
       return;
     }
+    const dName = ('displayName' in user ? user.displayName : user.name);
+    const uName = ('username' in user ? user.username : user.handle);
+    
     this.profileForm = {
-      displayName: user.displayName || user.username,
-      username: `@${user.username.replace(/^@/, '')}`,
+      displayName: dName || uName,
+      username: `@${uName.replace(/^@/, '')}`,
       bio: user.bio || '',
     };
+    
+    this.allowShowSubscribers.set((user as any).allowShowSubscribers ?? true);
+    this.allowShowFollowing.set((user as any).allowShowFollowing ?? true);
   }
 
   private normalizeUsername(value: string): string {
