@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { RefreshToken } from './models/refresh-token.model';
+import { Subscription } from '../subscriptions/models/subscription.model';
 import { JwtStrategy } from './jwt.strategy';
 import { MailModule } from '../mail/mail.module';
 
@@ -13,7 +14,7 @@ import { MailModule } from '../mail/mail.module';
   imports: [
     UsersModule,
     MailModule,
-    SequelizeModule.forFeature([RefreshToken]),
+    SequelizeModule.forFeature([RefreshToken, Subscription]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal, ElementRef, ViewChild, OnDestroy } from '@angular/core';
+import { Component, computed, inject, signal, ElementRef, ViewChild, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LocaleService } from '../../core/locale/locale.service';
 import { Category, translateCategory } from '../categories/models/category.model';
@@ -67,11 +67,9 @@ export class HomeComponent implements OnDestroy {
       error: () => this.categories.set([]),
     });
 
-    // Tải lại feed mỗi khi ngôn ngữ hiển thị thay đổi.
-    effect(() => {
-      this.currentLang();
-      this.loadFeed(1);
-    }, { allowSignalWrites: true });
+    // Load feed once on init — language changes are handled client-side
+    // since each post already carries all translations[].
+    this.loadFeed(1);
   }
 
   private loadFeed(page: number) {
@@ -102,6 +100,7 @@ export class HomeComponent implements OnDestroy {
   }
 
   selectCategory(slug: string) {
+    this.page.set(1);
     this.selectedCategorySlug.set(slug);
   }
 

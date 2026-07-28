@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, computed, inject } from '@angular/core';
+import { Component, Input, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { LocaleService } from '../../../../core/locale/locale.service';
@@ -18,7 +18,7 @@ import { AssetImageDirective } from '../../../../shared/directives/asset-image.d
   templateUrl: './post-card.component.html',
   styleUrl: './post-card.component.scss',
 })
-export class PostCardComponent implements OnInit {
+export class PostCardComponent {
   private readonly languageService = inject(LocaleService);
   private readonly likeService = inject(LikeService);
   private readonly authService = inject(AuthService);
@@ -37,9 +37,6 @@ export class PostCardComponent implements OnInit {
     }
     return '';
   });
-
-  ngOnInit() {
-  }
 
   get translation() {
     return getPostTranslation(this.post, this.currentLang());
@@ -76,7 +73,6 @@ export class PostCardComponent implements OnInit {
         this.post = { ...this.post, liked: status.liked, likeCount: status.likeCount, isLiking: false };
       },
       error: (err) => {
-        console.error('Error toggling like:', err);
         this.post = { ...this.post, liked: previousLiked, likeCount: previousLikeCount, isLiking: false };
       }
     });

@@ -265,11 +265,16 @@ export class CommentsService {
   }
 
   async getDashboardMetrics() {
-    const comments = await this.commentModel.findAll({ attributes: ['status'] });
+    const total = await this.commentModel.count();
+    const byStatusRows = await this.commentModel.sequelize!.query(
+      `SELECT status, COUNT(*) as count FROM comments GROUP BY status`,
+      { type: 'SELECT' as any }
+    ) as unknown as Array<{ status: string; count: string }>;
+
     const byStatus: Record<string, number> = {};
-    for (const comment of comments) {
-      byStatus[comment.status] = (byStatus[comment.status] ?? 0) + 1;
+    for (const row of byStatusRows) {
+      byStatus[row.status] = Number(row.count);
     }
-    return { total: comments.length, byStatus };
+    return { total, byStatus };
   }
 }

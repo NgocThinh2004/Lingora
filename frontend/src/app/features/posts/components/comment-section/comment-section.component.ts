@@ -188,7 +188,6 @@ export class CommentSectionComponent implements OnInit, OnChanges {
         comment.isLiking = false;
       },
       error: (err) => {
-        console.error('Error toggling comment like:', err);
         comment.liked = previousLiked;
         comment.likeCount = previousLikeCount;
         comment.isLiking = false;

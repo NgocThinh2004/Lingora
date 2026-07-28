@@ -40,11 +40,6 @@ export class SubscriptionsService {
     return this.http.get<ApiItemResponse<SubscriptionData>>(this.baseUrl).pipe(map(response => response.data));
   }
 
-  stats(): Observable<{ followers: number; following: number }> {
-    return this.http
-      .get<ApiItemResponse<{ followers: number; following: number }>>(`${this.baseUrl}/stats`)
-      .pipe(map(response => response.data));
-  }
 
   followers(): Observable<SubscriptionAuthor[]> {
     return this.http
@@ -81,7 +76,4 @@ export class SubscriptionsService {
     );
   }
 
-  checkSubscription(authorId: string | number): Observable<{ subscribed: boolean }> {
-    return this.http.get<ApiItemResponse<{ subscribed: boolean }>>(`${this.baseUrl}/check/${authorId}`).pipe(map(res => res.data));
-  }
 }

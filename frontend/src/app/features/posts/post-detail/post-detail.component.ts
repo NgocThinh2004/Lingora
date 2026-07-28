@@ -109,7 +109,6 @@ export class PostDetailComponent implements OnInit {
         }
       },
       error: (err) => {
-        console.error('Error loading post:', err);
         this.error.set('Could not load post details. Please try again later.');
         this.loading.set(false);
       }
@@ -143,7 +142,6 @@ export class PostDetailComponent implements OnInit {
         }
       },
       error: (err) => {
-        console.error('Error loading author post preview:', err);
         this.error.set('Could not load this article. It may have changed or been removed.');
         this.loading.set(false);
       },
@@ -234,7 +232,6 @@ export class PostDetailComponent implements OnInit {
         }
       },
       error: (err) => {
-        console.error('Error toggling like:', err);
         // Rollback on error
         const currentPost = this.post();
         if (currentPost && currentPost.id === p.id) {
