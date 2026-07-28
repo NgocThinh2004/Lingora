@@ -13,10 +13,6 @@ export class SubscriptionsController {
     return { data: await this.subscriptionsService.list(userId) };
   }
 
-  @Get('stats')
-  async stats(@CurrentUser('id') userId: string) {
-    return { data: await this.subscriptionsService.stats(userId) };
-  }
 
   @Get('followers')
   async followers(@CurrentUser('id') userId: string) {
@@ -36,10 +32,5 @@ export class SubscriptionsController {
   @Delete(':authorId')
   async unsubscribe(@CurrentUser('id') userId: string, @Param('authorId') authorId: string) {
     return { data: await this.subscriptionsService.unsubscribe(userId, authorId) };
-  }
-
-  @Get('check/:authorId')
-  async checkSubscription(@CurrentUser('id') userId: string, @Param('authorId') authorId: string) {
-    return { data: await this.subscriptionsService.checkSubscription(userId, authorId) };
   }
 }

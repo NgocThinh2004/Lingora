@@ -9,6 +9,7 @@ import { Sequelize } from 'sequelize-typescript';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/models/user.model';
 import { RefreshToken } from './models/refresh-token.model';
+import { Subscription } from '../subscriptions/models/subscription.model';
 import { ChangePasswordDto, RegisterDto, LoginDto, ResetPasswordDto, UpdateProfileDto } from './dto/auth.dto';
 import { MailService } from '../mail/mail.service';
 
@@ -31,6 +32,8 @@ export class AuthService {
     private readonly sequelize: Sequelize,
     @InjectModel(RefreshToken)
     private readonly refreshTokenModel: typeof RefreshToken,
+    @InjectModel(Subscription)
+    private readonly subscriptionModel: typeof Subscription,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -88,8 +91,12 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
-    const role = await this.usersService.getRoleById(user.role_id);
-    return this.toCurrentUser(user, role?.name);
+    const [role, followersCount, followingCount] = await Promise.all([
+      this.usersService.getRoleById(user.role_id),
+      this.subscriptionModel.count({ where: { author_id: String(userId) } }),
+      this.subscriptionModel.count({ where: { subscriber_id: String(userId) } }),
+    ]);
+    return { ...this.toCurrentUser(user, role?.name), followersCount, followingCount };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
