@@ -51,11 +51,6 @@
 
 .dropdown-wrap {
   position: relative;
-
-  &:hover .dropdown-menu,
-  &:focus-within .dropdown-menu {
-    display: flex;
-  }
 }
 
 .filter-btn {
@@ -83,6 +78,10 @@
   background-color: var(--bg-panel);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
   z-index: 20;
+
+  &.show {
+    display: flex;
+  }
 }
 
 .dropdown-item {

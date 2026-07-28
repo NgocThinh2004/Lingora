@@ -48,6 +48,7 @@ export class HomeComponent implements OnDestroy {
   readonly selectedCategorySlug = signal<string>('');
   readonly page = signal(1);
   readonly totalPages = signal(1);
+  readonly isDropdownOpen = signal(false);
 
   readonly currentLang = computed(() => this.languageService.current());
   readonly quickDraftAvatar = computed(() => {
@@ -102,6 +103,8 @@ export class HomeComponent implements OnDestroy {
   selectCategory(slug: string) {
     this.page.set(1);
     this.selectedCategorySlug.set(slug);
+    this.isDropdownOpen.set(false);
+    this.loadFeed(1);
   }
 
   loadMore() {

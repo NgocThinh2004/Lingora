@@ -8,12 +8,12 @@
   </a>
 
   <div class="filter-row">
-    <div class="dropdown-wrap">
-      <button type="button" class="filter-btn">
+    <div class="dropdown-wrap" (mouseenter)="isDropdownOpen.set(true)" (mouseleave)="isDropdownOpen.set(false)">
+      <button type="button" class="filter-btn" (click)="isDropdownOpen.set(!isDropdownOpen())">
         <span>{{ selectedCategoryLabel() }}</span>
         <i class="bi bi-chevron-down"></i>
       </button>
-      <div class="dropdown-menu">
+      <div class="dropdown-menu" [class.show]="isDropdownOpen()">
         <button type="button" class="dropdown-item" [class.active]="!selectedCategorySlug()" (click)="selectCategory('')">
           Dành cho bạn
         </button>
