@@ -90,7 +90,6 @@ export class HomeComponent implements OnDestroy {
 
     this.postService
       .list({
-        lang: this.currentLang(),
         category: this.selectedCategorySlug() || undefined,
         page,
         limit: 10,

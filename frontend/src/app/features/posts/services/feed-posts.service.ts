@@ -6,7 +6,6 @@ import { PaginatedResult, Post } from '../models/post.model';
 import { ApiResponse } from '../../../core/http/api-response.model';
 
 export interface PostQuery {
-  lang?: string;
   category?: string;
   q?: string;
   authorId?: string | number;
