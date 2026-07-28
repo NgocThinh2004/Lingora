@@ -23,13 +23,11 @@
               <div class="profile-avatar hero-avatar m-0 has-image">
                 <img [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
               </div>
-              @if (!isOwnProfile()) {
-              <button class="profile-action is-primary btn-subscribe m-0"
-                style="min-height: 44px; padding: 0 24px; width: auto;" type="button"
-                [disabled]="subscriptionLoading()" (click)="toggleSubscription()">
-                <i class="bi" [class.bi-plus-lg]="!isSubscribed()" [class.bi-check-lg]="isSubscribed()"></i>
-                <span>{{ isSubscribed() ? 'Following' : 'Follow' }}</span>
-              </button>
+              @if (!isOwnProfile() && viewedUserId) {
+                <app-subscribe-button
+                  [authorId]="viewedUserId"
+                  (followChange)="onFollowChange($event)">
+                </app-subscribe-button>
               }
             </div>
           </section>
@@ -80,30 +78,7 @@
           <div id="profilePostsContainer" class="mt-5">
             @if (posts().length > 0) {
               @for (post of posts(); track post.id) {
-                <article class="substack-post">
-                  <div class="substack-post-header">
-                    <div class="author-badge-group">
-                      <img class="author-avatar" [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
-                      <div class="author-meta-info">
-                        <span class="author-name">{{ profileForm.displayName }}</span>
-                        <span class="post-timestamp">{{ postDate(post) | date:'shortDate' }}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <span class="category-label">{{ categoryLabel(post) }}</span>
-
-                  <a class="post-link" [routerLink]="['/posts', post.id]">
-                    <h2 class="post-title">{{ postTitle(post) }}</h2>
-                    <div class="substack-post-content post-content" [innerHTML]="postContent(post)"></div>
-                  </a>
-
-                  <div class="substack-post-footer">
-                    <span class="footer-action-item"><i class="bi bi-heart"></i><span>0</span></span>
-                    <span class="footer-action-item"><i class="bi bi-chat"></i><span>0</span></span>
-                    <span class="footer-action-item"><i class="bi bi-eye"></i><span>{{ post.viewCount }}</span></span>
-                  </div>
-                </article>
+                <app-post-card [post]="post"></app-post-card>
               }
             } @else {
               <div class="text-center text-muted p-4">
