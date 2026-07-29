@@ -97,22 +97,3 @@
   overflow: hidden;
 }
 
-.tooltip-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-}
-
-.btn-view-profile {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-decoration: none;
-  padding: 0.3rem 0;
-  transition: color 0.15s;
-
-  &:hover {
-    color: var(--primary-color);
-  }
-}
