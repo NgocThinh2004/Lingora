@@ -25,6 +25,7 @@ describe('PublicPostsService locale filtering', () => {
       {} as never,
       languageModel as never,
       {} as never,
+      { get: jest.fn(), set: jest.fn() } as never,
     );
 
     const result = await service.listFeed({ lang: 'ja', page: 1, limit: 10 });

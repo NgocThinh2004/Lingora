@@ -39,6 +39,7 @@ export class PublicPostsController {
     @Req() req: any,
     @Query('lang') lang?: string,
   ) {
-    return this.postsService.getById(id, req.user?.id, lang);
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    return this.postsService.getById(id, req.user?.id, lang, ip);
   }
 }
