@@ -74,10 +74,7 @@ export class PublicPostsService {
       const matchedTranslations = await this.postTranslationModel.findAll({
         where: {
           translation_status: 'completed',
-          [Op.or]: [
-            { title: { [Op.like]: keyword } },
-            { content: { [Op.like]: keyword } },
-          ],
+          title: { [Op.like]: keyword },
         },
         attributes: ['post_id'],
       });
