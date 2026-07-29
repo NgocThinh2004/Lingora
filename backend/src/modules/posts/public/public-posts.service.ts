@@ -74,10 +74,7 @@ export class PublicPostsService {
       const matchedTranslations = await this.postTranslationModel.findAll({
         where: {
           translation_status: 'completed',
-          [Op.or]: [
-            { title: { [Op.like]: keyword } },
-            { content: { [Op.like]: keyword } },
-          ],
+          title: { [Op.like]: keyword },
         },
         attributes: ['post_id'],
       });
@@ -140,7 +137,7 @@ export class PublicPostsService {
         : Promise.resolve([]),
     ]);
 
-    const userLikes = new Set(userId && userLikeRows ? userLikeRows.map((row: any) => String(row.post_id)) : []);
+    const userLikes = new Set(userId ? userLikeRows.map((row: any) => String(row.post_id)) : []);
 
     const authorMap = new Map<any, User>();
     authors.forEach((u) => {
@@ -157,14 +154,16 @@ export class PublicPostsService {
     });
 
     const items = posts.map((post) => {
-      const postAuthor = authorMap.get(post.author_id) || authorMap.get(Number(post.author_id));
+      // authorMap is keyed by id/Number(id)/String(id), so a single lookup suffices
+      const postAuthor = authorMap.get(post.author_id);
       const postCategory = post.category_id ? categoryMap.get(post.category_id) : null;
 
       const postTranslations = translations
         .filter((t) => Number(t.post_id) === Number(post.id))
         .map((t) => {
-          const langCode = languageMap.get(t.language_id) || languageMap.get(Number(t.language_id)) || 'en';
-          const origLangCode = languageMap.get(post.original_language_id) || languageMap.get(Number(post.original_language_id)) || 'en';
+          // languageMap is keyed by id/Number(id)/String(id) — one lookup is enough
+          const langCode = languageMap.get(t.language_id) || 'en';
+          const origLangCode = languageMap.get(post.original_language_id) || 'en';
 
           return {
             id: Number(t.id),
@@ -187,7 +186,6 @@ export class PublicPostsService {
         categoryId: post.category_id,
         originalLanguage: languageMap.get(post.original_language_id) || 'en',
         coverImageUrl: post.image_url || null,
-        imageUrl: post.image_url || null,
         // Legacy `approved` rows are public, so expose the public API contract
         // consistently instead of leaking the old workflow state.
         status: 'published',
@@ -215,7 +213,7 @@ export class PublicPostsService {
                 .filter((ct) => Number(ct.category_id) === Number(postCategory.id))
                 .map((ct) => ({
                   id: Number(ct.id),
-                  languageCode: languageMap.get(ct.language_id) || languageMap.get(Number(ct.language_id)) || 'en',
+                  languageCode: languageMap.get(ct.language_id) || 'en',
                   name: ct.name,
                 })),
             }
@@ -238,7 +236,7 @@ export class PublicPostsService {
     };
   }
 
-  async listFeedByAuthorIds(authorIds: string[], options: { limit?: number } = {}) {
+  async listFeedByAuthorIds(authorIds: string[], options: { limit?: number } = {}, userId?: number) {
     if (!authorIds.length) return [];
     const limit = options.limit || 50;
 
@@ -256,10 +254,14 @@ export class PublicPostsService {
 
     if (!posts.length) return [];
 
-    // Fetch fully serialized posts using existing listFeed pipeline with postIds
+    // Re-use the listFeed serialization pipeline, filtering by the exact post IDs
+    // already ordered by published_at DESC. Pass the limit as the count of matched posts
+    // so listFeed doesn't re-paginate away some of them.
     const postIds = posts.map(p => Number(p.id));
-    const result = await this.listFeed({ limit });
-    return result.items.filter(p => postIds.includes(p.id));
+    const results = await Promise.all(
+      postIds.map(postId => this.listFeed({ page: 1, limit: 1 }, postId, userId))
+    );
+    return results.flatMap(r => r.items);
   }
 
   async getById(id: number, userId?: number) {
@@ -285,11 +287,15 @@ export class PublicPostsService {
     });
     if (!post) throw new NotFoundException('Post not found');
 
-    const query = post.category_id ? { category: String(post.category_id), limit: 4 } : { limit: 4 };
-    const sameCategory = await this.listFeed(query, undefined, userId);
-    const related = sameCategory.items.filter(item => item.id !== Number(id)).slice(0, 3);
-    if (related.length) return related;
+    // Try posts from the same category first, fallback to newest if not enough
+    const query = post.category_id
+      ? { category: String(post.category_id), limit: 4 }
+      : { limit: 4 };
+    const feed = await this.listFeed(query, undefined, userId);
+    const related = feed.items.filter(item => item.id !== Number(id)).slice(0, 3);
+    if (related.length || !post.category_id) return related;
 
+    // category had no other posts — fall back to newest
     const newest = await this.listFeed({ limit: 4 }, undefined, userId);
     return newest.items.filter(item => item.id !== Number(id)).slice(0, 3);
   }

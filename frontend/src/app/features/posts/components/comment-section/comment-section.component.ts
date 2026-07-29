@@ -172,8 +172,8 @@ export class CommentSectionComponent implements OnInit, OnChanges {
       return;
     }
 
-    const previousLiked = comment.liked;
-    const previousLikeCount = comment.likeCount || 0;
+    const previousLiked = comment.liked === true;  // guard: undefined → false
+    const previousLikeCount = comment.likeCount ?? 0;
     const nextLiked = !previousLiked;
     const nextLikeCount = nextLiked ? previousLikeCount + 1 : Math.max(0, previousLikeCount - 1);
 
@@ -187,7 +187,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
         comment.likeCount = res.likeCount;
         comment.isLiking = false;
       },
-      error: (err) => {
+      error: () => {
         comment.liked = previousLiked;
         comment.likeCount = previousLikeCount;
         comment.isLiking = false;

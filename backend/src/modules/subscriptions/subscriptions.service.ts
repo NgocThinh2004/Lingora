@@ -24,7 +24,7 @@ export class SubscriptionsService {
 
     // Query posts directly by authorIds instead of fetching global feed and filtering
     const posts = authorIds.length
-      ? await this.postsService.listFeedByAuthorIds(authorIds.map(String), { limit: 50 })
+      ? await this.postsService.listFeedByAuthorIds(authorIds, { limit: 50 }, Number(subscriberId))
       : [];
 
     return {

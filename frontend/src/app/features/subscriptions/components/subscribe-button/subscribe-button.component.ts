@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, inject, ChangeDetectorRef, HostBinding } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { SubscriptionsService } from '../../services/subscriptions.service';
@@ -14,7 +14,11 @@ import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 })
 export class SubscribeButtonComponent implements OnInit, OnDestroy, OnChanges {
   @Input({ required: true }) authorId!: number | string;
+  @Input() fullWidth = false;
   @Output() followChange = new EventEmitter<boolean>();
+
+  @HostBinding('style.width') get hostWidth() { return this.fullWidth ? '100%' : null; }
+  @HostBinding('style.display') get hostDisplay() { return this.fullWidth ? 'block' : null; }
   
   isSubscribed = false;
   loading = false;

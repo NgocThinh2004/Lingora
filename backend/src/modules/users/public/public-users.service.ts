@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { literal } from 'sequelize';
+import { literal, Op } from 'sequelize';
 import { Subscription } from '../../subscriptions/models/subscription.model';
 import { User } from '../models/user.model';
 
@@ -11,13 +11,22 @@ export class PublicUsersService {
     @InjectModel(Subscription) private readonly subscriptionModel: typeof Subscription,
   ) {}
 
-  async getRecommended(userId?: string | number) {
+  async getRecommended(userId?: string | number, q?: string) {
+    const whereClause: any = { status: 'active', deleted_at: null };
+    if (q && q.trim()) {
+      const keyword = `%${q.trim()}%`;
+      whereClause[Op.or] = [
+        { display_name: { [Op.like]: keyword } },
+        { username: { [Op.like]: keyword } },
+      ];
+    }
+
     const users = await this.userModel.findAll({
-      where: { status: 'active', deleted_at: null },
+      where: whereClause,
       order: [
         [literal('(SELECT COUNT(*) FROM subscriptions WHERE author_id = User.id)'), 'DESC'],
       ],
-      limit: 10,
+      limit: q ? 20 : 10,
     });
 
     const followingSet = await this.getFollowingSet(

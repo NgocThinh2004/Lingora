@@ -1,5 +1,6 @@
 <button class="btn rounded-pill fw-medium btn-subscribe"
-        [class.subscribed]="isSubscribed" 
+        [class.subscribed]="isSubscribed"
+        [class.w-100]="fullWidth"
         (click)="toggleSubscribe($event)"
         [disabled]="loading">
   <span class="btn-subscribe-label d-flex align-items-center justify-content-center gap-1">

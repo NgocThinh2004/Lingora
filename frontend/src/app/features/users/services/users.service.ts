@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -15,9 +15,13 @@ export class UsersService {
       .pipe(map((res) => res.data));
   }
 
-  getRecommended(): Observable<User[]> {
+  getRecommended(q?: string): Observable<User[]> {
+    let params = new HttpParams();
+    if (q) {
+      params = params.set('q', q);
+    }
     return this.http
-      .get<ApiResponse<User[]>>(`${environment.apiUrl}/users/recommended`)
+      .get<ApiResponse<User[]>>(`${environment.apiUrl}/users/recommended`, { params })
       .pipe(map((res) => res.data));
   }
 
