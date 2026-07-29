@@ -4,6 +4,7 @@ import {
   Param,
   ParseIntPipe,
   Req,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { OptionalJwtAuthGuard } from '../../auth/optional-jwt-auth.guard';
@@ -15,8 +16,8 @@ export class PublicUsersController {
 
   @Get('recommended')
   @UseGuards(OptionalJwtAuthGuard)
-  getRecommended(@Req() req: any) {
-    return this.usersService.getRecommended(req.user?.id);
+  getRecommended(@Req() req: any, @Query('q') q?: string) {
+    return this.usersService.getRecommended(req.user?.id, q);
   }
 
   @Get(':id/followers')

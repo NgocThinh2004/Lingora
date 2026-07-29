@@ -119,9 +119,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
         if (tab === 'top') {
           return forkJoin({
             posts: this.postsService.list({ q, category, limit: 10, sort: 'trending' }).pipe(map(res => res.items)),
-            people: this.userService.getRecommended().pipe(
-              map(users => q ? users.filter(u => u.name?.toLowerCase().includes(q) || u.handle?.toLowerCase().includes(q)) : users)
-            ),
+            people: this.userService.getRecommended(q),
             pubs: this.categoryService.findAll()
           }).pipe(map(res => ({ tab, q, data: res })));
         } else if (tab === 'posts') {
@@ -129,8 +127,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
             map(res => ({ tab, q, data: res }))
           );
         } else if (tab === 'people') {
-          return this.userService.getRecommended().pipe(
-            map(users => q ? users.filter(u => u.name?.toLowerCase().includes(q) || u.handle?.toLowerCase().includes(q)) : users),
+          return this.userService.getRecommended(q).pipe(
             map(res => ({ tab, q, data: res }))
           );
         } else if (tab === 'publications') {
