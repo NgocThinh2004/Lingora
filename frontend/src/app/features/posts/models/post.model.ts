@@ -137,11 +137,7 @@ export interface PaginatedResult<T> {
   };
 }
 
-/** Select the requested display translation, then fall back to the original language. */
+/** Select only the requested public display translation. */
 export function getPostTranslation(post: Post, lang: string): FeedPostTranslation | undefined {
-  return (
-    post.translations?.find(translation => translation.languageCode === lang)
-    ?? post.translations?.find(translation => translation.languageCode === post.originalLanguage)
-    ?? post.translations?.[0]
-  );
+  return post.translations?.find(translation => translation.languageCode === lang);
 }

@@ -57,10 +57,12 @@ export class PostDetailComponent implements OnInit {
   displayedTranslation = computed(() => {
     const currentPost = this.post();
     if (!currentPost) return null;
-    const trans = getPostTranslation(
-      currentPost,
-      this.localeService.selectedLocale(),
-    );
+    const selectedLocale = this.localeService.selectedLocale();
+    const trans = this.authorPreview()
+      ? getPostTranslation(currentPost, selectedLocale)
+        ?? currentPost.translations.find(item => item.languageCode === currentPost.originalLanguage)
+        ?? currentPost.translations[0]
+      : currentPost.translations.find(item => item.languageCode === selectedLocale);
     if (!trans) return null;
     
     return {
@@ -90,9 +92,10 @@ export class PostDetailComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     
+    const language = this.localeService.selectedLocale();
     forkJoin({
-      post: this.postService.getById(id),
-      related: this.postService.getRelated(id)
+      post: this.postService.getById(id, language),
+      related: this.postService.getRelated(id, language)
     }).subscribe({
       next: ({ post, related }) => {
         this.post.set(post);

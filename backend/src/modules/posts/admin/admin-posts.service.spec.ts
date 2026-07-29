@@ -15,7 +15,7 @@ describe('AdminPostsService', () => {
   beforeEach(() => {
     sequelize = { transaction: jest.fn((callback: (value: unknown) => unknown) => callback(transaction)) };
     postModel = { findAll: jest.fn(), findOne: jest.fn() };
-    translationModel = { findAll: jest.fn(), update: jest.fn() };
+    translationModel = { findAll: jest.fn(), update: jest.fn(), bulkCreate: jest.fn() };
     userModel = { findAll: jest.fn() };
     categoryModel = { findAll: jest.fn() };
     categoryTranslationModel = { findAll: jest.fn() };
@@ -62,7 +62,7 @@ describe('AdminPostsService', () => {
     });
   });
 
-  it('publishes an approved post and queues every unfinished target translation', async () => {
+  it('publishes a post and queues only the target translations selected by its author', async () => {
     const update = jest.fn();
     postModel.findOne.mockResolvedValue({
       id: '12',
@@ -83,6 +83,7 @@ describe('AdminPostsService', () => {
       expect.objectContaining({ translation_status: 'queued' }),
       expect.objectContaining({ transaction }),
     );
+    expect(translationModel.bulkCreate).not.toHaveBeenCalled();
   });
 
   it('requires a note before rejecting a post', async () => {

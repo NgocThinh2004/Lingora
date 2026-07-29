@@ -12,13 +12,6 @@ import {
 } from './models/admin-language.model';
 import { AdminLanguagesService } from './services/admin-languages.service';
 
-interface LanguageCatalogEntry {
-  code: string;
-  name: string;
-  nativeName: string;
-  flagCode: string;
-}
-
 type LanguageDialog = 'add' | 'edit' | null;
 
 @Component({
@@ -44,19 +37,11 @@ export class AdminLanguagesComponent implements OnInit {
   readonly updatingLanguageId = signal<number | null>(null);
   readonly pagination = signal<PaginationMeta>({ total: 0, page: 1, limit: 8, totalPages: 0 });
 
-  readonly catalog: readonly LanguageCatalogEntry[] = [
-    { code: 'en', name: 'English', nativeName: 'English', flagCode: 'gb' },
-    { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', flagCode: 'vn' },
-    { code: 'zh', name: 'Chinese', nativeName: '中文', flagCode: 'cn' },
-    { code: 'ja', name: 'Japanese', nativeName: '日本語', flagCode: 'jp' },
-    { code: 'ko', name: 'Korean', nativeName: '한국어', flagCode: 'kr' },
-    { code: 'fr', name: 'French', nativeName: 'Français', flagCode: 'fr' },
-    { code: 'es', name: 'Spanish', nativeName: 'Español', flagCode: 'es' },
-    { code: 'de', name: 'German', nativeName: 'Deutsch', flagCode: 'de' },
-  ];
-
   readonly addForm = this.fb.nonNullable.group({
-    code: ['', Validators.required],
+    code: ['', [Validators.required, Validators.maxLength(10), Validators.pattern(/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,6})?$/)]],
+    name: ['', [Validators.required, Validators.maxLength(100)]],
+    nativeName: ['', [Validators.required, Validators.maxLength(100)]],
+    flagCode: ['', Validators.pattern(/^[A-Za-z]{2}$/)],
   });
 
   readonly editForm = this.fb.nonNullable.group({
@@ -104,7 +89,7 @@ export class AdminLanguagesComponent implements OnInit {
   }
 
   openAddDialog(): void {
-    this.addForm.reset({ code: '' });
+    this.addForm.reset({ code: '', name: '', nativeName: '', flagCode: '' });
     this.dialogVisible.set(false);
     this.dialog.set('add');
     this.revealDialog('add');
@@ -156,16 +141,12 @@ export class AdminLanguagesComponent implements OnInit {
       this.addForm.markAllAsTouched();
       return;
     }
-    const entry = this.catalogEntry(this.addForm.controls.code.value);
-    if (!entry) {
-      return;
-    }
-
+    const values = this.addForm.getRawValue();
     const payload: CreateAdminLanguageRequest = {
-      code: entry.code,
-      name: entry.name,
-      nativeName: entry.nativeName,
-      flagCode: entry.flagCode,
+      code: values.code.trim().toLowerCase(),
+      name: values.name.trim(),
+      nativeName: values.nativeName.trim(),
+      ...(values.flagCode.trim() ? { flagCode: values.flagCode.trim().toLowerCase() } : {}),
       isActive: true,
     };
     this.saving.set(true);
@@ -231,15 +212,6 @@ export class AdminLanguagesComponent implements OnInit {
         this.toastService.showError(error.error?.meta?.error?.message || 'Unable to change the default language.');
       },
     });
-  }
-
-  availableCatalog(): readonly LanguageCatalogEntry[] {
-    const configuredCodes = new Set(this.languages().map(language => language.code.toLowerCase()));
-    return this.catalog.filter(entry => !configuredCodes.has(entry.code));
-  }
-
-  catalogEntry(code: string): LanguageCatalogEntry | undefined {
-    return this.catalog.find(entry => entry.code === code);
   }
 
   pageNumbers(): number[] {

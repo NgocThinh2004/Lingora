@@ -173,14 +173,23 @@ const UI_TRANSLATIONS = {
   },
 } as const;
 
-export type UiTranslationKey = keyof typeof UI_TRANSLATIONS.en;
+export type UiTranslationKey = string;
+type UiLocaleBundle = Record<string, string>;
 
 @Injectable({ providedIn: 'root' })
 export class LocaleService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/languages`;
+  private readonly localesApiUrl = `${environment.apiUrl}/locales`;
   private loaded = false;
   private requestInProgress = false;
+  private readonly bundleRequests = new Set<string>();
+
+  readonly bundles = signal<Record<string, UiLocaleBundle>>({
+    en: UI_TRANSLATIONS.en,
+    vi: UI_TRANSLATIONS.vi,
+    zh: UI_TRANSLATIONS.zh,
+  });
 
   readonly options = signal<readonly LocaleOption[]>(FALLBACK_OPTIONS);
   readonly selectedLocale = signal(this.initialLocale());
@@ -203,6 +212,7 @@ export class LocaleService {
         this.loaded = true;
         this.requestInProgress = false;
         this.ensureValidSelection();
+        this.loadBundle(this.selectedLocale());
       },
       error: () => {
         this.requestInProgress = false;
@@ -223,6 +233,7 @@ export class LocaleService {
         this.options.set(options.length ? options : FALLBACK_OPTIONS);
         this.loaded = true;
         this.ensureValidSelection();
+        this.loadBundle(this.selectedLocale());
       }),
     );
   }
@@ -241,8 +252,8 @@ export class LocaleService {
 
   translate(key: UiTranslationKey): string {
     const locale = this.selectedLocale();
-    const dictionary = UI_TRANSLATIONS[locale as keyof typeof UI_TRANSLATIONS] ?? UI_TRANSLATIONS.en;
-    return dictionary[key] ?? UI_TRANSLATIONS.en[key];
+    const dictionaries = this.bundles();
+    return dictionaries[locale]?.[key] ?? dictionaries['en']?.[key] ?? key;
   }
 
   private initialLocale(): string {
@@ -250,7 +261,9 @@ export class LocaleService {
       localStorage.getItem('preferredLanguage') ??
       localStorage.getItem('lingora-locale')
     )?.trim().toLowerCase();
-    return FALLBACK_OPTIONS.some(option => option.code === savedLocale) ? savedLocale! : 'en';
+    return savedLocale && /^[a-z]{2,3}(?:-[a-z0-9]{2,6})?$/.test(savedLocale)
+      ? savedLocale
+      : 'en';
   }
 
   private ensureValidSelection(): void {
@@ -270,9 +283,26 @@ export class LocaleService {
     localStorage.setItem('lingora-locale', code);
     localStorage.setItem('preferredLanguage', code);
     this.applyDocumentLanguage(code);
+    this.loadBundle(code);
     window.dispatchEvent(new CustomEvent('lingora:languagechange', {
       detail: { language: code },
     }));
+  }
+
+  private loadBundle(code: string): void {
+    const normalizedCode = code.trim().toLowerCase();
+    if (!normalizedCode || this.bundles()[normalizedCode] || this.bundleRequests.has(normalizedCode)) {
+      return;
+    }
+    this.bundleRequests.add(normalizedCode);
+    this.http.get<ApiResponse<UiLocaleBundle>>(`${this.localesApiUrl}/${encodeURIComponent(normalizedCode)}`)
+      .subscribe({
+        next: response => {
+          this.bundles.update(bundles => ({ ...bundles, [normalizedCode]: response.data }));
+          this.bundleRequests.delete(normalizedCode);
+        },
+        error: () => this.bundleRequests.delete(normalizedCode),
+      });
   }
 
   private applyDocumentLanguage(code: string): void {

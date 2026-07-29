@@ -13,6 +13,10 @@ describe('LanguagesService', () => {
     update: jest.Mock;
   };
   let service: LanguagesService;
+  let localeBundlesService: {
+    provisionLanguage: jest.Mock;
+    removeGeneratedBundle: jest.Mock;
+  };
 
   const makeLanguage = (overrides: Record<string, unknown> = {}) => {
     const language: Record<string, any> = {
@@ -23,12 +27,14 @@ describe('LanguagesService', () => {
       flag_code: 'vn',
       is_default: false,
       is_active: true,
+      activated_at: null,
       ...overrides,
     };
     language.update = jest.fn(async (values: Record<string, unknown>) => {
       Object.assign(language, values);
       return language;
     });
+    language.destroy = jest.fn().mockResolvedValue(undefined);
     return language;
   };
 
@@ -44,7 +50,15 @@ describe('LanguagesService', () => {
       create: jest.fn(),
       update: jest.fn().mockResolvedValue([0]),
     };
-    service = new LanguagesService(sequelize as never, languageModel as never);
+    localeBundlesService = {
+      provisionLanguage: jest.fn().mockResolvedValue(undefined),
+      removeGeneratedBundle: jest.fn().mockResolvedValue(undefined),
+    };
+    service = new LanguagesService(
+      sequelize as never,
+      languageModel as never,
+      localeBundlesService as never,
+    );
   });
 
   it('returns only active languages for public selectors with the default first', async () => {
@@ -117,6 +131,11 @@ describe('LanguagesService', () => {
     });
 
     expect(languageModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({ is_default: false, is_active: false, activated_at: null }),
+      { transaction },
+    );
+    expect(localeBundlesService.provisionLanguage).toHaveBeenCalledWith(created);
+    expect(created.update).toHaveBeenCalledWith(
       expect.objectContaining({ is_default: true, is_active: true }),
       { transaction },
     );
@@ -126,6 +145,7 @@ describe('LanguagesService', () => {
 
   it('does not allow the default language to be disabled', async () => {
     const defaultLanguage = makeLanguage({ id: 1, code: 'en', is_default: true });
+    languageModel.findByPk.mockResolvedValue(defaultLanguage);
     languageModel.findAll.mockResolvedValue([defaultLanguage]);
 
     await expect(service.update(1, { isActive: false }))
@@ -137,6 +157,7 @@ describe('LanguagesService', () => {
   it('switches the default language atomically and keeps it active', async () => {
     const currentDefault = makeLanguage({ id: 1, code: 'en', is_default: true });
     const target = makeLanguage({ id: 2, code: 'vi', is_default: false, is_active: false });
+    languageModel.findByPk.mockResolvedValue(target);
     languageModel.findAll.mockResolvedValue([currentDefault, target]);
 
     const result = await service.update(2, { isDefault: true, isActive: false });
@@ -149,6 +170,7 @@ describe('LanguagesService', () => {
       expect.objectContaining({ is_default: true, is_active: true }),
       { transaction },
     );
+    expect(localeBundlesService.provisionLanguage).toHaveBeenCalledWith(target);
     expect(result.isDefault).toBe(true);
     expect(result.isActive).toBe(true);
   });

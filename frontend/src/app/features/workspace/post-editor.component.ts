@@ -90,11 +90,11 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     title: '',
     categoryId: undefined,
     originalLanguageId: 1,
-    targetLanguageIds: [2, 3],
+    targetLanguageIds: [],
     content: '',
   };
 
-  targetInput = '2,3';
+  targetInput = '';
   createdPost: AuthorPost | null = null;
   saveMode: SaveMode | null = null;
   uploadingType: EditorMediaType | null = null;
@@ -118,7 +118,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   linkBubbleLeft = 150;
   linkBubbleAbove = false;
   shareLabel = 'Share';
-  private readonly allowedTargetLanguageIds = new Set<number>([2, 3]);
+  private readonly allowedTargetLanguageIds = new Set<number>();
 
   ngOnInit(): void {
     document.body.classList.add('editor-page');

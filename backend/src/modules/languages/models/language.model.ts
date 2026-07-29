@@ -27,4 +27,7 @@ export class Language extends Model {
 
   @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: true })
   declare is_active: boolean;
+
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare activated_at: Date | null;
 }

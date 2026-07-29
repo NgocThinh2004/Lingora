@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, AfterViewInit, AfterViewChecked, ElementRef, ViewChild, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, AfterViewInit, AfterViewChecked, ElementRef, ViewChild, effect, inject, untracked } from '@angular/core';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { BehaviorSubject, debounceTime, distinctUntilChanged, Subscription, forkJoin, map, switchMap, tap, of, catchError } from 'rxjs';
 import { FeedPostsService } from '../posts/services/feed-posts.service';
@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthorTooltipComponent } from '../users/components/author-tooltip/author-tooltip.component';
 import { SubscribeButtonComponent } from '../subscriptions/components/subscribe-button/subscribe-button.component';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
+import { LocaleService } from '../../core/locale/locale.service';
 
 @Component({
   selector: 'app-explore',
@@ -31,6 +32,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
   private readonly userService = inject(UsersService);
   private readonly categoryService = inject(CategoriesService);
   private readonly route = inject(ActivatedRoute);
+  private readonly localeService = inject(LocaleService);
 
   query = '';
   tab: 'top' | 'posts' | 'publications' | 'people' = 'top';
@@ -54,8 +56,19 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
   
   selectedCategory?: Category;
 
-  private readonly filterSubject = new BehaviorSubject<{query: string, tab: string, category?: string}>({query: '', tab: 'top'});
+  private readonly filterSubject = new BehaviorSubject<{query: string, tab: string, category?: string, lang: string}>({
+    query: '',
+    tab: 'top',
+    lang: this.localeService.current(),
+  });
   private searchSubscription?: Subscription;
+
+  constructor() {
+    effect(() => {
+      const lang = this.localeService.current();
+      untracked(() => this.filterSubject.next({ ...this.filterSubject.value, lang }));
+    });
+  }
 
   ngAfterViewInit() {
     if (this.stickyHeaderRef) {
@@ -99,7 +112,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
           if (found) {
             this.selectedCategory = found;
             this.tab = 'posts';
-            this.filterSubject.next({ query: this.query, tab: this.tab, category: found.slug });
+            this.emitFilters(found.slug);
           }
         });
       }
@@ -107,23 +120,26 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
 
     this.searchSubscription = this.filterSubject.pipe(
       debounceTime(300),
-      distinctUntilChanged((prev, curr) => prev.query === curr.query && prev.tab === curr.tab && prev.category === curr.category),
+      distinctUntilChanged((prev, curr) => prev.query === curr.query
+        && prev.tab === curr.tab
+        && prev.category === curr.category
+        && prev.lang === curr.lang),
       tap(() => {
         this.loading = true;
         this.error = '';
         this.page = 1;
       }),
-      switchMap(({ query, tab, category }) => {
+      switchMap(({ query, tab, category, lang }) => {
         const q = query.trim().toLowerCase();
         
         if (tab === 'top') {
           return forkJoin({
-            posts: this.postsService.list({ q, category, limit: 10, sort: 'trending' }).pipe(map(res => res.items)),
+            posts: this.postsService.list({ q, category, lang, limit: 10, sort: 'trending' }).pipe(map(res => res.items)),
             people: this.userService.getRecommended(q),
             pubs: this.categoryService.findAll()
           }).pipe(map(res => ({ tab, q, data: res })));
         } else if (tab === 'posts') {
-          return this.postsService.list({ q, category, limit: 20, sort: 'trending', page: 1 }).pipe(
+          return this.postsService.list({ q, category, lang, limit: 20, sort: 'trending', page: 1 }).pipe(
             map(res => ({ tab, q, data: res }))
           );
         } else if (tab === 'people') {
@@ -132,7 +148,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
           );
         } else if (tab === 'publications') {
           return this.categoryService.findAll().pipe(
-            map(categories => q ? categories.filter(c => translateCategory(c, 'vi').toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)) : categories),
+            map(categories => q ? categories.filter(c => translateCategory(c, lang).toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)) : categories),
             map(res => ({ tab, q, data: res }))
           );
         }
@@ -153,7 +169,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
         let filteredPubs = data.pubs;
         if (q) {
           filteredPubs = filteredPubs.filter((c: any) => 
-            translateCategory(c, 'vi').toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)
+            translateCategory(c, this.localeService.current()).toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)
           );
         }
         this.featuredPublications = filteredPubs.slice(0, 2);
@@ -181,7 +197,14 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
     const q = this.query.trim().toLowerCase();
     this.page++;
 
-    this.postsService.list({ q, category: this.selectedCategory?.slug, limit: 20, sort: 'trending', page: this.page }).subscribe({
+    this.postsService.list({
+      q,
+      category: this.selectedCategory?.slug,
+      lang: this.localeService.current(),
+      limit: 20,
+      sort: 'trending',
+      page: this.page,
+    }).subscribe({
       next: (res) => {
         this.posts = [...this.posts, ...res.items];
         this.totalPages = res.meta.totalPages;
@@ -195,35 +218,44 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
 
   updateQuery(event: Event): void {
     this.query = (event.target as HTMLInputElement).value;
-    this.filterSubject.next({ query: this.query, tab: this.tab, category: this.selectedCategory?.slug });
+    this.emitFilters(this.selectedCategory?.slug);
   }
 
   clearQuery(): void {
     this.query = '';
-    this.filterSubject.next({ query: this.query, tab: this.tab, category: this.selectedCategory?.slug });
+    this.emitFilters(this.selectedCategory?.slug);
   }
 
   setTab(tab: 'top' | 'posts' | 'publications' | 'people'): void {
     if (this.tab !== tab) {
       this.tab = tab;
-      this.filterSubject.next({ query: this.query, tab: this.tab, category: this.selectedCategory?.slug });
+      this.emitFilters(this.selectedCategory?.slug);
     }
   }
 
   selectCategory(cat: Category): void {
     this.selectedCategory = cat;
     this.tab = 'posts';
-    this.filterSubject.next({ query: this.query, tab: this.tab, category: this.selectedCategory.slug });
+    this.emitFilters(this.selectedCategory.slug);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   clearCategory(): void {
     this.selectedCategory = undefined;
-    this.filterSubject.next({ query: this.query, tab: this.tab });
+    this.emitFilters();
   }
   
   translateCategoryName(cat: Category): string {
-    return translateCategory(cat, 'vi');
+    return translateCategory(cat, this.localeService.current());
+  }
+
+  private emitFilters(category?: string): void {
+    this.filterSubject.next({
+      query: this.query,
+      tab: this.tab,
+      category,
+      lang: this.localeService.current(),
+    });
   }
 
   private handleError(): void {

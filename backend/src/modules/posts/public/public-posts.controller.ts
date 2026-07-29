@@ -24,13 +24,21 @@ export class PublicPostsController {
 
   @Get(':id/related')
   @UseGuards(OptionalJwtAuthGuard)
-  getRelated(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
-    return this.postsService.getRelated(id, req.user?.id);
+  getRelated(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
+    @Query('lang') lang?: string,
+  ) {
+    return this.postsService.getRelated(id, req.user?.id, lang);
   }
 
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
-  getById(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
-    return this.postsService.getById(id, req.user?.id);
+  getById(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
+    @Query('lang') lang?: string,
+  ) {
+    return this.postsService.getById(id, req.user?.id, lang);
   }
 }

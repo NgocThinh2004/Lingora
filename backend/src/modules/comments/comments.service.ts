@@ -7,7 +7,6 @@ import { Language } from '../languages/models/language.model';
 import { CommentTranslation } from './models/comment-translation.model';
 import { CommentLike } from '../likes/models/comment-like.model';
 import { CreateCommentDto } from './dto/create-comment.dto';
-import { ConfigService } from '@nestjs/config';
 import { TranslationProviderService } from '../translations/translation-provider.service';
 
 @Injectable()
@@ -18,7 +17,6 @@ export class CommentsService {
     @InjectModel(Language) private languageModel: typeof Language,
     @InjectModel(CommentTranslation) private commentTranslationModel: typeof CommentTranslation,
     @InjectModel(CommentLike) private commentLikeModel: typeof CommentLike,
-    private configService: ConfigService,
     private translationProvider: TranslationProviderService,
   ) {}
 
@@ -235,24 +233,15 @@ export class CommentsService {
           targetLanguageCode: languageCode,
         };
 
-        const providerOrderStr = this.configService.get<string>('TRANSLATION_PROVIDER_ORDER') ||
-                                 this.configService.get<string>('TRANSLATION_PROVIDER') || 'google,libretranslate,deepl';
-        const providers = providerOrderStr.split(',').map(p => p.trim()).filter(Boolean);
+        const result = await this.translationProvider.translateWithFallback({
+          texts: [request.content],
+          sourceLanguageCode: request.sourceLanguageCode,
+          targetLanguageCode: request.targetLanguageCode,
+          format: 'text',
+        });
 
-        let success = false;
-        let translatedText = '';
-
-        for (const provider of providers) {
-          const result = await this.translationProvider.translate(provider, request);
-          if (result.ok) {
-            translatedText = result.content;
-            success = true;
-            break;
-          }
-        }
-
-        if (success) {
-          await translation.update({ content: translatedText, translation_status: 'completed' });
+        if (result.ok) {
+          await translation.update({ content: result.texts[0], translation_status: 'completed' });
         } else {
           await translation.update({ translation_status: 'failed' });
         }

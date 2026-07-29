@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, effect, untracked } from '@angular/core';
 import { SubscriptionsService } from './services/subscriptions.service';
 import { AuthorTooltipComponent } from '../users/components/author-tooltip/author-tooltip.component';
 import { PostCardComponent } from '../posts/components/post-card/post-card.component';
@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { Post } from '../posts/models/post.model';
 import { SubscribeButtonComponent } from './components/subscribe-button/subscribe-button.component';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
+import { LocaleService } from '../../core/locale/locale.service';
 
 @Component({
   selector: 'app-subscriptions',
@@ -14,8 +15,9 @@ import { AssetImageDirective } from '../../shared/directives/asset-image.directi
   templateUrl: './subscriptions.component.html',
   styleUrl: './subscriptions.component.scss'
 })
-export class SubscriptionsComponent implements OnInit {
+export class SubscriptionsComponent {
   private readonly subscriptionsService = inject(SubscriptionsService);
+  private readonly localeService = inject(LocaleService);
 
   tab: 'all' | 'manage' = 'all';
   authorFilter = '';
@@ -27,8 +29,11 @@ export class SubscriptionsComponent implements OnInit {
 
   @ViewChild('carousel') carousel!: ElementRef<HTMLDivElement>;
 
-  ngOnInit(): void {
-    this.loadSubscriptions();
+  constructor() {
+    effect(() => {
+      const language = this.localeService.current();
+      untracked(() => this.loadSubscriptions(language));
+    });
   }
 
   get visiblePosts(): Post[] {
@@ -61,8 +66,9 @@ export class SubscriptionsComponent implements OnInit {
     }
   }
 
-  private loadSubscriptions(): void {
-    this.subscriptionsService.list().subscribe({
+  private loadSubscriptions(language: string): void {
+    this.loading = true;
+    this.subscriptionsService.list(language).subscribe({
       next: data => {
         this.authors = data.authors.map(author => ({
           id: author.id,

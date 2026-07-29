@@ -156,33 +156,33 @@
       </header>
       <form [formGroup]="addForm" (ngSubmit)="createLanguage()">
         <div class="dialog-body">
-          <label for="addLanguageCode">Select language</label>
-          <select id="addLanguageCode" class="form-select" formControlName="code">
-            <option value="">Choose a language...</option>
-            @for (entry of availableCatalog(); track entry.code) {
-              <option [value]="entry.code">{{ entry.nativeName }} ({{ entry.name }})</option>
-            }
-          </select>
+          <label for="addLanguageCode">Language code</label>
+          <input id="addLanguageCode" class="form-control" type="text" maxlength="10" placeholder="For example: ja or pt-BR" formControlName="code">
           @if (addForm.controls.code.touched && addForm.controls.code.invalid) {
-            <span class="field-error">Please select a language.</span>
+            <span class="field-error">Enter a valid language code such as ja or pt-BR.</span>
           }
 
-          <label for="generatedLanguageCode">Language code</label>
-          <input id="generatedLanguageCode" class="form-control" type="text" [value]="addForm.controls.code.value" readonly>
-
-          @if (catalogEntry(addForm.controls.code.value); as entry) {
-            <div class="language-preview">
-              <img class="language-flag" [src]="flagUrl(entry.flagCode)" [alt]="entry.name + ' flag'" width="34" height="25">
-              <div><strong>{{ entry.name }}</strong><span>{{ entry.nativeName }}</span></div>
-            </div>
+          <label for="addLanguageName">Display name</label>
+          <input id="addLanguageName" class="form-control" type="text" maxlength="100" placeholder="Japanese" formControlName="name">
+          @if (addForm.controls.name.touched && addForm.controls.name.invalid) {
+            <span class="field-error">Please enter a display name.</span>
           }
-          @if (!availableCatalog().length) {
-            <p class="dialog-note">Every language in the current catalog is already configured.</p>
+
+          <label for="addLanguageNativeName">Native name</label>
+          <input id="addLanguageNativeName" class="form-control" type="text" maxlength="100" placeholder="日本語" formControlName="nativeName">
+          @if (addForm.controls.nativeName.touched && addForm.controls.nativeName.invalid) {
+            <span class="field-error">Please enter the language's native name.</span>
+          }
+
+          <label for="addLanguageFlag">Flag code (optional)</label>
+          <input id="addLanguageFlag" class="form-control" type="text" maxlength="2" placeholder="jp" formControlName="flagCode">
+          @if (addForm.controls.flagCode.touched && addForm.controls.flagCode.invalid) {
+            <span class="field-error">Enter a two-letter country code.</span>
           }
         </div>
         <footer class="dialog-footer">
           <button class="btn btn-outline-secondary" type="button" (click)="closeDialog()">Cancel</button>
-          <button class="btn btn-primary px-4" type="submit" [disabled]="saving() || !availableCatalog().length">
+          <button class="btn btn-primary px-4" type="submit" [disabled]="saving()">
             @if (saving()) { <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> }
             Save changes
           </button>

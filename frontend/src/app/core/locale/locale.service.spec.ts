@@ -62,6 +62,45 @@ describe('LocaleService', () => {
     expect(localStorage.getItem('lingora-locale')).toBeNull();
   });
 
+  it('loads a generated UI bundle when a newly active locale is selected', () => {
+    service.load();
+    httpTesting.expectOne(`${environment.apiUrl}/languages`).flush({
+      data: [
+        { code: 'en', name: 'English', nativeName: 'English', flagCode: 'gb', isDefault: true },
+        { code: 'ja', name: 'Japanese', nativeName: '日本語', flagCode: 'jp', isDefault: false },
+      ],
+    });
+
+    service.selectLocale('ja');
+    httpTesting.expectOne(`${environment.apiUrl}/locales/ja`).flush({
+      data: { home: 'ホーム', sign_out: 'ログアウト' },
+    });
+
+    expect(service.translate('home')).toBe('ホーム');
+    expect(service.translate('sign_out')).toBe('ログアウト');
+  });
+
+  it('restores a dynamically added locale after a page reload', () => {
+    localStorage.setItem('preferredLanguage', 'ja');
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(LocaleService);
+    httpTesting = TestBed.inject(HttpTestingController);
+
+    expect(service.selectedLocale()).toBe('ja');
+    service.load();
+    httpTesting.expectOne(`${environment.apiUrl}/languages`).flush({
+      data: [
+        { code: 'en', name: 'English', nativeName: 'English', flagCode: 'gb', isDefault: true },
+        { code: 'ja', name: 'Japanese', nativeName: '日本語', flagCode: 'jp', isDefault: false },
+      ],
+    });
+    httpTesting.expectOne(`${environment.apiUrl}/locales/ja`).flush({ data: { home: 'ホーム' } });
+    expect(service.translate('home')).toBe('ホーム');
+  });
+
   it('translates the shared sidebar and My Posts labels from core.js', () => {
     service.selectLocale('vi');
     expect(service.translate('home')).toBe('Trang chủ');

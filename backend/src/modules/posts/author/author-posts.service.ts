@@ -304,10 +304,11 @@ export class AuthorPostsService {
         transaction,
       );
 
-      if (dto.targetLanguageIds) {
-        await this.ensureTargetTranslations(
+      if (dto.targetLanguageIds !== undefined) {
+        await this.syncTargetTranslations(
           post.id,
           this.normalizeTargetLanguageIds(dto.targetLanguageIds, originalLanguageId),
+          originalLanguageId,
           sourceTranslation.id,
           transaction,
         );
@@ -579,6 +580,29 @@ export class AuthorPostsService {
         );
       }
     }
+  }
+
+  private async syncTargetTranslations(
+    postId: string,
+    targetLanguageIds: number[],
+    originalLanguageId: number,
+    sourceTranslationId: string,
+    transaction: Transaction,
+  ): Promise<void> {
+    const retainedLanguageIds = [originalLanguageId, ...targetLanguageIds];
+    await this.postTranslationModel.destroy({
+      where: {
+        post_id: postId,
+        language_id: { [Op.notIn]: retainedLanguageIds },
+      },
+      transaction,
+    });
+    await this.ensureTargetTranslations(
+      postId,
+      targetLanguageIds,
+      sourceTranslationId,
+      transaction,
+    );
   }
 
   private async markTargetTranslationsOutdated(

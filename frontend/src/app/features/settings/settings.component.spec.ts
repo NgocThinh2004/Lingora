@@ -36,6 +36,9 @@ describe('SettingsComponent', () => {
         },
       ],
     });
+    http.expectOne(request => request.url.endsWith('/locales/fr')).flush({
+      data: { settings: 'Paramètres' },
+    });
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
