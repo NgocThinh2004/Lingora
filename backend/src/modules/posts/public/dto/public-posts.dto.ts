@@ -2,6 +2,9 @@ import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class PublicPostsQueryDto {
+  @IsOptional()
+  @IsString()
+  lang?: string;
 
   @IsOptional()
   @IsString()
