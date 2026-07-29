@@ -18,4 +18,5 @@ export interface Comment {
   liked?: boolean;
   isLiking?: boolean;
   translations?: any[];
+  originalLanguage?: { code: string };
 }
