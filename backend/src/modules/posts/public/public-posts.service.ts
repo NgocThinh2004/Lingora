@@ -238,7 +238,7 @@ export class PublicPostsService {
     };
   }
 
-  async listFeedByAuthorIds(authorIds: string[], options: { limit?: number } = {}) {
+  async listFeedByAuthorIds(authorIds: string[], options: { limit?: number } = {}, userId?: number) {
     if (!authorIds.length) return [];
     const limit = options.limit || 50;
 
@@ -258,7 +258,7 @@ export class PublicPostsService {
 
     // Fetch fully serialized posts using existing listFeed pipeline with postIds
     const postIds = posts.map(p => Number(p.id));
-    const result = await this.listFeed({ limit });
+    const result = await this.listFeed({ limit }, undefined, userId);
     return result.items.filter(p => postIds.includes(p.id));
   }
 

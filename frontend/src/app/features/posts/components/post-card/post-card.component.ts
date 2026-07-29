@@ -61,8 +61,8 @@ export class PostCardComponent {
       return;
     }
 
-    const previousLiked = this.post.liked;
-    const previousLikeCount = this.post.likeCount || 0;
+    const previousLiked = this.post.liked === true;   // guard: undefined → false
+    const previousLikeCount = this.post.likeCount ?? 0;
     const nextLiked = !previousLiked;
     const nextLikeCount = nextLiked ? previousLikeCount + 1 : Math.max(0, previousLikeCount - 1);
 
