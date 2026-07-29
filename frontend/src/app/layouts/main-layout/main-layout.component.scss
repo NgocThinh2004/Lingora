@@ -38,7 +38,7 @@
   flex-direction: column;
   align-items: center;
 
-  >* {
+  ::ng-deep > * {
     width: 100%;
     max-width: var(--content-max-width, 720px);
   }
@@ -50,7 +50,7 @@
   min-height: 100vh;
   overflow: visible;
 
-  > * {
+  ::ng-deep > * {
     max-width: 100%;
   }
 }
@@ -88,7 +88,7 @@
     border-right: none;
     padding: 0 1rem 1.25rem 1rem;
 
-    >* {
+    ::ng-deep >* {
       max-width: 100%;
     }
   }
