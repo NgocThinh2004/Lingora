@@ -14,7 +14,7 @@ export interface SearchCategory {
 export interface SearchPost {
   id: number;
   title: string;
-  imageUrl: string | null;
+
   createdAt: string;
   author: {
     id: number;

@@ -180,12 +180,23 @@ export class PublicPostsService {
           };
         });
 
+      let coverImageUrl: string | null = null;
+      for (const t of postTranslations) {
+        if (t.contentHtml) {
+          const match = t.contentHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
+          if (match && match[1]) {
+            coverImageUrl = match[1];
+            break;
+          }
+        }
+      }
+
       return {
         id: Number(post.id),
         authorId: Number(post.author_id),
         categoryId: post.category_id,
         originalLanguage: languageMap.get(post.original_language_id) || 'en',
-        coverImageUrl: post.image_url || null,
+        coverImageUrl,
         // Legacy `approved` rows are public, so expose the public API contract
         // consistently instead of leaking the old workflow state.
         status: 'published',

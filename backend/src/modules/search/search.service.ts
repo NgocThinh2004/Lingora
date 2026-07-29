@@ -112,7 +112,6 @@ export class SearchService {
           return {
             id: Number(p.id),
             title: trans?.title || '',
-            imageUrl: p.image_url,
             createdAt: p.published_at || p.created_at,
             author: {
               id: Number(author?.id || p.author_id),
