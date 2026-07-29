@@ -32,6 +32,7 @@
     "class-validator": "^0.15.1",
     "compression": "^1.8.1",
     "dotenv": "^16.4.7",
+    "franc-min": "^5.0.0",
     "helmet": "^8.3.0",
     "multer": "^2.2.0",
     "mysql2": "^3.14.0",
@@ -45,6 +46,7 @@
     "sequelize-typescript": "^2.1.6"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.5.0",
     "@nestjs/cli": "^11.0.24",
     "@nestjs/schematics": "^11.1.0",
     "@nestjs/testing": "^11.1.28",
