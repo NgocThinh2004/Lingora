@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { Sequelize } from 'sequelize-typescript';
 import { Comment } from './models/comment.model';
 import { User } from '../users/models/user.model';
 import { Post } from '../posts/models/post.model';
@@ -20,6 +21,7 @@ export class CommentsService {
     @InjectModel(CommentLike) private commentLikeModel: typeof CommentLike,
     private configService: ConfigService,
     private translationProvider: TranslationProviderService,
+    private readonly sequelize: Sequelize,
   ) {}
 
   async create(postId: string, userId: string, dto: CreateCommentDto): Promise<Comment | null> {
@@ -57,21 +59,24 @@ export class CommentsService {
     const language = await this.languageModel.findOne({ where: { code: langCode } });
     const originalLanguageId = language ? language.id : null;
 
-    const comment = await this.commentModel.create({
-      post_id: postId,
-      user_id: userId,
-      parent_id: parentId,
-      reply_to_comment_id: replyToCommentId,
-      reply_to_user_id: replyToUserId,
-      reply_to_username: replyToUsername,
-      content: dto.content,
-      status: 'approved', // Default, could be pending based on moderation
-      original_language_id: originalLanguageId,
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
+    const comment = await this.sequelize.transaction(async (transaction) => {
+      const created = await this.commentModel.create({
+        post_id: postId,
+        user_id: userId,
+        parent_id: parentId,
+        reply_to_comment_id: replyToCommentId,
+        reply_to_user_id: replyToUserId,
+        reply_to_username: replyToUsername,
+        content: dto.content,
+        status: 'approved', // Default, could be pending based on moderation
+        original_language_id: originalLanguageId,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }, { transaction });
 
-    await this.postModel.increment('comment_count', { by: 1, where: { id: postId } });
+      await this.postModel.increment('comment_count', { by: 1, where: { id: postId }, transaction });
+      return created;
+    });
 
     return this.commentModel.findByPk(comment.id, {
       include: [{ model: User, as: 'author', attributes: ['id', 'username', 'display_name', 'avatar'] }],
@@ -192,9 +197,10 @@ export class CommentsService {
       throw new ForbiddenException('You do not have permission to delete this comment');
     }
 
-    await comment.destroy();
-    
-    await this.postModel.decrement('comment_count', { by: 1, where: { id: comment.post_id } });
+    await this.sequelize.transaction(async (transaction) => {
+      await comment.destroy({ transaction });
+      await this.postModel.decrement('comment_count', { by: 1, where: { id: comment.post_id }, transaction });
+    });
 
     return { success: true };
   }
