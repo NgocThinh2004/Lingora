@@ -1,27 +1,29 @@
 /* ==========================================================
-   SUBSCRIBE & TOOLTIP STYLES
+   AUTHOR TOOLTIP CARD
    ========================================================== */
-/* For Angular component, we use the class directly */
+
 .author-hover-card {
   position: fixed;
   pointer-events: none;
   z-index: 3000;
   min-width: 280px;
-  max-width: 340px; /* Constrain width so text wraps */
-  white-space: normal; /* Ensure text can wrap */
+  max-width: 320px;
+  white-space: normal;
   background-color: var(--bg-panel);
   visibility: hidden;
   opacity: 0;
-  transform: translateY(10px) scale(0.95);
+  transform: translateY(8px) scale(0.97);
   transform-origin: top left;
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.04) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 16px !important;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 1.1rem 1.25rem 1.25rem;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
+/* Bridge area so card doesn't disappear before cursor reaches it */
 .author-hover-card::before {
   content: "";
   position: absolute;
@@ -37,12 +39,12 @@
   pointer-events: auto;
   opacity: 1;
   transform: translateY(0) scale(1);
-  transition: opacity 0.25s ease 0.1s, transform 0.25s ease 0.1s;
+  transition: opacity 0.2s ease 0.08s, transform 0.2s ease 0.08s;
 }
 
-/* Flipped state */
+/* Flipped state (renders above the trigger) */
 .author-hover-card.flipped {
-  transform: translateY(-10px) scale(0.95);
+  transform: translateY(-8px) scale(0.97);
   transform-origin: bottom left;
 }
 .author-hover-card.flipped::before {
@@ -53,64 +55,64 @@
   transform: translateY(0) scale(1);
 }
 
-/* ── Subscribe / Follow Button (Premium Redesign) ── */
-.btn-subscribe {
-  display: inline-flex;
+/* === Inner layout === */
+.tooltip-author-row {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  min-height: 32px;
-  min-width: 120px;
-  padding: 0 1.15rem;
-  border: 1px solid transparent !important;
-  border-radius: 50rem !important;
-  background: var(--primary-color) !important;
-  color: var(--accent-contrast, #ffffff) !important;
-  font-size: 0.82rem !important;
-  font-weight: 600 !important;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  position: relative;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  gap: 0.85rem;
+  margin-bottom: 0.75rem;
   cursor: pointer;
 }
 
-.btn-subscribe:not(.subscribed):hover {
-  background: var(--primary-hover) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(255, 103, 25, 0.15);
+.tooltip-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid var(--border-color);
 }
 
-/* Subscribed state: subtle outlined pill */
-.btn-subscribe.subscribed {
-  border: 1px solid #ced4da !important;
-  color: var(--text-main) !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-:host-context([data-bs-theme="dark"]) .btn-subscribe.subscribed {
-  border-color: #495057 !important;
+.tooltip-name {
+  font-size: 0.97rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.3;
+  margin-bottom: 0.1rem;
 }
 
-/* Subscribed hover → Twitter/X "Unfollow" red hint */
-.btn-subscribe.subscribed:not(.edit-profile):hover {
-  border-color: #dc2626 !important;
-  color: #dc2626 !important;
-  background: rgba(220, 38, 38, 0.08) !important;
-  transform: none;
+.tooltip-handle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
-/* Hide real text on hover, show unfollow label via data-attr */
-.btn-subscribe.subscribed:not(.edit-profile):hover .btn-text {
-  visibility: hidden;
+.tooltip-bio {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.btn-subscribe.subscribed:not(.edit-profile):hover::after {
-  content: "Unfollow";
-  position: absolute;
-  inset: 0;
+
+.tooltip-footer {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-weight: 700;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.btn-view-profile {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 0.3rem 0;
+  transition: color 0.15s;
+
+  &:hover {
+    color: var(--primary-color);
+  }
 }

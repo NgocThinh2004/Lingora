@@ -1,26 +1,30 @@
 <div
-  class="author-hover-card p-3 shadow-sm"
+  class="author-hover-card"
   [class.flipped]="isFlipped"
   [style.top.px]="cardTop"
   [style.left.px]="cardLeft"
   (click)="$event.stopPropagation()">
-  <div class="d-flex align-items-center mb-3 cursor-pointer" (click)="goToAuthor($event)" style="cursor: pointer;">
-    <img [appAssetImage]="avatarUrl" class="rounded-circle border me-3" width="56" height="56" style="object-fit:cover;" [alt]="user?.name || user?.username">
+
+  <!-- Avatar + Name row -->
+  <div class="tooltip-author-row" (click)="goToAuthor($event)">
+    <img [appAssetImage]="avatarUrl" class="tooltip-avatar" [alt]="user?.name || user?.username">
     <div>
-      <h6 class="fw-bold mb-0 text-main">{{ user?.name || user?.displayName || user?.username }}</h6>
-      <div class="text-muted small">&#64;{{ user?.handle || user?.username }}</div>
+      <div class="tooltip-name">{{ user?.name || user?.displayName || user?.username }}</div>
+      <div class="tooltip-handle">&#64;{{ user?.handle || user?.username }}</div>
     </div>
   </div>
+
+  <!-- Bio -->
   @if (user?.bio) {
-    <p class="small text-muted mb-3" style="line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
-      {{ user?.bio }}
-    </p>
+    <p class="tooltip-bio">{{ user?.bio }}</p>
   }
+
+  <!-- Footer: full-width follow button -->
   @if (isSelf) {
-    <button class="btn btn-subscribe subscribed edit-profile w-100" (click)="editProfile($event)">
-      <span class="btn-text">Edit Profile</span>
+    <button class="btn btn-subscribe subscribed w-100" (click)="editProfile($event)">
+      <span class="btn-text">Chỉnh sửa hồ sơ</span>
     </button>
   } @else if (user) {
-    <app-subscribe-button [authorId]="user.id" />
+    <app-subscribe-button [authorId]="user.id" [fullWidth]="true" />
   }
 </div>
