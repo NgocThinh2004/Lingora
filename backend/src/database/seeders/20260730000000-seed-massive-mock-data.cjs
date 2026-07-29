@@ -3,42 +3,49 @@
 const bcrypt = require('bcrypt');
 const { faker } = require('@faker-js/faker');
 
-const viSentences = [
-  "Công nghệ AI đang phát triển với tốc độ chóng mặt, thay đổi cách chúng ta làm việc.",
-  "Hôm nay thời tiết rất đẹp, tôi đã có một buổi sáng làm việc vô cùng hiệu quả.",
-  "Tôi nghĩ tính năng này rất hữu ích, hy vọng nhóm phát triển sẽ ra mắt thêm nhiều cải tiến mới.",
-  "Thiết kế giao diện hiện tại rất đẹp mắt và dễ sử dụng, tôi rất thích phong cách này.",
-  "Bài viết này thật sự mang lại nhiều kiến thức bổ ích. Cảm ơn tác giả đã chia sẻ!",
-  "Khám phá ngôn ngữ mới luôn là một hành trình thú vị nhưng cũng đầy thử thách.",
-  "Chúng ta cần cân nhắc kỹ lưỡng về bảo mật thông tin trong thời đại số hóa hiện nay.",
-];
+const topicSentences = {
+  frontend: {
+    en: ["React and Angular are great frameworks.", "CSS Grid makes layout so much easier.", "The new frontend ecosystem is incredibly fast.", "Optimizing web vitals is critical for SEO."],
+    vi: ["React và Angular là những framework tuyệt vời.", "CSS Grid giúp việc bố cục dễ dàng hơn nhiều.", "Hệ sinh thái frontend mới cực kỳ nhanh.", "Tối ưu hóa web vitals rất quan trọng cho SEO."],
+    zh: ["React 和 Angular 是很棒的框架。", "CSS Grid 让布局变得非常简单。", "新的前端生态系统非常快。", "优化网络核心指标对 SEO 至关重要。"]
+  },
+  backend: {
+    en: ["Node.js scales perfectly for I/O tasks.", "Database indexing is crucial for performance.", "Microservices bring flexibility to the backend.", "Redis caching reduces latency."],
+    vi: ["Node.js mở rộng rất tốt cho các tác vụ I/O.", "Đánh chỉ mục cơ sở dữ liệu là rất quan trọng để tăng hiệu suất.", "Microservices mang lại sự linh hoạt cho backend.", "Redis caching giúp giảm độ trễ."],
+    zh: ["Node.js 非常适合 I/O 任务。", "数据库索引对性能至关重要。", "微服务为后端带来了灵活性。", "Redis 缓存减少了延迟。"]
+  },
+  cybersecurity: {
+    en: ["Zero Trust architecture is the new standard.", "Always encrypt sensitive data at rest.", "Phishing attacks are getting more sophisticated.", "Security should be built into the CI/CD pipeline."],
+    vi: ["Kiến trúc Zero Trust là tiêu chuẩn mới.", "Luôn mã hóa dữ liệu nhạy cảm khi lưu trữ.", "Các cuộc tấn công Phishing ngày càng tinh vi.", "Bảo mật nên được tích hợp vào CI/CD."],
+    zh: ["零信任架构是新标准。", "始终对静态敏感数据进行加密。", "网络钓鱼攻击变得越来越复杂。", "安全性应内置于 CI/CD 管道中。"]
+  },
+  design: {
+    en: ["UX research is the foundation of good design.", "Minimalism in UI helps reduce cognitive load.", "Color theory plays a huge role in user emotions.", "Prototyping in Figma saves hours of coding."],
+    vi: ["Nghiên cứu UX là nền tảng của thiết kế tốt.", "Sự tối giản trong UI giúp giảm tải nhận thức.", "Lý thuyết màu sắc đóng vai trò lớn trong cảm xúc người dùng.", "Thiết kế mẫu bằng Figma tiết kiệm nhiều giờ lập trình."],
+    zh: ["UX 研究是好设计的基础。", "UI 中的极简主义有助于减少认知负荷。", "色彩理论在用户情感中起着巨大作用。", "在 Figma 中进行原型设计节省了大量编码时间。"]
+  },
+  mobile: {
+    en: ["Flutter provides a smooth cross-platform experience.", "Swift is incredibly fast for iOS development.", "Managing app state effectively is a big challenge.", "Mobile-first design is a must."],
+    vi: ["Flutter mang lại trải nghiệm đa nền tảng mượt mà.", "Swift cực kỳ nhanh cho lập trình iOS.", "Quản lý state của app hiệu quả là một thách thức lớn.", "Thiết kế ưu tiên di động là bắt buộc."],
+    zh: ["Flutter 提供了流畅的跨平台体验。", "Swift 用于 iOS 开发非常快。", "有效管理应用程序状态是一个巨大挑战。", "移动优先设计是必须的。"]
+  },
+  generic: {
+    en: ["This is a fascinating perspective on the topic.", "Continuous learning is essential in our field.", "Technology is constantly evolving.", "I really appreciate this detailed breakdown."],
+    vi: ["Đây là một góc nhìn rất thú vị về chủ đề này.", "Học tập không ngừng là điều thiết yếu trong lĩnh vực của chúng ta.", "Công nghệ không ngừng phát triển.", "Tôi rất trân trọng bài phân tích chi tiết này."],
+    zh: ["这是关于该主题的一个非常有趣的视角。", "持续学习在我们的领域至关重要。", "技术在不断发展。", "我非常欣赏这个详细的分析。"]
+  }
+};
 
-const enSentences = [
-  "AI technology is advancing at a breathtaking pace, changing how we work.",
-  "The weather is beautiful today, I had a very productive morning.",
-  "I think this feature is very useful, hoping the dev team will release more improvements.",
-  "The current UI design is stunning and user-friendly, I really love this style.",
-  "This article is truly informative. Thanks to the author for sharing!",
-  "Exploring new languages is always an exciting yet challenging journey.",
-  "We need to carefully consider data privacy in this digital era.",
-];
+function getRandomText(lang, sentencesCount, slug = 'generic') {
+  let topic = 'generic';
+  if (slug.includes('frontend')) topic = 'frontend';
+  else if (slug.includes('backend')) topic = 'backend';
+  else if (slug.includes('cybersecurity')) topic = 'cybersecurity';
+  else if (slug.includes('design')) topic = 'design';
+  else if (slug.includes('mobile')) topic = 'mobile';
 
-const zhSentences = [
-  "人工智能技术正在以惊人的速度发展，改变了我们的工作方式。",
-  "今天天气真好，我度过了一个非常高效的早晨。",
-  "我认为这个功能非常有用，希望开发团队能推出更多改进。",
-  "目前的界面设计非常漂亮且易于使用，我真的很喜欢这种风格。",
-  "这篇文章确实提供了很多有用的知识。感谢作者的分享！",
-  "探索新语言始终是一段令人兴奋但也充满挑战的旅程。",
-  "在这个数字时代，我们需要仔细考虑数据隐私问题。",
-];
-
-function getRandomText(lang, sentencesCount) {
-  let source;
-  if (lang === 'vi') source = viSentences;
-  else if (lang === 'zh') source = zhSentences;
-  else source = enSentences;
-
+  const source = topicSentences[topic][lang] || topicSentences['generic'][lang];
+  
   const result = [];
   for (let i = 0; i < sentencesCount; i++) {
     result.push(faker.helpers.arrayElement(source));
@@ -88,8 +95,10 @@ module.exports = {
     const enLangId = languages.find(l => l.code === 'en')?.id || 2;
     const zhLangId = languages.find(l => l.code === 'zh')?.id || 3;
 
-    const categories = await queryInterface.sequelize.query(`SELECT id FROM categories`, { type: QueryTypes.SELECT });
+    const categories = await queryInterface.sequelize.query(`SELECT id, slug FROM categories`, { type: QueryTypes.SELECT });
     const categoryIds = categories.map(c => c.id);
+    const categorySlugMap = {};
+    categories.forEach(c => { categorySlugMap[c.id] = c.slug; });
 
     if (categoryIds.length === 0) {
       console.error('No categories found. Run base seeders first.');
@@ -143,24 +152,57 @@ module.exports = {
     await queryInterface.bulkInsert('posts', posts);
 
     const insertedPosts = await queryInterface.sequelize.query(
-      `SELECT id, original_language_id FROM posts ORDER BY id DESC LIMIT ${NUM_POSTS}`,
+      `SELECT id, original_language_id, category_id FROM posts ORDER BY id DESC LIMIT ${NUM_POSTS}`,
       { type: QueryTypes.SELECT }
     );
+
+function generateRichHtml(lang, slug) {
+  const coverImg = faker.image.urlPicsumPhotos({ width: 1280, height: 720 });
+  const midImg = faker.image.urlPicsumPhotos({ width: 800, height: 600 });
+  
+  const h2Text = getRandomText(lang, 1, slug);
+  const h3Text = getRandomText(lang, 1, slug);
+  const intro = getRandomText(lang, 3, slug);
+  const quote = getRandomText(lang, 2, slug);
+  const midP1 = getRandomText(lang, 1, slug);
+  const midP2 = getRandomText(lang, 1, slug);
+  const midP3 = getRandomText(lang, 1, slug);
+  const end = getRandomText(lang, 3, slug);
+  const linkText = lang === 'vi' ? 'Xem thêm tại đây' : (lang === 'zh' ? '在此处查看更多' : 'Read more here');
+
+  return `
+    <figure><img src="${coverImg}" alt="Cover Image"></figure>
+    <p>${intro}</p>
+    <h2>${h2Text}</h2>
+    <blockquote>${quote}</blockquote>
+    <p>
+      <strong>${midP1}</strong> <em>${midP2}</em> <a href="#">${linkText}</a>. ${midP3}
+    </p>
+    <figure><img src="${midImg}" alt="Illustration"></figure>
+    <h3>${h3Text}</h3>
+    <ul>
+      <li>${getRandomText(lang, 1, slug)}</li>
+      <li>${getRandomText(lang, 1, slug)}</li>
+      <li>${getRandomText(lang, 1, slug)}</li>
+    </ul>
+    <p>${end}</p>
+  `;
+}
 
     // 4. Insert Post Translations (Content)
     console.log(`Generating post translations...`);
     const postTranslations = [];
     for (const post of insertedPosts) {
-      const imgUrl = faker.image.urlPicsumPhotos({ width: 1280, height: 720 });
-      // IMAGE AT TOP, THEN CONTENT!
-      const contentEn = `<figure><img src="${imgUrl}" alt="Cover Image"></figure><p>${getRandomText('en', 3)}</p><p>${getRandomText('en', 2)}</p>`;
-      const contentVi = `<figure><img src="${imgUrl}" alt="Cover Image"></figure><p>${getRandomText('vi', 3)}</p><p>${getRandomText('vi', 2)}</p>`;
-      const contentZh = `<figure><img src="${imgUrl}" alt="Cover Image"></figure><p>${getRandomText('zh', 3)}</p><p>${getRandomText('zh', 2)}</p>`;
+      const slug = categorySlugMap[post.category_id] || 'generic';
+      
+      const contentEn = generateRichHtml('en', slug);
+      const contentVi = generateRichHtml('vi', slug);
+      const contentZh = generateRichHtml('zh', slug);
 
       postTranslations.push({
         post_id: post.id,
         language_id: enLangId,
-        title: getRandomText('en', 1),
+        title: getRandomText('en', 1, slug),
         content: contentEn,
         translation_status: 'completed',
         created_at: now,
@@ -169,7 +211,7 @@ module.exports = {
       postTranslations.push({
         post_id: post.id,
         language_id: viLangId,
-        title: getRandomText('vi', 1),
+        title: getRandomText('vi', 1, slug),
         content: contentVi,
         translation_status: 'completed',
         created_at: now,
@@ -178,7 +220,7 @@ module.exports = {
       postTranslations.push({
         post_id: post.id,
         language_id: zhLangId,
-        title: getRandomText('zh', 1),
+        title: getRandomText('zh', 1, slug),
         content: contentZh,
         translation_status: 'completed',
         created_at: now,

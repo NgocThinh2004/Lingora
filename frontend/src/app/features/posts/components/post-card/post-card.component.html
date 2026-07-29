@@ -20,14 +20,14 @@
   </header>
 
   <a [routerLink]="['/post', post.id]" class="post-body-link">
-    <h2 class="post-title">{{ translation?.title }}</h2>
-    <div class="post-excerpt text-muted mb-3">{{ excerpt() }}</div>
-
     @if (post.coverImageUrl) {
-      <div class="post-media">
+      <div class="post-media mb-3">
         <img [src]="post.coverImageUrl" [alt]="translation?.title" />
       </div>
     }
+
+    <h2 class="post-title">{{ translation?.title }}</h2>
+    <div class="post-excerpt text-muted mb-3">{{ excerpt() }}</div>
   </a>
 
   <footer class="post-footer">

@@ -6,6 +6,22 @@ export function preparePostDetailHtml(html: string): string {
   const container = document.createElement('div');
   container.innerHTML = html;
 
+  // Xóa ảnh đầu tiên (vì nó đã được extract làm Cover Image ở backend và hiển thị thủ công ở UI)
+  const firstImg = container.querySelector('img');
+  if (firstImg) {
+    const parentFigure = firstImg.closest('figure');
+    if (parentFigure) {
+      parentFigure.remove();
+    } else {
+      const parentP = firstImg.closest('p');
+      if (parentP && parentP.childNodes.length === 1) {
+        parentP.remove(); // Remove wrapping p if it only contains the img
+      } else {
+        firstImg.remove();
+      }
+    }
+  }
+
   container
     .querySelectorAll(
       '.editor-code-toolbar, .editor-code-delete, .editor-code-language-menu, .editor-media-delete',
