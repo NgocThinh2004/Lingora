@@ -10,8 +10,8 @@ import { PostCardComponent } from '../posts/components/post-card/post-card.compo
 import { User } from '../users/models/user.model';
 import { Post } from '../posts/models/post.model';
 import { FormsModule } from '@angular/forms';
-import { AuthorTooltipComponent } from '../../shared/components/author-tooltip/author-tooltip.component';
-import { SubscribeButtonComponent } from '../../shared/components/subscribe-button/subscribe-button.component';
+import { AuthorTooltipComponent } from '../users/components/author-tooltip/author-tooltip.component';
+import { SubscribeButtonComponent } from '../subscriptions/components/subscribe-button/subscribe-button.component';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 
 @Component({
@@ -141,7 +141,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
         }
         return of(null);
       }),
-      catchError(err => {
+      catchError(() => {
         this.handleError();
         return of(null);
       })

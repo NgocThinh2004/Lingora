@@ -12,8 +12,8 @@ import { CommentSectionComponent } from '../components/comment-section/comment-s
 import { LikeService } from '../services/like.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { preparePostDetailHtml } from './post-detail-html.util';
-import { AuthModalService } from '../../../shared/components/auth-modal/auth-modal.service';
-import { AuthorTooltipComponent } from '../../../shared/components/author-tooltip/author-tooltip.component';
+import { AuthModalService } from '../../../core/auth/auth-modal.service';
+import { AuthorTooltipComponent } from '../../users/components/author-tooltip/author-tooltip.component';
 import { CompactNumberPipe } from '../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
 

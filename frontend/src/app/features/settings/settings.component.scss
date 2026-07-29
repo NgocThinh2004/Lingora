@@ -176,7 +176,16 @@
 }
 
 .perfect-switch {
+  position: relative;
+  display: inline-flex;
   flex: 0 0 auto;
+}
+
+.perfect-switch-input {
+  top: 50%;
+  left: 50%;
+  margin: 0;
+  transform: translate(-50%, -50%);
 }
 
 .settings-footer {

@@ -8,8 +8,8 @@ import { CategoriesService } from '../categories/services/categories.service';
 import { User } from '../users/models/user.model';
 import { UsersService } from '../users/services/users.service';
 import { SearchService, SearchResults } from './services/search.service';
-import { SearchModalService } from '../../core/ui/search-modal.service';
-import { AuthorTooltipComponent } from '../../shared/components/author-tooltip/author-tooltip.component';
+import { SearchModalService } from './search-modal.service';
+import { AuthorTooltipComponent } from '../users/components/author-tooltip/author-tooltip.component';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 
 @Component({

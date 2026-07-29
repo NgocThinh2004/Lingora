@@ -404,10 +404,6 @@ export class TranslationsService implements OnModuleInit, OnModuleDestroy {
     return translation;
   }
 
-  private countTranslationCharacters(source: PostTranslation): number {
-    return [source.title, source.content].filter(Boolean).join('').length;
-  }
-
   private async generateUniqueSlug(
     title: string,
     languageId: number,

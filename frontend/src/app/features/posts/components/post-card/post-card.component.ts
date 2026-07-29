@@ -6,8 +6,8 @@ import { LocaleService } from '../../../../core/locale/locale.service';
 import { translateCategory } from '../../../categories/models/category.model';
 import { Post, getPostTranslation } from '../../models/post.model';
 import { LikeService } from '../../services/like.service';
-import { AuthModalService } from '../../../../shared/components/auth-modal/auth-modal.service';
-import { AuthorTooltipComponent } from '../../../../shared/components/author-tooltip/author-tooltip.component';
+import { AuthModalService } from '../../../../core/auth/auth-modal.service';
+import { AuthorTooltipComponent } from '../../../users/components/author-tooltip/author-tooltip.component';
 import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../../shared/directives/asset-image.directive';
 

@@ -14,7 +14,7 @@ describe('AdminDashboardComponent', () => {
   const selectedLocale = signal('en');
 
   const overview: AdminDashboardOverview = {
-    summary: { totalUsers: 12, totalArticles: 8, totalComments: 20, totalLikes: 37 },
+    summary: { totalUsers: 12, totalArticles: 8, totalComments: 20, totalLikes: 30 },
     users: {
       total: 12,
       byRole: { admin: 2, member: 10 },
@@ -40,6 +40,9 @@ describe('AdminDashboardComponent', () => {
       commentLikes: 7,
       totalLikes: 37,
       follows: 14,
+      topFollowedUsers: [
+        { id: '2', username: 'alex', displayName: 'Alex', avatarUrl: null, followerCount: 9 },
+      ],
     },
     translations: { failed: 2, completed: 9 },
   };
@@ -64,12 +67,14 @@ describe('AdminDashboardComponent', () => {
     fixture.detectChanges();
 
     expect(service.getOverview).toHaveBeenCalledOnceWith('en');
-    expect(component.stats().map(stat => stat.value)).toEqual([12, 8, 20, 37]);
+    expect(component.stats().map(stat => stat.value)).toEqual([12, 8, 20, 30]);
     expect(fixture.nativeElement.textContent).toContain('Real article');
     expect(fixture.nativeElement.textContent).toContain('Technology');
     expect(fixture.nativeElement.querySelector('a[href="/admin/users"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('a[href="/admin/posts"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('a[href="/post/7"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Top Followed Users');
+    expect(fixture.nativeElement.querySelector('a[href="/profile/2"]')).not.toBeNull();
   });
 
   it('shows a retry state when loading fails', () => {

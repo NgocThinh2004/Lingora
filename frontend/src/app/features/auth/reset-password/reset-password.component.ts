@@ -4,7 +4,7 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { AuthLayoutComponent } from '../../../shared/layouts/auth-layout/auth-layout.component';
+import { AuthLayoutComponent } from '../../../layouts/auth-layout/auth-layout.component';
 
 @Component({
   selector: 'app-reset-password',

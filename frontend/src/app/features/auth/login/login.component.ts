@@ -2,9 +2,22 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
+import { CurrentUser } from '../../../core/auth/current-user.model';
+import { getApiErrorMessage } from '../../../core/http/api-error.util';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { AuthLayoutComponent } from '../../../shared/layouts/auth-layout/auth-layout.component';
+import { AuthLayoutComponent } from '../../../layouts/auth-layout/auth-layout.component';
+
+export function resolvePostLoginUrl(user: CurrentUser, returnUrl: string | null): string {
+  if (user.role === 'admin') {
+    return '/admin';
+  }
+
+  return returnUrl?.startsWith('/') && !returnUrl.startsWith('//')
+    ? returnUrl
+    : '/';
+}
 
 @Component({
   selector: 'app-login',
@@ -17,6 +30,7 @@ export class LoginComponent implements OnInit {
   isSubmitting = false;
   showPassword = false;
   errorMessage = '';
+  returnUrl: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -31,11 +45,12 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  togglePasswordVisibility() {
+  togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
     this.route.queryParams.subscribe(params => {
       if (params['registered'] === 'true') {
         this.toastService.showSuccess('Registration successful! Please log in.');
@@ -43,10 +58,13 @@ export class LoginComponent implements OnInit {
       if (params['passwordReset'] === 'true') {
         this.toastService.showSuccess('Password reset successfully. Sign in with your new password.');
       }
+      if (typeof params['message'] === 'string' && params['message']) {
+        this.toastService.showSuccess(params['message']);
+      }
     });
   }
 
-  onSubmit() {
+  onSubmit(): void {
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
@@ -55,21 +73,15 @@ export class LoginComponent implements OnInit {
     this.isSubmitting = true;
     this.errorMessage = '';
 
-    this.authService.login(this.loginForm.value).subscribe({
+    this.authService.login(this.loginForm.value).pipe(
+      finalize(() => this.isSubmitting = false),
+    ).subscribe({
       next: response => {
-        this.isSubmitting = false;
         this.toastService.showSuccess('Logged in successfully!');
-        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-        const destination = returnUrl
-          ? [returnUrl]
-          : response.data.user.role === 'admin'
-            ? ['/admin']
-            : ['/'];
-        void this.router.navigate(destination);
+        void this.router.navigateByUrl(resolvePostLoginUrl(response.data.user, this.returnUrl));
       },
-      error: (err) => {
-        this.isSubmitting = false;
-        this.errorMessage = err.error?.meta?.error?.message || 'Login failed. Invalid credentials.';
+      error: error => {
+        this.errorMessage = getApiErrorMessage(error, 'Login failed. Invalid credentials.');
       }
     });
   }

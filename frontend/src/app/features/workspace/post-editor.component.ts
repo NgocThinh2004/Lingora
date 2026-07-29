@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule, Location } from '@angular/common';
 import {
   AfterViewInit,
@@ -22,6 +21,7 @@ import { EditorUploadsService } from './services/editor-uploads.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TranslationsService } from '../posts/services/translations.service';
 import { LocaleService } from '../../core/locale/locale.service';
+import { getApiErrorMessage } from '../../core/http/api-error.util';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 
 type SaveMode = 'draft' | 'submit';
@@ -125,6 +125,12 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.updateBodyModalClasses();
     const postId = this.route.snapshot.paramMap.get('id');
     this.currentPostId = postId;
+
+    if (!postId && this.route.snapshot.queryParamMap.get('fresh') === '1') {
+      this.removeAutosaveSnapshot(null);
+      // Remove the one-shot flag so a later refresh can recover this new draft.
+      this.location.replaceState('/workspace/create');
+    }
 
     this.postsService.getPostOptions().subscribe({
       next: options => {
@@ -2199,15 +2205,6 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private formatError(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const message = (error.error?.meta?.error?.message ?? error.error?.message) as string | string[] | undefined;
-      if (Array.isArray(message)) {
-        return message.join(' ');
-      }
-
-      return message || error.message;
-    }
-
-    return 'Co loi xay ra, hay kiem tra backend dang chay.';
+    return getApiErrorMessage(error, 'Có lỗi xảy ra, hãy kiểm tra backend đang chạy.');
   }
 }

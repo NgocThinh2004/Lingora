@@ -74,22 +74,6 @@ export interface PublicPost extends AuthorPost {
   commentCount: number;
 }
 
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
-
-export interface ApiCollectionResponse<T> {
-  data: T[];
-  meta: PaginationMeta;
-}
-
-export interface ApiItemResponse<T> {
-  data: T;
-}
-
 export interface CreatePostPayload {
   title: string;
   categoryId?: number;
