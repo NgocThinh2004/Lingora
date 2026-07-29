@@ -156,10 +156,7 @@ module.exports = {
       { type: QueryTypes.SELECT }
     );
 
-function generateRichHtml(lang, slug) {
-  const coverImg = faker.image.urlPicsumPhotos({ width: 1280, height: 720 });
-  const midImg = faker.image.urlPicsumPhotos({ width: 800, height: 600 });
-  
+function generateRichHtml(lang, slug, coverImg, midImg) {
   const h2Text = getRandomText(lang, 1, slug);
   const h3Text = getRandomText(lang, 1, slug);
   const intro = getRandomText(lang, 3, slug);
@@ -171,8 +168,8 @@ function generateRichHtml(lang, slug) {
   const linkText = lang === 'vi' ? 'Xem thêm tại đây' : (lang === 'zh' ? '在此处查看更多' : 'Read more here');
 
   return `
-    <figure><img src="${coverImg}" alt="Cover Image"></figure>
     <p>${intro}</p>
+    <figure><img src="${coverImg}" alt="Cover Image"></figure>
     <h2>${h2Text}</h2>
     <blockquote>${quote}</blockquote>
     <p>
@@ -194,10 +191,12 @@ function generateRichHtml(lang, slug) {
     const postTranslations = [];
     for (const post of insertedPosts) {
       const slug = categorySlugMap[post.category_id] || 'generic';
+      const coverImg = faker.image.urlPicsumPhotos({ width: 1280, height: 720 });
+      const midImg = faker.image.urlPicsumPhotos({ width: 800, height: 600 });
       
-      const contentEn = generateRichHtml('en', slug);
-      const contentVi = generateRichHtml('vi', slug);
-      const contentZh = generateRichHtml('zh', slug);
+      const contentEn = generateRichHtml('en', slug, coverImg, midImg);
+      const contentVi = generateRichHtml('vi', slug, coverImg, midImg);
+      const contentZh = generateRichHtml('zh', slug, coverImg, midImg);
 
       postTranslations.push({
         post_id: post.id,
