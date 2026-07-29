@@ -133,13 +133,3 @@
 }
 
 
-.center-feed > :not(app-explore):not(router-outlet) {
-  display: block;
-  padding-top: 1.5rem;
-}
-
-@media (max-width: 991px) {
-  .center-feed > :not(app-explore):not(router-outlet) {
-    padding-top: 1.25rem;
-  }
-}
