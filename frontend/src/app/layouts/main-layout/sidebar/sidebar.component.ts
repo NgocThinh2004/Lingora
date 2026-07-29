@@ -2,6 +2,7 @@
 import {
   Component,
   HostListener,
+  computed,
   inject,
   OnInit,
   signal,
@@ -31,6 +32,12 @@ export class SidebarComponent implements OnInit {
   readonly moreMenuOpen = signal(false);
   readonly localeOptions = this.localeService.options;
   readonly currentLanguage = this.localeService.selectedLocale;
+  readonly isAuthenticated = computed(
+    () => Boolean(this.authService.currentUser() && this.authService.getToken()),
+  );
+  readonly isAdmin = computed(
+    () => this.isAuthenticated() && this.authService.currentUser()?.role === 'admin',
+  );
 
   get profileAvatar(): string | null {
     return this.authService.currentUser()?.avatarUrl ?? null;
@@ -47,6 +54,14 @@ export class SidebarComponent implements OnInit {
 
   translate(key: UiTranslationKey): string {
     return this.localeService.translate(key);
+  }
+
+  signInLabel(): string {
+    switch (this.currentLanguage()) {
+      case 'vi': return 'Đăng nhập';
+      case 'zh': return '登录';
+      default: return 'Sign In';
+    }
   }
 
   toggleLanguageMenu(event: Event): void {

@@ -27,9 +27,11 @@
 }
 
 .center-feed {
+  box-sizing: border-box;
   background-color: var(--bg-body);
   height: 100vh;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   padding: 0 2.5rem 1.5rem 2.5rem;
   border-right: 1px solid var(--border-color);
   display: flex;

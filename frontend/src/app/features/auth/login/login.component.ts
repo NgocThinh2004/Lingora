@@ -4,9 +4,20 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
+import { CurrentUser } from '../../../core/auth/current-user.model';
 import { getApiErrorMessage } from '../../../core/http/api-error.util';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { AuthLayoutComponent } from '../../../layouts/auth-layout/auth-layout.component';
+
+export function resolvePostLoginUrl(user: CurrentUser, returnUrl: string | null): string {
+  if (user.role === 'admin') {
+    return '/admin';
+  }
+
+  return returnUrl?.startsWith('/') && !returnUrl.startsWith('//')
+    ? returnUrl
+    : '/';
+}
 
 @Component({
   selector: 'app-login',
@@ -67,13 +78,7 @@ export class LoginComponent implements OnInit {
     ).subscribe({
       next: response => {
         this.toastService.showSuccess('Logged in successfully!');
-        const returnUrl = this.returnUrl;
-        if (returnUrl?.startsWith('/') && !returnUrl.startsWith('//')) {
-          void this.router.navigateByUrl(returnUrl);
-          return;
-        }
-
-        void this.router.navigate(response.data.user.role === 'admin' ? ['/admin'] : ['/']);
+        void this.router.navigateByUrl(resolvePostLoginUrl(response.data.user, this.returnUrl));
       },
       error: error => {
         this.errorMessage = getApiErrorMessage(error, 'Login failed. Invalid credentials.');

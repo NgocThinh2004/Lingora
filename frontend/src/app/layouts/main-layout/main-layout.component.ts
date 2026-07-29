@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { afterNextRender, Component, inject, signal } from '@angular/core';
+import { afterNextRender, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
@@ -23,6 +23,9 @@ import { RightPanelComponent } from './right-panel/right-panel.component';
 export class MainLayoutComponent {
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
+  private lastContentPath = '';
+
+  @ViewChild('centerFeed') private centerFeed?: ElementRef<HTMLElement>;
 
   readonly mobileSidebarOpen = signal(false);
   readonly showRightPanel = signal(true);
@@ -35,10 +38,14 @@ export class MainLayoutComponent {
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => this.syncRouteLayout());
+      .subscribe(event => this.handleNavigation(event));
 
     // The layout is lazy-loaded, so its first NavigationEnd may predate this subscription.
-    afterNextRender(() => this.syncRouteLayout());
+    afterNextRender(() => {
+      this.lastContentPath = this.routePath(this.router.url);
+      this.syncRouteLayout();
+      this.resetContentScroll();
+    });
   }
 
   openMobileSidebar(): void {
@@ -47,6 +54,30 @@ export class MainLayoutComponent {
 
   closeMobileSidebar(): void {
     this.mobileSidebarOpen.set(false);
+  }
+
+  private handleNavigation(event: NavigationEnd): void {
+    const nextPath = this.routePath(event.urlAfterRedirects);
+    const routeChanged = nextPath !== this.lastContentPath;
+    this.lastContentPath = nextPath;
+    this.syncRouteLayout();
+
+    if (routeChanged) {
+      this.resetContentScroll();
+    }
+  }
+
+  private resetContentScroll(): void {
+    const content = this.centerFeed?.nativeElement;
+    if (content) {
+      content.scrollTop = 0;
+      content.scrollLeft = 0;
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }
+
+  private routePath(url: string): string {
+    return url.split(/[?#]/, 1)[0];
   }
 
   private syncRouteLayout(): void {
