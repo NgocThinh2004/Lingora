@@ -72,7 +72,7 @@ export class PostCardComponent {
       next: (status) => {
         this.post = { ...this.post, liked: status.liked, likeCount: status.likeCount, isLiking: false };
       },
-      error: (err) => {
+      error: () => {
         this.post = { ...this.post, liked: previousLiked, likeCount: previousLikeCount, isLiking: false };
       }
     });

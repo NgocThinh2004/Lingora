@@ -115,7 +115,6 @@ export interface Post {
   categoryId: number | null;
   originalLanguage: string;
   coverImageUrl?: string | null;
-  imageUrl?: string | null;
   status: 'draft' | 'published';
   viewCount: number;
   likeCount?: number;

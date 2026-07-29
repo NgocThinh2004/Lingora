@@ -187,7 +187,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
         comment.likeCount = res.likeCount;
         comment.isLiking = false;
       },
-      error: (err) => {
+      error: () => {
         comment.liked = previousLiked;
         comment.likeCount = previousLikeCount;
         comment.isLiking = false;
