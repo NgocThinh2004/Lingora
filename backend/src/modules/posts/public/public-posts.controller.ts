@@ -31,6 +31,7 @@ export class PublicPostsController {
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
   getById(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
-    return this.postsService.getById(id, req.user?.id);
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    return this.postsService.getById(id, req.user?.id, ip);
   }
 }

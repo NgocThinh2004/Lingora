@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op, literal } from 'sequelize';
 import { Post } from '../models/post.model';
@@ -22,6 +24,7 @@ export class PublicPostsService {
     private readonly categoryTranslationModel: typeof CategoryTranslation,
     @InjectModel(Language) private readonly languageModel: typeof Language,
     @InjectModel(PostLike) private readonly postLikeModel: typeof PostLike,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   async listFeed(query: PublicPostsQueryDto, postId?: number, userId?: number) {
@@ -275,7 +278,7 @@ export class PublicPostsService {
     return results.flatMap(r => r.items);
   }
 
-  async getById(id: number, userId?: number) {
+  async getById(id: number, userId?: number, ip?: string) {
     const post = await this.postModel.findOne({
       where: { id, deleted_at: null },
     });
@@ -284,7 +287,17 @@ export class PublicPostsService {
       throw new NotFoundException('Post not found');
     }
 
-    post.increment('view_count', { by: 1 }).catch(() => null);
+    // View Count Spam Prevention (1 view / 1 hour / IP or UserId)
+    const viewerId = userId ? `user:${userId}` : (ip ? `ip:${ip}` : `ip:unknown`);
+    const cacheKey = `view:post:${id}:${viewerId}`;
+    const alreadyViewed = await this.cacheManager.get(cacheKey);
+
+    if (!alreadyViewed) {
+      post.increment('view_count', { by: 1 }).catch(() => null);
+      // TTL is in milliseconds for cache-manager v5+, but v4/NestJS cache-manager might use seconds.
+      // NestJS cache-manager default is ms. Let's pass 3600000ms (1 hour).
+      await this.cacheManager.set(cacheKey, true, 3600000).catch(() => null);
+    }
 
     const result = await this.listFeed({ page: 1, limit: 1 }, id, userId);
     const found = result.items.find((p) => p.id === Number(id));
