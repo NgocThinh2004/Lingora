@@ -2,7 +2,7 @@ import { Component, HostListener, OnInit, OnDestroy, computed, signal, inject, V
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { finalize, Observable, Subscription, switchMap } from 'rxjs';
+import { finalize, map, Observable, Subscription, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { CurrentUser } from '../../core/auth/current-user.model';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -426,7 +426,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const request: Observable<Array<SubscriptionAuthor | User>> = this.isOwnProfile()
       ? (mode === 'followers'
           ? this.subscriptionsService.followers()
-          : this.subscriptionsService.following())
+          : this.subscriptionsService.following().pipe(map(response => response.items)))
       : (mode === 'followers'
           ? this.usersService.getFollowers(Number(this.viewedUserId))
           : this.usersService.getFollowing(Number(this.viewedUserId)));

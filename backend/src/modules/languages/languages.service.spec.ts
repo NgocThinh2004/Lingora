@@ -13,10 +13,6 @@ describe('LanguagesService', () => {
     update: jest.Mock;
   };
   let service: LanguagesService;
-  let localeBundlesService: {
-    provisionLanguage: jest.Mock;
-    removeGeneratedBundle: jest.Mock;
-  };
 
   const makeLanguage = (overrides: Record<string, unknown> = {}) => {
     const language: Record<string, any> = {
@@ -50,14 +46,9 @@ describe('LanguagesService', () => {
       create: jest.fn(),
       update: jest.fn().mockResolvedValue([0]),
     };
-    localeBundlesService = {
-      provisionLanguage: jest.fn().mockResolvedValue(undefined),
-      removeGeneratedBundle: jest.fn().mockResolvedValue(undefined),
-    };
     service = new LanguagesService(
       sequelize as never,
       languageModel as never,
-      localeBundlesService as never,
     );
   });
 
@@ -130,13 +121,16 @@ describe('LanguagesService', () => {
       isActive: false,
     });
 
-    expect(languageModel.create).toHaveBeenCalledWith(
-      expect.objectContaining({ is_default: false, is_active: false, activated_at: null }),
-      { transaction },
+    expect(languageModel.update).toHaveBeenCalledWith(
+      { is_default: false },
+      { where: { is_default: true }, transaction },
     );
-    expect(localeBundlesService.provisionLanguage).toHaveBeenCalledWith(created);
-    expect(created.update).toHaveBeenCalledWith(
-      expect.objectContaining({ is_default: true, is_active: true }),
+    expect(languageModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        is_default: true,
+        is_active: true,
+        activated_at: expect.any(Date),
+      }),
       { transaction },
     );
     expect(result.isDefault).toBe(true);
@@ -170,7 +164,6 @@ describe('LanguagesService', () => {
       expect.objectContaining({ is_default: true, is_active: true }),
       { transaction },
     );
-    expect(localeBundlesService.provisionLanguage).toHaveBeenCalledWith(target);
     expect(result.isDefault).toBe(true);
     expect(result.isActive).toBe(true);
   });

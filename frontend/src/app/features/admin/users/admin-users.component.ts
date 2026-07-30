@@ -157,7 +157,10 @@ export class AdminUsersComponent implements OnInit {
       next: response => {
         this.replaceUser(response.data);
         this.setUpdating(user.id, false);
-        this.toastService.showSuccess(this.localeService.translate('user_status_changed', { name: this.userName(response.data), status: response.data.status }));
+        this.toastService.showSuccess(this.localeService.translate('user_status_changed', {
+          name: this.userName(response.data),
+          status: this.localeService.translate(response.data.status),
+        }));
       },
       error: error => {
         input.checked = user.status === 'active';

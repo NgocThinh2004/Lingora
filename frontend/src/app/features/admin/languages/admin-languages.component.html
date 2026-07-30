@@ -158,6 +158,7 @@
         <div class="dialog-body">
           <label for="addLanguageCode">{{ 'language_code' | t }}</label>
           <input id="addLanguageCode" class="form-control" type="text" maxlength="10" [placeholder]="'language_code_example' | t" formControlName="code">
+          <span class="form-help">{{ 'ui_locale_bundle_required' | t }}</span>
           @if (addForm.controls.code.touched && addForm.controls.code.invalid) {
             <span class="field-error">{{ 'language_code_hint' | t }}</span>
           }

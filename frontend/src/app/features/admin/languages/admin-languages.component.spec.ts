@@ -42,8 +42,9 @@ describe('AdminLanguagesComponent', () => {
       'updateLanguage',
     ]);
     toast = jasmine.createSpyObj<ToastService>('ToastService', ['showSuccess', 'showError']);
-    locale = jasmine.createSpyObj<LocaleService>('LocaleService', ['refresh', 'translate']);
+    locale = jasmine.createSpyObj<LocaleService>('LocaleService', ['refresh', 'translate', 'hasStaticBundle']);
     locale.translate.and.callFake((key: string) => key);
+    locale.hasStaticBundle.and.returnValue(of(true));
     service.getLanguages.and.returnValue(of({
       data: [english, vietnamese],
       meta: { pagination: { total: 2, page: 1, limit: 8, totalPages: 1 } },
@@ -74,7 +75,7 @@ describe('AdminLanguagesComponent', () => {
     expect(component.flagUrl(null)).toBe('assets/images/lingora-mark.svg');
   });
 
-  it('creates any valid language without a hard-coded catalog', () => {
+  it('creates a language when its manually maintained frontend bundle exists', () => {
     const japanese: AdminLanguage = {
       ...vietnamese,
       id: 4,
@@ -104,6 +105,24 @@ describe('AdminLanguagesComponent', () => {
     expect(component.dialog()).toBeNull();
     expect(toast.showSuccess).toHaveBeenCalled();
     expect(locale.refresh).toHaveBeenCalled();
+  });
+
+  it('does not create a language when its frontend locale file is missing', () => {
+    locale.hasStaticBundle.and.returnValue(of(false));
+    component.openAddDialog();
+    component.addForm.setValue({
+      code: 'KO',
+      name: 'Korean',
+      nativeName: '한국어',
+      flagCode: 'KR',
+    });
+
+    component.createLanguage();
+
+    expect(locale.hasStaticBundle).toHaveBeenCalledWith('ko');
+    expect(service.createLanguage).not.toHaveBeenCalled();
+    expect(component.saving()).toBeFalse();
+    expect(toast.showError).toHaveBeenCalledWith('ui_locale_bundle_missing');
   });
 
   it('keeps the current default language active and locked', () => {

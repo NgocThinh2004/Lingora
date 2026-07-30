@@ -4,7 +4,7 @@ import { Observable, map, tap, BehaviorSubject } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiItemResponse } from '../../../core/http/api-response.model';
 import { AuthService } from '../../../core/auth/auth.service';
-import { SubscriptionAuthor, SubscriptionData } from '../models/subscription.model';
+import { SubscriptionAuthor, SubscriptionAuthorsPage } from '../models/subscription.model';
 
 @Injectable({ providedIn: 'root' })
 export class SubscriptionsService {
@@ -19,9 +19,8 @@ export class SubscriptionsService {
     if (!this.authService.isAuthenticated()) return;
     this.initialized = true;
     this.following().subscribe({
-      next: (data: any) => {
-        const authors = data.items || [];
-        this.followedAuthorIds.next(new Set(authors.map((a: any) => String(a.id))));
+      next: data => {
+        this.followedAuthorIds.next(new Set(data.items.map(author => String(author.id))));
       },
       error: () => { this.initialized = false; }
     });
@@ -44,13 +43,13 @@ export class SubscriptionsService {
       .pipe(map(response => response.data));
   }
 
-  following(q?: string, page?: number, limit?: number): Observable<any> {
+  following(q?: string, page?: number, limit?: number): Observable<SubscriptionAuthorsPage> {
     let params = new HttpParams();
     if (q) params = params.set('q', q);
     if (page) params = params.set('page', page);
     if (limit) params = params.set('limit', limit);
     return this.http
-      .get<ApiItemResponse<any>>(`${this.baseUrl}/following`, { params })
+      .get<ApiItemResponse<SubscriptionAuthorsPage>>(`${this.baseUrl}/following`, { params })
       .pipe(map(response => response.data));
   }
 
