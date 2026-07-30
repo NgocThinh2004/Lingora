@@ -219,11 +219,18 @@ export class PublicPostsService {
           const langCode = languageMap.get(t.language_id) || 'en';
           const origLangCode = languageMap.get(post.original_language_id) || 'en';
 
+          let excerpt = '';
+          if (t.content) {
+            const stripped = t.content.replace(/<[^>]*>?/gm, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+            excerpt = stripped.length > 200 ? stripped.substring(0, 200) + '...' : stripped;
+          }
+
           return {
             id: Number(t.id),
             languageCode: langCode,
             title: t.title || '',
             contentHtml: t.content || '',
+            excerpt,
             source: (
               langCode === origLangCode
                 ? 'original'

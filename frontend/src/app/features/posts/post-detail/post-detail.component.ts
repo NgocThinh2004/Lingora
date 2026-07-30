@@ -1,7 +1,7 @@
 import { Component, OnDestroy, computed, inject, signal, ViewChild, ElementRef, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, switchMap, Subscription } from 'rxjs';
 import { FeedPostsService } from '../services/feed-posts.service';
@@ -39,6 +39,7 @@ export class PostDetailComponent implements OnDestroy {
   private sanitizer = inject(DomSanitizer);
   private authModalService = inject(AuthModalService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
 
   @ViewChild('articleContent') articleContentRef?: ElementRef<HTMLElement>;
   @ViewChild('centerFeed') centerFeedRef?: ElementRef<HTMLElement>;
@@ -69,8 +70,7 @@ export class PostDetailComponent implements OnDestroy {
 
     // Wait one tick for Angular to render [innerHTML]
     setTimeout(() => {
-      const articleEl = this.articleContentRef?.nativeElement
-        ?? document.querySelector('.article-content');
+      const articleEl = this.articleContentRef?.nativeElement;
       if (!articleEl) return;
 
       articleEl.querySelectorAll<HTMLVideoElement>('video').forEach(videoEl => {
@@ -168,8 +168,7 @@ export class PostDetailComponent implements OnDestroy {
         if (title) this.titleService.setTitle(`${title} - Lingora`);
 
         // Scroll center-feed to top
-        const scrollContainer = this.centerFeedRef?.nativeElement
-          ?? document.querySelector('.center-feed');
+        const scrollContainer = this.document.querySelector('.center-feed');
         if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
 
         this.setupVideoObservers();

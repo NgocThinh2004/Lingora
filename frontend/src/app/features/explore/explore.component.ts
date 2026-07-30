@@ -112,8 +112,8 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
       switchMap(params => {
         const catSlug = params.get('category');
         if (!catSlug) return of(null);
-        return this.categoryService.findAll().pipe(
-          map(cats => cats.find(c => c.slug === catSlug) ?? null)
+        return this.categoryService.findBySlug(catSlug).pipe(
+          catchError(() => of(null))
         );
       }),
       takeUntilDestroyed(this.destroyRef),
