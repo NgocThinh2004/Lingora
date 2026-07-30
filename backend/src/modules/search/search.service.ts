@@ -7,6 +7,7 @@ import { CategoryTranslation } from '../categories/models/category-translation.m
 import { Post } from '../posts/models/post.model';
 import { PostTranslation } from '../posts/models/post-translation.model';
 import { Subscription } from '../subscriptions/models/subscription.model';
+import { removeAccents } from '../../utils/string.util';
 
 @Injectable()
 export class SearchService {
@@ -21,13 +22,13 @@ export class SearchService {
 
   async globalSearch(q: string, userId?: number) {
     if (!q || !q.trim()) return { data: { users: [], categories: [], posts: [] } };
-    const keyword = `%${q.trim()}%`;
+    const keyword = `%${removeAccents(q.trim())}%`;
 
     // 1. Search Users (limit 3)
     const users = await this.userModel.findAll({
       where: {
         [Op.or]: [
-          { display_name: { [Op.like]: keyword } },
+          { unaccented_display_name: { [Op.like]: keyword } },
           { username: { [Op.like]: keyword } }
         ]
       },
@@ -37,7 +38,7 @@ export class SearchService {
 
     // 2. Search Categories (limit 3)
     const catTranslations = await this.categoryTranslationModel.findAll({
-      where: { name: { [Op.like]: keyword } },
+      where: { unaccented_name: { [Op.like]: keyword } },
       attributes: ['category_id']
     });
     const catIdsFromName = catTranslations.map(t => Number(t.category_id));
@@ -60,7 +61,7 @@ export class SearchService {
     // 3. Search Posts by Title ONLY (limit 4)
     const postTranslations = await this.postTranslationModel.findAll({
       where: {
-        title: { [Op.like]: keyword },
+        unaccented_title: { [Op.like]: keyword },
         translation_status: 'completed'
       },
       attributes: ['post_id', 'title']
