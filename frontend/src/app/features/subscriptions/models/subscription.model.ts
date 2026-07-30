@@ -12,3 +12,14 @@ export interface SubscriptionData {
   authors: SubscriptionAuthor[];
   posts: Post[];
 }
+
+export interface SubscriptionAuthorView { 
+  id: string; 
+  username: string; 
+  name: string; 
+  displayName?: string; 
+  role: string; 
+  avatar: string; 
+  avatarUrl?: string; 
+  bio?: string; 
+}

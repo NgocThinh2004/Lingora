@@ -139,11 +139,7 @@ export class PublicPostsService {
     const order: any = query.sort === 'trending'
       ? [
           [
-            literal(
-              `(view_count) + 
-               (SELECT COUNT(*) FROM post_likes WHERE post_likes.post_id = Post.id) * 5 + 
-               (SELECT COUNT(*) FROM comments WHERE comments.post_id = Post.id AND comments.status = 'approved') * 10`
-            ),
+            literal(`(view_count) + (like_count) * 5 + (comment_count) * 10`),
             'DESC',
           ],
           ['published_at', 'DESC'],

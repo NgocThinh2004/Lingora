@@ -5,6 +5,7 @@ import { PostCardComponent } from '../posts/components/post-card/post-card.compo
 import { FormsModule } from '@angular/forms';
 import { Post } from '../posts/models/post.model';
 import { SubscribeButtonComponent } from './components/subscribe-button/subscribe-button.component';
+import { SubscriptionAuthorView } from './models/subscription.model';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { LocaleService } from '../../core/locale/locale.service';
@@ -155,5 +156,3 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
     }));
   }
 }
-
-interface SubscriptionAuthorView { id: string; username: string; name: string; displayName?: string; role: string; avatar: string; avatarUrl?: string; bio?: string; }
