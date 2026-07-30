@@ -6,13 +6,13 @@
     <button class="carousel-control-next" type="button" (click)="scrollCarousel('right')" [attr.aria-label]="'continue' | t"><i class="bi bi-chevron-right"></i></button>
     
     <div class="authors-carousel-container" id="subscriptionsAuthorsCarousel" #carousel>
-    <button class="author-carousel-item border-0 sticky-all-authors" [class.active]="!authorFilter" type="button" (click)="selectAuthor('')">
+    <button class="author-carousel-item border-0 sticky-all-authors" [class.active]="!authorFilter" type="button" (click)="selectAuthor('', '')">
       <span class="author-carousel-avatar-wrapper d-flex align-items-center justify-content-center bg-body-tertiary"><i class="bi bi-people fs-4 text-main"></i></span>
       <span class="author-carousel-name">{{ 'all_authors' | t }}</span>
     </button>
     @for (author of authors; track author.name) {
       <div class="author-tooltip-container position-relative">
-        <button class="author-carousel-item border-0 bg-transparent w-100" [class.active]="authorFilter === author.name" type="button" (click)="authorFilter === author.name ? selectAuthor('') : selectAuthor(author.name)">
+        <button class="author-carousel-item border-0 bg-transparent w-100" [class.active]="authorFilter === author.name" type="button" (click)="selectAuthor(author.name, $any(author.id))">
           <span class="author-carousel-avatar-wrapper"><img [appAssetImage]="author.avatar" [alt]="author.name" class="author-carousel-avatar"></span>
           <span class="author-carousel-name">{{ author.name }}</span>
         </button>
@@ -51,7 +51,7 @@
       } @else {
       <div class="mb-4 position-relative" style="max-width: 400px;">
         <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-        <input type="text" class="form-control rounded-pill ps-5 bg-body-tertiary border-0" [placeholder]="'search_authors' | t" [(ngModel)]="manageSearchQuery">
+        <input type="text" class="form-control rounded-pill ps-5 bg-body-tertiary border-0" [placeholder]="'search_authors' | t" [value]="manageSearchQuery" (input)="onSearchAuthors($event)">
       </div>
       <div class="row g-3">
         @for (author of visibleManageAuthors; track author.name) {
