@@ -37,6 +37,7 @@ export class AuthorTooltipComponent implements OnInit, OnChanges, AfterViewInit,
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
   
   private mouseEnterListener: (() => void) | null = null;
+  private parentEl: HTMLElement | null = null;
 
   ngOnInit(): void {
     this.updateSelfStatus();
@@ -71,10 +72,10 @@ export class AuthorTooltipComponent implements OnInit, OnChanges, AfterViewInit,
   }
 
   ngAfterViewInit(): void {
-    const parent = this.el.nativeElement.parentElement;
-    if (parent) {
+    this.parentEl = this.el.nativeElement.parentElement;
+    if (this.parentEl) {
       this.mouseEnterListener = () => this.checkPosition();
-      parent.addEventListener('mouseenter', this.mouseEnterListener);
+      this.parentEl.addEventListener('mouseenter', this.mouseEnterListener);
     }
   }
 
@@ -83,9 +84,10 @@ export class AuthorTooltipComponent implements OnInit, OnChanges, AfterViewInit,
   }
 
   ngOnDestroy(): void {
-    const parent = this.el.nativeElement.parentElement;
-    if (parent && this.mouseEnterListener) {
-      parent.removeEventListener('mouseenter', this.mouseEnterListener);
+    if (this.parentEl && this.mouseEnterListener) {
+      this.parentEl.removeEventListener('mouseenter', this.mouseEnterListener);
+      this.mouseEnterListener = null;
+      this.parentEl = null;
     }
   }
 

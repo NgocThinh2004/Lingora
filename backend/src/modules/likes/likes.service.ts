@@ -27,6 +27,7 @@ export class LikesService {
       const existingLike = await this.postLikeModel.findOne({
         where: { post_id: postId, user_id: userId },
         transaction,
+        lock: transaction.LOCK.UPDATE,
       });
 
       let liked = false;
@@ -56,6 +57,7 @@ export class LikesService {
       const existingLike = await this.commentLikeModel.findOne({
         where: { comment_id: commentId, user_id: userId },
         transaction,
+        lock: transaction.LOCK.UPDATE,
       });
 
       let liked = false;

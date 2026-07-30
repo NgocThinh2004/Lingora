@@ -130,6 +130,7 @@ export class SubscriptionsService {
         ],
         group: ['author_id'],
         order: [[fn('COUNT', col('id')), 'DESC'], ['author_id', 'ASC']],
+        limit: 5,
         raw: true,
       }),
     ]);
@@ -149,7 +150,6 @@ export class SubscriptionsService {
     const topUsers = rankedAuthors
       .map(item => ({ item, user: authorsById.get(String(item.author_id)) }))
       .filter((entry): entry is { item: typeof entry.item; user: User } => Boolean(entry.user))
-      .slice(0, 5)
       .map(({ item, user }) => ({
         id: user.id,
         username: user.username,

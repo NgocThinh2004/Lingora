@@ -107,6 +107,7 @@ export interface FeedPostTranslation {
   languageCode: string;
   title: string;
   contentHtml: string;
+  excerpt?: string;
   source: 'original' | 'human' | 'machine';
 }
 

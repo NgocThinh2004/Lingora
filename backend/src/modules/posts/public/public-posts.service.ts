@@ -98,14 +98,14 @@ export class PublicPostsService {
           where: {
             language_id: selectedLanguage.id,
             translation_status: 'completed',
-            title: { [Op.ne]: null },
-            content: { [Op.ne]: null },
+            [Op.and]: [
+              literal("TRIM(title) != ''"),
+              literal("TRIM(content) != ''"),
+            ],
           },
-          attributes: ['post_id', 'title', 'content'],
+          attributes: ['post_id'],
         });
-        intersectPostIds(localizedTranslations
-          .filter(item => Boolean(item.title?.trim()) && Boolean(item.content?.trim()))
-          .map(item => Number(item.post_id)));
+        intersectPostIds(localizedTranslations.map(item => Number(item.post_id)));
       }
     }
 
@@ -139,11 +139,7 @@ export class PublicPostsService {
     const order: any = query.sort === 'trending'
       ? [
           [
-            literal(
-              `(view_count) + 
-               (SELECT COUNT(*) FROM post_likes WHERE post_likes.post_id = Post.id) * 5 + 
-               (SELECT COUNT(*) FROM comments WHERE comments.post_id = Post.id AND comments.status = 'approved') * 10`
-            ),
+            literal(`(view_count) + (like_count) * 5 + (comment_count) * 10`),
             'DESC',
           ],
           ['published_at', 'DESC'],
@@ -219,11 +215,18 @@ export class PublicPostsService {
           const langCode = languageMap.get(t.language_id) || 'en';
           const origLangCode = languageMap.get(post.original_language_id) || 'en';
 
+          let excerpt = '';
+          if (t.content) {
+            const stripped = t.content.replace(/<[^>]*>?/gm, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+            excerpt = stripped.length > 200 ? stripped.substring(0, 200) + '...' : stripped;
+          }
+
           return {
             id: Number(t.id),
             languageCode: langCode,
             title: t.title || '',
             contentHtml: t.content || '',
+            excerpt,
             source: (
               langCode === origLangCode
                 ? 'original'

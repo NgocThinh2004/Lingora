@@ -207,7 +207,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
           if (parentIdx > -1) {
             arr[parentIdx] = { ...arr[parentIdx] };
             if (arr[parentIdx].replies) {
-              arr[parentIdx].replies = arr[parentIdx].replies.filter((r: any) => r.id !== comment.id);
+              arr[parentIdx].replies = arr[parentIdx].replies.filter((r: Comment) => r.id !== comment.id);
             }
           }
           return arr;
@@ -244,7 +244,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
             if (pIdx > -1) {
               arr[pIdx] = { ...arr[pIdx] };
               if (arr[pIdx].replies) {
-                const rIdx = arr[pIdx].replies.findIndex((r: any) => r.id === comment.id);
+                const rIdx = arr[pIdx].replies.findIndex((r: Comment) => r.id === comment.id);
                 if (rIdx > -1) arr[pIdx].replies[rIdx] = updatedComment;
               }
             }
@@ -260,9 +260,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   canEdit(comment: Comment): boolean {
-    const userId = this.authService.currentUser()?.id;
-    const authorId = comment.author?.id || comment.user_id;
-    return userId !== undefined && String(userId) === String(authorId);
+    return !!comment.permissions?.canEdit;
   }
 
   isPostAuthor(comment: Comment): boolean {
@@ -271,10 +269,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   canDelete(comment: Comment): boolean {
-    const userId = this.authService.currentUser()?.id;
-    if (userId === undefined) return false;
-    const authorId = comment.author?.id || comment.user_id;
-    return String(userId) === String(authorId) || String(userId) === String(this.postAuthorId);
+    return !!comment.permissions?.canDelete;
   }
 
   shouldShowTranslateButton(comment: Comment): boolean {

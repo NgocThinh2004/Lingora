@@ -12,7 +12,7 @@
     </button>
     @for (author of authors; track author.name) {
       <div class="author-tooltip-container position-relative">
-        <button class="author-carousel-item border-0 bg-transparent w-100" [class.active]="authorFilter === author.name" type="button" (click)="selectAuthor(author.name, $any(author.id))">
+        <button class="author-carousel-item border-0 bg-transparent w-100" [class.active]="authorFilter === author.name" type="button" (click)="selectAuthor(author.name, author.id)">
           <span class="author-carousel-avatar-wrapper"><img [appAssetImage]="author.avatar" [alt]="author.name" class="author-carousel-avatar"></span>
           <span class="author-carousel-name">{{ author.name }}</span>
         </button>
@@ -43,7 +43,7 @@
       </div>
     } @else {
       @if (tab === 'all') {
-        @for (post of visiblePosts; track post.id) {
+        @for (post of posts; track post.id) {
           <app-post-card [post]="post"></app-post-card>
         } @empty {
           <div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>{{ 'no_articles' | t }}</div>
@@ -54,13 +54,13 @@
         <input type="text" class="form-control rounded-pill ps-5 bg-body-tertiary border-0" [placeholder]="'search_authors' | t" [value]="manageSearchQuery" (input)="onSearchAuthors($event)">
       </div>
       <div class="row g-3">
-        @for (author of visibleManageAuthors; track author.name) {
+        @for (author of authors; track author.name) {
           <div class="col-12"><div class="manage-author-card">
             <a [href]="'/profile/' + author.username" class="d-flex align-items-center text-decoration-none text-reset flex-grow-1">
               <img [appAssetImage]="author.avatar" [alt]="author.name" class="rounded-circle border" width="54" height="54" style="object-fit: cover;">
               <div class="ms-3"><h6 class="fw-bold mb-1 text-main">{{ author.name }}</h6><p class="text-muted small mb-0">{{ author.role }}</p></div>
             </a>
-            <app-subscribe-button [authorId]="$any(author.id)" class="ms-2"></app-subscribe-button>
+            <app-subscribe-button [authorId]="author.id" class="ms-2"></app-subscribe-button>
           </div></div>
         } @empty {
           <div class="text-center py-5 text-muted">{{ 'no_matching_authors' | t }}</div>

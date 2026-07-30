@@ -1,6 +1,7 @@
-import { Component, OnDestroy, OnInit, AfterViewInit, AfterViewChecked, ElementRef, ViewChild, effect, inject, untracked } from '@angular/core';
+import { Component, OnDestroy, OnInit, AfterViewInit, ElementRef, ViewChild, effect, inject, untracked, DestroyRef } from '@angular/core';
 import { RouterLink, ActivatedRoute } from '@angular/router';
-import { BehaviorSubject, debounceTime, distinctUntilChanged, Subscription, forkJoin, map, switchMap, tap, of, catchError } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, Subject, debounceTime, distinctUntilChanged, Subscription, forkJoin, map, switchMap, tap, of, catchError } from 'rxjs';
 import { FeedPostsService } from '../posts/services/feed-posts.service';
 import { UsersService } from '../users/services/users.service';
 import { CategoriesService } from '../categories/services/categories.service';
@@ -40,6 +41,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly categoryService = inject(CategoriesService);
   private readonly route = inject(ActivatedRoute);
   private readonly localeService = inject(LocaleService);
+  private readonly destroyRef = inject(DestroyRef);
 
   query = '';
   tab: 'top' | 'posts' | 'publications' | 'people' = 'top';
@@ -68,6 +70,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
     tab: 'top',
     lang: this.localeService.current(),
   });
+  private readonly loadMoreSubject = new Subject<{ page: number }>();
   private searchSubscription?: Subscription;
 
   constructor() {
@@ -104,18 +107,21 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
-    // Check if category is passed via URL query params
-    this.route.queryParamMap.subscribe(params => {
-      const catSlug = params.get('category');
-      if (catSlug) {
-        this.categoryService.findAll().subscribe(cats => {
-          const found = cats.find(c => c.slug === catSlug);
-          if (found) {
-            this.selectedCategory = found;
-            this.tab = 'posts';
-            this.emitFilters(found.slug);
-          }
-        });
+    // Fix: switchMap để cancel nested subscribe khi category slug thay đổi từ URL
+    this.route.queryParamMap.pipe(
+      switchMap(params => {
+        const catSlug = params.get('category');
+        if (!catSlug) return of(null);
+        return this.categoryService.findBySlug(catSlug).pipe(
+          catchError(() => of(null))
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(found => {
+      if (found) {
+        this.selectedCategory = found;
+        this.tab = 'posts';
+        this.emitFilters(found.slug);
       }
     });
 
@@ -177,6 +183,41 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
         this.publications = data;
       }
     });
+
+    // Fix: loadMore dùng switchMap thay vì subscribe trực tiếp
+    // switchMap tự cancel request trang cũ nếu user scroll nhanh
+    this.loadMoreSubject.pipe(
+      debounceTime(300),
+      switchMap(({ page }) => {
+        this.loadingMore = true;
+        const q = this.query.trim().toLowerCase();
+        if (this.tab === 'posts') {
+          return this.postsService.list({
+            q,
+            category: this.selectedCategory?.slug,
+            lang: this.localeService.current(),
+            limit: 20, sort: 'trending', page,
+          }).pipe(map(res => ({ kind: 'posts' as const, res })));
+        } else if (this.tab === 'people') {
+          return this.userService.getRecommended(q, 20, page).pipe(
+            map(res => ({ kind: 'people' as const, res }))
+          );
+        }
+        return of(null);
+      }),
+      takeUntilDestroyed(this.destroyRef),
+      catchError(() => { this.loadingMore = false; return of(null); })
+    ).subscribe((result) => {
+      if (!result) { this.loadingMore = false; return; }
+      if (result.kind === 'posts') {
+        this.posts = [...this.posts, ...result.res.items];
+        this.totalPages = result.res.meta.totalPages;
+      } else if (result.kind === 'people') {
+        this.people = [...this.people, ...result.res.items];
+        this.totalPages = result.res.meta.totalPages;
+      }
+      this.loadingMore = false;
+    });
   }
 
   ngOnDestroy(): void {
@@ -186,42 +227,10 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadMore(): void {
-    if ((this.tab !== 'posts' && this.tab !== 'people') || this.page >= this.totalPages) return;
-    
+    if ((this.tab !== 'posts' && this.tab !== 'people') || this.page >= this.totalPages || this.loadingMore) return;
     this.loadingMore = true;
-    const q = this.query.trim().toLowerCase();
     this.page++;
-
-    if (this.tab === 'posts') {
-      this.postsService.list({
-        q,
-        category: this.selectedCategory?.slug,
-        lang: this.localeService.current(),
-        limit: 20,
-        sort: 'trending',
-        page: this.page,
-      }).subscribe({
-        next: (res) => {
-          this.posts = [...this.posts, ...res.items];
-          this.totalPages = res.meta.totalPages;
-          this.loadingMore = false;
-        },
-        error: () => {
-          this.loadingMore = false;
-        }
-      });
-    } else if (this.tab === 'people') {
-      this.userService.getRecommended(q, 20, this.page).subscribe({
-        next: (res) => {
-          this.people = [...this.people, ...res.items];
-          this.totalPages = res.meta.totalPages;
-          this.loadingMore = false;
-        },
-        error: () => {
-          this.loadingMore = false;
-        }
-      });
-    }
+    this.loadMoreSubject.next({ page: this.page });
   }
 
   updateQuery(event: Event): void {

@@ -42,7 +42,8 @@ export class SearchService {
     // 2. Search Categories (limit 3)
     const catTranslations = await this.categoryTranslationModel.findAll({
       where: { unaccented_name: { [Op.like]: keyword } },
-      attributes: ['category_id']
+      attributes: ['category_id'],
+      limit: 20,
     });
     const catIdsFromName = catTranslations.map(t => Number(t.category_id));
 
@@ -67,7 +68,8 @@ export class SearchService {
         unaccented_title: { [Op.like]: keyword },
         translation_status: 'completed'
       },
-      attributes: ['post_id', 'title']
+      attributes: ['post_id', 'title'],
+      limit: 20,
     });
     const postIds = postTranslations.map(t => Number(t.post_id));
 

@@ -423,7 +423,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.showSubscribersModal.set(true);
     document.body.classList.add('profile-modal-open');
 
-    const request: Observable<Array<SubscriptionAuthor | User>> = this.isOwnProfile()
+    const request: Observable<Array<any>> = this.isOwnProfile()
       ? (mode === 'followers'
           ? this.subscriptionsService.followers()
           : this.subscriptionsService.following().pipe(map(response => response.items)))

@@ -5,6 +5,7 @@ import { PostCardComponent } from '../posts/components/post-card/post-card.compo
 import { FormsModule } from '@angular/forms';
 import { Post } from '../posts/models/post.model';
 import { SubscribeButtonComponent } from './components/subscribe-button/subscribe-button.component';
+import { SubscriptionAuthorView, SubscriptionAuthor } from './models/subscription.model';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { LocaleService } from '../../core/locale/locale.service';
@@ -33,8 +34,6 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
   loadingFeed = false;
   
   error = '';
-  feedPage = 1;
-  authorsPage = 1;
   
   private feedSubject = new BehaviorSubject<{ author: string; lang: string; page: number }>({ author: '', lang: '', page: 1 });
   private authorsSubject = new BehaviorSubject<{ q: string; page: number }>({ q: '', page: 1 });
@@ -95,14 +94,6 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
-  get visiblePosts(): Post[] {
-    return this.posts;
-  }
-
-  get visibleManageAuthors(): SubscriptionAuthorView[] {
-    return this.authors;
-  }
-
   onSearchAuthors(event: Event): void {
     const q = (event.target as HTMLInputElement).value;
     this.manageSearchQuery = q;
@@ -155,7 +146,7 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
     });
   }
 
-  private mapAuthors(items: any[]): SubscriptionAuthorView[] {
+  private mapAuthors(items: SubscriptionAuthor[]): SubscriptionAuthorView[] {
     return items.map(author => ({
       id: author.id,
       username: author.username,
@@ -165,5 +156,3 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
     }));
   }
 }
-
-interface SubscriptionAuthorView { id: string; username: string; name: string; role: string; avatar: string; }
