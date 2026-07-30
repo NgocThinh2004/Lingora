@@ -319,19 +319,20 @@ export class PublicPostsService {
 
   async listFeedByAuthorIds(
     authorIds: string[],
-    options: { limit?: number; lang?: string } = {},
+    options: { limit?: number; page?: number; lang?: string } = {},
     userId?: number,
   ) {
-    if (!authorIds.length) return [];
+    if (!authorIds.length) return { items: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 } };
     const limit = options.limit || 50;
+    const page = options.page || 1;
 
     const result = await this.listFeed(
-      { page: 1, limit, lang: options.lang },
+      { page, limit, lang: options.lang },
       undefined,
       userId,
       authorIds,
     );
-    return result.items;
+    return result;
   }
 
   async getById(id: number, userId?: number, lang?: string, ip?: string) {

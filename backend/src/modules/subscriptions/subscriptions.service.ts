@@ -4,7 +4,7 @@ import { col, fn } from 'sequelize';
 import { Subscription, User } from '../../database/models';
 import { PublicPostsService } from '../posts/public/public-posts.service';
 import { Op } from 'sequelize';
-import { removeAccents } from '../../../utils/string.util';
+import { removeAccents } from '../../utils/string.util';
 
 @Injectable()
 export class SubscriptionsService {
