@@ -33,8 +33,6 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
   loadingFeed = false;
   
   error = '';
-  feedPage = 1;
-  authorsPage = 1;
   
   private feedSubject = new BehaviorSubject<{ author: string; lang: string; page: number }>({ author: '', lang: '', page: 1 });
   private authorsSubject = new BehaviorSubject<{ q: string; page: number }>({ q: '', page: 1 });
@@ -95,14 +93,6 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
-  get visiblePosts(): Post[] {
-    return this.posts;
-  }
-
-  get visibleManageAuthors(): SubscriptionAuthorView[] {
-    return this.authors;
-  }
-
   onSearchAuthors(event: Event): void {
     const q = (event.target as HTMLInputElement).value;
     this.manageSearchQuery = q;
@@ -155,7 +145,7 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
     });
   }
 
-  private mapAuthors(items: any[]): SubscriptionAuthorView[] {
+  private mapAuthors(items: SubscriptionAuthorView[]): SubscriptionAuthorView[] {
     return items.map(author => ({
       id: author.id,
       username: author.username,
@@ -166,4 +156,4 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
   }
 }
 
-interface SubscriptionAuthorView { id: string; username: string; name: string; role: string; avatar: string; }
+interface SubscriptionAuthorView { id: string; username: string; name: string; displayName?: string; role: string; avatar: string; avatarUrl?: string; bio?: string; }

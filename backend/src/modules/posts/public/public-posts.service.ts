@@ -98,14 +98,14 @@ export class PublicPostsService {
           where: {
             language_id: selectedLanguage.id,
             translation_status: 'completed',
-            title: { [Op.ne]: null },
-            content: { [Op.ne]: null },
+            [Op.and]: [
+              literal("TRIM(title) != ''"),
+              literal("TRIM(content) != ''"),
+            ],
           },
-          attributes: ['post_id', 'title', 'content'],
+          attributes: ['post_id'],
         });
-        intersectPostIds(localizedTranslations
-          .filter(item => Boolean(item.title?.trim()) && Boolean(item.content?.trim()))
-          .map(item => Number(item.post_id)));
+        intersectPostIds(localizedTranslations.map(item => Number(item.post_id)));
       }
     }
 

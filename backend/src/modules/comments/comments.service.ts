@@ -117,10 +117,11 @@ export class CommentsService {
 
     const rootCommentIds = rootComments.rows.map((c) => c.id);
 
-    // Fetch replies for these root comments
+    // Fetch replies for these root comments (max 50 per batch to prevent OOM)
     const replies = await this.commentModel.findAll({
       where: { parent_id: rootCommentIds },
       order: [['created_at', 'ASC']],
+      limit: 50,
       include: [
         { model: User, as: 'author', attributes: ['id', 'username', 'display_name', 'avatar'] },
         { model: CommentTranslation, as: 'translations', include: [Language] },
