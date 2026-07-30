@@ -70,7 +70,6 @@ export class SubscriptionsComponent implements OnInit {
           name: author.displayName || author.username,
           role: author.bio || `@${author.username}`,
           avatar: author.avatarUrl || '/assets/images/default-avatar.svg',
-          isFollowing: true
         }));
         this.posts = data.posts;
         this.loading = false;
@@ -83,4 +82,4 @@ export class SubscriptionsComponent implements OnInit {
   }
 }
 
-interface SubscriptionAuthorView { id: string; username: string; name: string; role: string; avatar: string; isFollowing: boolean; }
+interface SubscriptionAuthorView { id: string; username: string; name: string; role: string; avatar: string; }

@@ -9,6 +9,7 @@ import { User } from '../../users/models/user.model';
 import { Category } from '../../categories/models/category.model';
 import { CategoryTranslation } from '../../categories/models/category-translation.model';
 import { Language } from '../../languages/models/language.model';
+import { removeAccents } from '../../../utils/string.util';
 import { PostLike } from '../../likes/models/post-like.model';
 import { PublicPostsQueryDto } from './dto/public-posts.dto';
 
@@ -71,14 +72,22 @@ export class PublicPostsService {
       where.author_id = query.authorId;
     }
 
-    // Filter by keyword search if provided
     if (query.q && query.q.trim()) {
-      const keyword = `%${query.q.trim()}%`;
+      const keyword = `%${removeAccents(query.q.trim())}%`;
+      const translationWhere: any = {
+        translation_status: 'completed',
+        unaccented_title: { [Op.like]: keyword },
+      };
+      
+      if (query.lang) {
+        const langModel = await this.languageModel.findOne({ where: { code: query.lang } });
+        if (langModel) {
+          translationWhere.language_id = langModel.id;
+        }
+      }
+
       const matchedTranslations = await this.postTranslationModel.findAll({
-        where: {
-          translation_status: 'completed',
-          title: { [Op.like]: keyword },
-        },
+        where: translationWhere,
         attributes: ['post_id'],
       });
       const matchingPostIds = matchedTranslations.map((t) => Number(t.post_id));
@@ -186,21 +195,27 @@ export class PublicPostsService {
       let coverImageUrl: string | null = null;
       let coverVideoUrl: string | null = null;
       for (const t of postTranslations) {
-        if (t.contentHtml) {
-          if (!coverImageUrl) {
-            const imgMatch = t.contentHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
-            if (imgMatch?.[1]) coverImageUrl = imgMatch[1];
-          }
-          if (!coverVideoUrl) {
-            // Match <video src="..."> or <video><source src="..."> or <iframe src="...">
-            const videoMatch =
-              t.contentHtml.match(/<video[^>]+src=["']([^"']+)["']/i) ||
-              t.contentHtml.match(/<source[^>]+src=["']([^"']+)["']/i) ||
-              t.contentHtml.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-            if (videoMatch?.[1]) coverVideoUrl = videoMatch[1];
-          }
-          if (coverImageUrl && coverVideoUrl) break;
+        if (!t.contentHtml) continue;
+
+        // Find the position of the first <img> and first <video>/<source> in the HTML
+        const imgMatch = t.contentHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
+        const videoMatch =
+          t.contentHtml.match(/<video[^>]+src=["']([^"']+)["']/i) ||
+          t.contentHtml.match(/<source[^>]+src=["']([^"']+)["']/i) ||
+          t.contentHtml.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+
+        const imgIdx = imgMatch ? t.contentHtml.indexOf(imgMatch[0]) : Infinity;
+        const videoIdx = videoMatch ? t.contentHtml.indexOf(videoMatch[0]) : Infinity;
+
+        if (imgIdx === Infinity && videoIdx === Infinity) continue;
+
+        // Whichever appears first in the HTML wins
+        if (imgIdx <= videoIdx) {
+          coverImageUrl = imgMatch![1];
+        } else {
+          coverVideoUrl = videoMatch![1];
         }
+        break;
       }
 
       return {

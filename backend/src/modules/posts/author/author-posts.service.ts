@@ -598,6 +598,7 @@ export class AuthorPostsService {
           language_id: { [Op.ne]: originalLanguageId },
         },
         transaction,
+        individualHooks: true,
       },
     );
   }

@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -24,7 +24,7 @@ import { AssetImageDirective } from '../../../shared/directives/asset-image.dire
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
 })
-export class PostDetailComponent implements OnInit {
+export class PostDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly postService = inject(FeedPostsService);
@@ -41,6 +41,44 @@ export class PostDetailComponent implements OnInit {
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
   authorPreview = signal(false);
+
+  private videoObservers: IntersectionObserver[] = [];
+
+  ngOnDestroy(): void {
+    this.cleanupVideoObservers();
+  }
+
+  private cleanupVideoObservers(): void {
+    this.videoObservers.forEach(obs => obs.disconnect());
+    this.videoObservers = [];
+  }
+
+  /** Call after post content is rendered to observe all videos in the article */
+  private setupVideoObservers(): void {
+    if (typeof document === 'undefined') return;
+    this.cleanupVideoObservers();
+
+    // Wait one tick for Angular to render [innerHTML]
+    setTimeout(() => {
+      const articleEl = document.querySelector('.article-content');
+      if (!articleEl) return;
+
+      articleEl.querySelectorAll<HTMLVideoElement>('video').forEach(videoEl => {
+        const obs = new IntersectionObserver(
+          ([entry]) => {
+            if (entry.isIntersecting) {
+              videoEl.play().catch(() => null);
+            } else {
+              videoEl.pause();
+            }
+          },
+          { threshold: 0.25 }
+        );
+        obs.observe(videoEl);
+        this.videoObservers.push(obs);
+      });
+    }, 100);
+  }
 
   goBack(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
@@ -107,6 +145,7 @@ export class PostDetailComponent implements OnInit {
         if (scrollContainer) {
           scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
         }
+        this.setupVideoObservers();
       },
       error: (err) => {
         this.error.set('Could not load post details. Please try again later.');
@@ -140,6 +179,7 @@ export class PostDetailComponent implements OnInit {
         if (scrollContainer) {
           scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
         }
+        this.setupVideoObservers();
       },
       error: (err) => {
         this.error.set('Could not load this article. It may have changed or been removed.');
