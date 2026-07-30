@@ -493,7 +493,7 @@
     "posts_moved_to_trash": "Se movieron {count} artículos a la papelera.",
     "posts_deleted_permanently": "{count} artículos eliminados permanentemente.",
     "delete_comment_confirm": "¿Estás seguro de que quieres eliminar este comentario?",
-  "comment_deleted": "Comentario eliminado",
+    "comment_deleted": "Comentario eliminado",
     "replying_to": "Respondiendo a {name}...",
     "dismiss_notification": "Descartar notificación",
     "enter_handle": "@ Introduzca un identificador",
