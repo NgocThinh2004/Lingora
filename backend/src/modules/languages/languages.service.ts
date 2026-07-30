@@ -13,14 +13,12 @@ import {
   UpdateAdminLanguageDto,
 } from './admin/dto/admin-languages.dto';
 import { Language } from './models/language.model';
-import { LocaleBundlesService } from './locale-bundles.service';
 
 @Injectable()
 export class LanguagesService {
   constructor(
     private readonly sequelize: Sequelize,
     @InjectModel(Language) private readonly languageModel: typeof Language,
-    private readonly localeBundlesService: LocaleBundlesService,
   ) {}
 
   async findActive() {
@@ -63,7 +61,7 @@ export class LanguagesService {
   async create(dto: CreateAdminLanguageDto) {
     try {
       const shouldActivate = dto.isActive !== false || dto.isDefault === true;
-      const created = await this.sequelize.transaction(async transaction => {
+      const language = await this.sequelize.transaction(async transaction => {
         const duplicate = await this.languageModel.findOne({
           where: { code: dto.code },
           transaction,
@@ -80,47 +78,29 @@ export class LanguagesService {
         });
         const isDefault = dto.isDefault === true || configuredLanguages.length === 0;
 
-        const language = await this.languageModel.create(
+        if (isDefault) {
+          await this.languageModel.update(
+            { is_default: false },
+            { where: { is_default: true }, transaction },
+          );
+        }
+
+        const isActive = shouldActivate || isDefault;
+        const now = new Date();
+
+        return this.languageModel.create(
           {
             code: dto.code,
             name: dto.name,
             native_name: dto.nativeName,
             flag_code: dto.flagCode ?? null,
-            is_default: false,
-            is_active: false,
-            activated_at: null,
+            is_default: isDefault,
+            is_active: isActive,
+            activated_at: isActive ? now : null,
           },
           { transaction },
         );
-        return { language, isDefault };
       });
-      const { language, isDefault } = created;
-
-      if (shouldActivate || isDefault) {
-        try {
-          await this.localeBundlesService.provisionLanguage(language);
-          await this.sequelize.transaction(async transaction => {
-            if (isDefault) {
-              await this.languageModel.update(
-                { is_default: false },
-                { where: { is_default: true }, transaction },
-              );
-            }
-            await language.update(
-              {
-                is_active: true,
-                activated_at: new Date(),
-                ...(isDefault ? { is_default: true } : {}),
-              },
-              { transaction },
-            );
-          });
-        } catch (error) {
-          await this.localeBundlesService.removeGeneratedBundle(language.code).catch(() => undefined);
-          await language.destroy().catch(() => undefined);
-          throw error;
-        }
-      }
       return this.toAdminLanguage(language);
     } catch (error) {
       if (error instanceof UniqueConstraintError) {
@@ -145,11 +125,6 @@ export class LanguagesService {
     if (!current) {
       throw new NotFoundException('Language not found');
     }
-    const willActivate = !current.is_active && (dto.isActive === true || dto.isDefault === true);
-    if (willActivate) {
-      await this.localeBundlesService.provisionLanguage(current);
-    }
-
     return this.sequelize.transaction(async transaction => {
       const configuredLanguages = await this.languageModel.findAll({
         order: [['id', 'ASC']],

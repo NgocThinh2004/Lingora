@@ -21,7 +21,7 @@ describe('SettingsComponent', () => {
 
   afterEach(() => localStorage.clear());
 
-  it('shows the language confirmation after the selected bundle is applied', () => {
+  it('shows the language confirmation after the selected static bundle is applied', () => {
     const fixture = TestBed.createComponent(SettingsComponent);
     const http = TestBed.inject(HttpTestingController);
     const showSuccess = spyOn(TestBed.inject(ToastService), 'showSuccess');
@@ -30,26 +30,22 @@ describe('SettingsComponent', () => {
     http.expectOne(request => request.url.endsWith('/languages')).flush({
       data: [
         { code: 'en', name: 'English', nativeName: 'English', flagCode: 'gb', isDefault: true },
-        { code: 'zh', name: 'Chinese', nativeName: 'Chinese Native', flagCode: 'cn', isDefault: false },
+        { code: 'zh', name: 'Chinese', nativeName: '中文', flagCode: 'cn', isDefault: false },
       ],
     });
-    http.expectOne(request => request.url.endsWith('/locales/en')).flush({
-      data: { feed_language: 'Feed language' },
-    });
+    http.expectOne('/locales/en.json').flush({ feed_language: 'Feed language' });
 
     fixture.componentInstance.selectLanguage({
       code: 'zh',
       name: 'Chinese',
-      nativeName: 'Chinese Native',
+      nativeName: '中文',
       flagCode: 'cn',
       isDefault: false,
     });
 
     expect(showSuccess).not.toHaveBeenCalled();
-    http.expectOne(request => request.url.endsWith('/locales/zh')).flush({
-      data: { feed_language: 'Localized feed language' },
-    });
-    expect(showSuccess).toHaveBeenCalledWith('Localized feed language: Chinese Native');
+    http.expectOne('/locales/zh.json').flush({ feed_language: '信息流语言' });
+    expect(showSuccess).toHaveBeenCalledWith('信息流语言: 中文');
     http.verify();
   });
 
@@ -69,9 +65,7 @@ describe('SettingsComponent', () => {
         },
       ],
     });
-    http.expectOne(request => request.url.endsWith('/locales/fr')).flush({
-      data: { settings: 'Paramètres', default_label: 'Default' },
-    });
+    http.expectOne('/locales/fr.json').flush({ settings: 'Paramètres', default_label: 'Default' });
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;

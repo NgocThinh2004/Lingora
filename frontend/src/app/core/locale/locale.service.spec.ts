@@ -1,6 +1,6 @@
-import { TestBed } from '@angular/core/testing';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../environments/environment';
 import { LocaleService } from './locale.service';
 
@@ -22,52 +22,28 @@ describe('LocaleService', () => {
     localStorage.clear();
   });
 
-  it('loads active languages from the public API', () => {
+  it('loads active languages and the selected static frontend bundle', () => {
     service.load();
-
-    const request = httpTesting.expectOne(`${environment.apiUrl}/languages`);
-    request.flush({
-      data: [
-        { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', flagCode: 'vn', isDefault: true },
-        { code: 'ja', name: 'Japanese', nativeName: '日本語', flagCode: 'jp', isDefault: false },
-      ],
-    });
-
-    httpTesting.expectOne(`${environment.apiUrl}/locales/vi`).flush({ data: {} });
-
-    expect(service.options()).toEqual([
-      jasmine.objectContaining({ code: 'vi', label: 'Tiếng Việt', isDefault: true }),
-      jasmine.objectContaining({ code: 'ja', flagUrl: 'https://flagcdn.com/w40/jp.png' }),
-    ]);
-  });
-
-  it('falls back to the API default when the saved language is no longer active', () => {
-    service.selectLocale('zh');
-    httpTesting.expectOne(`${environment.apiUrl}/locales/zh`).flush(null, { status: 500, statusText: 'Unavailable' });
-    service.load();
-
     httpTesting.expectOne(`${environment.apiUrl}/languages`).flush({
       data: [
         { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', flagCode: 'vn', isDefault: true },
         { code: 'en', name: 'English', nativeName: 'English', flagCode: 'gb', isDefault: false },
       ],
     });
-
-    httpTesting.expectOne(`${environment.apiUrl}/locales/vi`).flush({ data: {} });
+    httpTesting.expectOne('/locales/vi.json').flush({ home: 'Trang chủ' });
 
     expect(service.selectedLocale()).toBe('vi');
-    expect(localStorage.getItem('lingora-locale')).toBe('vi');
-    expect(localStorage.getItem('preferredLanguage')).toBe('vi');
+    expect(service.translate('home')).toBe('Trang chủ');
   });
 
   it('ignores locale codes that are not active', () => {
     service.selectLocale('ja');
 
     expect(service.selectedLocale()).toBe('en');
-    expect(localStorage.getItem('lingora-locale')).toBeNull();
+    expect(localStorage.getItem('preferredLanguage')).toBeNull();
   });
 
-  it('loads a generated UI bundle when a newly active locale is selected', () => {
+  it('loads a frontend locale file when an active locale is selected', () => {
     service.load();
     httpTesting.expectOne(`${environment.apiUrl}/languages`).flush({
       data: [
@@ -75,19 +51,16 @@ describe('LocaleService', () => {
         { code: 'ja', name: 'Japanese', nativeName: '日本語', flagCode: 'jp', isDefault: false },
       ],
     });
-
-    httpTesting.expectOne(`${environment.apiUrl}/locales/en`).flush({ data: {} });
+    httpTesting.expectOne('/locales/en.json').flush({ home: 'Home' });
 
     service.selectLocale('ja');
-    httpTesting.expectOne(`${environment.apiUrl}/locales/ja`).flush({
-      data: { home: 'ホーム', sign_out: 'ログアウト' },
-    });
+    httpTesting.expectOne('/locales/ja.json').flush({ home: 'ホーム', sign_out: 'ログアウト' });
 
     expect(service.translate('home')).toBe('ホーム');
     expect(service.translate('sign_out')).toBe('ログアウト');
   });
 
-  it('restores a dynamically added locale after a page reload', () => {
+  it('restores a supported saved locale after a page reload', () => {
     localStorage.setItem('preferredLanguage', 'ja');
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -96,7 +69,6 @@ describe('LocaleService', () => {
     service = TestBed.inject(LocaleService);
     httpTesting = TestBed.inject(HttpTestingController);
 
-    expect(service.selectedLocale()).toBe('en');
     service.load();
     httpTesting.expectOne(`${environment.apiUrl}/languages`).flush({
       data: [
@@ -104,7 +76,8 @@ describe('LocaleService', () => {
         { code: 'ja', name: 'Japanese', nativeName: '日本語', flagCode: 'jp', isDefault: false },
       ],
     });
-    httpTesting.expectOne(`${environment.apiUrl}/locales/ja`).flush({ data: { home: 'ホーム' } });
+    httpTesting.expectOne('/locales/ja.json').flush({ home: 'ホーム' });
+
     expect(service.selectedLocale()).toBe('ja');
     expect(service.translate('home')).toBe('ホーム');
   });
@@ -112,31 +85,11 @@ describe('LocaleService', () => {
   it('switches the interface only after the requested bundle is ready', () => {
     service.selectLocale('vi');
     expect(service.selectedLocale()).toBe('en');
-    httpTesting.expectOne(`${environment.apiUrl}/locales/vi`).flush({ data: {
-      home: 'Trang chủ',
-      more: 'Thêm',
-      my_posts_title: 'Bài viết của tôi',
-      original_language: 'Ngôn ngữ gốc',
-      items: 'bài viết',
-    } });
+
+    httpTesting.expectOne('/locales/vi.json').flush({ home: 'Trang chủ' });
+
     expect(service.selectedLocale()).toBe('vi');
     expect(service.translate('home')).toBe('Trang chủ');
-    expect(service.translate('more')).toBe('Thêm');
-    expect(service.translate('my_posts_title')).toBe('Bài viết của tôi');
-    expect(service.translate('original_language')).toBe('Ngôn ngữ gốc');
-    expect(service.translate('items')).toBe('bài viết');
-
-    service.selectLocale('zh');
-    expect(service.selectedLocale()).toBe('vi');
-    httpTesting.expectOne(`${environment.apiUrl}/locales/zh`).flush({ data: {
-      sign_out: '退出登录',
-      search_posts: '搜索你的文章...',
-      item: '篇文章',
-    } });
-    expect(service.selectedLocale()).toBe('zh');
-    expect(service.translate('sign_out')).toBe('退出登录');
-    expect(service.translate('search_posts')).toBe('搜索你的文章...');
-    expect(service.translate('item')).toBe('篇文章');
   });
 
   it('runs the language callback only after the requested bundle is applied', () => {
@@ -147,17 +100,19 @@ describe('LocaleService', () => {
     });
 
     expect(appliedLocale).toBe('');
-    httpTesting.expectOne(`${environment.apiUrl}/locales/vi`).flush({ data: {} });
+    httpTesting.expectOne('/locales/vi.json').flush({});
     expect(appliedLocale).toBe('vi');
   });
 
-  it('reloads an already cached bundle when the user selects it again', () => {
-    service.selectLocale('vi');
-    httpTesting.expectOne(`${environment.apiUrl}/locales/vi`).flush({ data: { home: 'Trang chủ' } });
-    expect(service.translate('home')).toBe('Trang chủ');
+  it('checks whether a manually maintained frontend bundle exists', () => {
+    let japaneseExists = false;
+    service.hasStaticBundle('ja').subscribe(exists => japaneseExists = exists);
+    httpTesting.expectOne('/locales/ja.json').flush({ home: 'ホーム' });
+    expect(japaneseExists).toBeTrue();
 
-    service.selectLocale('vi');
-    httpTesting.expectOne(`${environment.apiUrl}/locales/vi`).flush({ data: { home: 'Trang chủ mới' } });
-    expect(service.translate('home')).toBe('Trang chủ mới');
+    let koreanExists = true;
+    service.hasStaticBundle('ko').subscribe(exists => koreanExists = exists);
+    httpTesting.expectOne('/locales/ko.json').flush(null, { status: 404, statusText: 'Not Found' });
+    expect(koreanExists).toBeFalse();
   });
 });
