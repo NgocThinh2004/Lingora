@@ -22,9 +22,9 @@ export class RightPanelComponent implements OnInit {
   readonly recommendationsLoading = signal(true);
 
   ngOnInit(): void {
-    this.usersService.getRecommended().subscribe({
-      next: users => {
-        this.recommendedUsers.set((users ?? []).slice(0, 3));
+    this.usersService.getRecommended(undefined, 3).subscribe({
+      next: res => {
+        this.recommendedUsers.set(res.items);
         this.recommendationsLoading.set(false);
       },
       error: () => this.recommendationsLoading.set(false),

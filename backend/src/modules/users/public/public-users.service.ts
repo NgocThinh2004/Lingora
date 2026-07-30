@@ -12,22 +12,31 @@ export class PublicUsersService {
     @InjectModel(Subscription) private readonly subscriptionModel: typeof Subscription,
   ) {}
 
-  async getRecommended(userId?: string | number, q?: string, limit?: number) {
+  async getRecommended(userId?: string | number, q?: string, limit?: number, page?: number) {
     const whereClause: any = { status: 'active', deleted_at: null };
     if (q && q.trim()) {
-      const keyword = `%${removeAccents(q.trim())}%`;
+      const rawQ = q.trim();
+      const qWithoutAt = rawQ.startsWith('@') ? rawQ.substring(1) : rawQ;
+      const keyword = `%${removeAccents(rawQ)}%`;
+      const keywordWithoutAt = `%${removeAccents(qWithoutAt)}%`;
+      
       whereClause[Op.or] = [
         { unaccented_display_name: { [Op.like]: keyword } },
-        { username: { [Op.like]: keyword } },
+        { username: { [Op.like]: keywordWithoutAt } },
       ];
     }
 
-    const users = await this.userModel.findAll({
+    const pageNum = page || 1;
+    const limitNum = limit ? limit : (q ? 20 : 10);
+    const offset = (pageNum - 1) * limitNum;
+
+    const { rows: users, count } = await this.userModel.findAndCountAll({
       where: whereClause,
       order: [
         [literal('(SELECT COUNT(*) FROM subscriptions WHERE author_id = User.id)'), 'DESC'],
       ],
-      limit: limit ? limit : (q ? 20 : 10),
+      limit: limitNum,
+      offset,
     });
 
     const followingSet = await this.getFollowingSet(
@@ -35,10 +44,17 @@ export class PublicUsersService {
       users.map(user => String(user.id)),
     );
 
-    return users.map(user => ({
-      ...this.serializeUser(user),
-      isFollowing: followingSet.has(String(user.id)),
-    }));
+    return {
+      items: users.map(user => ({
+        ...this.serializeUser(user),
+        isFollowing: followingSet.has(String(user.id)),
+      })),
+      meta: {
+        total: count,
+        page: pageNum,
+        totalPages: Math.ceil(count / limitNum) || 1
+      }
+    };
   }
 
   async getProfile(id: number, viewerId?: string | number) {

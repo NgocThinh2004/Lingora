@@ -96,7 +96,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
     this.scrollObserver = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !this.loading && !this.loadingMore) {
-          this.loadMorePosts();
+          this.loadMore();
         }
       },
       { rootMargin: '200px' }
@@ -136,7 +136,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
         if (tab === 'top') {
           return forkJoin({
             posts: this.postsService.list({ q, category, lang, limit: 10, sort: 'trending' }).pipe(map(res => res.items)),
-            people: this.userService.getRecommended(q, 2),
+            people: this.userService.getRecommended(q, 2, 1).pipe(map(res => res.items)),
             pubs: this.categoryService.findAll(q, lang, 2)
           }).pipe(map(res => ({ tab, data: res })));
         } else if (tab === 'posts') {
@@ -144,7 +144,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
             map(res => ({ tab, data: res }))
           );
         } else if (tab === 'people') {
-          return this.userService.getRecommended(q).pipe(
+          return this.userService.getRecommended(q, 20, 1).pipe(
             map(res => ({ tab, data: res }))
           );
         } else if (tab === 'publications') {
@@ -171,7 +171,8 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
         this.posts = data.items;
         this.totalPages = data.meta.totalPages;
       } else if (tab === 'people') {
-        this.people = data;
+        this.people = data.items;
+        this.totalPages = data.meta.totalPages;
       } else if (tab === 'publications') {
         this.publications = data;
       }
@@ -184,30 +185,43 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
     this.searchSubscription?.unsubscribe();
   }
 
-  loadMorePosts(): void {
-    if (this.tab !== 'posts' || this.page >= this.totalPages) return;
+  loadMore(): void {
+    if ((this.tab !== 'posts' && this.tab !== 'people') || this.page >= this.totalPages) return;
     
     this.loadingMore = true;
     const q = this.query.trim().toLowerCase();
     this.page++;
 
-    this.postsService.list({
-      q,
-      category: this.selectedCategory?.slug,
-      lang: this.localeService.current(),
-      limit: 20,
-      sort: 'trending',
-      page: this.page,
-    }).subscribe({
-      next: (res) => {
-        this.posts = [...this.posts, ...res.items];
-        this.totalPages = res.meta.totalPages;
-        this.loadingMore = false;
-      },
-      error: () => {
-        this.loadingMore = false;
-      }
-    });
+    if (this.tab === 'posts') {
+      this.postsService.list({
+        q,
+        category: this.selectedCategory?.slug,
+        lang: this.localeService.current(),
+        limit: 20,
+        sort: 'trending',
+        page: this.page,
+      }).subscribe({
+        next: (res) => {
+          this.posts = [...this.posts, ...res.items];
+          this.totalPages = res.meta.totalPages;
+          this.loadingMore = false;
+        },
+        error: () => {
+          this.loadingMore = false;
+        }
+      });
+    } else if (this.tab === 'people') {
+      this.userService.getRecommended(q, 20, this.page).subscribe({
+        next: (res) => {
+          this.people = [...this.people, ...res.items];
+          this.totalPages = res.meta.totalPages;
+          this.loadingMore = false;
+        },
+        error: () => {
+          this.loadingMore = false;
+        }
+      });
+    }
   }
 
   updateQuery(event: Event): void {
