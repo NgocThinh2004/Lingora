@@ -9,6 +9,7 @@ import { User } from '../../users/models/user.model';
 import { PostTranslation } from '../models/post-translation.model';
 import { Post } from '../models/post.model';
 import { AdminPostsQueryDto, ReviewAdminPostDto } from './dto/admin-posts.dto';
+import { removeAccents } from '../../../utils/string.util';
 
 type UiStatus = 'pending' | 'approved' | 'rejected';
 
@@ -26,10 +27,10 @@ export class AdminPostsService {
 
   async findAll(query: AdminPostsQueryDto) {
     const posts = await this.buildViews(query.language);
-    const search = query.search.trim().toLocaleLowerCase();
+    const search = removeAccents(query.search.trim().toLocaleLowerCase());
     const filtered = posts.filter(post => {
       const matchesSearch = !search || [post.title, post.author.name, post.category?.name]
-        .some(value => value?.toLocaleLowerCase().includes(search));
+        .some(value => removeAccents(value?.toLocaleLowerCase() || '').includes(search));
       const matchesStatus = query.status === 'all' || post.status === query.status;
       const matchesCategory = !query.categoryId || post.category?.id === query.categoryId;
       return matchesSearch && matchesStatus && matchesCategory;
