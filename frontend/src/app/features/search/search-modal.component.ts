@@ -81,12 +81,12 @@ export class SearchModalComponent {
   private loadTrending() {
     this.trendingLoaded = true;
 
-    this.userService.getRecommended().subscribe((authors) => {
-      this.trendingAuthors.set(authors.slice(0, 6));
+    this.userService.getRecommended(undefined, 6).subscribe((authors) => {
+      this.trendingAuthors.set(authors);
     });
 
-    this.categoryService.findAll().subscribe((categories) => {
-      this.trendingCategories.set(categories.filter(c => (c.postCount || 0) > 0).slice(0, 6));
+    this.categoryService.findAll(undefined, undefined, 6).subscribe((categories) => {
+      this.trendingCategories.set(categories.filter(c => (c.postCount || 0) > 0));
     });
   }
 

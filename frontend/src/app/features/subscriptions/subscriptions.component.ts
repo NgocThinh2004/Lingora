@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, ElementRef, effect, untracked } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, effect, untracked, OnInit, OnDestroy } from '@angular/core';
 import { SubscriptionsService } from './services/subscriptions.service';
 import { AuthorTooltipComponent } from '../users/components/author-tooltip/author-tooltip.component';
 import { PostCardComponent } from '../posts/components/post-card/post-card.component';
@@ -8,6 +8,7 @@ import { SubscribeButtonComponent } from './components/subscribe-button/subscrib
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { LocaleService } from '../../core/locale/locale.service';
+import { BehaviorSubject, Subscription, debounceTime, distinctUntilChanged, forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-subscriptions',
@@ -16,43 +17,101 @@ import { LocaleService } from '../../core/locale/locale.service';
   templateUrl: './subscriptions.component.html',
   styleUrl: './subscriptions.component.scss'
 })
-export class SubscriptionsComponent {
+export class SubscriptionsComponent implements OnInit, OnDestroy {
   private readonly subscriptionsService = inject(SubscriptionsService);
   private readonly localeService = inject(LocaleService);
 
   tab: 'all' | 'manage' = 'all';
   authorFilter = '';
   manageSearchQuery = '';
+  
   authors: SubscriptionAuthorView[] = [];
   posts: Post[] = [];
+  
   loading = true;
+  loadingAuthors = false;
+  loadingFeed = false;
+  
   error = '';
+  feedPage = 1;
+  authorsPage = 1;
+  
+  private feedSubject = new BehaviorSubject<{ author: string; lang: string; page: number }>({ author: '', lang: '', page: 1 });
+  private authorsSubject = new BehaviorSubject<{ q: string; page: number }>({ q: '', page: 1 });
+  private subscriptions: Subscription = new Subscription();
 
   @ViewChild('carousel') carousel!: ElementRef<HTMLDivElement>;
 
   constructor() {
     effect(() => {
       const language = this.localeService.current();
-      untracked(() => this.loadSubscriptions(language));
+      untracked(() => {
+        this.feedSubject.next({ ...this.feedSubject.value, lang: language, page: 1 });
+      });
     });
   }
 
+  ngOnInit(): void {
+    // Initial parallel load
+    this.loading = true;
+    const lang = this.localeService.current();
+    this.subscriptions.add(
+      forkJoin({
+        feed: this.subscriptionsService.getFeed('', lang, 1, 20),
+        authors: this.subscriptionsService.following('', 1, 50)
+      }).subscribe({
+        next: ({ feed, authors }) => {
+          this.posts = feed.items;
+          this.authors = this.mapAuthors(authors.items);
+          this.loading = false;
+        },
+        error: () => {
+          this.error = 'Unable to load subscriptions from the database.';
+          this.loading = false;
+        }
+      })
+    );
+
+    this.subscriptions.add(
+      this.feedSubject.pipe(
+        debounceTime(300),
+        distinctUntilChanged((a, b) => a.author === b.author && a.lang === b.lang && a.page === b.page)
+      ).subscribe(filter => {
+        if (!this.loading) this.loadFeed(filter);
+      })
+    );
+
+    this.subscriptions.add(
+      this.authorsSubject.pipe(
+        debounceTime(300),
+        distinctUntilChanged((a, b) => a.q === b.q && a.page === b.page)
+      ).subscribe(filter => {
+        if (!this.loading) this.loadAuthors(filter);
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
   get visiblePosts(): Post[] {
-    return this.posts.filter(post => !this.authorFilter || post.author.name === this.authorFilter || post.author.handle === this.authorFilter);
+    return this.posts;
   }
 
   get visibleManageAuthors(): SubscriptionAuthorView[] {
-    const q = this.normalizeString(this.manageSearchQuery.trim());
-    return this.authors.filter(a => !q || this.normalizeString(a.name).includes(q));
+    return this.authors;
   }
 
-  private normalizeString(str: string): string {
-    return str ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase() : '';
+  onSearchAuthors(event: Event): void {
+    const q = (event.target as HTMLInputElement).value;
+    this.manageSearchQuery = q;
+    this.authorsSubject.next({ q, page: 1 });
   }
 
   scrollCarousel(direction: 'left' | 'right'): void {
     if (this.carousel) {
-      const scrollAmount = 300; // Adjust scroll distance as needed
+      const scrollAmount = 300;
       this.carousel.nativeElement.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -60,34 +119,51 @@ export class SubscriptionsComponent {
     }
   }
 
-  selectAuthor(name: string): void {
-    this.authorFilter = name;
+  selectAuthor(name: string, authorId: string): void {
+    this.authorFilter = this.authorFilter === name ? '' : name;
+    const authorFilterId = this.authorFilter ? authorId : '';
+    this.feedSubject.next({ ...this.feedSubject.value, author: authorFilterId, page: 1 });
+    
     if (this.tab !== 'all') {
       this.tab = 'all';
     }
   }
 
-  private loadSubscriptions(language: string): void {
-    this.loading = true;
-    this.subscriptionsService.list(language).subscribe({
+  private loadFeed(filter: { author: string; lang: string; page: number }): void {
+    this.loadingFeed = true;
+    this.subscriptionsService.getFeed(filter.author, filter.lang, filter.page, 20).subscribe({
       next: data => {
-        this.authors = data.authors.map(author => ({
-          id: author.id,
-          username: author.username,
-          name: author.displayName || author.username,
-          role: author.bio || `@${author.username}`,
-          avatar: author.avatarUrl || '/assets/images/default-avatar.svg',
-          isFollowing: true
-        }));
-        this.posts = data.posts;
-        this.loading = false;
+        this.posts = filter.page === 1 ? data.items : [...this.posts, ...data.items];
+        this.loadingFeed = false;
       },
       error: () => {
-        this.error = 'Unable to load subscriptions from the database.';
-        this.loading = false;
-      },
+        this.loadingFeed = false;
+      }
     });
+  }
+
+  private loadAuthors(filter: { q: string; page: number }): void {
+    this.loadingAuthors = true;
+    this.subscriptionsService.following(filter.q, filter.page, 50).subscribe({
+      next: data => {
+        this.authors = filter.page === 1 ? this.mapAuthors(data.items) : [...this.authors, ...this.mapAuthors(data.items)];
+        this.loadingAuthors = false;
+      },
+      error: () => {
+        this.loadingAuthors = false;
+      }
+    });
+  }
+
+  private mapAuthors(items: any[]): SubscriptionAuthorView[] {
+    return items.map(author => ({
+      id: author.id,
+      username: author.username,
+      name: author.displayName || author.username,
+      role: author.bio || `@${author.username}`,
+      avatar: author.avatarUrl || '/assets/images/default-avatar.svg',
+    }));
   }
 }
 
-interface SubscriptionAuthorView { id: string; username: string; name: string; role: string; avatar: string; isFollowing: boolean; }
+interface SubscriptionAuthorView { id: string; username: string; name: string; role: string; avatar: string; }

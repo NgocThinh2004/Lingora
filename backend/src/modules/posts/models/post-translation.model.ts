@@ -1,4 +1,5 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { BeforeSave, BeforeUpdate, Column, DataType, Model, Table } from 'sequelize-typescript';
+import { removeAccents } from '../../../utils/string.util';
 
 @Table({
   tableName: 'post_translations',
@@ -40,4 +41,15 @@ export class PostTranslation extends Model {
 
   @Column({ type: DataType.DATE, allowNull: false })
   declare updated_at: Date;
+
+  @Column({ type: DataType.STRING(255), allowNull: true })
+  declare unaccented_title: string | null;
+
+  @BeforeSave
+  @BeforeUpdate
+  static generateUnaccented(instance: PostTranslation) {
+    if (instance.changed('title') && instance.title) {
+      instance.unaccented_title = removeAccents(instance.title);
+    }
+  }
 }

@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { literal, Op } from 'sequelize';
 import { Category } from '../models/category.model';
 import { CategoryTranslation } from '../models/category-translation.model';
 import { Language } from '../../languages/models/language.model';
-import { literal } from 'sequelize';
+import { removeAccents } from '../../../utils/string.util';
 
 @Injectable()
 export class PublicCategoriesService {
@@ -14,11 +15,38 @@ export class PublicCategoriesService {
     @InjectModel(Language) private readonly languageModel: typeof Language,
   ) {}
 
-  async findActive() {
+  async findActive(q?: string, lang?: string, limit?: number) {
+    let categoryIdsFilter: number[] | undefined;
+
+    if (q && q.trim()) {
+      const keyword = `%${removeAccents(q.trim())}%`;
+      const langModel = lang ? await this.languageModel.findOne({ where: { code: lang } }) : null;
+      
+      const translationWhere: any = {
+        unaccented_name: { [Op.like]: keyword }
+      };
+      if (langModel) {
+        translationWhere.language_id = langModel.id;
+      }
+      
+      const matchedTranslations = await this.translationModel.findAll({
+        where: translationWhere,
+        attributes: ['category_id']
+      });
+      categoryIdsFilter = matchedTranslations.map(t => Number(t.category_id));
+      
+      if (categoryIdsFilter.length === 0) return [];
+    }
+
     const postCountSubquery = `(SELECT COUNT(*) FROM posts WHERE category_id = Category.id AND status IN ('published', 'approved') AND deleted_at IS NULL)`;
     
+    const where: any = { status: 'active' };
+    if (categoryIdsFilter) {
+      where.id = { [Op.in]: categoryIdsFilter.length ? categoryIdsFilter : [0] };
+    }
+    
     const categories = await this.categoryModel.findAll({
-      where: { status: 'active' },
+      where,
       attributes: {
         include: [
           [literal(postCountSubquery), 'postCount']
@@ -26,7 +54,8 @@ export class PublicCategoriesService {
       },
       order: [
         [literal(postCountSubquery), 'DESC']
-      ]
+      ],
+      limit
     });
 
     if (!categories.length) return [];

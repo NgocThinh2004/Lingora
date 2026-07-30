@@ -8,20 +8,30 @@ import { SubscriptionsService } from './subscriptions.service';
 export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 
-  @Get()
-  async list(@CurrentUser('id') userId: string, @Query('lang') lang?: string) {
-    return { data: await this.subscriptionsService.list(userId, lang) };
-  }
-
-
   @Get('followers')
   async followers(@CurrentUser('id') userId: string) {
     return { data: await this.subscriptionsService.listFollowers(userId) };
   }
 
   @Get('following')
-  async following(@CurrentUser('id') userId: string) {
-    return { data: await this.subscriptionsService.listFollowing(userId) };
+  async following(
+    @CurrentUser('id') userId: string,
+    @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string
+  ) {
+    return { data: await this.subscriptionsService.listFollowing(userId, q, page, limit) };
+  }
+
+  @Get('feed')
+  async feed(
+    @CurrentUser('id') userId: string,
+    @Query('author') author?: string,
+    @Query('lang') lang?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string
+  ) {
+    return { data: await this.subscriptionsService.getFeed(userId, author, lang, page, limit) };
   }
 
   @Post(':authorId')

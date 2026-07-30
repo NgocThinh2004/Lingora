@@ -23,9 +23,15 @@ import { LocaleService } from '../../core/locale/locale.service';
   templateUrl: './explore.component.html',
   styleUrl: './explore.component.scss'
 })
-export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, AfterViewChecked {
+export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('stickyHeader') stickyHeaderRef!: ElementRef<HTMLElement>;
-  @ViewChild('infiniteScrollTrigger') infiniteScrollTrigger?: ElementRef<HTMLElement>;
+
+  @ViewChild('infiniteScrollTrigger') set infiniteScrollTrigger(el: ElementRef<HTMLElement> | undefined) {
+    if (el && this.scrollObserver) {
+      this.scrollObserver.disconnect();
+      this.scrollObserver.observe(el.nativeElement);
+    }
+  }
   private headerObserver?: IntersectionObserver;
   private scrollObserver?: IntersectionObserver;
 
@@ -97,12 +103,6 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
     );
   }
 
-  // Bind observer to the trigger element when it appears in the DOM
-  ngAfterViewChecked() {
-    if (this.infiniteScrollTrigger?.nativeElement && this.scrollObserver) {
-      this.scrollObserver.observe(this.infiniteScrollTrigger.nativeElement);
-    }
-  }
   ngOnInit(): void {
     // Check if category is passed via URL query params
     this.route.queryParamMap.subscribe(params => {
@@ -136,21 +136,20 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
         if (tab === 'top') {
           return forkJoin({
             posts: this.postsService.list({ q, category, lang, limit: 10, sort: 'trending' }).pipe(map(res => res.items)),
-            people: this.userService.getRecommended(q),
-            pubs: this.categoryService.findAll()
-          }).pipe(map(res => ({ tab, q, data: res })));
+            people: this.userService.getRecommended(q, 2),
+            pubs: this.categoryService.findAll(q, lang, 2)
+          }).pipe(map(res => ({ tab, data: res })));
         } else if (tab === 'posts') {
           return this.postsService.list({ q, category, lang, limit: 20, sort: 'trending', page: 1 }).pipe(
-            map(res => ({ tab, q, data: res }))
+            map(res => ({ tab, data: res }))
           );
         } else if (tab === 'people') {
           return this.userService.getRecommended(q).pipe(
-            map(res => ({ tab, q, data: res }))
+            map(res => ({ tab, data: res }))
           );
         } else if (tab === 'publications') {
-          return this.categoryService.findAll().pipe(
-            map(categories => q ? categories.filter(c => translateCategory(c, lang).toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)) : categories),
-            map(res => ({ tab, q, data: res }))
+          return this.categoryService.findAll(q, lang).pipe(
+            map(res => ({ tab, data: res }))
           );
         }
         return of(null);
@@ -162,18 +161,12 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit, After
     ).subscribe((result: any) => {
       if (!result) return;
       this.loading = false;
-      const { tab, q, data } = result;
+      const { tab, data } = result;
 
       if (tab === 'top') {
         this.topPosts = data.posts;
-        this.featuredPeople = data.people.slice(0, 2);
-        let filteredPubs = data.pubs;
-        if (q) {
-          filteredPubs = filteredPubs.filter((c: any) => 
-            translateCategory(c, this.localeService.current()).toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)
-          );
-        }
-        this.featuredPublications = filteredPubs.slice(0, 2);
+        this.featuredPeople = data.people;
+        this.featuredPublications = data.pubs;
       } else if (tab === 'posts') {
         this.posts = data.items;
         this.totalPages = data.meta.totalPages;

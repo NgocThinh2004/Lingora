@@ -19,6 +19,7 @@ import {
 } from './dto/admin-categories.dto';
 import { CategoryTranslation } from '../models/category-translation.model';
 import { Category } from '../models/category.model';
+import { removeAccents } from '../../../utils/string.util';
 
 interface CategoryView {
   id: number;
@@ -54,13 +55,13 @@ export class AdminCategoriesService {
 
   async findAll(query: AdminCategoriesQueryDto) {
     const categories = await this.buildCategoryViews();
-    const search = query.search.trim().toLocaleLowerCase();
+    const search = removeAccents(query.search.trim().toLocaleLowerCase());
 
     const filtered = categories.filter(category => {
       const matchesSearch = !search || [
         category.slug,
         ...category.translations.flatMap(item => [item.name, item.slug]),
-      ].some(value => value.toLocaleLowerCase().includes(search));
+      ].some(value => removeAccents(value.toLocaleLowerCase()).includes(search));
       const matchesStatus = query.status === 'all'
         || (query.status === 'active') === category.isActive;
       const matchesPosts = query.postFilter === 'all'
@@ -198,7 +199,7 @@ export class AdminCategoriesService {
             name: item.name.trim(),
             slug: this.slugify(item.slug || item.name),
           })),
-          { transaction },
+          { transaction, individualHooks: true },
         );
         return category.id;
       });

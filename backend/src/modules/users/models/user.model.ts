@@ -1,4 +1,5 @@
-import { Column, DataType, Model, Table, HasMany } from 'sequelize-typescript';
+import { BeforeSave, BeforeUpdate, Column, DataType, Model, Table, HasMany } from 'sequelize-typescript';
+import { removeAccents } from '../../../utils/string.util';
 import { Comment } from '../../comments/models/comment.model';
 import { CommentLike } from '../../likes/models/comment-like.model';
 
@@ -74,4 +75,15 @@ export class User extends Model {
 
   @HasMany(() => CommentLike, 'user_id')
   declare comment_likes: CommentLike[];
+
+  @Column({ type: DataType.STRING(150), allowNull: true })
+  declare unaccented_display_name: string | null;
+
+  @BeforeSave
+  @BeforeUpdate
+  static generateUnaccented(instance: User) {
+    if (instance.changed('display_name') && instance.display_name) {
+      instance.unaccented_display_name = removeAccents(instance.display_name);
+    }
+  }
 }

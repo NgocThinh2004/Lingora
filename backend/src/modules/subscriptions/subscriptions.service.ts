@@ -3,6 +3,8 @@ import { InjectModel } from '@nestjs/sequelize';
 import { col, fn } from 'sequelize';
 import { Subscription, User } from '../../database/models';
 import { PublicPostsService } from '../posts/public/public-posts.service';
+import { Op } from 'sequelize';
+import { removeAccents } from '../../utils/string.util';
 
 @Injectable()
 export class SubscriptionsService {
@@ -12,31 +14,30 @@ export class SubscriptionsService {
     private readonly postsService: PublicPostsService,
   ) {}
 
-  async list(subscriberId: string, lang?: string) {
+  async getFeed(subscriberId: string, authorIdFilter?: string, lang?: string, pageStr?: string, limitStr?: string) {
     const subscriptions = await this.subscriptionModel.findAll({
       where: { subscriber_id: subscriberId },
-      order: [['created_at', 'DESC']],
     });
-    const authorIds = subscriptions.map(item => item.author_id);
-    const authors = authorIds.length
-      ? await this.userModel.findAll({ where: { id: authorIds, status: 'active', deleted_at: null } })
-      : [];
+    
+    const followingIds = subscriptions.map(item => String(item.author_id));
+    if (!followingIds.length) {
+      return { items: [], meta: { total: 0, page: 1, totalPages: 1 } };
+    }
 
-    // Query posts directly by authorIds instead of fetching global feed and filtering
-    const posts = authorIds.length
-      ? await this.postsService.listFeedByAuthorIds(authorIds, { limit: 50, lang }, Number(subscriberId))
-      : [];
+    let queryAuthorIds = followingIds;
+    // Security: Only allow filtering by author if the user actually follows them
+    if (authorIdFilter) {
+      if (followingIds.includes(String(authorIdFilter))) {
+        queryAuthorIds = [String(authorIdFilter)];
+      } else {
+        return { items: [], meta: { total: 0, page: 1, totalPages: 1 } };
+      }
+    }
 
-    return {
-      authors: authors.map(author => ({
-        id: author.id,
-        username: author.username,
-        displayName: author.display_name,
-        avatarUrl: author.avatar,
-        bio: author.bio,
-      })),
-      posts,
-    };
+    const page = pageStr ? parseInt(pageStr, 10) : 1;
+    const limit = limitStr ? parseInt(limitStr, 10) : 10;
+
+    return await this.postsService.listFeedByAuthorIds(queryAuthorIds, { limit, page, lang }, Number(subscriberId));
   }
 
   async subscribe(subscriberId: string, authorId: string) {
@@ -66,12 +67,53 @@ export class SubscriptionsService {
     return this.listActiveUsers(subscriptions.map(item => item.subscriber_id));
   }
 
-  async listFollowing(userId: string) {
+  async listFollowing(userId: string, q?: string, pageStr?: string, limitStr?: string) {
     const subscriptions = await this.subscriptionModel.findAll({
       where: { subscriber_id: userId },
       order: [['created_at', 'DESC']],
     });
-    return this.listActiveUsers(subscriptions.map(item => item.author_id));
+    if (!subscriptions.length) {
+      return { items: [], meta: { total: 0, page: 1, totalPages: 1 } };
+    }
+
+    const authorIds = subscriptions.map(item => item.author_id);
+    let whereClause: any = { id: authorIds, status: 'active', deleted_at: null };
+    
+    if (q) {
+      const keyword = `%${removeAccents(q.trim())}%`;
+      whereClause = {
+        ...whereClause,
+        [Op.or]: [
+          { username: { [Op.like]: keyword } },
+          { unaccented_display_name: { [Op.like]: keyword } }
+        ]
+      };
+    }
+
+    const page = pageStr ? parseInt(pageStr, 10) : 1;
+    const limit = limitStr ? parseInt(limitStr, 10) : authorIds.length;
+    const offset = (page - 1) * limit;
+
+    const { rows, count } = await this.userModel.findAndCountAll({
+      where: whereClause,
+      limit,
+      offset
+    });
+
+    return {
+      items: rows.map(user => ({
+        id: user.id,
+        username: user.username,
+        displayName: user.display_name,
+        avatarUrl: user.avatar,
+        bio: user.bio,
+      })),
+      meta: {
+        total: count,
+        page,
+        totalPages: Math.ceil(count / limit) || 1
+      }
+    };
   }
 
 

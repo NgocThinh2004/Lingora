@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, computed, inject } from '@angular/core';
+import { Component, Input, computed, inject, OnDestroy, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { LocaleService } from '../../../../core/locale/locale.service';
@@ -20,13 +20,37 @@ import { LocalizedDatePipe } from '../../../../shared/pipes/localized-date.pipe'
   templateUrl: './post-card.component.html',
   styleUrl: './post-card.component.scss',
 })
-export class PostCardComponent {
+export class PostCardComponent implements OnDestroy, AfterViewInit {
   private readonly languageService = inject(LocaleService);
   private readonly likeService = inject(LikeService);
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);
 
   @Input({ required: true }) post!: Post;
+  @ViewChild('videoEl') videoElRef?: ElementRef<HTMLVideoElement>;
+
+  private videoObserver?: IntersectionObserver;
+
+  ngAfterViewInit(): void {
+    const videoEl = this.videoElRef?.nativeElement;
+    if (!videoEl) return;
+
+    this.videoObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          videoEl.play().catch(() => null);
+        } else {
+          videoEl.pause();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    this.videoObserver.observe(videoEl);
+  }
+
+  ngOnDestroy(): void {
+    this.videoObserver?.disconnect();
+  }
 
   readonly currentLang = computed(() => this.languageService.current());
   

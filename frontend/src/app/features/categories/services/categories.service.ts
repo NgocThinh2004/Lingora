@@ -11,15 +11,23 @@ export class CategoriesService {
 
   constructor(private readonly http: HttpClient) {}
 
-  findAll(): Observable<Category[]> {
-    if (!this.cache$) {
-      this.cache$ = this.http
-        .get<ApiResponse<Category[]>>(`${environment.apiUrl}/categories`)
-        .pipe(
-          map((res) => res.data),
-          shareReplay(1),
-        );
+  findAll(q?: string, lang?: string, limit?: number): Observable<Category[]> {
+    const params: any = {};
+    if (q) params.q = q;
+    if (lang) params.lang = lang;
+    if (limit) params.limit = limit.toString();
+
+    const request = this.http
+      .get<ApiResponse<Category[]>>(`${environment.apiUrl}/categories`, { params })
+      .pipe(map((res) => res.data));
+
+    if (!q && !lang && !limit) {
+      if (!this.cache$) {
+        this.cache$ = request.pipe(shareReplay(1));
+      }
+      return this.cache$;
     }
-    return this.cache$;
+
+    return request;
   }
 }

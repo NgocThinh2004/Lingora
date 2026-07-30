@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, OnDestroy, computed, signal, inject, ViewEncapsulation } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy, computed, signal, inject, ViewEncapsulation, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -44,6 +44,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private branding = inject(BrandingService);
   private localeService = inject(LocaleService);
 
+  private observer?: IntersectionObserver;
   private routeSubscription?: Subscription;
   private previousAccent = this.branding.accent();
   viewedUserId: string | null = null;
@@ -66,6 +67,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   isEditing = signal(false);
   posts = signal<Post[]>([]);
+  page = 1;
+  feedLoading = signal(false);
   publicPostsCount = signal(0);
   categoryOptions: Array<{ id: number; label: string }> = [];
   followersCount = signal(0);
@@ -151,6 +154,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.routeSubscription?.unsubscribe();
+    this.observer?.disconnect();
     this.clearBrandingVariables();
     if (!this.isOwnProfile()) {
       this.branding.setAccent(this.previousAccent, false);
@@ -199,6 +203,23 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.savingProfile.set(false);
       },
     });
+  }
+
+  @ViewChild('scrollTrigger') set scrollTrigger(el: ElementRef<HTMLElement> | undefined) {
+    if (el) {
+      if (!this.observer) {
+        this.observer = new IntersectionObserver(([entry]) => {
+          if (entry.isIntersecting && !this.feedLoading() && this.posts().length < this.publicPostsCount()) {
+            this.page++;
+            this.loadPosts();
+          }
+        }, { rootMargin: '200px' });
+      }
+      this.observer.observe(el.nativeElement);
+    } else {
+      this.observer?.disconnect();
+      this.observer = undefined;
+    }
   }
 
   onAvatarSelected(event: Event): void {
@@ -552,6 +573,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.viewedUserId = routeUserId || (currentUser ? String(currentUser.id) : null);
     this.isEditing.set(false);
     this.loadingProfile.set(true);
+    this.page = 1;
     this.posts.set([]);
     this.publicPostsCount.set(0);
     this.followersCount.set(0);
@@ -599,12 +621,26 @@ export class ProfileComponent implements OnInit, OnDestroy {
       },
     });
 
-    this.feedPostsService.list({ authorId: publicUserId, limit: 100 }).subscribe({
+    this.loadPosts();
+  }
+
+  private loadPosts(): void {
+    if (!this.viewedUserId) return;
+    this.feedLoading.set(true);
+    this.feedPostsService.list({ authorId: Number(this.viewedUserId), limit: 10, page: this.page }).subscribe({
       next: response => {
-        this.posts.set(response.items.slice(0, 10));
+        if (this.page === 1) {
+          this.posts.set(response.items);
+        } else {
+          this.posts.set([...this.posts(), ...response.items]);
+        }
         this.publicPostsCount.set(response.meta.total);
+        this.feedLoading.set(false);
       },
-      error: err => this.toast.showError(this.formatError(err)),
+      error: err => {
+        this.toast.showError(this.formatError(err));
+        this.feedLoading.set(false);
+      },
     });
   }
 
@@ -621,13 +657,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.followersCount.set(user.followersCount ?? 0);
         this.followingCount.set(user.followingCount ?? 0);
 
-        this.feedPostsService.list({ authorId: user.id, limit: 100 }).subscribe({
-          next: response => {
-            this.posts.set(response.items.slice(0, 10));
-            this.publicPostsCount.set(response.meta.total);
-          },
-          error: err => this.toast.showError(this.formatError(err)),
-        });
+        this.loadPosts();
       },
       error: err => {
         this.toast.showError(this.formatError(err));
