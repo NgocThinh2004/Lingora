@@ -83,7 +83,7 @@
 
 @media (max-width: 991px) {
   .explore-sticky-header {
-    top: 60px; /* Offset for mobile header */
+    top: 0; /* Center-feed is the scroll container and starts below the mobile header */
   }
 }
 
