@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal, ElementRef, ViewChild, OnDestroy, HostListener, untracked } from '@angular/core';
+import { Component, computed, effect, inject, signal, ElementRef, ViewChild, HostListener, untracked, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
+import { Subject, switchMap } from 'rxjs';
 import { LocaleService } from '../../core/locale/locale.service';
 import { Category, translateCategory } from '../categories/models/category.model';
 import { CategoriesService } from '../categories/services/categories.service';
@@ -18,7 +20,7 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
-export class HomeComponent implements OnDestroy {
+export class HomeComponent {
   private observer?: IntersectionObserver;
 
   @ViewChild('scrollTrigger') set scrollTrigger(el: ElementRef<HTMLElement> | undefined) {
@@ -45,13 +47,14 @@ export class HomeComponent implements OnDestroy {
     }
   }
 
-  ngOnDestroy() {
-    this.observer?.disconnect();
-  }
   private readonly postService = inject(FeedPostsService);
   private readonly categoryService = inject(CategoriesService);
   private readonly languageService = inject(LocaleService);
   private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  // Subject carries {page, category, lang} — switchMap cancels in-flight requests
+  private readonly feedTrigger$ = new Subject<{ page: number; category: string; lang: string }>();
 
   readonly posts = signal<Post[]>([]);
   readonly categories = signal<Category[]>([]);
@@ -75,56 +78,64 @@ export class HomeComponent implements OnDestroy {
   });
 
   constructor() {
-    this.categoryService.findAll().subscribe({
+    // Load categories once
+    this.categoryService.findAll().pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (categories) => this.categories.set(categories || []),
       error: () => this.categories.set([]),
     });
 
-    // Load feed once on init — language changes are handled client-side
-    // since each post already carries all translations[].
-    effect(() => {
-      this.currentLang();
-      untracked(() => this.loadFeed(1));
+    // switchMap automatically cancels the previous in-flight request
+    // when a new filter arrives (category/lang change or loadMore).
+    this.feedTrigger$.pipe(
+      switchMap(({ page, category, lang }) => {
+        this.loading.set(page === 1);
+        this.loadingMore.set(page > 1);
+        return this.postService.list({ lang, category: category || undefined, page, limit: 10 });
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: (res) => {
+        const currentPage = res?.meta?.page || 1;
+        const items = res?.items || [];
+        this.posts.set(currentPage === 1 ? items : [...this.posts(), ...items]);
+        this.page.set(currentPage);
+        this.totalPages.set(res?.meta?.totalPages || 1);
+        this.loading.set(false);
+        this.loadingMore.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.loadingMore.set(false);
+      },
     });
-  }
 
-  private loadFeed(page: number) {
-    this.loading.set(page === 1);
-    this.loadingMore.set(page > 1);
-
-    this.postService
-      .list({
-        lang: this.currentLang(),
-        category: this.selectedCategorySlug() || undefined,
-        page,
-        limit: 10,
-      })
-      .subscribe({
-        next: (res) => {
-          const items = res?.items || [];
-          this.posts.set(page === 1 ? items : [...this.posts(), ...items]);
-          this.page.set(res?.meta?.page || 1);
-          this.totalPages.set(res?.meta?.totalPages || 1);
-          this.loading.set(false);
-          this.loadingMore.set(false);
-        },
-        error: () => {
-          this.loading.set(false);
-          this.loadingMore.set(false);
-        },
+    // Trigger initial load and re-load on language change
+    effect(() => {
+      const lang = this.currentLang();
+      untracked(() => {
+        this.page.set(1);
+        this.feedTrigger$.next({ page: 1, category: this.selectedCategorySlug(), lang });
       });
+    });
   }
 
   selectCategory(slug: string) {
     this.page.set(1);
     this.selectedCategorySlug.set(slug);
     this.isDropdownOpen.set(false);
-    this.loadFeed(1);
+    this.feedTrigger$.next({ page: 1, category: slug, lang: this.currentLang() });
   }
 
   loadMore() {
     if (this.page() < this.totalPages()) {
-      this.loadFeed(this.page() + 1);
+      const nextPage = this.page() + 1;
+      this.feedTrigger$.next({
+        page: nextPage,
+        category: this.selectedCategorySlug(),
+        lang: this.currentLang(),
+      });
     }
   }
 
@@ -132,3 +143,4 @@ export class HomeComponent implements OnDestroy {
     return translateCategory(category, this.currentLang());
   }
 }
+

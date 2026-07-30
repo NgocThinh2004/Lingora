@@ -271,10 +271,11 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   canDelete(comment: Comment): boolean {
-    const userId = this.authService.currentUser()?.id;
-    if (userId === undefined) return false;
+    const user = this.authService.currentUser();
+    if (!user) return false;
+    if (user.role === 'admin') return true;
     const authorId = comment.author?.id || comment.user_id;
-    return String(userId) === String(authorId) || String(userId) === String(this.postAuthorId);
+    return String(user.id) === String(authorId) || String(user.id) === String(this.postAuthorId);
   }
 
   shouldShowTranslateButton(comment: Comment): boolean {
