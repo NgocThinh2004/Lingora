@@ -9,6 +9,7 @@ import { LocaleService } from '../../../../core/locale/locale.service';
 import { RouterModule, RouterLink } from '@angular/router';
 import { AuthorTooltipComponent } from '../../../users/components/author-tooltip/author-tooltip.component';
 import { AuthModalService } from '../../../../core/auth/auth-modal.service';
+import { ToastService } from '../../../../core/notifications/toast.service';
 import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../../shared/directives/asset-image.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
@@ -30,6 +31,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   public localeService = inject(LocaleService);
   public authService = inject(AuthService);
   private authModalService = inject(AuthModalService);
+  private toastService = inject(ToastService);
 
   comments = signal<Comment[]>([]);
   totalComments = signal<number>(0);
@@ -38,14 +40,16 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   currentPage = signal<number>(1);
   hasMore = signal<boolean>(false);
 
-  newCommentText = signal<string>('');
+  newCommentText = '';
   isSubmitting = signal<boolean>(false);
 
   replyingToCommentId = signal<string | null>(null);
-  replyingToText = signal<string>('');
+  replyingToText = '';
 
   editingCommentId = signal<string | null>(null);
-  editingCommentText = signal<string>('');
+  editingCommentText = '';
+  
+  commentToDelete = signal<{ comment: Comment, parent?: Comment } | null>(null);
   
   translatingIds = signal<Set<string>>(new Set());
   showingTranslationIds = signal<Set<string>>(new Set());
@@ -92,7 +96,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
       return;
     }
     this.replyingToCommentId.set(comment.id);
-    this.replyingToText.set('');
+    this.replyingToText = '';
   }
 
   handleCommentFocus(event: FocusEvent): void {
@@ -104,11 +108,11 @@ export class CommentSectionComponent implements OnInit, OnChanges {
 
   cancelReply(): void {
     this.replyingToCommentId.set(null);
-    this.replyingToText.set('');
+    this.replyingToText = '';
   }
 
   submitComment(): void {
-    const content = this.newCommentText().trim();
+    const content = this.newCommentText.trim();
     if (!content) return;
     if (!this.authService.isAuthenticated()) {
       this.authModalService.open();
@@ -120,7 +124,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     this.commentService.createComment(this.postId.toString(), content).subscribe({
       next: (newComment) => {
         this.isSubmitting.set(false);
-        this.newCommentText.set('');
+        this.newCommentText = '';
         this.comments.update(prev => [newComment, ...prev]);
         this.totalComments.update(t => t + 1);
       },
@@ -131,7 +135,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   submitReply(target: Comment): void {
-    const content = this.replyingToText().trim();
+    const content = this.replyingToText.trim();
     if (!content) return;
     if (!this.authService.isAuthenticated()) {
       this.authModalService.open();
@@ -143,7 +147,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     this.commentService.createComment(this.postId.toString(), content, target.id).subscribe({
       next: (newComment) => {
         this.isSubmitting.set(false);
-        this.replyingToText.set('');
+        this.replyingToText = '';
         this.replyingToCommentId.set(null);
         
         // Mutate array
@@ -198,8 +202,23 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   deleteComment(comment: Comment, parent?: Comment): void {
-    if (!confirm(this.localeService.translate('delete_comment_confirm'))) return;
+    this.commentToDelete.set({ comment, parent });
+    document.body.classList.add('modal-open');
+  }
+
+  cancelDelete(): void {
+    this.commentToDelete.set(null);
+    document.body.classList.remove('modal-open');
+  }
+
+  confirmDelete(): void {
+    const target = this.commentToDelete();
+    if (!target) return;
+    const { comment, parent } = target;
+    
     this.commentService.deleteComment(this.postId.toString(), comment.id).subscribe(() => {
+      this.cancelDelete();
+      this.toastService.showSuccess(this.localeService.translate('comment_deleted'));
       this.comments.update(prev => {
         if (parent) {
           const arr = [...prev];
@@ -220,16 +239,16 @@ export class CommentSectionComponent implements OnInit, OnChanges {
 
   startEdit(comment: Comment): void {
     this.editingCommentId.set(comment.id);
-    this.editingCommentText.set(comment.content);
+    this.editingCommentText = comment.content;
   }
 
   cancelEdit(): void {
     this.editingCommentId.set(null);
-    this.editingCommentText.set('');
+    this.editingCommentText = '';
   }
 
   saveEdit(comment: Comment, parent?: Comment): void {
-    const text = this.editingCommentText().trim();
+    const text = this.editingCommentText.trim();
     if (!text || text === comment.content) {
       this.cancelEdit();
       return;
@@ -245,7 +264,10 @@ export class CommentSectionComponent implements OnInit, OnChanges {
               arr[pIdx] = { ...arr[pIdx] };
               if (arr[pIdx].replies) {
                 const rIdx = arr[pIdx].replies.findIndex((r: Comment) => r.id === comment.id);
-                if (rIdx > -1) arr[pIdx].replies[rIdx] = updatedComment;
+                if (rIdx > -1) {
+                  arr[pIdx].replies = [...arr[pIdx].replies];
+                  arr[pIdx].replies[rIdx] = updatedComment;
+                }
               }
             }
             return arr;

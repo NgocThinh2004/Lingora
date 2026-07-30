@@ -53,7 +53,7 @@
 }
 
 .btn-subscribe.subscribed:hover::after {
-  content: 'Unfollow';
+  content: attr(data-unfollow-text);
   position: absolute;
   inset: 0;
   display: flex;

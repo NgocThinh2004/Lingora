@@ -2,7 +2,8 @@
         [class.subscribed]="isSubscribed"
         [class.w-100]="fullWidth"
         (click)="toggleSubscribe($event)"
-        [disabled]="loading">
+        [disabled]="loading"
+        [attr.data-unfollow-text]="'unfollow' | t">
   <span class="btn-subscribe-label d-flex align-items-center justify-content-center gap-1">
     @if (loading) {
       <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
