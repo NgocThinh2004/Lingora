@@ -15,7 +15,7 @@ export class UsersService {
       .pipe(map((res) => res.data));
   }
 
-  getRecommended(q?: string, limit?: number): Observable<User[]> {
+  getRecommended(q?: string, limit?: number, page?: number): Observable<{ items: User[], meta: any }> {
     let params = new HttpParams();
     if (q) {
       params = params.set('q', q);
@@ -23,8 +23,11 @@ export class UsersService {
     if (limit) {
       params = params.set('limit', limit.toString());
     }
+    if (page) {
+      params = params.set('page', page.toString());
+    }
     return this.http
-      .get<ApiResponse<User[]>>(`${environment.apiUrl}/users/recommended`, { params })
+      .get<ApiResponse<{ items: User[], meta: any }>>(`${environment.apiUrl}/users/recommended`, { params })
       .pipe(map((res) => res.data));
   }
 

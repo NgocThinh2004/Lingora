@@ -22,14 +22,17 @@ export class SearchService {
 
   async globalSearch(q: string, userId?: number) {
     if (!q || !q.trim()) return { data: { users: [], categories: [], posts: [] } };
-    const keyword = `%${removeAccents(q.trim())}%`;
+    const rawQ = q.trim();
+    const qWithoutAt = rawQ.startsWith('@') ? rawQ.substring(1) : rawQ;
+    const keyword = `%${removeAccents(rawQ)}%`;
+    const keywordWithoutAt = `%${removeAccents(qWithoutAt)}%`;
 
     // 1. Search Users (limit 3)
     const users = await this.userModel.findAll({
       where: {
         [Op.or]: [
           { unaccented_display_name: { [Op.like]: keyword } },
-          { username: { [Op.like]: keyword } }
+          { username: { [Op.like]: keywordWithoutAt } }
         ]
       },
       attributes: ['id', 'display_name', 'username', 'avatar', 'bio'],

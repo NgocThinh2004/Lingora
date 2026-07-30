@@ -156,16 +156,6 @@
     @for (post of posts; track post.id) {
       <app-post-card [post]="post"></app-post-card>
     }
-    
-    <!-- Infinite scroll trigger -->
-    <div #infiniteScrollTrigger style="height: 10px; width: 100%;"></div>
-    
-    @if (loadingMore) {
-      <div class="text-center py-3 text-muted small">
-        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-        {{ 'loading_more' | t }}
-      </div>
-    }
   }
 
   <!-- PEOPLE TAB -->
@@ -210,6 +200,18 @@
           </div>
         </div>
       </a>
+    }
+  }
+
+  @if (!loading && (tab === 'posts' || tab === 'people')) {
+    <!-- Infinite scroll trigger -->
+    <div #infiniteScrollTrigger style="height: 10px; width: 100%;"></div>
+    
+    @if (loadingMore) {
+      <div class="text-center py-3 text-muted small">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        {{ 'loading_more' | t }}
+      </div>
     }
   }
 </div>

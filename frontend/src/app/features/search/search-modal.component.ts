@@ -81,8 +81,8 @@ export class SearchModalComponent {
   private loadTrending() {
     this.trendingLoaded = true;
 
-    this.userService.getRecommended(undefined, 6).subscribe((authors) => {
-      this.trendingAuthors.set(authors);
+    this.userService.getRecommended(undefined, 6).subscribe((res) => {
+      this.trendingAuthors.set(res.items);
     });
 
     this.categoryService.findAll(undefined, undefined, 6).subscribe((categories) => {

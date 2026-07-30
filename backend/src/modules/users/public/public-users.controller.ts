@@ -20,8 +20,9 @@ export class PublicUsersController {
     @Req() req: any,
     @Query('q') q?: string,
     @Query('limit') limit?: string,
+    @Query('page') page?: string,
   ) {
-    return this.usersService.getRecommended(req.user?.id, q, limit ? Number(limit) : undefined);
+    return this.usersService.getRecommended(req.user?.id, q, limit ? Number(limit) : undefined, page ? Number(page) : undefined);
   }
 
   @Get(':id/followers')

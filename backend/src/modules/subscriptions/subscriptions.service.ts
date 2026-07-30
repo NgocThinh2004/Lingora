@@ -80,11 +80,14 @@ export class SubscriptionsService {
     let whereClause: any = { id: authorIds, status: 'active', deleted_at: null };
     
     if (q) {
-      const keyword = `%${removeAccents(q.trim())}%`;
+      const rawQ = q.trim();
+      const qWithoutAt = rawQ.startsWith('@') ? rawQ.substring(1) : rawQ;
+      const keyword = `%${removeAccents(rawQ)}%`;
+      const keywordWithoutAt = `%${removeAccents(qWithoutAt)}%`;
       whereClause = {
         ...whereClause,
         [Op.or]: [
-          { username: { [Op.like]: keyword } },
+          { username: { [Op.like]: keywordWithoutAt } },
           { unaccented_display_name: { [Op.like]: keyword } }
         ]
       };
