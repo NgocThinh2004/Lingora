@@ -3,7 +3,7 @@
     <div class="author-tooltip-container position-relative">
       <a [routerLink]="['/profile', post.author.id]" class="author-group text-decoration-none">
         <img
-          [appAssetImage]="authorAvatar"
+          [appAssetImage]="post.author.avatarUrl"
           [alt]="post.author.name"
           class="author-avatar" />
         <div class="author-meta">
@@ -23,7 +23,11 @@
     <h2 class="post-title">{{ translation?.title }}</h2>
     <div class="post-excerpt text-muted mb-3">{{ excerpt() }}</div>
 
-    @if (post.coverImageUrl) {
+    @if (post.coverVideoUrl) {
+      <div class="post-media">
+        <video [src]="post.coverVideoUrl" muted autoplay loop playsinline></video>
+      </div>
+    } @else if (post.coverImageUrl) {
       <div class="post-media">
         <img [src]="post.coverImageUrl" [alt]="translation?.title" />
       </div>

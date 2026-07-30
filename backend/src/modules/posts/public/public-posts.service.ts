@@ -226,13 +226,22 @@ export class PublicPostsService {
         });
 
       let coverImageUrl: string | null = null;
+      let coverVideoUrl: string | null = null;
       for (const t of postTranslations) {
         if (t.contentHtml) {
-          const match = t.contentHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
-          if (match && match[1]) {
-            coverImageUrl = match[1];
-            break;
+          if (!coverImageUrl) {
+            const imgMatch = t.contentHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
+            if (imgMatch?.[1]) coverImageUrl = imgMatch[1];
           }
+          if (!coverVideoUrl) {
+            // Match <video src="..."> or <video><source src="..."> or <iframe src="...">
+            const videoMatch =
+              t.contentHtml.match(/<video[^>]+src=["']([^"']+)["']/i) ||
+              t.contentHtml.match(/<source[^>]+src=["']([^"']+)["']/i) ||
+              t.contentHtml.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+            if (videoMatch?.[1]) coverVideoUrl = videoMatch[1];
+          }
+          if (coverImageUrl && coverVideoUrl) break;
         }
       }
 
@@ -242,6 +251,7 @@ export class PublicPostsService {
         categoryId: post.category_id,
         originalLanguage: languageMap.get(post.original_language_id) || 'en',
         coverImageUrl,
+        coverVideoUrl,
         // Legacy `approved` rows are public, so expose the public API contract
         // consistently instead of leaking the old workflow state.
         status: 'published',

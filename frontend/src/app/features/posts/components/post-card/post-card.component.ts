@@ -48,9 +48,6 @@ export class PostCardComponent {
     return translateCategory(this.post.category, this.currentLang());
   }
 
-  get authorAvatar(): string {
-    return this.post.author.avatarUrl ?? 'assets/images/default-avatar.svg';
-  }
 
   toggleLike(event: Event) {
     event.preventDefault();

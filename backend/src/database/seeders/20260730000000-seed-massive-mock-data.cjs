@@ -186,17 +186,59 @@ function generateRichHtml(lang, slug, coverImg, midImg) {
   `;
 }
 
+function generateVideoHtml(lang, slug, videoUrl, midImg) {
+  const h2Text = getRandomText(lang, 1, slug);
+  const h3Text = getRandomText(lang, 1, slug);
+  const intro = getRandomText(lang, 3, slug);
+  const quote = getRandomText(lang, 2, slug);
+  const midP1 = getRandomText(lang, 1, slug);
+  const midP2 = getRandomText(lang, 1, slug);
+  const midP3 = getRandomText(lang, 1, slug);
+  const end = getRandomText(lang, 3, slug);
+  const linkText = lang === 'vi' ? 'Xem thêm tại đây' : (lang === 'zh' ? '在此处查看更多' : 'Read more here');
+
+  return `
+    <p>${intro}</p>
+    <figure><video src="${videoUrl}" controls></video></figure>
+    <h2>${h2Text}</h2>
+    <blockquote>${quote}</blockquote>
+    <p>
+      <strong>${midP1}</strong> <em>${midP2}</em> <a href="#">${linkText}</a>. ${midP3}
+    </p>
+    <figure><img src="${midImg}" alt="Illustration"></figure>
+    <h3>${h3Text}</h3>
+    <ul>
+      <li>${getRandomText(lang, 1, slug)}</li>
+      <li>${getRandomText(lang, 1, slug)}</li>
+      <li>${getRandomText(lang, 1, slug)}</li>
+    </ul>
+    <p>${end}</p>
+  `;
+}
+
+const DEMO_VIDEO_URL = 'https://res.cloudinary.com/ddizrhk7g/video/upload/v1784192503/Top_5_m%C3%B3n_%C4%83n_nguy_hi%E1%BB%83m_nh%E1%BA%A5t_Vi%E1%BB%87t_Nam-_food_shorts_health_-_YouTube_lyyec7.mp4';
+
     // 4. Insert Post Translations (Content)
     console.log(`Generating post translations...`);
     const postTranslations = [];
-    for (const post of insertedPosts) {
+    for (let idx = 0; idx < insertedPosts.length; idx++) {
+      const post = insertedPosts[idx];
       const slug = categorySlugMap[post.category_id] || 'generic';
-      const coverImg = faker.image.urlPicsumPhotos({ width: 1280, height: 720 });
       const midImg = faker.image.urlPicsumPhotos({ width: 800, height: 600 });
-      
-      const contentEn = generateRichHtml('en', slug, coverImg, midImg);
-      const contentVi = generateRichHtml('vi', slug, coverImg, midImg);
-      const contentZh = generateRichHtml('zh', slug, coverImg, midImg);
+
+      // ~20% of posts will have a video instead of a cover image
+      const isVideoPost = idx % 5 === 0;
+      const coverImg = faker.image.urlPicsumPhotos({ width: 1280, height: 720 });
+
+      const contentEn = isVideoPost
+        ? generateVideoHtml('en', slug, DEMO_VIDEO_URL, midImg)
+        : generateRichHtml('en', slug, coverImg, midImg);
+      const contentVi = isVideoPost
+        ? generateVideoHtml('vi', slug, DEMO_VIDEO_URL, midImg)
+        : generateRichHtml('vi', slug, coverImg, midImg);
+      const contentZh = isVideoPost
+        ? generateVideoHtml('zh', slug, DEMO_VIDEO_URL, midImg)
+        : generateRichHtml('zh', slug, coverImg, midImg);
 
       postTranslations.push({
         post_id: post.id,
