@@ -16,8 +16,12 @@ export class PublicUsersController {
 
   @Get('recommended')
   @UseGuards(OptionalJwtAuthGuard)
-  getRecommended(@Req() req: any, @Query('q') q?: string) {
-    return this.usersService.getRecommended(req.user?.id, q);
+  getRecommended(
+    @Req() req: any,
+    @Query('q') q?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.usersService.getRecommended(req.user?.id, q, limit ? Number(limit) : undefined);
   }
 
   @Get(':id/followers')

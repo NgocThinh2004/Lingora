@@ -15,7 +15,7 @@ export class PublicCategoriesService {
     @InjectModel(Language) private readonly languageModel: typeof Language,
   ) {}
 
-  async findActive(q?: string, lang?: string) {
+  async findActive(q?: string, lang?: string, limit?: number) {
     let categoryIdsFilter: number[] | undefined;
 
     if (q && q.trim()) {
@@ -54,7 +54,8 @@ export class PublicCategoriesService {
       },
       order: [
         [literal(postCountSubquery), 'DESC']
-      ]
+      ],
+      limit
     });
 
     if (!categories.length) return [];

@@ -12,7 +12,8 @@ export class PublicCategoriesController {
   findActive(
     @Query('q') q?: string,
     @Query('lang') lang?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.categoriesService.findActive(q, lang);
+    return this.categoriesService.findActive(q, lang, limit ? Number(limit) : undefined);
   }
 }
