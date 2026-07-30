@@ -215,6 +215,22 @@ export class CommentsService {
       { where: { comment_id: commentId } }
     );
 
+    const result = await this.commentModel.findByPk(comment.id, {
+      include: [
+        { model: User, as: 'author', attributes: ['id', 'username', 'display_name', 'avatar'] },
+        { model: Language, as: 'originalLanguage', attributes: ['code'] }
+      ],
+    });
+    
+    if (result) {
+      const json = result.toJSON() as any;
+      json.permissions = {
+        canEdit: true,
+        canDelete: true
+      };
+      return json;
+    }
+
     return comment;
   }
 

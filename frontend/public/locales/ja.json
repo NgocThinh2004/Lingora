@@ -490,6 +490,7 @@
     "posts_moved_to_trash": "{count} 記事をゴミ箱に移動しました。",
     "posts_deleted_permanently": "{count} 記事は完全に削除されました。",
     "delete_comment_confirm": "このコメントを削除してもよろしいですか?",
+  "comment_deleted": "????????????",
     "replying_to": "{name} に返信します...",
     "dismiss_notification": "通知を閉じる",
     "enter_handle": "@ハンドルを入力してください",

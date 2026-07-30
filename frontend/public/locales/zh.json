@@ -492,8 +492,10 @@
   "posts_moved_to_trash": "已将{count}篇文章移至回收站。",
   "posts_deleted_permanently": "已永久删除{count}篇文章。",
   "delete_comment_confirm": "确定要删除这条评论吗？",
+  "comment_deleted": "?????",
   "replying_to": "正在回复{name}...",
   "dismiss_notification": "关闭通知",
   "enter_handle": "@ 输入用户名",
   "zoom_image": "缩放图片"
 }
+

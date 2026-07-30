@@ -492,8 +492,10 @@
   "posts_moved_to_trash": "Moved {count} articles to trash.",
   "posts_deleted_permanently": "Permanently deleted {count} articles.",
   "delete_comment_confirm": "Are you sure you want to delete this comment?",
+  "comment_deleted": "Comment deleted",
   "replying_to": "Replying to {name}...",
   "dismiss_notification": "Dismiss notification",
   "enter_handle": "@ Enter a handle",
   "zoom_image": "Zoom image"
 }
+
