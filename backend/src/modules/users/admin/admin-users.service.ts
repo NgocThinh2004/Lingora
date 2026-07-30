@@ -9,6 +9,7 @@ import {
   AdminUsersQueryDto,
   UpdateAdminUserDto,
 } from './dto/admin-users.dto';
+import { removeAccents } from '../../../utils/string.util';
 
 @Injectable()
 export class AdminUsersService {
@@ -24,13 +25,14 @@ export class AdminUsersService {
     const search = query.search?.trim();
 
     if (search) {
+      const keyword = `%${removeAccents(search)}%`;
       where = {
         ...where,
         [Op.or]: [
-          { id: { [Op.like]: `%${search}%` } },
-          { email: { [Op.like]: `%${search}%` } },
-          { username: { [Op.like]: `%${search}%` } },
-          { display_name: { [Op.like]: `%${search}%` } },
+          { id: { [Op.like]: keyword } },
+          { email: { [Op.like]: keyword } },
+          { username: { [Op.like]: keyword } },
+          { unaccented_display_name: { [Op.like]: keyword } },
         ],
       };
     }

@@ -19,8 +19,9 @@ export class SubscriptionsService {
     if (!this.authService.isAuthenticated()) return;
     this.initialized = true;
     this.following().subscribe({
-      next: (authors) => {
-        this.followedAuthorIds.next(new Set(authors.map(a => String(a.id))));
+      next: (data: any) => {
+        const authors = data.items || [];
+        this.followedAuthorIds.next(new Set(authors.map((a: any) => String(a.id))));
       },
       error: () => { this.initialized = false; }
     });
@@ -33,16 +34,23 @@ export class SubscriptionsService {
     return this.followedAuthorIds.asObservable().pipe(map(set => set.has(String(authorId))));
   }
 
-  list(lang?: string): Observable<SubscriptionData> {
-    const params = lang ? new HttpParams().set('lang', lang) : undefined;
-    return this.http.get<ApiItemResponse<SubscriptionData>>(this.baseUrl, { params })
+  getFeed(author?: string, lang?: string, page?: number, limit?: number): Observable<any> {
+    let params = new HttpParams();
+    if (author) params = params.set('author', author);
+    if (lang) params = params.set('lang', lang);
+    if (page) params = params.set('page', page);
+    if (limit) params = params.set('limit', limit);
+    return this.http.get<ApiItemResponse<any>>(`${this.baseUrl}/feed`, { params })
       .pipe(map(response => response.data));
   }
 
-
-  following(): Observable<SubscriptionAuthor[]> {
+  following(q?: string, page?: number, limit?: number): Observable<any> {
+    let params = new HttpParams();
+    if (q) params = params.set('q', q);
+    if (page) params = params.set('page', page);
+    if (limit) params = params.set('limit', limit);
     return this.http
-      .get<ApiItemResponse<SubscriptionAuthor[]>>(`${this.baseUrl}/following`)
+      .get<ApiItemResponse<any>>(`${this.baseUrl}/following`, { params })
       .pipe(map(response => response.data));
   }
 

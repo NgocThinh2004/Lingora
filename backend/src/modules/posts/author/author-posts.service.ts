@@ -13,6 +13,7 @@ import {
   POST_STATUS_TRANSITIONS,
   PostStatus,
 } from '../posts.constants';
+import { removeAccents } from '../../../utils/string.util';
 
 type TranslationMatrixItem = {
   languageId: number;
@@ -199,7 +200,7 @@ export class AuthorPostsService {
     });
     const translationsByPost = await this.getTranslationsByPostIds(posts.map((post) => post.id));
 
-    const search = query.search?.trim().toLowerCase();
+    const search = removeAccents(query.search?.trim().toLowerCase() || '');
     const allItems = posts
       .map((post) => this.toAuthorPostResponse(post, translationsByPost.get(post.id) ?? []))
       .filter((post) => {
@@ -210,7 +211,7 @@ export class AuthorPostsService {
         return post.translations.some((translation) =>
           [translation.title, translation.slug]
             .filter(Boolean)
-            .some((value) => value!.toLowerCase().includes(search)),
+            .some((value) => removeAccents(value!.toLowerCase()).includes(search)),
         );
       });
 
