@@ -4,15 +4,14 @@
     <div class="explore-search-input-box">
       <i class="bi bi-search text-muted fs-5"></i>
       <input type="text" id="explorePageSearchInput" class="explore-page-search-input" 
-             placeholder="Search Lingora..." 
-             data-i18n="search_placeholder" 
+             [placeholder]="'search_lingora' | t"
              autocomplete="off" 
              [value]="query" 
              (input)="updateQuery($event)">
       <button type="button" class="btn-clear-search" 
               [class.d-none]="!query" 
               id="exploreClearBtn" 
-              aria-label="Clear" 
+              [attr.aria-label]="'clear' | t"
               (click)="clearQuery()">
         <i class="bi bi-x-lg fs-6"></i>
       </button>
@@ -21,17 +20,17 @@
 
   <!-- Substack Explore Tabs -->
   <div class="explore-tabs-nav border-bottom">
-    <button class="explore-tab-btn" [class.active]="tab === 'top'" (click)="setTab('top')">Nổi bật</button>
-    <button class="explore-tab-btn" [class.active]="tab === 'posts'" (click)="setTab('posts')">Bài viết</button>
-    <button class="explore-tab-btn" [class.active]="tab === 'publications'" (click)="setTab('publications')">Chuyên mục</button>
-    <button class="explore-tab-btn" [class.active]="tab === 'people'" (click)="setTab('people')">Tác giả</button>
+    <button class="explore-tab-btn" [class.active]="tab === 'top'" (click)="setTab('top')">{{ 'explore_top' | t }}</button>
+    <button class="explore-tab-btn" [class.active]="tab === 'posts'" (click)="setTab('posts')">{{ 'explore_posts' | t }}</button>
+    <button class="explore-tab-btn" [class.active]="tab === 'publications'" (click)="setTab('publications')">{{ 'explore_categories' | t }}</button>
+    <button class="explore-tab-btn" [class.active]="tab === 'people'" (click)="setTab('people')">{{ 'explore_people' | t }}</button>
   </div>
 </div>
 
 <!-- Selected Category Filter Header -->
 @if (selectedCategory && tab === 'posts') {
   <div id="exploreCategoryHeader" class="mb-3 text-muted small mt-4 px-2">
-    <span>Đang xem chuyên mục </span><strong class="text-main">"{{ translateCategoryName(selectedCategory) }}"</strong>
+    <span>{{ 'viewing_category' | t }} </span><strong class="text-main">"{{ translateCategoryName(selectedCategory) }}"</strong>
     <a (click)="clearCategory()" class="ms-1 text-decoration-none text-danger" style="cursor: pointer;" title="Bỏ lọc">
       <i class="bi bi-x fs-5"></i>
     </a>
@@ -41,7 +40,7 @@
 <!-- Search Query Header / Results Count -->
 @if (query) {
   <div id="exploreQueryHeader" class="mb-3 text-muted small mt-4 px-2">
-    <span>Kết quả cho </span><strong class="text-main">"{{ query }}"</strong>
+    <span>{{ 'results_for' | t }} </span><strong class="text-main">"{{ query }}"</strong>
   </div>
 }
 
@@ -74,7 +73,7 @@
     @if (topPosts.length === 0 && featuredPeople.length === 0 && featuredPublications.length === 0) {
       <div class="text-center py-5 text-muted">
         <i class="bi bi-search fs-1 d-block mb-2"></i>
-        <span>Không tìm thấy kết quả phù hợp.</span>
+        <span>{{ 'no_matching_results' | t }}</span>
       </div>
     }
 
@@ -83,9 +82,9 @@
       <div class="mb-4 explore-section">
         <h6 class="fw-bold text-main mb-3 d-flex align-items-center gap-2">
           @if (query) {
-            <i class="bi bi-people text-primary"></i><span>Tác giả khớp với "{{ query }}"</span>
+            <i class="bi bi-people text-primary"></i><span>{{ 'matching_authors' | t }} "{{ query }}"</span>
           } @else {
-            <i class="bi bi-star-fill text-warning"></i><span data-i18n="featured_creators">Tác giả nổi bật</span>
+            <i class="bi bi-star-fill text-warning"></i><span>{{ 'featured_creators' | t }}</span>
           }
         </h6>
         @for (person of featuredPeople; track person.id) {
@@ -96,14 +95,14 @@
                   <img [appAssetImage]="person.avatarUrl" class="explore-card-avatar" [alt]="person.name">
                   <div class="explore-card-info">
                     <div class="explore-card-title fw-bold fs-6 mb-1">{{ person.name }}</div>
-                    <div class="text-muted small"><i class="bi bi-journal-text me-1"></i>{{ person.handle ? '@'+person.handle : '0 bài viết' }}</div>
+                    <div class="text-muted small"><i class="bi bi-journal-text me-1"></i>{{ person.handle ? '@'+person.handle : ('0 ' + ('article_count' | t)) }}</div>
                   </div>
                 </a>
                 <app-author-tooltip [user]="person"></app-author-tooltip>
               </div>
             </div>
             <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
-              <a [routerLink]="['/profile', person.id]" class="btn-profile-unified" data-i18n="view_profile">Xem hồ sơ</a>
+              <a [routerLink]="['/profile', person.id]" class="btn-profile-unified">{{ 'view_profile' | t }}</a>
               <app-subscribe-button [authorId]="person.id"></app-subscribe-button>
             </div>
           </div>
@@ -116,7 +115,7 @@
       <div class="mb-4 explore-section">
         <h6 class="fw-bold text-main mb-3 d-flex align-items-center gap-2">
           <i class="bi bi-journal-text text-primary"></i>
-          <span>Chuyên mục @if (query) { khớp với "{{ query }}" }</span>
+          <span>{{ (query ? 'matching_categories' : 'explore_categories') | t }} @if (query) { "{{ query }}" }</span>
         </h6>
         @for (pub of featuredPublications; track pub.id) {
           <a (click)="selectCategory(pub)" style="cursor: pointer" class="explore-card-item text-decoration-none text-reset d-flex">
@@ -124,7 +123,7 @@
               <div class="explore-card-pub-icon"><i class="bi" [class]="pub.icon || 'bi-folder'"></i></div>
               <div class="explore-card-info">
                 <div class="explore-card-title">{{ translateCategoryName(pub) }}</div>
-                <div class="explore-card-sub text-muted small mt-1"><i class="bi bi-file-earmark-text me-1"></i>{{ pub.postCount || 0 }} bài viết</div>
+                <div class="explore-card-sub text-muted small mt-1"><i class="bi bi-file-earmark-text me-1"></i>{{ pub.postCount || 0 }} {{ 'article_count' | t }}</div>
               </div>
             </div>
           </a>
@@ -137,9 +136,9 @@
       <div class="mb-2">
         <h6 class="fw-bold text-main mb-3 d-flex align-items-center gap-2">
           @if (query) {
-            <i class="bi bi-file-earmark-post text-primary"></i><span>Bài viết khớp với "{{ query }}"</span>
+            <i class="bi bi-file-earmark-post text-primary"></i><span>{{ 'matching_articles' | t }} "{{ query }}"</span>
           } @else {
-            <i class="bi bi-file-earmark-post text-primary"></i><span>Bài viết thịnh hành</span>
+            <i class="bi bi-file-earmark-post text-primary"></i><span>{{ 'trending_articles' | t }}</span>
           }
         </h6>
         @for (post of topPosts; track post.id) {
@@ -152,7 +151,7 @@
   <!-- POSTS TAB -->
   @if (tab === 'posts' && !loading) {
     @if (posts.length === 0) {
-      <div class="text-center py-5 text-muted">Không tìm thấy bài viết.</div>
+      <div class="text-center py-5 text-muted">{{ 'no_articles' | t }}</div>
     }
     @for (post of posts; track post.id) {
       <app-post-card [post]="post"></app-post-card>
@@ -164,7 +163,7 @@
     @if (loadingMore) {
       <div class="text-center py-3 text-muted small">
         <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-        Đang tải thêm...
+        {{ 'loading_more' | t }}
       </div>
     }
   }
@@ -172,7 +171,7 @@
   <!-- PEOPLE TAB -->
   @if (tab === 'people' && !loading) {
     @if (people.length === 0) {
-      <div class="text-center py-5 text-muted">Không tìm thấy tác giả.</div>
+      <div class="text-center py-5 text-muted">{{ 'no_matching_authors' | t }}</div>
     }
     @for (person of people; track person.id) {
       <div class="explore-card-item align-items-center">
@@ -182,14 +181,14 @@
               <img [appAssetImage]="person.avatarUrl" class="explore-card-avatar" [alt]="person.name">
               <div class="explore-card-info">
                 <div class="explore-card-title fw-bold fs-6 mb-1">{{ person.name }}</div>
-                <div class="text-muted small"><i class="bi bi-journal-text me-1"></i>{{ person.handle ? '@'+person.handle : '0 bài viết' }}</div>
+                <div class="text-muted small"><i class="bi bi-journal-text me-1"></i>{{ person.handle ? '@'+person.handle : ('0 ' + ('article_count' | t)) }}</div>
               </div>
             </a>
             <app-author-tooltip [user]="person"></app-author-tooltip>
           </div>
         </div>
         <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
-          <a [routerLink]="['/profile', person.id]" class="btn-profile-unified" data-i18n="view_profile">Xem hồ sơ</a>
+          <a [routerLink]="['/profile', person.id]" class="btn-profile-unified">{{ 'view_profile' | t }}</a>
           <app-subscribe-button [authorId]="person.id"></app-subscribe-button>
         </div>
       </div>
@@ -199,7 +198,7 @@
   <!-- PUBLICATIONS TAB -->
   @if (tab === 'publications' && !loading) {
     @if (publications.length === 0) {
-      <div class="text-center py-5 text-muted">Không tìm thấy chuyên mục.</div>
+      <div class="text-center py-5 text-muted">{{ 'no_categories' | t }}</div>
     }
     @for (pub of publications; track pub.id) {
       <a (click)="selectCategory(pub)" style="cursor: pointer" class="explore-card-item text-decoration-none text-reset d-flex">
@@ -207,7 +206,7 @@
           <div class="explore-card-pub-icon"><i class="bi" [class]="pub.icon || 'bi-folder'"></i></div>
           <div class="explore-card-info">
             <div class="explore-card-title">{{ translateCategoryName(pub) }}</div>
-            <div class="explore-card-sub text-muted small mt-1"><i class="bi bi-file-earmark-text me-1"></i>{{ pub.postCount || 0 }} bài viết</div>
+            <div class="explore-card-sub text-muted small mt-1"><i class="bi bi-file-earmark-text me-1"></i>{{ pub.postCount || 0 }} {{ 'article_count' | t }}</div>
           </div>
         </div>
       </a>

@@ -5,21 +5,21 @@
       <input
         type="search"
         readonly
-        placeholder="Tìm kiếm trên Lingora..."
-        aria-label="Tìm kiếm trên Lingora"
+        [placeholder]="'search_lingora' | t"
+        [attr.aria-label]="'search_lingora' | t"
         (focus)="openSearch($event)">
     </div>
   }
 
   <div class="featured-authors-widget mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h6 class="fw-bold text-main mb-0">Gợi ý cho bạn</h6>
+      <h6 class="fw-bold text-main mb-0">{{ 'suggested_for_you' | t }}</h6>
     </div>
 
     @if (recommendationsLoading()) {
       <div class="recommendations-state">
         <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-        <span>Đang tải...</span>
+        <span>{{ 'loading' | t }}</span>
       </div>
     } @else {
       @for (user of recommendedUsers(); track user.id) {
@@ -34,10 +34,10 @@
               <span class="featured-author-count">{{ user.bio || ('@' + user.handle) }}</span>
             </span>
           </a>
-          <a class="btn-profile-view text-decoration-none" [routerLink]="['/profile', user.id]">Xem hồ sơ</a>
+          <a class="btn-profile-view text-decoration-none" [routerLink]="['/profile', user.id]">{{ 'view_profile' | t }}</a>
         </div>
       } @empty {
-        <p class="recommendations-empty">Chưa có tác giả được đề xuất.</p>
+        <p class="recommendations-empty">{{ 'no_recommended_authors' | t }}</p>
       }
     }
   </div>

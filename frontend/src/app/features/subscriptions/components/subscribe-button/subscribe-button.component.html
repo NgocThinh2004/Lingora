@@ -8,9 +8,9 @@
       <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
     }
     @if (isSubscribed) {
-      <span class="btn-text">Following</span>
+      <span class="btn-text">{{ 'following' | t }}</span>
     } @else {
-      <span class="btn-text">Follow</span>
+      <span class="btn-text">{{ 'follow' | t }}</span>
     }
   </span>
 </button>

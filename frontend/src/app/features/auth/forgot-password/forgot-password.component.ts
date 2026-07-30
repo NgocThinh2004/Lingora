@@ -4,11 +4,13 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { AuthLayoutComponent } from '../../../layouts/auth-layout/auth-layout.component';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { LocaleService } from '../../../core/locale/locale.service';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthLayoutComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthLayoutComponent, TranslatePipe],
   templateUrl: './forgot-password.component.html',
   styleUrl: '../password-recovery.scss',
 })
@@ -25,6 +27,7 @@ export class ForgotPasswordComponent {
   constructor(
     private readonly authService: AuthService,
     private readonly router: Router,
+    private readonly localeService: LocaleService,
   ) {}
 
   onSubmit(): void {
@@ -48,8 +51,7 @@ export class ForgotPasswordComponent {
       },
       error: error => {
         this.isSubmitting = false;
-        this.errorMessage = error.error?.meta?.error?.message
-          || 'We could not process your request. Please try again.';
+        this.errorMessage = this.localeService.translate('request_failed');
       },
     });
   }

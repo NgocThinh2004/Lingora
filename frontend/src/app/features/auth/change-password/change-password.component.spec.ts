@@ -55,7 +55,7 @@ describe('ChangePasswordComponent', () => {
     });
     expect(authService.expireSession).toHaveBeenCalled();
     expect(navigateSpy).toHaveBeenCalledWith(['/auth/login'], {
-      queryParams: { message: 'Password updated. Please sign in again.' },
+      queryParams: { messageKey: 'password_updated_sign_in_again' },
     });
   });
 });

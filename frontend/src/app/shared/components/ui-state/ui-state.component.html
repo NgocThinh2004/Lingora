@@ -1,7 +1,7 @@
 <section class="ui-state" [attr.aria-live]="kind === 'loading' ? 'polite' : null">
   @if (kind === 'loading') {
     <span class="spinner-border text-primary" aria-hidden="true"></span>
-    <span class="visually-hidden">Loading</span>
+    <span class="visually-hidden">{{ 'loading' | t }}</span>
   } @else {
     <span class="ui-state__icon" [class.ui-state__icon--error]="kind === 'error'" aria-hidden="true">
       <i class="bi" [class.bi-inbox]="kind === 'empty'" [class.bi-exclamation-triangle]="kind === 'error'"></i>

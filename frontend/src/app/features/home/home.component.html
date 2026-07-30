@@ -4,7 +4,7 @@
       [appAssetImage]="quickDraftAvatar()"
       alt="Avatar"
       class="quick-draft-avatar" />
-    <span class="quick-draft-placeholder">Bạn đang nghĩ gì?</span>
+    <span class="quick-draft-placeholder">{{ 'whats_on_your_mind' | t }}</span>
   </a>
 
   <div class="filter-row">
@@ -15,7 +15,7 @@
       </button>
       <div class="dropdown-menu" [class.show]="isDropdownOpen()">
         <button type="button" class="dropdown-item" [class.active]="!selectedCategorySlug()" (click)="selectCategory('')">
-          Dành cho bạn
+          {{ 'for_you' | t }}
         </button>
         @for (category of categories(); track category.id) {
           <button
@@ -34,12 +34,12 @@
   @if (loading()) {
     <div class="state-block">
       <i class="bi bi-arrow-repeat spin"></i>
-      <span>Đang tải bảng tin...</span>
+      <span>{{ 'loading_feed' | t }}</span>
     </div>
   } @else if (posts().length === 0) {
     <div class="state-block">
       <i class="bi bi-inbox"></i>
-      <span>Chưa có bài viết nào phù hợp.</span>
+      <span>{{ 'no_matching_posts' | t }}</span>
     </div>
   } @else {
     <div class="posts-list">
@@ -51,7 +51,7 @@
     @if (page() < totalPages()) {
       <div #scrollTrigger class="scroll-trigger text-center py-4 text-muted">
         @if (loadingMore()) {
-          <i class="bi bi-arrow-repeat spin me-2"></i> Đang tải thêm...
+          <i class="bi bi-arrow-repeat spin me-2"></i> {{ 'loading_more' | t }}
         }
       </div>
     }

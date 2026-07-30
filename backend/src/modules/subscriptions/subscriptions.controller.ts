@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SubscriptionsService } from './subscriptions.service';
@@ -9,8 +9,8 @@ export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 
   @Get()
-  async list(@CurrentUser('id') userId: string) {
-    return { data: await this.subscriptionsService.list(userId) };
+  async list(@CurrentUser('id') userId: string, @Query('lang') lang?: string) {
+    return { data: await this.subscriptionsService.list(userId, lang) };
   }
 
 

@@ -1,29 +1,29 @@
 <div class="admin-container">
   <header class="admin-header">
     <span>
-      <h1>Admin Dashboard</h1>
-      <p>Live platform, moderation, social, and translation statistics.</p>
+      <h1>{{ 'admin_dashboard' | t }}</h1>
+      <p>{{ 'dashboard_description' | t }}</p>
     </span>
   </header>
 
   @if (loading()) {
-    <app-ui-state kind="loading" title="Loading dashboard" description="Collecting the latest platform statistics." />
+    <app-ui-state kind="loading" [title]="'loading_dashboard' | t" [description]="'collecting_statistics' | t" />
   } @else if (error()) {
-    <app-ui-state kind="error" title="Dashboard unavailable" [description]="error()" actionLabel="Try again" (action)="loadOverview()" />
+    <app-ui-state kind="error" [title]="'dashboard_unavailable' | t" [description]="error()" [actionLabel]="'try_again' | t" (action)="loadOverview()" />
   } @else {
     @if (overview(); as data) {
     <section class="stats-grid" aria-label="Platform statistics">
       @for (stat of stats(); track stat.label) {
         @if (stat.route) {
-          <a class="admin-card stat-card stat-card--link" [routerLink]="stat.route" [attr.aria-label]="'Open ' + stat.label + ' management'">
+          <a class="admin-card stat-card stat-card--link" [routerLink]="stat.route" [attr.aria-label]="('open_management' | t:{ name: (stat.label | t) })">
             <span class="stat-icon" aria-hidden="true"><i class="bi {{ stat.icon }}"></i></span>
-            <span><small>{{ stat.label }}</small><strong>{{ formatNumber(stat.value) }}</strong></span>
+            <span><small>{{ stat.label | t }}</small><strong>{{ formatNumber(stat.value) }}</strong></span>
             <i class="bi bi-arrow-up-right stat-link-icon" aria-hidden="true"></i>
           </a>
         } @else {
           <article class="admin-card stat-card">
             <span class="stat-icon" aria-hidden="true"><i class="bi {{ stat.icon }}"></i></span>
-            <span><small>{{ stat.label }}</small><strong>{{ formatNumber(stat.value) }}</strong></span>
+            <span><small>{{ stat.label | t }}</small><strong>{{ formatNumber(stat.value) }}</strong></span>
           </article>
         }
       }
@@ -32,8 +32,8 @@
     <section class="dashboard-primary-row">
       <article class="admin-card chart-card">
         <header class="card-heading">
-          <span><h2>New Users</h2><p>Registrations during the last 7 days</p></span>
-          <strong>{{ formatNumber(data.users.byStatus['active'] || 0) }} active</strong>
+          <span><h2>{{ 'new_users' | t }}</h2><p>{{ 'last_7_days_registrations' | t }}</p></span>
+          <strong>{{ formatNumber(data.users.byStatus['active'] || 0) }} {{ 'active' | t }}</strong>
         </header>
         <div class="chart-box" aria-label="New user registrations over the last seven days">
           @for (point of data.users.growth; track point.date; let index = $index) {
@@ -50,7 +50,7 @@
 
       <article class="admin-card featured-card">
         <header class="featured-header">
-          <span><h2>Top Articles</h2><p>Ranked by total views</p></span>
+          <span><h2>{{ 'top_articles' | t }}</h2><p>{{ 'ranked_by_views' | t }}</p></span>
           <span class="featured-icon" aria-hidden="true"><i class="bi bi-stars"></i></span>
         </header>
         @if (data.posts.topArticles.length) {
@@ -59,7 +59,7 @@
               <li>
                 <a [routerLink]="['/post', article.id]" [attr.aria-label]="'Open article: ' + article.title">
                   <span class="article-rank">{{ index + 1 }}</span>
-                  <span class="article-copy"><strong>{{ article.title }}</strong><small>{{ formatNumber(article.viewCount) }} views</small></span>
+                  <span class="article-copy"><strong>{{ article.title }}</strong><small>{{ formatNumber(article.viewCount) }} {{ 'views' | t }}</small></span>
                   <i class="bi bi-chevron-right article-link-icon" aria-hidden="true"></i>
                   <span class="article-meter"><span [style.width.%]="articleChart()[index]"></span></span>
                 </a>
@@ -67,14 +67,14 @@
             }
           </ol>
         } @else {
-          <div class="featured-empty"><i class="bi bi-journal-text"></i><strong>No articles yet</strong><span>Published articles will appear here.</span></div>
+          <div class="featured-empty"><i class="bi bi-journal-text"></i><strong>{{ 'no_articles_yet' | t }}</strong><span>{{ 'published_articles_appear' | t }}</span></div>
         }
       </article>
     </section>
 
     <section class="dashboard-secondary-row">
       <article class="admin-card categories-card">
-        <h2>Top Categories</h2>
+        <h2>{{ 'top_categories' | t }}</h2>
         @if (data.posts.topCategories.length) {
           <div class="category-list">
             @for (category of data.posts.topCategories; track category.id) {
@@ -85,13 +85,13 @@
             }
           </div>
         } @else {
-          <p class="card-empty">No published article categories yet.</p>
+          <p class="card-empty">{{ 'no_published_categories' | t }}</p>
         }
       </article>
 
       <article class="admin-card followers-card">
         <header class="featured-header">
-          <span><h2>Top Followed Users</h2><p>Ranked by number of followers</p></span>
+          <span><h2>{{ 'top_followed_users' | t }}</h2><p>{{ 'ranked_by_followers' | t }}</p></span>
           <span class="featured-icon" aria-hidden="true"><i class="bi bi-people"></i></span>
         </header>
         @if (data.social.topFollowedUsers.length) {
@@ -105,13 +105,13 @@
                     @else { <i class="bi bi-person-fill" aria-hidden="true"></i> }
                   </span>
                   <span class="follower-copy"><strong>{{ user.displayName || user.username }}</strong><small>&#64;{{ user.username }}</small></span>
-                  <span class="follower-count"><strong>{{ formatNumber(user.followerCount) }}</strong><small>followers</small></span>
+                  <span class="follower-count"><strong>{{ formatNumber(user.followerCount) }}</strong><small>{{ 'followers' | t }}</small></span>
                 </a>
               </li>
             }
           </ol>
         } @else {
-          <p class="card-empty">No follow relationships yet.</p>
+          <p class="card-empty">{{ 'no_follow_relationships' | t }}</p>
         }
       </article>
     </section>

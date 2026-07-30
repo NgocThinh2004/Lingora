@@ -181,7 +181,6 @@ module.exports = {
         {
           authorId: demoAuthor.id,
           originalCode: 'vi',
-          imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=85&w=1600',
           inlineImage: {
             url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=85&w=1400',
             alt: {
@@ -235,7 +234,6 @@ module.exports = {
         {
           authorId: demoReader.id,
           originalCode: 'en',
-          imageUrl: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=85&w=1600',
           inlineImage: {
             url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=85&w=1400',
             alt: {
@@ -289,7 +287,6 @@ module.exports = {
         {
           authorId: demoAuthor.id,
           originalCode: 'zh',
-          imageUrl: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&q=85&w=1600',
           inlineImage: {
             url: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=85&w=1400',
             alt: {
@@ -380,7 +377,7 @@ module.exports = {
           const postId = existing[0].post_id;
           await queryInterface.bulkUpdate(
             'posts',
-            { image_url: article.imageUrl, updated_at: now },
+            { updated_at: now },
             { id: postId },
             { transaction },
           );
@@ -408,7 +405,6 @@ module.exports = {
             created_at: article.publishedAt,
             updated_at: now,
             deleted_at: null,
-            image_url: article.imageUrl,
           }],
           { transaction },
         );

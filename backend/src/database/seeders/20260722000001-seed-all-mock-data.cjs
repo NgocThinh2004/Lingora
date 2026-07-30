@@ -1,6 +1,15 @@
 
 'use strict';
 
+function withCoverImage(content, imageUrl, title) {
+  if (!imageUrl) return content;
+  const figure = `<figure><img src="${imageUrl}" alt="${title}" loading="lazy" width="720" height="360"></figure>`;
+  const introEnd = content.indexOf('\n\n');
+  return introEnd >= 0
+    ? `${content.slice(0, introEnd)}\n\n${figure}\n\n${content.slice(introEnd + 2)}`
+    : `${content}\n\n${figure}`;
+}
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -253,26 +262,26 @@ module.exports = {
 
     // 5. POSTS (Full 18 Posts; rich media is embedded in translation content)
     const postsData = [
-      { id: 1, author_id: 101, category_id: 1, view_count: 1420, image_url: null },
-      { id: 2, author_id: 103, category_id: 2, view_count: 987, image_url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=720&h=360' },
-      { id: 3, author_id: 102, category_id: 3, view_count: 456, image_url: null },
-      { id: 4, author_id: 104, category_id: 1, view_count: 1500, image_url: null },
-      { id: 5, author_id: 105, category_id: 2, view_count: 800, image_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 1, author_id: 101, category_id: 1, view_count: 1420, coverImageUrl: null },
+      { id: 2, author_id: 103, category_id: 2, view_count: 987, coverImageUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 3, author_id: 102, category_id: 3, view_count: 456, coverImageUrl: null },
+      { id: 4, author_id: 104, category_id: 1, view_count: 1500, coverImageUrl: null },
+      { id: 5, author_id: 105, category_id: 2, view_count: 800, coverImageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=720&h=360' },
 
-      { id: 6, author_id: 106, category_id: 3, view_count: 620, image_url: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&q=80&w=720&h=360' },
-      { id: 7, author_id: 107, category_id: 2, view_count: 1120, image_url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=720&h=360' },
-      { id: 8, author_id: 108, category_id: 3, view_count: 890, image_url: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&q=80&w=720&h=360' },
-      { id: 9, author_id: 101, category_id: 1, view_count: 1850, image_url: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=720&h=360' },
-      { id: 10, author_id: 102, category_id: 3, view_count: 740, image_url: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?auto=format&fit=crop&q=80&w=720&h=360' },
-      { id: 11, author_id: 101, category_id: 4, view_count: 1240, image_url: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=720&h=360' },
-      { id: 12, author_id: 102, category_id: 5, view_count: 980, image_url: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=80&w=720&h=360' },
-      { id: 13, author_id: 103, category_id: 6, view_count: 1560, image_url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=720&h=360' },
-      { id: 14, author_id: 104, category_id: 7, view_count: 890, image_url: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&q=80&w=720&h=360' },
-      { id: 15, author_id: 105, category_id: 2, view_count: 2100, image_url: 'https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?auto=format&fit=crop&q=80&w=720&h=360' },
-      { id: 16, author_id: 108, category_id: 3, view_count: 1120, image_url: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&q=80&w=720&h=360' },
-      { id: 17, author_id: 102, category_id: 8, view_count: 3200, image_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 6, author_id: 106, category_id: 3, view_count: 620, coverImageUrl: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 7, author_id: 107, category_id: 2, view_count: 1120, coverImageUrl: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 8, author_id: 108, category_id: 3, view_count: 890, coverImageUrl: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 9, author_id: 101, category_id: 1, view_count: 1850, coverImageUrl: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 10, author_id: 102, category_id: 3, view_count: 740, coverImageUrl: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 11, author_id: 101, category_id: 4, view_count: 1240, coverImageUrl: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 12, author_id: 102, category_id: 5, view_count: 980, coverImageUrl: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 13, author_id: 103, category_id: 6, view_count: 1560, coverImageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 14, author_id: 104, category_id: 7, view_count: 890, coverImageUrl: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 15, author_id: 105, category_id: 2, view_count: 2100, coverImageUrl: 'https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 16, author_id: 108, category_id: 3, view_count: 1120, coverImageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 17, author_id: 102, category_id: 8, view_count: 3200, coverImageUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&q=80&w=720&h=360' },
 
-      { id: 18, author_id: 109, category_id: 9, view_count: 1450, image_url: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&q=80&w=720&h=360' },
+      { id: 18, author_id: 109, category_id: 9, view_count: 1450, coverImageUrl: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&q=80&w=720&h=360' },
     ];
 
     for (const p of postsData) {
@@ -286,7 +295,6 @@ module.exports = {
             original_language_id: enLangId,
 
             view_count: p.view_count,
-            image_url: p.image_url,
             status: 'published',
             published_at: now,
             created_at: now,
@@ -294,12 +302,6 @@ module.exports = {
           },
         ],
         { ignoreDuplicates: true }
-      );
-      await queryInterface.bulkUpdate(
-
-        'posts',
-        { image_url: p.image_url },
-        { id: p.id }
       );
     }
 
@@ -417,7 +419,11 @@ module.exports = {
         language_id: t.language_id,
         title: t.title,
         slug: t.slug,
-        content: t.content,
+        content: withCoverImage(
+          t.content,
+          postsData.find((post) => post.id === t.post_id)?.coverImageUrl,
+          t.title,
+        ),
         translation_status: 'completed',
 
         created_at: now,

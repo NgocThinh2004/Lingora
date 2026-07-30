@@ -16,11 +16,13 @@ import { AuthModalService } from '../../../core/auth/auth-modal.service';
 import { AuthorTooltipComponent } from '../../users/components/author-tooltip/author-tooltip.component';
 import { CompactNumberPipe } from '../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
 
 @Component({
   selector: 'app-post-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective],
+  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
 })
@@ -57,10 +59,12 @@ export class PostDetailComponent implements OnInit {
   displayedTranslation = computed(() => {
     const currentPost = this.post();
     if (!currentPost) return null;
-    const trans = getPostTranslation(
-      currentPost,
-      this.localeService.selectedLocale(),
-    );
+    const selectedLocale = this.localeService.selectedLocale();
+    const trans = this.authorPreview()
+      ? getPostTranslation(currentPost, selectedLocale)
+        ?? currentPost.translations.find(item => item.languageCode === currentPost.originalLanguage)
+        ?? currentPost.translations[0]
+      : currentPost.translations.find(item => item.languageCode === selectedLocale);
     if (!trans) return null;
     
     return {
@@ -90,9 +94,10 @@ export class PostDetailComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     
+    const language = this.localeService.selectedLocale();
     forkJoin({
-      post: this.postService.getById(id),
-      related: this.postService.getRelated(id)
+      post: this.postService.getById(id, language),
+      related: this.postService.getRelated(id, language)
     }).subscribe({
       next: ({ post, related }) => {
         this.post.set(post);
@@ -109,7 +114,7 @@ export class PostDetailComponent implements OnInit {
         }
       },
       error: (err) => {
-        this.error.set('Could not load post details. Please try again later.');
+        this.error.set(this.localeService.translate('post_details_load_failed'));
         this.loading.set(false);
       }
     });
@@ -142,7 +147,7 @@ export class PostDetailComponent implements OnInit {
         }
       },
       error: (err) => {
-        this.error.set('Could not load this article. It may have changed or been removed.');
+        this.error.set(this.localeService.translate('article_unavailable'));
         this.loading.set(false);
       },
     });

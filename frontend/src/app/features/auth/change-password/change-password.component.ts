@@ -10,11 +10,13 @@ import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { getApiErrorMessage } from '../../../core/http/api-error.util';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { LocaleService } from '../../../core/locale/locale.service';
 
 @Component({
   selector: 'app-change-password',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './change-password.component.html',
   styleUrl: './change-password.component.scss',
 })
@@ -22,6 +24,7 @@ export class ChangePasswordComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly localeService = inject(LocaleService);
 
   readonly form = this.formBuilder.nonNullable.group(
     {
@@ -54,11 +57,11 @@ export class ChangePasswordComponent {
       next: () => {
         this.authService.expireSession();
         void this.router.navigate(['/auth/login'], {
-          queryParams: { message: 'Password updated. Please sign in again.' },
+          queryParams: { messageKey: 'password_updated_sign_in_again' },
         });
       },
       error: error => {
-        this.errorMessage = getApiErrorMessage(error, 'Unable to update your password. Please try again.');
+        this.errorMessage = getApiErrorMessage(error, this.localeService.translate('password_update_failed'), true);
       },
     });
   }

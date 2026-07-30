@@ -4,11 +4,12 @@ import { RouterModule } from '@angular/router';
 import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { LocaleService } from '../../../../core/locale/locale.service';
 import { LocaleSelectorComponent } from '../../../../shared/components/locale-selector/locale-selector.component';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-auth-modal',
   standalone: true,
-  imports: [CommonModule, RouterModule, LocaleSelectorComponent],
+  imports: [CommonModule, RouterModule, LocaleSelectorComponent, TranslatePipe],
   templateUrl: './auth-modal.component.html',
   styleUrls: ['./auth-modal.component.scss']
 })

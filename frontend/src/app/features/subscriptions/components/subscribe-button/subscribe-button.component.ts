@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import { SubscriptionsService } from '../../services/subscriptions.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { AuthModalService } from '../../../../core/auth/auth-modal.service';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-subscribe-button',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './subscribe-button.component.html',
   styleUrl: './subscribe-button.component.scss'
 })

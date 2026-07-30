@@ -13,12 +13,14 @@ import {
   UpdateAdminLanguageDto,
 } from './admin/dto/admin-languages.dto';
 import { Language } from './models/language.model';
+import { LocaleBundlesService } from './locale-bundles.service';
 
 @Injectable()
 export class LanguagesService {
   constructor(
     private readonly sequelize: Sequelize,
     @InjectModel(Language) private readonly languageModel: typeof Language,
+    private readonly localeBundlesService: LocaleBundlesService,
   ) {}
 
   async findActive() {
@@ -60,7 +62,8 @@ export class LanguagesService {
 
   async create(dto: CreateAdminLanguageDto) {
     try {
-      return await this.sequelize.transaction(async transaction => {
+      const shouldActivate = dto.isActive !== false || dto.isDefault === true;
+      const created = await this.sequelize.transaction(async transaction => {
         const duplicate = await this.languageModel.findOne({
           where: { code: dto.code },
           transaction,
@@ -76,12 +79,6 @@ export class LanguagesService {
           lock: transaction.LOCK.UPDATE,
         });
         const isDefault = dto.isDefault === true || configuredLanguages.length === 0;
-        if (isDefault) {
-          await this.languageModel.update(
-            { is_default: false },
-            { where: { is_default: true }, transaction },
-          );
-        }
 
         const language = await this.languageModel.create(
           {
@@ -89,13 +86,42 @@ export class LanguagesService {
             name: dto.name,
             native_name: dto.nativeName,
             flag_code: dto.flagCode ?? null,
-            is_default: isDefault,
-            is_active: isDefault ? true : (dto.isActive ?? true),
+            is_default: false,
+            is_active: false,
+            activated_at: null,
           },
           { transaction },
         );
-        return this.toAdminLanguage(language);
+        return { language, isDefault };
       });
+      const { language, isDefault } = created;
+
+      if (shouldActivate || isDefault) {
+        try {
+          await this.localeBundlesService.provisionLanguage(language);
+          await this.sequelize.transaction(async transaction => {
+            if (isDefault) {
+              await this.languageModel.update(
+                { is_default: false },
+                { where: { is_default: true }, transaction },
+              );
+            }
+            await language.update(
+              {
+                is_active: true,
+                activated_at: new Date(),
+                ...(isDefault ? { is_default: true } : {}),
+              },
+              { transaction },
+            );
+          });
+        } catch (error) {
+          await this.localeBundlesService.removeGeneratedBundle(language.code).catch(() => undefined);
+          await language.destroy().catch(() => undefined);
+          throw error;
+        }
+      }
+      return this.toAdminLanguage(language);
     } catch (error) {
       if (error instanceof UniqueConstraintError) {
         throw new ConflictException('Language code already exists');
@@ -113,6 +139,15 @@ export class LanguagesService {
       && dto.isActive === undefined
     ) {
       throw new BadRequestException('Provide at least one language field to update');
+    }
+
+    const current = await this.languageModel.findByPk(languageId);
+    if (!current) {
+      throw new NotFoundException('Language not found');
+    }
+    const willActivate = !current.is_active && (dto.isActive === true || dto.isDefault === true);
+    if (willActivate) {
+      await this.localeBundlesService.provisionLanguage(current);
     }
 
     return this.sequelize.transaction(async transaction => {
@@ -148,6 +183,9 @@ export class LanguagesService {
           flag_code: dto.flagCode ?? language.flag_code,
           is_default: makeDefault ? true : language.is_default,
           is_active: makeDefault ? true : (dto.isActive ?? language.is_active),
+          activated_at: (makeDefault || dto.isActive === true) && !language.activated_at
+            ? new Date()
+            : language.activated_at,
         },
         { transaction },
       );
@@ -165,6 +203,7 @@ export class LanguagesService {
       flagCode: language.flag_code,
       isDefault: language.is_default,
       isActive: language.is_active,
+      activatedAt: language.activated_at,
       translationCoverage: {
         translatedPosts: 0,
         totalPosts: 0,

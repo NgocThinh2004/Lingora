@@ -2,11 +2,12 @@ import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { BrandComponent } from '../../shared/components/brand/brand.component';
 import { AdminSidebarComponent } from './admin-sidebar/admin-sidebar.component';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [RouterOutlet, BrandComponent, AdminSidebarComponent],
+  imports: [RouterOutlet, BrandComponent, AdminSidebarComponent, TranslatePipe],
   templateUrl: './admin-layout.component.html',
   styleUrl: './admin-layout.component.scss'
 })

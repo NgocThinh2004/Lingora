@@ -31,4 +31,27 @@ describe('TranslationProviderService', () => {
       expect(result.errorMessage).not.toContain(secret);
     }
   });
+
+  it('falls back from an unconfigured paid provider to google-free', async () => {
+    const config = {
+      get: jest.fn((key: string) => {
+        if (key === 'TRANSLATION_PROVIDER_ORDER') return 'deepl,google-free';
+        return undefined;
+      }),
+    } as unknown as ConfigService;
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => [[['Xin chào']]],
+    } as unknown as Response);
+    const service = new TranslationProviderService(config);
+
+    const result = await service.translateWithFallback({
+      texts: ['Hello'],
+      sourceLanguageCode: 'en',
+      targetLanguageCode: 'vi',
+      format: 'text',
+    });
+
+    expect(result).toEqual({ ok: true, texts: ['Xin chào'], provider: 'google-free' });
+  });
 });

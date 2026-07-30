@@ -23,6 +23,7 @@ import { TranslationsService } from '../posts/services/translations.service';
 import { LocaleService } from '../../core/locale/locale.service';
 import { getApiErrorMessage } from '../../core/http/api-error.util';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
 type SaveMode = 'draft' | 'submit';
 type BaselineFormat = 'normal' | 'superscript' | 'subscript';
@@ -37,7 +38,7 @@ interface EditorAutosaveSnapshot {
 @Component({
   selector: 'app-post-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, AssetImageDirective],
+  imports: [CommonModule, FormsModule, AssetImageDirective, TranslatePipe],
   templateUrl: './post-editor.component.html',
   styleUrl: './post-editor.component.scss',
 })
@@ -90,11 +91,11 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     title: '',
     categoryId: undefined,
     originalLanguageId: 1,
-    targetLanguageIds: [2, 3],
+    targetLanguageIds: [],
     content: '',
   };
 
-  targetInput = '2,3';
+  targetInput = '';
   createdPost: AuthorPost | null = null;
   saveMode: SaveMode | null = null;
   uploadingType: EditorMediaType | null = null;
@@ -117,8 +118,9 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   linkBubbleTop = 150;
   linkBubbleLeft = 150;
   linkBubbleAbove = false;
-  shareLabel = 'Share';
-  private readonly allowedTargetLanguageIds = new Set<number>([2, 3]);
+  shareLabel = 'share';
+  previewDate = new Date();
+  private readonly allowedTargetLanguageIds = new Set<number>();
 
   ngOnInit(): void {
     document.body.classList.add('editor-page');
@@ -170,22 +172,22 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   get contentPreview(): SafeHtml {
     const content = this.previewTranslatedContent ?? this.draft.content;
     return this.sanitizer.bypassSecurityTrustHtml(
-      this.buildPreviewHtml(content || '<p>No content yet.</p>'),
+      this.buildPreviewHtml(content || `<p>${this.localeService.translate('no_content_yet')}</p>`),
     );
   }
 
   get previewTitle(): string {
-    return (this.previewTranslatedTitle ?? this.draft.title) || 'Untitled post';
+    return (this.previewTranslatedTitle ?? this.draft.title) || this.localeService.translate('untitled');
   }
 
   get saveStateLabel(): string {
     if (this.saveMode === 'draft' || this.autosaveState === 'saving') {
-      return 'Saving';
+      return this.localeService.translate('saving');
     }
     if (this.createdPost || this.autosaveState === 'saved') {
-      return 'Saved';
+      return this.localeService.translate('saved');
     }
-    return 'Save';
+    return this.localeService.translate('save');
   }
 
   get titleWordCount(): number {
@@ -276,7 +278,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.syncContentFromEditor();
     if (this.isTitleOverLimit || this.isBodyOverLimit) {
       this.toast.showError(
-        `Tiêu đề tối đa ${this.titleWordLimit} từ và nội dung tối đa ${this.bodyWordLimit} từ.`,
+        this.localeService.translate('editor_word_limits', { title: this.titleWordLimit, body: this.bodyWordLimit }),
       );
       return;
     }
@@ -311,7 +313,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.previewLanguageId = languageId;
     this.previewTranslatedTitle = null;
     this.previewTranslatedContent = null;
-    this.shareLabel = 'Share';
+    this.shareLabel = 'share';
     this.showPreview = true;
     this.updateBodyModalClasses();
 
@@ -371,12 +373,12 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     void navigator.clipboard
       ?.writeText(text)
       .then(() => {
-        this.shareLabel = 'Copied';
-        window.setTimeout(() => (this.shareLabel = 'Share'), 1400);
+        this.shareLabel = 'copied';
+        window.setTimeout(() => (this.shareLabel = 'share'), 1400);
       })
       .catch(() => {
-        this.shareLabel = 'Ready';
-        window.setTimeout(() => (this.shareLabel = 'Share'), 1400);
+        this.shareLabel = 'ready';
+        window.setTimeout(() => (this.shareLabel = 'share'), 1400);
       });
   }
 
@@ -532,7 +534,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       next: (upload) => {
         const url = this.uploadsService.toAbsoluteUrl(upload.url);
         this.insertHtml(this.buildMediaHtml(mediaType, url, upload.filename), true);
-        this.toast.showSuccess(`Đã tải lên ${upload.filename}.`);
+        this.toast.showSuccess(this.localeService.translate('upload_success', { filename: upload.filename }));
         this.uploadingType = null;
       },
       error: (error: unknown) => {
@@ -839,12 +841,12 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.flushAutosave();
     const payload = this.buildPayload();
     if (!payload.title.trim() || !this.hasMeaningfulContent(payload.content)) {
-      this.toast.showError('Tiêu đề và nội dung là bắt buộc.');
+      this.toast.showError(this.localeService.translate('title_content_required'));
       return;
     }
     if (this.isTitleOverLimit || this.isBodyOverLimit) {
       this.toast.showError(
-        `Tiêu đề tối đa ${this.titleWordLimit} từ và nội dung tối đa ${this.bodyWordLimit} từ.`,
+        this.localeService.translate('editor_word_limits', { title: this.titleWordLimit, body: this.bodyWordLimit }),
       );
       return;
     }
@@ -859,6 +861,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(
         switchMap((post) => {
           this.createdPost = post;
+          this.previewDate = new Date(post.createdAt);
 
           if (mode === 'submit' && post.status !== 'pending_review') {
             return this.postsService.submitAuthorPost(post.id);
@@ -879,15 +882,15 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             this.location.replaceState(`/workspace/posts/${post.id}/edit`);
           }
           if (mode === 'submit') {
-            this.navigateToMyPosts(`Bài #${post.id} đã được gửi duyệt.`);
+            this.navigateToMyPosts(this.localeService.translate('post_submitted_review', { id: post.id }));
             return;
           }
           if (this.navigateAfterSave) {
             this.navigateAfterSave = false;
-            this.navigateToMyPosts(`Đã lưu bản nháp #${post.id}.`);
+            this.navigateToMyPosts(this.localeService.translate('draft_saved', { id: post.id }));
             return;
           }
-          this.toast.showSuccess(`Đã lưu bản nháp #${post.id}.`);
+          this.toast.showSuccess(this.localeService.translate('draft_saved', { id: post.id }));
         },
         error: (error: unknown) => {
           this.toast.showError(this.formatError(error));
@@ -903,6 +906,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       next: post => {
         const source = post.translations.find(item => item.languageId === post.originalLanguageId) ?? post.translations[0];
         this.createdPost = post;
+        this.previewDate = new Date(post.createdAt);
         const serverDraft: CreatePostPayload = {
           title: source?.title ?? '',
           categoryId: post.categoryId ?? undefined,
@@ -939,10 +943,18 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     void this.router.navigateByUrl(this.myPostsReturnUrl())
       .then(navigated => {
         if (!navigated) {
-          this.toast.showError('Không thể mở trang bài viết của tôi.');
+          this.toast.showError(this.localeService.translate('unable_open_my_posts'));
         }
       })
-      .catch(() => this.toast.showError('Không thể mở trang bài viết của tôi.'));
+      .catch(() => this.toast.showError(this.localeService.translate('unable_open_my_posts')));
+  }
+
+  formatPreviewDate(): string {
+    return new Intl.DateTimeFormat(this.localeService.selectedLocale(), {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }).format(this.previewDate);
   }
 
   private myPostsReturnUrl(): string {
@@ -2205,6 +2217,6 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private formatError(error: unknown): string {
-    return getApiErrorMessage(error, 'Có lỗi xảy ra, hãy kiểm tra backend đang chạy.');
+    return getApiErrorMessage(error, this.localeService.translate('request_failed'), true);
   }
 }

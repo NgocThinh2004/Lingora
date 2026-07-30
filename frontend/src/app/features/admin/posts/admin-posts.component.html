@@ -1,22 +1,22 @@
 <div class="admin-container">
   <header class="admin-header">
-    <h1>Post Management</h1>
-    <p>Review author submissions before publishing them to the feed.</p>
+    <h1>{{ 'post_management' | t }}</h1>
+    <p>{{ 'post_management_description' | t }}</p>
   </header>
 
   <form class="post-filter-panel" [formGroup]="filters" aria-label="Post filters">
     <div class="input-group search-field">
       <span class="input-group-text border-end-0"><i class="bi bi-search" aria-hidden="true"></i></span>
-      <input class="form-control border-start-0" type="search" formControlName="search" placeholder="Search by title or author...">
+      <input class="form-control border-start-0" type="search" formControlName="search" [placeholder]="'search_posts_admin' | t">
     </div>
     <select class="form-select" formControlName="status" aria-label="Status">
-      <option value="all">All statuses</option>
-      <option value="pending">Pending</option>
-      <option value="approved">Approved</option>
-      <option value="rejected">Rejected</option>
+      <option value="all">{{ 'all_statuses' | t }}</option>
+      <option value="pending">{{ 'pending' | t }}</option>
+      <option value="approved">{{ 'approved' | t }}</option>
+      <option value="rejected">{{ 'rejected' | t }}</option>
     </select>
     <select class="form-select" formControlName="categoryId" aria-label="Category">
-      <option value="">All categories</option>
+      <option value="">{{ 'all_categories' | t }}</option>
       @for (category of categories(); track category.id) {
         <option [value]="category.id">{{ categoryName(category) }}</option>
       }
@@ -24,20 +24,20 @@
   </form>
 
   @if (!loading() && !errorMessage()) {
-    <div class="post-results" aria-live="polite">{{ posts().length }} of {{ pagination().total }} posts</div>
+    <div class="post-results" aria-live="polite">{{ posts().length }} / {{ pagination().total }} {{ 'posts' | t }}</div>
   }
 
   @if (loading()) {
-    <app-ui-state kind="loading" title="Loading posts"></app-ui-state>
+    <app-ui-state kind="loading" [title]="'loading_articles' | t"></app-ui-state>
   } @else if (errorMessage()) {
-    <app-ui-state kind="error" title="Unable to load posts" [description]="errorMessage()" actionLabel="Try again"
+    <app-ui-state kind="error" [title]="'unable_load_posts' | t" [description]="errorMessage()" [actionLabel]="'try_again' | t"
       (action)="loadPosts(pagination().page)"></app-ui-state>
   } @else if (!posts().length) {
-    <app-ui-state kind="empty" title="No posts found" description="Try another title, author, status, or category."></app-ui-state>
+    <app-ui-state kind="empty" [title]="'no_articles' | t" [description]="'post_filter_empty_description' | t"></app-ui-state>
   } @else {
     <div class="posts-table-wrap">
       <table class="posts-table" aria-label="Post moderation queue">
-        <thead><tr><th>Post</th><th>Author</th><th>Category</th><th>Submitted</th><th>Translations</th><th>Status</th></tr></thead>
+        <thead><tr><th>{{ 'posts' | t }}</th><th>{{ 'author' | t }}</th><th>{{ 'category' | t }}</th><th>{{ 'submitted' | t }}</th><th>{{ 'translations' | t }}</th><th>{{ 'status_label' | t }}</th></tr></thead>
         <tbody>
           @for (post of posts(); track post.id) {
             <tr class="post-row" tabindex="0" (click)="openReview(post)" (keydown)="openFromKeyboard($event, post)">
@@ -53,13 +53,13 @@
               </td>
               <td data-label="Category">
                 <div class="category-cell">
-                  <span class="category-cell-label">{{ post.category?.name || 'Uncategorized' }}</span>
+                  <span class="category-cell-label">{{ post.category?.name || ('uncategorized' | t) }}</span>
                   @if (post.category?.status === 'inactive') {
-                    <span class="category-state category-state-hidden"><i class="bi bi-eye-slash" aria-hidden="true"></i>Hidden</span>
+                    <span class="category-state category-state-hidden"><i class="bi bi-eye-slash" aria-hidden="true"></i>{{ 'hidden' | t }}</span>
                   }
                 </div>
               </td>
-              <td data-label="Submitted" class="muted">{{ post.submittedAt | date:'medium' }}</td>
+              <td data-label="Submitted" class="muted">{{ post.submittedAt | localizedDate:'dateTime' }}</td>
               <td data-label="Translations">
                 @if (targetTranslations(post).length) {
                   <div class="translation-flag-stack">
@@ -96,7 +96,7 @@
 @if (panelOpen()) {
   <button class="panel-backdrop" type="button" aria-label="Close review panel" (click)="closePanel($event)"></button>
   <aside class="review-panel" role="dialog" aria-modal="true" aria-labelledby="review-title">
-    <header class="panel-header"><h2 id="review-title">Review post</h2><button class="panel-close" type="button" (click)="closePanel($event)" aria-label="Close"><i class="bi bi-x-lg"></i></button></header>
+    <header class="panel-header"><h2 id="review-title">{{ 'review_post' | t }}</h2><button class="panel-close" type="button" (click)="closePanel($event)" [attr.aria-label]="'close' | t"><i class="bi bi-x-lg"></i></button></header>
     <div class="panel-body">
       @if (detailLoading()) {
         <app-ui-state kind="loading" title="Loading post"></app-ui-state>
@@ -105,34 +105,34 @@
         <span class="status-pill status-{{ post.status }}">{{ post.status | titlecase }}</span>
         <h3 class="review-title">{{ post.title }}</h3>
         <div class="review-meta">
-          <div class="meta-box"><span>Author</span><strong>{{ post.author.name }}</strong></div>
-          <div class="meta-box"><span>Category</span><strong>{{ post.category?.name || 'Uncategorized' }}</strong>
-            @if (post.category?.status === 'inactive') { <em class="category-state category-state-hidden"><i class="bi bi-eye-slash"></i>Hidden</em> }
+          <div class="meta-box"><span>{{ 'author' | t }}</span><strong>{{ post.author.name }}</strong></div>
+          <div class="meta-box"><span>{{ 'category' | t }}</span><strong>{{ post.category?.name || ('uncategorized' | t) }}</strong>
+            @if (post.category?.status === 'inactive') { <em class="category-state category-state-hidden"><i class="bi bi-eye-slash"></i>{{ 'hidden' | t }}</em> }
           </div>
-          <div class="meta-box"><span>Submitted</span><strong>{{ post.submittedAt | date:'medium' }}</strong></div>
-          <div class="meta-box"><span>Original language</span><strong>{{ post.originalLanguage?.name || 'Unknown' }}</strong></div>
+          <div class="meta-box"><span>{{ 'submitted' | t }}</span><strong>{{ post.submittedAt | localizedDate:'dateTime' }}</strong></div>
+          <div class="meta-box"><span>{{ 'original_language' | t }}</span><strong>{{ post.originalLanguage?.name || ('unknown' | t) }}</strong></div>
         </div>
-        <h4 class="section-label">Target translations</h4>
+        <h4 class="section-label">{{ 'target_translations' | t }}</h4>
         <div class="translation-jobs">
           @for (translation of targetTranslations(post); track translation.id) {
             <div class="translation-job translation-{{ translation.status }}">
               <img [src]="flagUrl(translation.flagCode)" alt=""><span><strong>{{ translation.name }}</strong><small>{{ translationStatusLabel(translation.status) }}</small></span>
             </div>
-          } @empty { <span class="muted">No target translations.</span> }
+          } @empty { <span class="muted">{{ 'no_target_translations' | t }}</span> }
         </div>
-        <h4 class="section-label">Content preview</h4>
+        <h4 class="section-label">{{ 'content_preview' | t }}</h4>
         <div class="review-content" [innerHTML]="post.content || '&mdash;'"></div>
         <form [formGroup]="reviewForm" class="review-form">
-          <label for="review-note">Review note</label>
-          <textarea id="review-note" class="form-control" rows="3" formControlName="note" [class.is-invalid]="noteInvalid()" (input)="noteInvalid.set(false)" placeholder="Required when rejecting a post..."></textarea>
-          @if (noteInvalid()) { <div class="field-error">Please enter a rejection reason.</div> }
+          <label for="review-note">{{ 'review_note' | t }}</label>
+          <textarea id="review-note" class="form-control" rows="3" formControlName="note" [class.is-invalid]="noteInvalid()" (input)="noteInvalid.set(false)" [placeholder]="'review_note_placeholder' | t"></textarea>
+          @if (noteInvalid()) { <div class="field-error">{{ 'rejection_reason_required' | t }}</div> }
         </form>
         }
       }
     </div>
     <footer class="panel-footer">
-      <button class="btn btn-outline-danger" type="button" [disabled]="saving() || detailLoading() || selectedPost()?.status === 'rejected'" (click)="review('reject')"><i class="bi bi-x-lg"></i> Reject</button>
-      <button class="btn btn-primary" type="button" [disabled]="saving() || detailLoading() || selectedPost()?.status === 'approved'" (click)="review('approve')"><i class="bi bi-check2"></i> {{ saving() ? 'Saving...' : 'Approve' }}</button>
+      <button class="btn btn-outline-danger" type="button" [disabled]="saving() || detailLoading() || selectedPost()?.status === 'rejected'" (click)="review('reject')"><i class="bi bi-x-lg"></i> {{ 'reject' | t }}</button>
+      <button class="btn btn-primary" type="button" [disabled]="saving() || detailLoading() || selectedPost()?.status === 'approved'" (click)="review('approve')"><i class="bi bi-check2"></i> {{ (saving() ? 'saving' : 'approve') | t }}</button>
     </footer>
   </aside>
 }

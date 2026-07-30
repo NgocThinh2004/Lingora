@@ -42,7 +42,8 @@ describe('AdminLanguagesComponent', () => {
       'updateLanguage',
     ]);
     toast = jasmine.createSpyObj<ToastService>('ToastService', ['showSuccess', 'showError']);
-    locale = jasmine.createSpyObj<LocaleService>('LocaleService', ['refresh']);
+    locale = jasmine.createSpyObj<LocaleService>('LocaleService', ['refresh', 'translate']);
+    locale.translate.and.callFake((key: string) => key);
     service.getLanguages.and.returnValue(of({
       data: [english, vietnamese],
       meta: { pagination: { total: 2, page: 1, limit: 8, totalPages: 1 } },
@@ -73,7 +74,7 @@ describe('AdminLanguagesComponent', () => {
     expect(component.flagUrl(null)).toBe('assets/images/lingora-mark.svg');
   });
 
-  it('creates a language from the supported catalog', () => {
+  it('creates any valid language without a hard-coded catalog', () => {
     const japanese: AdminLanguage = {
       ...vietnamese,
       id: 4,
@@ -84,7 +85,12 @@ describe('AdminLanguagesComponent', () => {
     };
     service.createLanguage.and.returnValue(of({ data: japanese }));
     component.openAddDialog();
-    component.addForm.setValue({ code: 'ja' });
+    component.addForm.setValue({
+      code: 'JA',
+      name: 'Japanese',
+      nativeName: '日本語',
+      flagCode: 'JP',
+    });
 
     component.createLanguage();
 
@@ -163,12 +169,12 @@ describe('AdminLanguagesComponent', () => {
     tick(16);
     fixture.detectChanges();
 
-    const languageSelect = fixture.nativeElement.querySelector('#addLanguageCode') as HTMLSelectElement;
-    const languageCode = fixture.nativeElement.querySelector('#generatedLanguageCode') as HTMLInputElement;
+    const languageCode = fixture.nativeElement.querySelector('#addLanguageCode') as HTMLInputElement;
+    const languageName = fixture.nativeElement.querySelector('#addLanguageName') as HTMLInputElement;
     const footerButtons = [...fixture.nativeElement.querySelectorAll('.dialog-footer .btn')] as HTMLButtonElement[];
 
-    expect(languageSelect.getBoundingClientRect().height).toBeLessThanOrEqual(50);
     expect(languageCode.getBoundingClientRect().height).toBeLessThanOrEqual(50);
+    expect(languageName.getBoundingClientRect().height).toBeLessThanOrEqual(50);
     expect(footerButtons.every(button => !button.classList.contains('rounded-pill'))).toBeTrue();
   }));
 

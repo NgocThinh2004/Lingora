@@ -38,7 +38,7 @@ describe('AdminPostsComponent', () => {
         { provide: AdminPostsService, useValue: postsService },
         { provide: AdminCategoriesService, useValue: categories },
         { provide: ToastService, useValue: toast },
-        { provide: LocaleService, useValue: { selectedLocale: signal('en') } },
+        { provide: LocaleService, useValue: { selectedLocale: signal('en'), translate: (key: string) => key } },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminPostsComponent);

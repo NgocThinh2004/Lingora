@@ -13,6 +13,7 @@ export interface AdminLanguage {
   flagCode: string | null;
   isDefault: boolean;
   isActive: boolean;
+  activatedAt?: string | null;
   translationCoverage: TranslationCoverage;
 }
 

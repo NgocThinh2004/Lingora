@@ -6,6 +6,7 @@ import { filter } from 'rxjs';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { MobileHeaderComponent } from './mobile-header/mobile-header.component';
 import { RightPanelComponent } from './right-panel/right-panel.component';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-main-layout',
@@ -16,6 +17,7 @@ import { RightPanelComponent } from './right-panel/right-panel.component';
     SidebarComponent,
     MobileHeaderComponent,
     RightPanelComponent,
+    TranslatePipe,
   ],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss',

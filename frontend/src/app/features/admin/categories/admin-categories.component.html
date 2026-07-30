@@ -1,65 +1,65 @@
 <div class="admin-container">
   <header class="admin-header">
     <div>
-      <h1>Category Management</h1>
-      <p>Create, organize, and edit post categories for the home feed.</p>
+      <h1>{{ 'category_management' | t }}</h1>
+      <p>{{ 'category_management_description' | t }}</p>
     </div>
     <button class="btn btn-primary rounded-pill px-4" type="button" [disabled]="languagesLoading()" (click)="openAddPanel()">
       <i class="bi bi-plus-lg" aria-hidden="true"></i>
-      Add Category
+      {{ 'add_category' | t }}
     </button>
   </header>
 
   <form class="category-filter-panel" [formGroup]="filters" aria-label="Category filters">
     <div class="search-field input-group">
       <span class="input-group-text border-end-0"><i class="bi bi-search" aria-hidden="true"></i></span>
-      <input class="form-control border-start-0" type="search" formControlName="search" placeholder="Search categories...">
+      <input class="form-control border-start-0" type="search" formControlName="search" [placeholder]="'search_categories' | t">
     </div>
     <select class="form-select" formControlName="status" aria-label="Filter by status">
-      <option value="all">All statuses</option>
-      <option value="active">Active</option>
-      <option value="inactive">Inactive</option>
+      <option value="all">{{ 'all_statuses' | t }}</option>
+      <option value="active">{{ 'active' | t }}</option>
+      <option value="inactive">{{ 'inactive' | t }}</option>
     </select>
     <select class="form-select" formControlName="postFilter" aria-label="Filter by post count">
-      <option value="all">All post counts</option>
-      <option value="with-posts">Has posts</option>
-      <option value="without-posts">No posts</option>
+      <option value="all">{{ 'all_post_counts' | t }}</option>
+      <option value="with-posts">{{ 'has_posts' | t }}</option>
+      <option value="without-posts">{{ 'no_posts' | t }}</option>
     </select>
     <select class="form-select" formControlName="sort" aria-label="Sort categories">
-      <option value="newest">Newest</option>
-      <option value="oldest">Oldest</option>
-      <option value="name">Name A–Z</option>
-      <option value="posts">Most posts</option>
+      <option value="newest">{{ 'newest' | t }}</option>
+      <option value="oldest">{{ 'oldest' | t }}</option>
+      <option value="name">{{ 'name_a_z' | t }}</option>
+      <option value="posts">{{ 'most_posts' | t }}</option>
     </select>
-    <button class="btn btn-outline-secondary reset-filter" type="button" title="Clear filters" aria-label="Clear filters" (click)="clearFilters()">
+    <button class="btn btn-outline-secondary reset-filter" type="button" [title]="'clear_filters' | t" [attr.aria-label]="'clear_filters' | t" (click)="clearFilters()">
       <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
     </button>
   </form>
 
   @if (!loading() && !errorMessage()) {
     <div class="category-results" aria-live="polite">
-      {{ categories().length }} of {{ pagination().total }} categories
+      {{ categories().length }} / {{ pagination().total }} {{ 'categories' | t }}
     </div>
   }
 
   @if (loading()) {
-    <app-ui-state kind="loading" title="Loading categories"></app-ui-state>
+    <app-ui-state kind="loading" [title]="'loading_categories' | t"></app-ui-state>
   } @else if (errorMessage()) {
-    <app-ui-state kind="error" title="Unable to load categories" [description]="errorMessage()" actionLabel="Try again"
+    <app-ui-state kind="error" [title]="'unable_load_categories' | t" [description]="errorMessage()" [actionLabel]="'try_again' | t"
       (action)="loadCategories(pagination().page)"></app-ui-state>
   } @else if (!categories().length) {
-    <app-ui-state kind="empty" title="No categories found" description="Try another search term or create a category."></app-ui-state>
+    <app-ui-state kind="empty" [title]="'no_categories' | t" [description]="'category_empty_description' | t"></app-ui-state>
   } @else {
     <div class="category-table-wrap">
       <table class="category-directory" aria-label="Category directory">
         <thead>
           <tr>
-            <th scope="col">Category</th>
-            <th scope="col">Slug</th>
-            <th scope="col">Created</th>
-            <th scope="col">Total posts</th>
-            <th scope="col">Status</th>
-            <th scope="col">Actions</th>
+            <th scope="col">{{ 'category' | t }}</th>
+            <th scope="col">{{ 'slug' | t }}</th>
+            <th scope="col">{{ 'created' | t }}</th>
+            <th scope="col">{{ 'total_posts' | t }}</th>
+            <th scope="col">{{ 'status_label' | t }}</th>
+            <th scope="col">{{ 'actions' | t }}</th>
           </tr>
         </thead>
         <tbody>
@@ -92,16 +92,16 @@
                   </div>
                 </td>
                 <td data-label="Slug"><code class="category-slug">{{ translation.slug }}</code></td>
-                <td data-label="Created" class="muted-cell">{{ category.createdAt | date:'MMM dd, y' }}</td>
+                <td data-label="Created" class="muted-cell">{{ category.createdAt | localizedDate }}</td>
                 <td data-label="Total posts">
                   <button class="post-count" type="button" [attr.aria-label]="'View posts in ' + translation.name"
                     (click)="$event.stopPropagation(); openPostsPanel(category)">
-                    <b>{{ category.postCount }}</b> posts <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                    <b>{{ category.postCount }}</b> {{ 'posts' | t }} <i class="bi bi-chevron-right" aria-hidden="true"></i>
                   </button>
                 </td>
                 <td data-label="Status">
                   <span class="status-pill" [class.is-active]="category.isActive" [class.is-inactive]="!category.isActive">
-                    <i class="bi bi-circle-fill" aria-hidden="true"></i>{{ category.isActive ? 'Active' : 'Inactive' }}
+                    <i class="bi bi-circle-fill" aria-hidden="true"></i>{{ (category.isActive ? 'active' : 'inactive') | t }}
                   </span>
                 </td>
                 <td data-label="Actions">
@@ -146,7 +146,7 @@
   <aside class="category-panel category-panel--visible" role="dialog" aria-modal="true"
     aria-labelledby="categoryPanelTitle">
     <header class="panel-header">
-      <h2 id="categoryPanelTitle">{{ panelMode() === 'add' ? 'Add Category' : 'Edit Category' }}</h2>
+      <h2 id="categoryPanelTitle">{{ (panelMode() === 'add' ? 'add_category' : 'edit_category') | t }}</h2>
       <button class="panel-close" type="button" aria-label="Close" (click)="closePanel()">
         <i class="bi bi-x-lg" aria-hidden="true"></i>
       </button>
@@ -155,9 +155,7 @@
     <form id="categoryForm" class="panel-form" [formGroup]="categoryForm" (ngSubmit)="saveCategory()">
       <div class="panel-body">
         <p class="panel-help">
-          {{ panelMode() === 'add'
-            ? 'Enter every translation so the category is ready in all active languages.'
-            : 'Existing translations are required. A newly activated language can be completed later.' }}
+          {{ (panelMode() === 'add' ? 'category_add_translation_help' : 'category_edit_translation_help') | t }}
         </p>
 
         <div formArrayName="translations">
@@ -169,26 +167,26 @@
                 <span class="language-code">{{ language.code.toUpperCase() }}</span>
               </div>
 
-              <label [for]="'categoryName-' + language.id">Name</label>
+              <label [for]="'categoryName-' + language.id">{{ 'name' | t }}</label>
               <input class="form-control" [id]="'categoryName-' + language.id" type="text" maxlength="150"
                 formControlName="name" (input)="suggestSlug(index)" [placeholder]="'Category name in ' + language.name">
               @if (translationForms.at(index).controls.name.touched && translationForms.at(index).controls.name.invalid) {
-                <div class="field-error">Enter a name with no more than 150 characters.</div>
+                <div class="field-error">{{ 'name_validation' | t }}</div>
               }
 
-              <label [for]="'categorySlug-' + language.id">Slug</label>
+              <label [for]="'categorySlug-' + language.id">{{ 'slug' | t }}</label>
               <input class="form-control" [id]="'categorySlug-' + language.id" type="text" maxlength="150"
                 formControlName="slug" [placeholder]="'category-slug-' + language.code">
-              <div class="field-help">Generated from the name. You can edit it before saving.</div>
+              <div class="field-help">{{ 'slug_generated_help' | t }}</div>
               @if (translationForms.at(index).controls.slug.touched && translationForms.at(index).controls.slug.invalid) {
-                <div class="field-error">Use letters, numbers and single hyphens only.</div>
+                <div class="field-error">{{ 'slug_validation' | t }}</div>
               }
             </section>
           }
         </div>
 
         <div class="status-setting">
-          <div><strong>Category status</strong><span>Show or hide this category in every language.</span></div>
+          <div><strong>{{ 'category_status' | t }}</strong><span>{{ 'category_status_description' | t }}</span></div>
           <label class="perfect-switch">
             <input class="perfect-switch-input" type="checkbox" formControlName="isActive">
             <span class="perfect-switch-track"><span class="perfect-switch-thumb"></span></span>
@@ -198,10 +196,10 @@
     </form>
 
     <footer class="panel-footer">
-      <button class="btn btn-outline-secondary" type="button" (click)="closePanel()">Cancel</button>
+      <button class="btn btn-outline-secondary" type="button" (click)="closePanel()">{{ 'cancel_action' | t }}</button>
       <button class="btn btn-primary" type="submit" form="categoryForm" [disabled]="saving()">
         @if (saving()) { <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> }
-        Save changes
+        {{ 'save_changes' | t }}
       </button>
     </footer>
   </aside>
@@ -217,25 +215,25 @@
       </button>
     </header>
     <div class="posts-panel-summary">
-      <span>Post list</span>
-      <span>{{ postsMeta().shown }} latest of {{ postsMeta().total }}</span>
+      <span>{{ 'post_list' | t }}</span>
+      <span>{{ postsMeta().shown }} / {{ postsMeta().total }}</span>
     </div>
     <div class="posts-panel-body">
       @if (postsLoading()) {
-        <app-ui-state kind="loading" title="Loading posts"></app-ui-state>
+        <app-ui-state kind="loading" [title]="'loading_articles' | t"></app-ui-state>
       } @else if (postsError()) {
-        <app-ui-state kind="error" title="Unable to load posts" [description]="postsError()"
-          actionLabel="Try again" (action)="openPostsPanel(category)"></app-ui-state>
+        <app-ui-state kind="error" [title]="'unable_load_posts' | t" [description]="postsError()"
+          [actionLabel]="'try_again' | t" (action)="openPostsPanel(category)"></app-ui-state>
       } @else if (!categoryPosts().length) {
-        <app-ui-state kind="empty" title="No posts in this category"
-          description="Posts assigned to this category will appear here."></app-ui-state>
+        <app-ui-state kind="empty" [title]="'no_posts_in_category' | t"
+          [description]="'category_posts_empty_description' | t"></app-ui-state>
       } @else {
         @for (post of categoryPosts(); track post.id) {
           <article class="category-post-item">
             <h3>{{ post.title }}</h3>
             <div>
               <span><i class="bi bi-person" aria-hidden="true"></i>{{ post.authorName }}</span>
-              <span><i class="bi bi-clock" aria-hidden="true"></i>{{ post.publishedAt | date:'MMM dd, y, HH:mm' }}</span>
+              <span><i class="bi bi-clock" aria-hidden="true"></i>{{ post.publishedAt | localizedDate:'dateTime' }}</span>
               <span class="post-status">{{ postStatus(post.status) }}</span>
             </div>
           </article>
@@ -254,14 +252,14 @@
         <i class="bi bi-x-lg" aria-hidden="true"></i>
       </button>
     </div>
-    <h2 id="deleteCategoryTitle">Delete category?</h2>
-    <p>Delete “{{ displayName(category) }}” and all of its translations? Existing posts will remain and become uncategorized.</p>
+    <h2 id="deleteCategoryTitle">{{ 'delete_category' | t }}</h2>
+    <p>{{ 'delete_category_prefix' | t }} “{{ displayName(category) }}” {{ 'delete_category_suffix' | t }}</p>
     <div class="confirm-actions">
-      <button class="btn btn-outline-secondary" type="button" [disabled]="deleting()" (click)="cancelDelete()">Cancel</button>
+      <button class="btn btn-outline-secondary" type="button" [disabled]="deleting()" (click)="cancelDelete()">{{ 'cancel_action' | t }}</button>
       <button class="btn btn-primary confirm-delete" type="button" [disabled]="deleting()" (click)="confirmDelete()">
         @if (deleting()) { <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> }
         @else { <i class="bi bi-trash" aria-hidden="true"></i> }
-        Delete category
+        {{ 'delete_category_action' | t }}
       </button>
     </div>
   </section>

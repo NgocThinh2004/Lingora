@@ -19,11 +19,13 @@ import { EditorUploadsService } from '../workspace/services/editor-uploads.servi
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 import { SubscribeButtonComponent } from '../subscriptions/components/subscribe-button/subscribe-button.component';
 import { PostCardComponent } from '../posts/components/post-card/post-card.component';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
+import { LocaleService } from '../../core/locale/locale.service';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AssetImageDirective, SubscribeButtonComponent, PostCardComponent],
+  imports: [CommonModule, FormsModule, RouterModule, AssetImageDirective, SubscribeButtonComponent, PostCardComponent, TranslatePipe],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
   encapsulation: ViewEncapsulation.None,
@@ -40,6 +42,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private uploadsService = inject(EditorUploadsService);
   private toast = inject(ToastService);
   private branding = inject(BrandingService);
+  private localeService = inject(LocaleService);
 
   private routeSubscription?: Subscription;
   private previousAccent = this.branding.accent();
@@ -171,7 +174,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   saveProfile() {
     if (!this.profileForm.displayName.trim() || !this.normalizeUsername(this.profileForm.username)) {
-      this.toast.showError('Display name and a valid username are required.');
+      this.toast.showError(this.localeService.translate('profile_fields_required'));
       return;
     }
 
@@ -187,7 +190,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.user.set(user);
         this.setProfileForm(user);
         this.persistBranding();
-        this.toast.showSuccess('Profile updated successfully.');
+        this.toast.showSuccess(this.localeService.translate('profile_updated_success'));
         this.savingProfile.set(false);
         this.isEditing.set(false);
       },
@@ -207,7 +210,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
 
     if (!file.type.startsWith('image/')) {
-      this.toast.showError('Please select an image file.');
+      this.toast.showError(this.localeService.translate('select_image_file'));
       return;
     }
 
@@ -267,7 +270,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     canvas.height = outputSize;
     const context = canvas.getContext('2d');
     if (!context) {
-      this.toast.showError('Unable to crop this image.');
+      this.toast.showError(this.localeService.translate('unable_crop_image'));
       return;
     }
 
@@ -292,7 +295,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     canvas.toBlob(blob => {
       if (!blob) {
-        this.toast.showError('Unable to crop this image.');
+        this.toast.showError(this.localeService.translate('unable_crop_image'));
         return;
       }
       const baseName = original.name.replace(/\.[^.]+$/, '') || 'avatar';
@@ -317,7 +320,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       next: user => {
         this.user.set(user);
         this.setProfileForm(user);
-        this.toast.showSuccess('Profile photo updated successfully.');
+        this.toast.showSuccess(this.localeService.translate('profile_photo_updated'));
       },
       error: err => this.toast.showError(this.formatError(err)),
     });
@@ -346,7 +349,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
           this.closePasswordModal();
           this.authService.expireSession();
           void this.router.navigate(['/auth/login'], {
-            queryParams: { message: 'Password updated. Please sign in again.' },
+            queryParams: { messageKey: 'password_updated_sign_in_again' },
           });
         },
         error: err => {
@@ -355,7 +358,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         },
       });
     } else {
-      this.toast.showError('The new passwords must match and contain at least 8 characters.');
+      this.toast.showError(this.localeService.translate('new_passwords_invalid'));
     }
   }
 
@@ -427,13 +430,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   peopleModalTitle(): string {
-    return this.peopleModalMode() === 'followers' ? 'Followers' : 'Following';
+    return this.peopleModalMode() === 'followers' ? 'followers' : 'following';
   }
 
   peopleSearchPlaceholder(): string {
     return this.peopleModalMode() === 'followers'
-      ? 'Search followers...'
-      : 'Search following...';
+      ? 'search_followers'
+      : 'search_following';
   }
 
   personDisplayName(person: SubscriptionAuthor): string {
@@ -520,7 +523,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     };
     image.onerror = () => {
       URL.revokeObjectURL(objectUrl);
-      this.toast.showError('Unable to open this image.');
+      this.toast.showError(this.localeService.translate('unable_open_image'));
     };
     image.src = objectUrl;
   }
@@ -565,7 +568,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const publicUserId = Number(routeUserId);
     if (!Number.isInteger(publicUserId) || publicUserId < 1) {
       this.loadingProfile.set(false);
-      this.toast.showError('Profile not found.');
+      this.toast.showError(this.localeService.translate('profile_not_found'));
       void this.router.navigate(['/home']);
       return;
     }
@@ -782,6 +785,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   private formatError(error: unknown): string {
-    return getApiErrorMessage(error, 'Unable to complete the request. Please try again.');
+    return getApiErrorMessage(error, this.localeService.translate('request_failed'), true);
   }
 }
