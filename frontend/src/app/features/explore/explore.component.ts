@@ -187,6 +187,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
     // Fix: loadMore dùng switchMap thay vì subscribe trực tiếp
     // switchMap tự cancel request trang cũ nếu user scroll nhanh
     this.loadMoreSubject.pipe(
+      debounceTime(300),
       switchMap(({ page }) => {
         this.loadingMore = true;
         const q = this.query.trim().toLowerCase();
@@ -226,7 +227,8 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadMore(): void {
-    if ((this.tab !== 'posts' && this.tab !== 'people') || this.page >= this.totalPages) return;
+    if ((this.tab !== 'posts' && this.tab !== 'people') || this.page >= this.totalPages || this.loadingMore) return;
+    this.loadingMore = true;
     this.page++;
     this.loadMoreSubject.next({ page: this.page });
   }

@@ -151,7 +151,7 @@ export class CommentsService {
         where: { user_id: userId, comment_id: allCommentIds },
         attributes: ['comment_id'],
       });
-      userLikes = new Set(userLikeRows.map((row: any) => String(row.comment_id)));
+      userLikes = new Set(userLikeRows.map((row: CommentLike) => String(row.comment_id)));
     }
 
     const processComment = (comment: Comment) => {

@@ -259,7 +259,9 @@ export class PostDetailComponent implements OnDestroy {
     this.post.set({ ...p, liked: nextLiked, likeCount: nextLikeCount, isLiking: true });
 
     this.likeSub?.unsubscribe();
-    this.likeSub = this.likeService.togglePostLike(p.id).subscribe({
+    this.likeSub = this.likeService.togglePostLike(p.id).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (status) => {
         // Sync with server state
         const updatedPost = this.post();

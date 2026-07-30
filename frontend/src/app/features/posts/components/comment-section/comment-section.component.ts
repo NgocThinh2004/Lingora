@@ -207,7 +207,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
           if (parentIdx > -1) {
             arr[parentIdx] = { ...arr[parentIdx] };
             if (arr[parentIdx].replies) {
-              arr[parentIdx].replies = arr[parentIdx].replies.filter((r: any) => r.id !== comment.id);
+              arr[parentIdx].replies = arr[parentIdx].replies.filter((r: Comment) => r.id !== comment.id);
             }
           }
           return arr;
@@ -244,7 +244,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
             if (pIdx > -1) {
               arr[pIdx] = { ...arr[pIdx] };
               if (arr[pIdx].replies) {
-                const rIdx = arr[pIdx].replies.findIndex((r: any) => r.id === comment.id);
+                const rIdx = arr[pIdx].replies.findIndex((r: Comment) => r.id === comment.id);
                 if (rIdx > -1) arr[pIdx].replies[rIdx] = updatedComment;
               }
             }
