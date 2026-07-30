@@ -6,6 +6,8 @@ import { User } from '../users/models/user.model';
 import { Post } from '../posts/models/post.model';
 import { Language } from '../languages/models/language.model';
 import { CommentTranslation } from './models/comment-translation.model';
+// @ts-ignore
+const franc = require('franc-min');
 import { CommentLike } from '../likes/models/comment-like.model';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { TranslationProviderService } from '../translations/translation-provider.service';
@@ -53,7 +55,13 @@ export class CommentsService {
       replyToUsername = replyTarget.author?.display_name || replyTarget.author?.username || null;
     }
 
-    const langCode = dto.languageCode || 'en';
+    // Auto detect language of the comment
+    const detected = franc(dto.content, { minLength: 1, only: ['eng', 'vie', 'cmn'] });
+    let langCode = dto.languageCode || 'en';
+    if (detected === 'vie') langCode = 'vi';
+    else if (detected === 'eng') langCode = 'en';
+    else if (detected === 'cmn') langCode = 'zh';
+
     const language = await this.languageModel.findOne({ where: { code: langCode } });
     const originalLanguageId = language ? language.id : null;
 
@@ -77,7 +85,10 @@ export class CommentsService {
     });
 
     return this.commentModel.findByPk(comment.id, {
-      include: [{ model: User, as: 'author', attributes: ['id', 'username', 'display_name', 'avatar'] }],
+      include: [
+        { model: User, as: 'author', attributes: ['id', 'username', 'display_name', 'avatar'] },
+        { model: Language, as: 'originalLanguage', attributes: ['code'] }
+      ],
     });
   }
 
@@ -99,7 +110,8 @@ export class CommentsService {
       offset,
       include: [
         { model: User, as: 'author', attributes: ['id', 'username', 'display_name', 'avatar'] },
-        { model: CommentTranslation, as: 'translations', include: [Language] }
+        { model: CommentTranslation, as: 'translations', include: [Language] },
+        { model: Language, as: 'originalLanguage', attributes: ['code'] }
       ],
     });
 
@@ -111,7 +123,8 @@ export class CommentsService {
       order: [['created_at', 'ASC']],
       include: [
         { model: User, as: 'author', attributes: ['id', 'username', 'display_name', 'avatar'] },
-        { model: CommentTranslation, as: 'translations', include: [Language] }
+        { model: CommentTranslation, as: 'translations', include: [Language] },
+        { model: Language, as: 'originalLanguage', attributes: ['code'] }
       ],
     });
 

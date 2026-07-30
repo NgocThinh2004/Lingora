@@ -159,15 +159,9 @@
   height: 54px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--border-color);
-  padding: 2px;
-  background-color: var(--bg-body);
-  transition: border-color 0.2s ease;
 }
 
-.search-avatar-item:hover .search-avatar-img {
-  border-color: var(--primary-color);
-}
+
 
 .search-avatar-label {
   font-size: 0.78rem;

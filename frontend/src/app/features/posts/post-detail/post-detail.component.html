@@ -52,12 +52,6 @@
         </div>
       </div>
 
-      @if (p.coverImageUrl) {
-        <div class="post-image-embed mb-4 mt-3" style="max-height: none; height: auto; border: none; background: transparent; overflow: visible;">
-          <img [src]="p.coverImageUrl" alt="Cover" class="w-100 rounded-4 shadow-sm" style="max-height: 500px; object-fit: cover;">
-        </div>
-      }
-
       <div class="substack-post-content post-content mt-2 text-main" style="line-height: 1.8;">
         <!-- Binding the translated HTML securely -->
         <div class="article-content" [innerHTML]="displayedTranslation()?.safeContentHtml"></div>

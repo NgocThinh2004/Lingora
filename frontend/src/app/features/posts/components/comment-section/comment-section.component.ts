@@ -6,7 +6,7 @@ import { Comment } from '../../models/comment.model';
 import { LikeService } from '../../services/like.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { LocaleService } from '../../../../core/locale/locale.service';
-import { RouterModule } from '@angular/router';
+import { RouterModule, RouterLink } from '@angular/router';
 import { AuthorTooltipComponent } from '../../../users/components/author-tooltip/author-tooltip.component';
 import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
@@ -17,7 +17,7 @@ import { LocalizedDatePipe } from '../../../../shared/pipes/localized-date.pipe'
 @Component({
   selector: 'app-comment-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
+  imports: [CommonModule, FormsModule, RouterModule, RouterLink, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss']
 })
@@ -275,6 +275,15 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     if (userId === undefined) return false;
     const authorId = comment.author?.id || comment.user_id;
     return String(userId) === String(authorId) || String(userId) === String(this.postAuthorId);
+  }
+
+  shouldShowTranslateButton(comment: Comment): boolean {
+    const currentLangCode = this.localeService.selectedLocale();
+    if (comment.originalLanguage?.code) {
+      return comment.originalLanguage.code !== currentLangCode;
+    }
+    // Fallback if originalLanguage is missing or null
+    return true;
   }
 
   toggleTranslate(comment: Comment): void {

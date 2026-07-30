@@ -11,6 +11,7 @@
   display: none !important;
 }
 
+
 /* Override Bootstrap's thin .lead class to match normal text completely */
 :host ::ng-deep .article-content p.lead {
   font-size: inherit;
