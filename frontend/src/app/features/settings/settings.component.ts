@@ -94,8 +94,11 @@ export class SettingsComponent implements OnInit {
   }
 
   selectLanguage(language: PublicLanguage): void {
-    this.languageService.setLanguage(language.code);
-    this.toastService.showSuccess(`${this.languageService.translate('feed_language')}: ${language.nativeName || language.name}`);
+    this.languageService.setLanguage(language.code, () => {
+      this.toastService.showSuccess(
+        `${this.languageService.translate('feed_language')}: ${language.nativeName || language.name}`,
+      );
+    });
   }
 
   updatePreference(key: UserPreferenceKey, event: Event, messageKey: string): void {

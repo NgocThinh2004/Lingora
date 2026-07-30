@@ -139,6 +139,18 @@ describe('LocaleService', () => {
     expect(service.translate('item')).toBe('篇文章');
   });
 
+  it('runs the language callback only after the requested bundle is applied', () => {
+    let appliedLocale = '';
+
+    service.setLanguage('vi', () => {
+      appliedLocale = service.current();
+    });
+
+    expect(appliedLocale).toBe('');
+    httpTesting.expectOne(`${environment.apiUrl}/locales/vi`).flush({ data: {} });
+    expect(appliedLocale).toBe('vi');
+  });
+
   it('reloads an already cached bundle when the user selects it again', () => {
     service.selectLocale('vi');
     httpTesting.expectOne(`${environment.apiUrl}/locales/vi`).flush({ data: { home: 'Trang chủ' } });

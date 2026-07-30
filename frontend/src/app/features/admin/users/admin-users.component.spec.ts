@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
+import { LocaleService } from '../../../core/locale/locale.service';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { AdminUser } from './models/admin-user.model';
 import { AdminUsersComponent } from './admin-users.component';
@@ -98,6 +99,13 @@ describe('AdminUsersComponent', () => {
 
   it('updates a member status from the table switch', () => {
     const inactiveUser: AdminUser = { ...member, status: 'inactive' };
+    const translate = spyOn(TestBed.inject(LocaleService), 'translate').and.callFake((key, params) => {
+      if (key === 'inactive') return 'Localized inactive';
+      if (key === 'user_status_changed' && params) {
+        return `${params['name']} -> ${params['status']}`;
+      }
+      return key;
+    });
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.checked = false;
@@ -107,7 +115,8 @@ describe('AdminUsersComponent', () => {
 
     expect(adminUsersService.updateUser).toHaveBeenCalledWith(member.id, { status: 'inactive' });
     expect(component.users()).toEqual([inactiveUser]);
-    expect(toastService.showSuccess).toHaveBeenCalled();
+    expect(translate).toHaveBeenCalledWith('inactive');
+    expect(toastService.showSuccess).toHaveBeenCalledWith('Member One -> Localized inactive');
   });
 
   it('closes the details drawer from the close button', () => {

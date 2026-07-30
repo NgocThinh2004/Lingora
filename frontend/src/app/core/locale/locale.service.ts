@@ -247,16 +247,16 @@ export class LocaleService {
     );
   }
 
-  setLanguage(code: string): void {
-    this.requestSelection(code.trim().toLowerCase());
+  setLanguage(code: string, onApplied?: () => void): void {
+    this.requestSelection(code.trim().toLowerCase(), onApplied);
   }
 
-  selectLocale(code: string): void {
+  selectLocale(code: string, onApplied?: () => void): void {
     const normalizedCode = code.trim().toLowerCase();
     if (!this.options().some(option => option.code === normalizedCode)) {
       return;
     }
-    this.requestSelection(normalizedCode);
+    this.requestSelection(normalizedCode, onApplied);
   }
 
   translate(key: UiTranslationKey, params?: Record<string, string | number>): string {
@@ -280,7 +280,7 @@ export class LocaleService {
       : 'en';
   }
 
-  private activateRequestedLocale(forceBundleReload = false): void {
+  private activateRequestedLocale(forceBundleReload = false, onApplied?: () => void): void {
     const options = this.options();
     const requested = options.find(option => option.code === this.requestedLocaleCode);
     const target = requested ?? options.find(option => option.isDefault) ?? options[0];
@@ -289,16 +289,17 @@ export class LocaleService {
     this.loadBundle(target.code, () => {
       if (this.requestedLocaleCode === target.code) {
         this.storeSelection(target.code);
+        onApplied?.();
       }
     }, forceBundleReload);
   }
 
-  private requestSelection(code: string): void {
+  private requestSelection(code: string, onApplied?: () => void): void {
     this.requestedLocaleCode = code;
     // A user-initiated selection must refresh the bundle. This prevents a
     // previously cached locale from continuing to show newly added keys in
     // the English fallback until the whole page is reloaded.
-    this.activateRequestedLocale(true);
+    this.activateRequestedLocale(true, onApplied);
   }
 
   private storeSelection(code: string): void {
