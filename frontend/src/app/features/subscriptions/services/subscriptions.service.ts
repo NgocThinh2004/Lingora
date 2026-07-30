@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map, tap, BehaviorSubject } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -33,8 +33,10 @@ export class SubscriptionsService {
     return this.followedAuthorIds.asObservable().pipe(map(set => set.has(String(authorId))));
   }
 
-  list(): Observable<SubscriptionData> {
-    return this.http.get<ApiItemResponse<SubscriptionData>>(this.baseUrl).pipe(map(response => response.data));
+  list(lang?: string): Observable<SubscriptionData> {
+    const params = lang ? new HttpParams().set('lang', lang) : undefined;
+    return this.http.get<ApiItemResponse<SubscriptionData>>(this.baseUrl, { params })
+      .pipe(map(response => response.data));
   }
 
 

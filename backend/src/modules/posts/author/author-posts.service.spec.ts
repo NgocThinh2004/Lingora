@@ -63,4 +63,32 @@ describe('AuthorPostsService state machine', () => {
     expect(() => service.assertEditorContentLimits('Title', '<p><br></p>')).toThrow(BadRequestException);
     expect(() => service.assertEditorContentLimits('Title', '<video controls src="/uploads/test.mp4"></video>')).not.toThrow();
   });
+
+  it('returns distinct post update months for the current author', async () => {
+    const postModel = {
+      findAll: jest.fn().mockResolvedValue([
+        { updated_at: new Date('2026-07-29T08:00:00Z') },
+        { updated_at: new Date('2026-07-01T08:00:00Z') },
+        { updated_at: new Date('2026-06-15T08:00:00Z') },
+      ]),
+    };
+    const optionsModel = { findAll: jest.fn().mockResolvedValue([]) };
+    const optionsService = new AuthorPostsService(
+      undefined as never,
+      postModel as never,
+      undefined as never,
+      optionsModel as never,
+      optionsModel as never,
+      optionsModel as never,
+    );
+
+    await expect(optionsService.getAuthorPostFilterOptions('author-1')).resolves.toEqual({
+      languages: [],
+      categories: [],
+      updatedMonths: ['2026-07', '2026-06'],
+    });
+    expect(postModel.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: { author_id: 'author-1' },
+    }));
+  });
 });

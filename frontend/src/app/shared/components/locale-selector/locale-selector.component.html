@@ -9,7 +9,7 @@
   <button
     class="locale__trigger"
     type="button"
-    aria-label="Interface language"
+    [attr.aria-label]="'interface_language' | t"
     aria-haspopup="menu"
     [attr.aria-expanded]="menuOpen()"
     (click)="toggleMenu()">
@@ -28,7 +28,7 @@
   </button>
 
   @if (menuOpen()) {
-    <div class="locale__menu" role="menu" aria-label="Choose interface language">
+    <div class="locale__menu" role="menu" [attr.aria-label]="'choose_interface_language' | t">
       @for (option of options; track option.code) {
         <button
           class="locale__option"

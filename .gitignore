@@ -11,6 +11,8 @@ coverage/
 !.env.example
 backend/storage/uploads/*
 !backend/storage/uploads/.gitkeep
+backend/storage/locales/*
+!backend/storage/locales/.gitkeep
 *.log
 
 # Editor and operating-system files

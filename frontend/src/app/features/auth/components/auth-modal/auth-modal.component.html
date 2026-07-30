@@ -13,7 +13,7 @@
             [value]="currentLang()"
             (valueChange)="selectLang($event)" />
           
-          <button type="button" class="btn-close shadow-none" (click)="close()" aria-label="Close" style="font-size: 0.85rem;"></button>
+          <button type="button" class="btn-close shadow-none" (click)="close()" [attr.aria-label]="'close' | t" style="font-size: 0.85rem;"></button>
         </div>
         
         <div class="modal-body text-center p-0">
@@ -21,20 +21,18 @@
             <img src="/assets/images/lingora-mark.svg" width="48" height="48" alt="Lingora Logo">
           </div>
           
-          <h4 class="fw-bold text-main mb-2">
-            {{ currentLang() === 'vi' ? 'Đăng nhập vào Lingora' : currentLang() === 'zh' ? '登录 Lingora' : 'Sign in to Lingora' }}
-          </h4>
+          <h4 class="fw-bold text-main mb-2">{{ 'sign_in_to_lingora' | t }}</h4>
           
           <p class="text-secondary mb-4" style="font-size: 0.95rem;">
-            <span>{{ currentLang() === 'vi' ? 'Lần đầu đến đây?' : currentLang() === 'zh' ? '第一次来这里？' : 'First time here?' }}</span> 
+            <span>{{ 'first_time_here' | t }}</span>
             <a [routerLink]="['/auth/register']" [queryParams]="{ returnUrl: modalService.redirectUrl() }" (click)="close()" class="text-decoration-none fw-medium" style="color: var(--primary-color, #ff6c1f);">
-              {{ currentLang() === 'vi' ? 'Tạo tài khoản' : currentLang() === 'zh' ? '创建帐户' : 'Create account' }}
+              {{ 'create_account' | t }}
             </a>
           </p>
           
           <div class="d-grid gap-3 mb-3">
             <a [routerLink]="['/auth/login']" [queryParams]="{ returnUrl: modalService.redirectUrl() }" (click)="close()" class="btn btn-primary fw-bold py-2" style="border-radius: 8px; font-size: 1rem;">
-              {{ currentLang() === 'vi' ? 'Đăng nhập' : currentLang() === 'zh' ? '登录' : 'Sign in' }}
+              {{ 'sign_in' | t }}
             </a>
           </div>
         </div>

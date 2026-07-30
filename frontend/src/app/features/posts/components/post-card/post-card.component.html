@@ -8,7 +8,7 @@
           class="author-avatar" />
         <div class="author-meta">
           <span class="author-name">{{ post.author.name }}</span>
-          <span class="post-time">{{ post.createdAt | date: 'mediumDate' }}</span>
+          <span class="post-time">{{ post.createdAt | localizedDate }}</span>
         </div>
       </a>
       <app-author-tooltip [user]="post.author"></app-author-tooltip>

@@ -55,7 +55,16 @@ describe('AdminDashboardComponent', () => {
       providers: [
         provideRouter([]),
         { provide: AdminDashboardService, useValue: service },
-        { provide: LocaleService, useValue: { selectedLocale } },
+        {
+          provide: LocaleService,
+          useValue: {
+            selectedLocale,
+            translate: (key: string) => ({
+              top_followed_users: 'Top Followed Users',
+              try_again: 'Try again',
+            } as Record<string, string>)[key] ?? key,
+          },
+        },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminDashboardComponent);
@@ -85,7 +94,7 @@ describe('AdminDashboardComponent', () => {
     fixture.detectChanges();
 
     expect(component.loading()).toBeFalse();
-    expect(component.error()).toBe('Database unavailable');
+    expect(component.error()).toBe('unable_load_dashboard');
     expect(fixture.nativeElement.textContent).toContain('Try again');
   });
 });

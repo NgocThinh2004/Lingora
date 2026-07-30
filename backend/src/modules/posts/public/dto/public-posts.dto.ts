@@ -1,9 +1,11 @@
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class PublicPostsQueryDto {
   @IsOptional()
   @IsString()
+  @Matches(/^[a-z]{2,3}(?:-[a-z0-9]{2,6})?$/)
+  @MaxLength(10)
   lang?: string;
 
   @IsOptional()

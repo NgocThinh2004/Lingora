@@ -5,19 +5,18 @@
       <span aria-hidden="true"></span>
     </a>
     <button aria-live="polite" class="save-state" id="saveButton" type="button" (click)="saveDraft()" [disabled]="saveMode !== null">
-      <span data-save-label="" data-i18n="btn_save">{{ saveStateLabel }}</span>
+      <span data-save-label="">{{ saveStateLabel }}</span>
     </button>
     <div class="editor-topbar-spacer"></div>
-    <button class="btn btn-light" data-preview-button="" type="button" data-i18n="btn_preview" (click)="openPreview()">Preview</button>
+    <button class="btn btn-light" data-preview-button="" type="button" (click)="openPreview()">{{ 'preview' | t }}</button>
     <button
       class="btn btn-accent"
       data-publish-button=""
       type="button"
-      data-i18n="btn_continue"
       (click)="openPublishOptions($event)"
       [disabled]="saveMode !== null"
       [attr.aria-busy]="saveMode !== null"
-    >Continue</button>
+    >{{ 'continue' | t }}</button>
   </header>
   <nav aria-label="Writing toolbar" class="editor-toolbar" (mousedown)="handleToolbarMouseDown($event)" (click)="handleToolbarClick($event)">
     <input accept="image/jpeg,image/png,image/webp,image/gif" class="hidden-file-input" id="editorImageInput" type="file" (change)="uploadMedia('image', $event)" />
@@ -44,33 +43,33 @@
         </button>
         <div class="tool-menu-panel style-menu">
           <button class="tool-menu-item is-selected" data-format-block="p" type="button">
-            <span class="style-icon">P</span><span>Normal text</span><span aria-hidden="true" class="menu-check"></span>
+            <span class="style-icon">P</span><span>{{ 'normal_text' | t }}</span><span aria-hidden="true" class="menu-check"></span>
           </button>
           <button class="tool-menu-item" data-format-block="h1" type="button">
-            <span class="style-icon">H1</span><span>Heading 1</span><span aria-hidden="true" class="menu-check"></span>
+            <span class="style-icon">H1</span><span>{{ 'heading_1' | t }}</span><span aria-hidden="true" class="menu-check"></span>
           </button>
           <button class="tool-menu-item" data-format-block="h2" type="button">
-            <span class="style-icon">H2</span><span>Heading 2</span><span aria-hidden="true" class="menu-check"></span>
+            <span class="style-icon">H2</span><span>{{ 'heading_2' | t }}</span><span aria-hidden="true" class="menu-check"></span>
           </button>
           <button class="tool-menu-item" data-format-block="h3" type="button">
-            <span class="style-icon">H3</span><span>Heading 3</span><span aria-hidden="true" class="menu-check"></span>
+            <span class="style-icon">H3</span><span>{{ 'heading_3' | t }}</span><span aria-hidden="true" class="menu-check"></span>
           </button>
           <button class="tool-menu-item" data-format-block="h4" type="button">
-            <span class="style-icon">H4</span><span>Heading 4</span><span aria-hidden="true" class="menu-check"></span>
+            <span class="style-icon">H4</span><span>{{ 'heading_4' | t }}</span><span aria-hidden="true" class="menu-check"></span>
           </button>
           <button class="tool-menu-item" data-format-block="h5" type="button">
-            <span class="style-icon">H5</span><span>Heading 5</span><span aria-hidden="true" class="menu-check"></span>
+            <span class="style-icon">H5</span><span>{{ 'heading_5' | t }}</span><span aria-hidden="true" class="menu-check"></span>
           </button>
           <button class="tool-menu-item" data-format-block="h6" type="button">
-            <span class="style-icon">H6</span><span>Heading 6</span><span aria-hidden="true" class="menu-check"></span>
+            <span class="style-icon">H6</span><span>{{ 'heading_6' | t }}</span><span aria-hidden="true" class="menu-check"></span>
           </button>
         </div>
       </div>
     </div>
     <div aria-label="Inline formatting" class="toolbar-group">
-      <button aria-label="Bold" class="tool-btn" data-command="bold" type="button"><strong>B</strong></button>
-      <button aria-label="Italic" class="tool-btn" data-command="italic" type="button"><em>I</em></button>
-      <button aria-label="Strikethrough" class="tool-btn" data-command="strikeThrough" type="button"><s>S</s></button>
+      <button [attr.aria-label]="'bold' | t" class="tool-btn" data-command="bold" type="button"><strong>B</strong></button>
+      <button [attr.aria-label]="'italic' | t" class="tool-btn" data-command="italic" type="button"><em>I</em></button>
+      <button [attr.aria-label]="'strikethrough' | t" class="tool-btn" data-command="strikeThrough" type="button"><s>S</s></button>
       <button aria-label="Inline code" class="tool-btn icon-tool" data-inline-code="" type="button">
         <svg aria-hidden="true" class="tool-svg" viewbox="0 0 24 24">
           <path d="m18 16 4-4-4-4"></path>
@@ -85,7 +84,7 @@
         <div class="tool-menu-panel color-menu" data-color-menu="text">
           <button class="color-none" data-apply-color="text" data-color="" type="button">
             <span aria-hidden="true" class="slash"></span>
-            <span>None</span>
+            <span>{{ 'none' | t }}</span>
           </button>
           <div aria-label="Text colors" class="color-grid">
             <button aria-label="Dark red" class="color-swatch" data-apply-color="text" data-color="#b80000"
@@ -187,7 +186,7 @@
             <button aria-label="Dark plum" class="color-swatch" data-apply-color="text" data-color="#741b47"
               style="--swatch:#741b47" type="button"></button>
           </div>
-          <span class="color-theme-label">THEME</span>
+          <span class="color-theme-label">{{ 'theme' | t }}</span>
           <div class="theme-row">
             <button aria-label="Theme orange" class="color-swatch theme-swatch" data-apply-color="text"
               data-color="#ff5c1a" style="--swatch:#ff5c1a" type="button"></button>
@@ -209,7 +208,7 @@
         <div class="tool-menu-panel color-menu" data-color-menu="highlight">
           <button class="color-none" data-apply-color="highlight" data-color="" type="button">
             <span aria-hidden="true" class="slash"></span>
-            <span>None</span>
+            <span>{{ 'none' | t }}</span>
           </button>
           <div aria-label="Highlight colors" class="color-grid">
             <button aria-label="Dark red" class="color-swatch" data-apply-color="highlight" data-color="#b80000"
@@ -311,7 +310,7 @@
             <button aria-label="Dark plum" class="color-swatch" data-apply-color="highlight" data-color="#741b47"
               style="--swatch:#741b47" type="button"></button>
           </div>
-          <span class="color-theme-label">THEME</span>
+          <span class="color-theme-label">{{ 'theme' | t }}</span>
           <div class="theme-row">
             <button aria-label="Theme orange" class="color-swatch theme-swatch" data-apply-color="highlight"
               data-color="#ff5c1a" style="--swatch:#ff5c1a" type="button"></button>
@@ -330,14 +329,14 @@
         </button>
         <div class="tool-menu-panel text-menu">
           <button class="tool-menu-item is-selected" data-inline-format="normal" type="button">
-            <span class="style-icon">A</span><span>Normal</span><span aria-hidden="true" class="menu-check"></span>
+            <span class="style-icon">A</span><span>{{ 'normal' | t }}</span><span aria-hidden="true" class="menu-check"></span>
           </button>
           <button class="tool-menu-item" data-inline-format="superscript" type="button">
-            <span class="style-icon">x<sup>2</sup></span><span>Superscript</span><span aria-hidden="true"
+            <span class="style-icon">x<sup>2</sup></span><span>{{ 'superscript' | t }}</span><span aria-hidden="true"
               class="menu-check"></span>
           </button>
           <button class="tool-menu-item" data-inline-format="subscript" type="button">
-            <span class="style-icon">x<sub>2</sub></span><span>Subscript</span><span aria-hidden="true"
+            <span class="style-icon">x<sub>2</sub></span><span>{{ 'subscript' | t }}</span><span aria-hidden="true"
               class="menu-check"></span>
           </button>
         </div>
@@ -410,7 +409,7 @@
               <path d="M15 12H3"></path>
               <path d="M17 18H3"></path>
             </svg>
-            <span>Left</span>
+            <span>{{ 'left' | t }}</span>
             <span aria-hidden="true" class="menu-check"></span>
           </button>
           <button class="tool-menu-item" data-align-command="justifyCenter" type="button">
@@ -419,7 +418,7 @@
               <path d="M17 12H7"></path>
               <path d="M19 18H5"></path>
             </svg>
-            <span>Center</span>
+            <span>{{ 'center' | t }}</span>
             <span aria-hidden="true" class="menu-check"></span>
           </button>
           <button class="tool-menu-item" data-align-command="justifyRight" type="button">
@@ -428,7 +427,7 @@
               <path d="M21 12H9"></path>
               <path d="M21 18H7"></path>
             </svg>
-            <span>Right</span>
+            <span>{{ 'right' | t }}</span>
             <span aria-hidden="true" class="menu-check"></span>
           </button>
           <button class="tool-menu-item" data-align-command="justifyFull" type="button">
@@ -437,7 +436,7 @@
               <path d="M21 12H3"></path>
               <path d="M21 18H3"></path>
             </svg>
-            <span>Justify</span>
+            <span>{{ 'justify' | t }}</span>
             <span aria-hidden="true" class="menu-check"></span>
           </button>
         </div>
@@ -453,9 +452,9 @@
         </button>
         <div class="tool-menu-panel more-menu align-right">
           <button class="tool-menu-item more-menu-item" data-insert-more="code-block" type="button"><span
-              class="more-icon">&#123;&#125;</span><span>Code block</span></button>
+              class="more-icon">&#123;&#125;</span><span>{{ 'code_block' | t }}</span></button>
           <button class="tool-menu-item more-menu-item" data-insert-more="divider" type="button"><span
-              class="more-icon">-</span><span>Divider</span></button>
+              class="more-icon">-</span><span>{{ 'divider' | t }}</span></button>
         </div>
       </div>
     </div>
@@ -463,7 +462,7 @@
   <main class="editor-main editor-main-full">
     <section aria-label="Post editor" class="compose-pane">
       <div class="compose-inner">
-        <label class="sr-only" for="postTitle">Title</label>
+        <label class="sr-only" for="postTitle">{{ 'title_label' | t }}</label>
         <textarea autocomplete="off" aria-describedby="postTitleLimit" class="title-input" id="postTitle" name="postTitle" placeholder="Title" rows="1" [(ngModel)]="draft.title" (input)="autoResizeTitle($event)"></textarea>
         <div class="writing-limit" id="postTitleLimit" aria-live="polite" [class.is-near]="isTitleNearLimit"><span data-title-word-count>{{ titleLimitLabel }}</span></div>
         <div aria-label="Authors" class="author-row" data-author-row="">
@@ -471,41 +470,41 @@
             <span>{{ authorDisplayName }}</span>
           </span>
         </div>
-        <label class="sr-only" for="postBody">Post body</label>
+        <label class="sr-only" for="postBody">{{ 'post_body' | t }}</label>
         <div #postBody aria-describedby="postBodyLimit" aria-label="Post body" class="rich-editor" contenteditable="true" data-placeholder="Start writing..." id="postBody" (input)="updateContentFromEditor($event)" (keydown)="handleEditorKeydown($event)" (keyup)="saveEditorSelection()" (mouseup)="saveEditorSelection()" (click)="handleEditorClick($event)" (focus)="saveEditorSelection()" (blur)="saveEditorSelection()"></div>
         <div class="writing-limit writing-limit-body" id="postBodyLimit" aria-live="polite" [class.is-near]="isBodyNearLimit" [class.is-over]="isBodyOverLimit"><span data-body-word-count>{{ bodyLimitLabel }}</span></div>
       </div>
     </section>
   </main>
-  <div aria-label="Create a link" aria-modal="false" class="link-modal" data-link-modal="" [hidden]="!showLinkModal" [class.is-above]="linkModalAbove" [style.top.px]="linkModalTop" [style.left.px]="linkModalLeft" role="dialog">
+  <div [attr.aria-label]="'create_link' | t" aria-modal="false" class="link-modal" data-link-modal="" [hidden]="!showLinkModal" [class.is-above]="linkModalAbove" [style.top.px]="linkModalTop" [style.left.px]="linkModalLeft" role="dialog">
     <form class="link-modal-panel" data-link-form="" (submit)="applyLink($event)">
       <header class="link-modal-header">
-        <h2 data-i18n="link_create_title">Create a link</h2>
+        <h2>{{ 'create_link' | t }}</h2>
       </header>
       <main class="link-modal-body">
         <label class="link-modal-field">
-          <span class="sr-only">Text</span>
-          <input autocomplete="off" data-i18n="link_text_placeholder" data-link-text-input=""
-            placeholder="Enter text..." type="text" name="linkText" [(ngModel)]="linkText">
+          <span class="sr-only">{{ 'text' | t }}</span>
+          <input autocomplete="off" data-link-text-input=""
+            [placeholder]="'enter_text' | t" type="text" name="linkText" [(ngModel)]="linkText">
         </label>
         <label class="link-modal-field">
           <span class="sr-only">URL</span>
-          <input autocomplete="off" data-i18n="link_url_placeholder" data-link-url-input=""
-            placeholder="Enter URL..." required type="text" name="linkUrl" [(ngModel)]="linkUrl">
+          <input autocomplete="off" data-link-url-input=""
+            [placeholder]="'enter_url' | t" required type="text" name="linkUrl" [(ngModel)]="linkUrl">
         </label>
       </main>
       <footer class="link-modal-footer">
-        <button class="btn btn-accent" data-i18n="link_apply" type="submit">Link</button>
-        <button class="btn btn-light" data-i18n="cancel" data-link-close="" type="button" (click)="closeLinkModal()">Cancel</button>
+        <button class="btn btn-accent" type="submit">{{ 'link' | t }}</button>
+        <button class="btn btn-light" data-link-close="" type="button" (click)="closeLinkModal()">{{ 'cancel_action' | t }}</button>
       </footer>
     </form>
   </div>
   <div aria-label="Link options" class="link-bubble" data-link-bubble="" [hidden]="!showLinkBubble" [class.is-above]="linkBubbleAbove" [style.top.px]="linkBubbleTop" [style.left.px]="linkBubbleLeft" role="dialog">
     <a data-link-bubble-url="" [href]="linkBubbleUrl || '#'" rel="noopener noreferrer" target="_blank">{{ linkBubbleUrl }}</a>
     <span aria-hidden="true">-</span>
-    <button data-i18n="link_change" data-link-change="" type="button" (click)="changeActiveLink()">Change</button>
+    <button data-link-change="" type="button" (click)="changeActiveLink()">{{ 'change' | t }}</button>
     <span aria-hidden="true">|</span>
-    <button data-i18n="link_remove" data-link-remove="" type="button" (click)="removeActiveLink()">Remove</button>
+    <button data-link-remove="" type="button" (click)="removeActiveLink()">{{ 'remove' | t }}</button>
   </div>
   <div aria-label="Post preview" aria-modal="true" class="preview-modal" data-preview-modal="" [hidden]="!showPreview" role="dialog">
     <div class="preview-modal-backdrop" data-preview-close="" (click)="closePreview()"></div>
@@ -513,21 +512,21 @@
       <header aria-label="Preview controls" class="preview-topbar">
         <div class="preview-topbar-controls">
           <select data-preview-language hidden>
-            <option value="original">Original</option>
-            <option value="en" data-i18n="english">English</option>
-            <option value="vi" data-i18n="vietnamese">Vietnamese</option>
-            <option value="zh" data-i18n="chinese">Chinese</option>
+            <option value="original">{{ 'original' | t }}</option>
+            <option value="en">{{ 'english' | t }}</option>
+            <option value="vi">{{ 'vietnamese' | t }}</option>
+            <option value="zh">{{ 'chinese' | t }}</option>
           </select>
           <div aria-label="Preview size" class="preview-mode-toggle" role="tablist">
             <button [attr.aria-selected]="previewMode === 'mobile'" class="preview-mode-btn" [class.is-active]="previewMode === 'mobile'" data-preview-mode="mobile" role="tab"
-              type="button" (click)="setPreviewMode('mobile')">Mobile</button>
+              type="button" (click)="setPreviewMode('mobile')">{{ 'mobile' | t }}</button>
             <button [attr.aria-selected]="previewMode === 'desktop'" class="preview-mode-btn" [class.is-active]="previewMode === 'desktop'" data-preview-mode="desktop" role="tab"
-              type="button" (click)="setPreviewMode('desktop')">Desktop</button>
+              type="button" (click)="setPreviewMode('desktop')">{{ 'desktop' | t }}</button>
           </div>
         </div>
         <div class="preview-topbar-actions">
-          <button class="btn btn-light" data-share-preview="" type="button" data-i18n="btn_share" (click)="copyPreview()">{{ shareLabel }}</button>
-          <button class="btn btn-white" data-preview-close="" type="button" data-i18n="btn_done" (click)="closePreview()">Done</button>
+          <button class="btn btn-light" data-share-preview="" type="button" (click)="copyPreview()">{{ shareLabel | t }}</button>
+          <button class="btn btn-white" data-preview-close="" type="button" (click)="closePreview()">{{ 'done' | t }}</button>
         </div>
       </header>
       <main aria-label="Post preview" class="preview-stage">
@@ -574,11 +573,11 @@
                 <img class="preview-avatar" data-preview-avatar="" [appAssetImage]="authorAvatarUrl" [alt]="authorDisplayName">
                 <div class="preview-author-meta">
                   <strong data-preview-author="">{{ authorDisplayName }}</strong>
-                  <time data-preview-date="">JUL 07, 2026</time>
+                  <time data-preview-date="">{{ formatPreviewDate() }}</time>
                 </div>
               </div>
               @if (previewTranslationLoading) {
-                <div class="preview-translation-loading" role="status">Translating...</div>
+                <div class="preview-translation-loading" role="status">{{ 'translating' | t }}</div>
               } @else {
                 <div class="preview-post-body" data-preview-body="" [innerHTML]="contentPreview"></div>
               }
@@ -616,7 +615,7 @@
     <div class="publish-modal-backdrop" data-publish-close="" (click)="closePublishOptions(true)"></div>
     <section class="publish-modal-panel fb-style-modal">
       <header class="publish-modal-header">
-        <h2 class="publish-modal-title" data-i18n="publish_options">Publish Options</h2>
+        <h2 class="publish-modal-title">{{ 'publish_options' | t }}</h2>
         <button aria-label="Close" class="publish-modal-close" data-publish-close="" type="button" (click)="closePublishOptions(true)">
           <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
             stroke-width="2.5" viewbox="0 0 24 24" width="20">
@@ -627,14 +626,14 @@
       </header>
       <main class="publish-modal-body">
         <div class="publish-form-group mb-4">
-          <h3 class="fb-modal-heading" data-i18n="post_category">Post Category</h3>
+          <h3 class="fb-modal-heading">{{ 'post_category' | t }}</h3>
           <select class="form-select category-select" id="post_category" name="postCategory" style="width: 100%;" [(ngModel)]="draft.categoryId" (ngModelChange)="updateCategoryId($event)">
-            <option [ngValue]="undefined">No category</option>
+            <option [ngValue]="undefined">{{ 'no_category' | t }}</option>
             <option *ngFor="let category of categoryOptions" [ngValue]="category.id">{{ category.label }}</option>
           </select>
         </div>
         <div class="publish-form-group mb-4">
-          <h3 class="fb-modal-heading" data-i18n="original_language">Original Language</h3>
+          <h3 class="fb-modal-heading">{{ 'original_language' | t }}</h3>
           <input id="original_language" type="hidden" [value]="languageCode(draft.originalLanguageId)">
           <div class="original-language-readonly" aria-live="polite">
             <i class="bi bi-translate" aria-hidden="true"></i>
@@ -642,7 +641,7 @@
           </div>
         </div>
         <div class="publish-form-group">
-          <h3 class="fb-modal-heading" data-i18n="allowed_translations">Allowed Translations</h3>
+          <h3 class="fb-modal-heading">{{ 'allowed_translations' | t }}</h3>
           <div class="publish-checkbox-group d-flex flex-column gap-2" style="max-height: 165px; overflow-y: auto; padding-right: 4px;">
             <div *ngFor="let language of languageOptions"
               class="publish-language-row d-flex align-items-center justify-content-between p-2 rounded-2 border">
@@ -651,13 +650,13 @@
               <a href="#" class="btn btn-sm btn-outline-primary px-3 rounded-pill"
                 style="font-size: 0.8rem; font-weight: 500;"
                 (click)="$event.preventDefault(); previewTranslation(language.id)"><i
-                  class="bi bi-eye me-1"></i> <span data-i18n="preview_translation">Preview translation</span></a>
+                  class="bi bi-eye me-1"></i> <span>{{ 'preview_translation' | t }}</span></a>
             </div>
           </div>
         </div>
 </main>
 <footer class="publish-modal-footer publish-modal-footer-centered">
-<button class="btn fb-btn-primary fb-btn-full" data-publish-action="publish" type="button" data-i18n="publish_btn" (click)="saveAndSubmit()" [disabled]="saveMode !== null">{{ saveMode === 'submit' ? 'Submitting...' : 'Publish' }}</button>
+<button class="btn fb-btn-primary fb-btn-full" data-publish-action="publish" type="button" (click)="saveAndSubmit()" [disabled]="saveMode !== null">{{ (saveMode === 'submit' ? 'submitting' : 'publish') | t }}</button>
 </footer>
 </section>
 </div>
@@ -666,17 +665,17 @@
 <div class="draft-confirm-backdrop" data-draft-close="" (click)="closeDraftConfirm()"></div>
 <section class="draft-confirm-panel">
 <header class="draft-confirm-header">
-<h2 class="draft-confirm-title" data-i18n="draft_save_prompt">Save this post as a draft?</h2>
+<h2 class="draft-confirm-title">{{ 'save_draft_prompt' | t }}</h2>
 <button aria-label="Close" class="draft-confirm-close" data-draft-close="" type="button" (click)="closeDraftConfirm()">
 <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20"><line x1="18" x2="6" y1="6" y2="18"></line><line x1="6" x2="18" y1="6" y2="18"></line></svg>
 </button>
 </header>
 <main class="draft-confirm-body">
-<p data-i18n="draft_discard_warn">If you discard now, you will lose this post.</p>
+<p>{{ 'discard_warning' | t }}</p>
 </main>
 <footer class="draft-confirm-footer">
-<button class="btn fb-btn-text-light" data-draft-action="discard" type="button" (click)="discardDraft()"><span data-i18n="delete_draft">Delete draft</span></button>
-<button class="btn fb-btn-primary" data-draft-action="save" type="button" (click)="saveDraftAndLeave()"><span data-i18n="save_as_draft">Save as draft</span></button>
+<button class="btn fb-btn-text-light" data-draft-action="discard" type="button" (click)="discardDraft()"><span>{{ 'delete_draft' | t }}</span></button>
+<button class="btn fb-btn-primary" data-draft-action="save" type="button" (click)="saveDraftAndLeave()"><span>{{ 'save_as_draft' | t }}</span></button>
 </footer>
 </section>
 </div>

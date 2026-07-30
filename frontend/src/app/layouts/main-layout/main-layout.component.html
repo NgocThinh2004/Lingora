@@ -23,7 +23,7 @@
 @if (mobileSidebarOpen()) {
   <div class="mobile-sidebar-backdrop" (click)="closeMobileSidebar()"></div>
   <div class="mobile-sidebar-panel">
-    <button type="button" class="close-btn" (click)="closeMobileSidebar()" aria-label="Đóng menu">
+    <button type="button" class="close-btn" (click)="closeMobileSidebar()" [attr.aria-label]="'close_menu' | t">
       <i class="bi bi-x-lg"></i>
     </button>
     <app-sidebar></app-sidebar>

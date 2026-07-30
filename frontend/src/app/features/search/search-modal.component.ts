@@ -11,11 +11,12 @@ import { SearchService, SearchResults } from './services/search.service';
 import { SearchModalService } from './search-modal.service';
 import { AuthorTooltipComponent } from '../users/components/author-tooltip/author-tooltip.component';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-search-modal',
   standalone: true,
-  imports: [CommonModule, AuthorTooltipComponent, AssetImageDirective],
+  imports: [CommonModule, AuthorTooltipComponent, AssetImageDirective, TranslatePipe],
   templateUrl: './search-modal.component.html',
   styleUrl: './search-modal.component.scss',
 })

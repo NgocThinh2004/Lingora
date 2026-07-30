@@ -6,6 +6,8 @@ import { PaginationMeta } from '../../../core/http/api-response.model';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { UiStateComponent } from '../../../shared/components/ui-state/ui-state.component';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
 import { AdminLanguage } from '../languages/models/admin-language.model';
 import { AdminLanguagesService } from '../languages/services/admin-languages.service';
 import {
@@ -23,7 +25,7 @@ type CategoryPanelMode = 'add' | 'edit' | null;
 @Component({
   selector: 'app-admin-categories',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UiStateComponent],
+  imports: [CommonModule, ReactiveFormsModule, UiStateComponent, TranslatePipe, LocalizedDatePipe],
   templateUrl: './admin-categories.component.html',
   styleUrl: './admin-categories.component.scss',
 })
@@ -102,7 +104,7 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
         this.loading.set(false);
       },
       error: error => {
-        this.errorMessage.set(error.error?.meta?.error?.message || 'Unable to load categories.');
+        this.errorMessage.set(this.localeService.translate('unable_load_categories'));
         this.loading.set(false);
       },
     });
@@ -117,7 +119,7 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.languagesLoading.set(false);
-        this.toastService.showError('Unable to load active languages for category translations.');
+        this.toastService.showError(this.localeService.translate('unable_load_active_languages'));
       },
     });
   }
@@ -128,7 +130,7 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
 
   openAddPanel(): void {
     if (!this.activeLanguages().length) {
-      this.toastService.showError('Add at least one active language before creating a category.');
+      this.toastService.showError(this.localeService.translate('active_language_required'));
       return;
     }
     this.selectedCategory.set(null);
@@ -180,8 +182,8 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
         translations,
       };
       this.categoriesService.createCategory(payload).subscribe({
-        next: response => this.finishSave(`${this.displayName(response.data)} was created.`),
-        error: error => this.failSave(error, 'Unable to create this category.'),
+        next: response => this.finishSave(this.localeService.translate('category_created', { name: this.displayName(response.data) })),
+        error: error => this.failSave('unable_create_category'),
       });
       return;
     }
@@ -196,8 +198,8 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
       translations,
     };
     this.categoriesService.updateCategory(category.id, payload).subscribe({
-      next: response => this.finishSave(`${this.displayName(response.data)} was updated.`),
-      error: error => this.failSave(error, 'Unable to update this category.'),
+      next: response => this.finishSave(this.localeService.translate('category_updated', { name: this.displayName(response.data) })),
+      error: () => this.failSave('unable_update_category'),
     });
   }
 
@@ -226,7 +228,7 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
           this.postsLoading.set(false);
         },
         error: error => {
-          this.postsError.set(error.error?.meta?.error?.message || 'Unable to load posts in this category.');
+          this.postsError.set(this.localeService.translate('unable_load_category_posts'));
           this.postsLoading.set(false);
         },
       });
@@ -255,7 +257,7 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
       next: () => {
         this.deleting.set(false);
         this.pendingDelete.set(null);
-        this.toastService.showSuccess(`${this.displayName(category)} was deleted.`);
+        this.toastService.showSuccess(this.localeService.translate('category_deleted', { name: this.displayName(category) }));
         const nextPage = this.categories().length === 1 && this.pagination().page > 1
           ? this.pagination().page - 1
           : this.pagination().page;
@@ -263,7 +265,7 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
       },
       error: error => {
         this.deleting.set(false);
-        this.toastService.showError(error.error?.meta?.error?.message || 'Unable to delete this category.');
+        this.toastService.showError(this.localeService.translate('unable_delete_category'));
       },
     });
   }
@@ -382,9 +384,9 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
     this.loadCategories(this.pagination().page);
   }
 
-  private failSave(error: any, fallback: string): void {
+  private failSave(messageKey: string): void {
     this.saving.set(false);
-    this.toastService.showError(error.error?.meta?.error?.message || fallback);
+    this.toastService.showError(this.localeService.translate(messageKey));
   }
 
   private slugify(value: string): string {

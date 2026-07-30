@@ -5,6 +5,7 @@ import { PaginationMeta } from '../../../core/http/api-response.model';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { UiStateComponent } from '../../../shared/components/ui-state/ui-state.component';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import {
   AdminLanguage,
   CreateAdminLanguageRequest,
@@ -12,19 +13,12 @@ import {
 } from './models/admin-language.model';
 import { AdminLanguagesService } from './services/admin-languages.service';
 
-interface LanguageCatalogEntry {
-  code: string;
-  name: string;
-  nativeName: string;
-  flagCode: string;
-}
-
 type LanguageDialog = 'add' | 'edit' | null;
 
 @Component({
   selector: 'app-admin-languages',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UiStateComponent],
+  imports: [CommonModule, ReactiveFormsModule, UiStateComponent, TranslatePipe],
   templateUrl: './admin-languages.component.html',
   styleUrl: './admin-languages.component.scss',
 })
@@ -44,19 +38,11 @@ export class AdminLanguagesComponent implements OnInit {
   readonly updatingLanguageId = signal<number | null>(null);
   readonly pagination = signal<PaginationMeta>({ total: 0, page: 1, limit: 8, totalPages: 0 });
 
-  readonly catalog: readonly LanguageCatalogEntry[] = [
-    { code: 'en', name: 'English', nativeName: 'English', flagCode: 'gb' },
-    { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', flagCode: 'vn' },
-    { code: 'zh', name: 'Chinese', nativeName: '中文', flagCode: 'cn' },
-    { code: 'ja', name: 'Japanese', nativeName: '日本語', flagCode: 'jp' },
-    { code: 'ko', name: 'Korean', nativeName: '한국어', flagCode: 'kr' },
-    { code: 'fr', name: 'French', nativeName: 'Français', flagCode: 'fr' },
-    { code: 'es', name: 'Spanish', nativeName: 'Español', flagCode: 'es' },
-    { code: 'de', name: 'German', nativeName: 'Deutsch', flagCode: 'de' },
-  ];
-
   readonly addForm = this.fb.nonNullable.group({
-    code: ['', Validators.required],
+    code: ['', [Validators.required, Validators.maxLength(10), Validators.pattern(/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,6})?$/)]],
+    name: ['', [Validators.required, Validators.maxLength(100)]],
+    nativeName: ['', [Validators.required, Validators.maxLength(100)]],
+    flagCode: ['', Validators.pattern(/^[A-Za-z]{2}$/)],
   });
 
   readonly editForm = this.fb.nonNullable.group({
@@ -97,14 +83,14 @@ export class AdminLanguagesComponent implements OnInit {
         this.loading.set(false);
       },
       error: error => {
-        this.errorMessage.set(error.error?.meta?.error?.message || 'Unable to load configured languages.');
+        this.errorMessage.set(this.localeService.translate('unable_load_languages'));
         this.loading.set(false);
       },
     });
   }
 
   openAddDialog(): void {
-    this.addForm.reset({ code: '' });
+    this.addForm.reset({ code: '', name: '', nativeName: '', flagCode: '' });
     this.dialogVisible.set(false);
     this.dialog.set('add');
     this.revealDialog('add');
@@ -156,16 +142,12 @@ export class AdminLanguagesComponent implements OnInit {
       this.addForm.markAllAsTouched();
       return;
     }
-    const entry = this.catalogEntry(this.addForm.controls.code.value);
-    if (!entry) {
-      return;
-    }
-
+    const values = this.addForm.getRawValue();
     const payload: CreateAdminLanguageRequest = {
-      code: entry.code,
-      name: entry.name,
-      nativeName: entry.nativeName,
-      flagCode: entry.flagCode,
+      code: values.code.trim().toLowerCase(),
+      name: values.name.trim(),
+      nativeName: values.nativeName.trim(),
+      ...(values.flagCode.trim() ? { flagCode: values.flagCode.trim().toLowerCase() } : {}),
       isActive: true,
     };
     this.saving.set(true);
@@ -173,13 +155,13 @@ export class AdminLanguagesComponent implements OnInit {
       next: response => {
         this.saving.set(false);
         this.closeDialog();
-        this.toastService.showSuccess(`${response.data.name} was added.`);
+        this.toastService.showSuccess(this.localeService.translate('language_added', { name: response.data.name }));
         this.localeService.refresh();
         this.loadLanguages(this.pagination().page);
       },
       error: error => {
         this.saving.set(false);
-        this.toastService.showError(error.error?.meta?.error?.message || 'Unable to add this language.');
+        this.toastService.showError(this.localeService.translate('unable_add_language'));
       },
     });
   }
@@ -203,13 +185,13 @@ export class AdminLanguagesComponent implements OnInit {
       next: response => {
         this.saving.set(false);
         this.closeDialog();
-        this.toastService.showSuccess(`${response.data.name} was updated.`);
+        this.toastService.showSuccess(this.localeService.translate('language_updated', { name: response.data.name }));
         this.localeService.refresh();
         this.loadLanguages(this.pagination().page);
       },
       error: error => {
         this.saving.set(false);
-        this.toastService.showError(error.error?.meta?.error?.message || 'Unable to update this language.');
+        this.toastService.showError(this.localeService.translate('unable_update_language'));
       },
     });
   }
@@ -222,24 +204,15 @@ export class AdminLanguagesComponent implements OnInit {
     this.languagesService.updateLanguage(language.id, { isDefault: true }).subscribe({
       next: response => {
         this.updatingLanguageId.set(null);
-        this.toastService.showSuccess(`${response.data.name} is now the default language.`);
+        this.toastService.showSuccess(this.localeService.translate('language_default_changed', { name: response.data.name }));
         this.localeService.refresh();
         this.loadLanguages(this.pagination().page);
       },
       error: error => {
         this.updatingLanguageId.set(null);
-        this.toastService.showError(error.error?.meta?.error?.message || 'Unable to change the default language.');
+        this.toastService.showError(this.localeService.translate('unable_change_default_language'));
       },
     });
-  }
-
-  availableCatalog(): readonly LanguageCatalogEntry[] {
-    const configuredCodes = new Set(this.languages().map(language => language.code.toLowerCase()));
-    return this.catalog.filter(entry => !configuredCodes.has(entry.code));
-  }
-
-  catalogEntry(code: string): LanguageCatalogEntry | undefined {
-    return this.catalog.find(entry => entry.code === code);
   }
 
   pageNumbers(): number[] {

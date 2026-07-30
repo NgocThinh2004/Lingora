@@ -50,4 +50,15 @@ describe('AuthorPostsService', () => {
 
     expect(result).toBe(post);
   });
+
+  it('loads the current author filter months from the API', () => {
+    let months: string[] | undefined;
+
+    service.getAuthorPostFilterOptions().subscribe(options => months = options.updatedMonths);
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/author/posts/options/filters`);
+    request.flush({ data: { languages: [], categories: [], updatedMonths: ['2026-07', '2026-06'] } });
+
+    expect(months).toEqual(['2026-07', '2026-06']);
+  });
 });

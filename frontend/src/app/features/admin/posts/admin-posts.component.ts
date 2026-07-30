@@ -11,11 +11,13 @@ import { AdminCategoriesService } from '../categories/services/admin-categories.
 import { AdminPost, AdminPostTranslation } from './models/admin-post.model';
 import { AdminPostsService } from './services/admin-posts.service';
 import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
 
 @Component({
   selector: 'app-admin-posts',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UiStateComponent, AssetImageDirective],
+  imports: [CommonModule, ReactiveFormsModule, UiStateComponent, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
   templateUrl: './admin-posts.component.html',
   styleUrl: './admin-posts.component.scss',
 })
@@ -77,7 +79,7 @@ export class AdminPostsComponent implements OnInit, OnDestroy {
         this.loading.set(false);
       },
       error: error => {
-        this.errorMessage.set(error.error?.meta?.error?.message || 'Unable to load posts.');
+        this.errorMessage.set(this.localeService.translate('unable_load_posts'));
         this.loading.set(false);
       },
     });
@@ -106,7 +108,7 @@ export class AdminPostsComponent implements OnInit, OnDestroy {
         if (requestVersion !== this.detailRequestVersion || !this.panelOpen()) return;
         this.detailLoading.set(false);
         this.closePanel();
-        this.toastService.showError('Unable to load this post.');
+        this.toastService.showError(this.localeService.translate('unable_load_post'));
       },
     });
   }
@@ -147,12 +149,12 @@ export class AdminPostsComponent implements OnInit, OnDestroy {
         next: () => {
           this.saving.set(false);
           this.closePanel();
-          this.toastService.showSuccess(decision === 'approve' ? 'Post approved.' : 'Post rejected.');
+          this.toastService.showSuccess(this.localeService.translate(decision === 'approve' ? 'post_approved_message' : 'post_rejected_message'));
           this.loadPosts(this.pagination().page);
         },
         error: error => {
           this.saving.set(false);
-          this.toastService.showError(error.error?.meta?.error?.message || 'Unable to review this post.');
+          this.toastService.showError(this.localeService.translate('unable_review_post'));
         },
       });
   }

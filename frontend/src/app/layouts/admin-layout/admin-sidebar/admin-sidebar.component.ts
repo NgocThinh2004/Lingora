@@ -5,9 +5,10 @@ import { LocaleService } from '../../../core/locale/locale.service';
 import { BrandComponent } from '../../../shared/components/brand/brand.component';
 import { LocaleSelectorComponent } from '../../../shared/components/locale-selector/locale-selector.component';
 import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 export interface AdminNavItem {
-  label: string;
+  labelKey: string;
   icon: string;
   route?: string;
 }
@@ -15,7 +16,7 @@ export interface AdminNavItem {
 @Component({
   selector: 'app-admin-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, BrandComponent, LocaleSelectorComponent, ThemeToggleComponent],
+  imports: [RouterLink, RouterLinkActive, BrandComponent, LocaleSelectorComponent, ThemeToggleComponent, TranslatePipe],
   templateUrl: './admin-sidebar.component.html',
   styleUrl: './admin-sidebar.component.scss'
 })
@@ -32,11 +33,11 @@ export class AdminSidebarComponent implements OnInit {
   readonly localeOptions = this.localeService.options;
   readonly selectedLocale = this.localeService.selectedLocale;
   readonly navItems: AdminNavItem[] = [
-    { label: 'Admin Dashboard', icon: 'bi-speedometer2', route: '/admin' },
-    { label: 'Manage Users', icon: 'bi-people', route: '/admin/users' },
-    { label: 'Manage Posts', icon: 'bi-file-earmark-check', route: '/admin/posts' },
-    { label: 'Manage Categories', icon: 'bi-tags', route: '/admin/categories' },
-    { label: 'Manage Languages', icon: 'bi-translate', route: '/admin/languages' }
+    { labelKey: 'admin_dashboard', icon: 'bi-speedometer2', route: '/admin' },
+    { labelKey: 'manage_users', icon: 'bi-people', route: '/admin/users' },
+    { labelKey: 'manage_posts', icon: 'bi-file-earmark-check', route: '/admin/posts' },
+    { labelKey: 'manage_categories', icon: 'bi-tags', route: '/admin/categories' },
+    { labelKey: 'manage_languages', icon: 'bi-translate', route: '/admin/languages' }
   ];
 
   ngOnInit(): void {

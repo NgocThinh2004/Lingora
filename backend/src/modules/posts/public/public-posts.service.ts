@@ -28,7 +28,12 @@ export class PublicPostsService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
-  async listFeed(query: PublicPostsQueryDto, postId?: number, userId?: number) {
+  async listFeed(
+    query: PublicPostsQueryDto,
+    postId?: number,
+    userId?: number,
+    followedAuthorIds?: Array<string | number>,
+  ) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const offset = (page - 1) * limit;
@@ -62,14 +67,46 @@ export class PublicPostsService {
       // immediately. This keeps legacy public links and profile posts available.
       status: { [Op.in]: ['approved', 'published'] },
     };
-    if (postId !== undefined) {
-      where.id = postId;
-    }
     if (categoryId) {
       where.category_id = categoryId;
     }
     if (query.authorId) {
       where.author_id = query.authorId;
+    } else if (followedAuthorIds?.length) {
+      where.author_id = { [Op.in]: followedAuthorIds };
+    }
+
+    let matchingPostIds: number[] | null = null;
+    const intersectPostIds = (ids: number[]) => {
+      if (matchingPostIds === null) {
+        matchingPostIds = [...new Set(ids)];
+        return;
+      }
+      const allowed = new Set(ids);
+      matchingPostIds = matchingPostIds.filter(id => allowed.has(id));
+    };
+
+    // Only expose posts with a completed translation in the selected locale.
+    if (query.lang?.trim()) {
+      const selectedLanguage = languages.find(language =>
+        language.code === query.lang!.trim().toLowerCase(),
+      );
+      if (!selectedLanguage) {
+        intersectPostIds([]);
+      } else {
+        const localizedTranslations = await this.postTranslationModel.findAll({
+          where: {
+            language_id: selectedLanguage.id,
+            translation_status: 'completed',
+            title: { [Op.ne]: null },
+            content: { [Op.ne]: null },
+          },
+          attributes: ['post_id', 'title', 'content'],
+        });
+        intersectPostIds(localizedTranslations
+          .filter(item => Boolean(item.title?.trim()) && Boolean(item.content?.trim()))
+          .map(item => Number(item.post_id)));
+      }
     }
 
     if (query.q && query.q.trim()) {
@@ -90,8 +127,13 @@ export class PublicPostsService {
         where: translationWhere,
         attributes: ['post_id'],
       });
-      const matchingPostIds = matchedTranslations.map((t) => Number(t.post_id));
-      where.id = { [Op.in]: matchingPostIds.length ? matchingPostIds : [0] };
+      intersectPostIds(matchedTranslations.map((t) => Number(t.post_id)));
+    }
+    const filteredPostIds = matchingPostIds as number[] | null;
+    if (postId !== undefined) {
+      where.id = filteredPostIds === null || filteredPostIds.includes(postId) ? postId : 0;
+    } else if (filteredPostIds !== null) {
+      where.id = { [Op.in]: filteredPostIds.length ? filteredPostIds : [0] };
     }
 
     const order: any = query.sort === 'trending'
@@ -275,35 +317,24 @@ export class PublicPostsService {
     };
   }
 
-  async listFeedByAuthorIds(authorIds: string[], options: { limit?: number } = {}, userId?: number) {
+  async listFeedByAuthorIds(
+    authorIds: string[],
+    options: { limit?: number; lang?: string } = {},
+    userId?: number,
+  ) {
     if (!authorIds.length) return [];
     const limit = options.limit || 50;
 
-    // Get matching post IDs ordered by date directly from DB
-    const posts = await this.postModel.findAll({
-      where: {
-        author_id: { [Op.in]: authorIds },
-        status: { [Op.in]: ['published', 'approved'] },
-        deleted_at: null,
-      },
-      attributes: ['id'],
-      order: [['published_at', 'DESC']],
-      limit,
-    });
-
-    if (!posts.length) return [];
-
-    // Re-use the listFeed serialization pipeline, filtering by the exact post IDs
-    // already ordered by published_at DESC. Pass the limit as the count of matched posts
-    // so listFeed doesn't re-paginate away some of them.
-    const postIds = posts.map(p => Number(p.id));
-    const results = await Promise.all(
-      postIds.map(postId => this.listFeed({ page: 1, limit: 1 }, postId, userId))
+    const result = await this.listFeed(
+      { page: 1, limit, lang: options.lang },
+      undefined,
+      userId,
+      authorIds,
     );
-    return results.flatMap(r => r.items);
+    return result.items;
   }
 
-  async getById(id: number, userId?: number, ip?: string) {
+  async getById(id: number, userId?: number, lang?: string, ip?: string) {
     const post = await this.postModel.findOne({
       where: { id, deleted_at: null },
     });
@@ -324,13 +355,13 @@ export class PublicPostsService {
       await this.cacheManager.set(cacheKey, true, 3600000).catch(() => null);
     }
 
-    const result = await this.listFeed({ page: 1, limit: 1 }, id, userId);
+    const result = await this.listFeed({ page: 1, limit: 1, lang }, id, userId);
     const found = result.items.find((p) => p.id === Number(id));
     if (!found) throw new NotFoundException('Post details not found');
     return found;
   }
 
-  async getRelated(id: number, userId?: number) {
+  async getRelated(id: number, userId?: number, lang?: string) {
     const post = await this.postModel.findOne({
       where: { id, deleted_at: null, status: { [Op.in]: ['approved', 'published'] } },
     });
@@ -338,14 +369,16 @@ export class PublicPostsService {
 
     // Try posts from the same category first, fallback to newest if not enough
     const query = post.category_id
-      ? { category: String(post.category_id), limit: 4 }
-      : { limit: 4 };
+      ? { category: String(post.category_id), limit: 4, lang }
+      : { limit: 4, lang };
     const feed = await this.listFeed(query, undefined, userId);
     const related = feed.items.filter(item => item.id !== Number(id)).slice(0, 3);
-    if (related.length || !post.category_id) return related;
+    if (related.length >= 3 || !post.category_id) return related;
 
     // category had no other posts — fall back to newest
-    const newest = await this.listFeed({ limit: 4 }, undefined, userId);
-    return newest.items.filter(item => item.id !== Number(id)).slice(0, 3);
+    const newest = await this.listFeed({ limit: 4, lang }, undefined, userId);
+    const seen = new Set([Number(id), ...related.map(item => item.id)]);
+    const fallback = newest.items.filter(item => !seen.has(item.id));
+    return [...related, ...fallback].slice(0, 3);
   }
 }

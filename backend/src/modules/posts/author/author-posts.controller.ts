@@ -23,6 +23,11 @@ export class AuthorPostsController {
     return { data: result.items, meta: result.meta };
   }
 
+  @Get('options/filters')
+  async filterOptions(@CurrentUser('id') userId: string) {
+    return { data: await this.postsService.getAuthorPostFilterOptions(userId) };
+  }
+
   @Get(':id')
   async get(
     @CurrentUser('id') userId: string,

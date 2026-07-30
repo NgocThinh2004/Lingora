@@ -11,11 +11,13 @@ import { AuthorTooltipComponent } from '../../../users/components/author-tooltip
 import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { LocalizedDatePipe } from '../../../../shared/pipes/localized-date.pipe';
 
 @Component({
   selector: 'app-comment-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, RouterLink, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective],
+  imports: [CommonModule, FormsModule, RouterModule, RouterLink, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss']
 })
@@ -196,7 +198,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   deleteComment(comment: Comment, parent?: Comment): void {
-    if (!confirm('Are you sure you want to delete this comment?')) return;
+    if (!confirm(this.localeService.translate('delete_comment_confirm'))) return;
     this.commentService.deleteComment(this.postId.toString(), comment.id).subscribe(() => {
       this.comments.update(prev => {
         if (parent) {

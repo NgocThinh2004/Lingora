@@ -8,18 +8,19 @@ import { UserPreferenceKey } from '../../core/preferences/user-preferences.model
 import { UserPreferencesService } from '../../core/preferences/user-preferences.service';
 import { ThemePreference, ThemeService } from '../../core/theme/theme.service';
 import { UiStateComponent } from '../../shared/components/ui-state/ui-state.component';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
 interface ThemeOption {
   value: Exclude<ThemePreference, 'system'>;
   icon: string;
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
 }
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, RouterLink, UiStateComponent],
+  imports: [CommonModule, RouterLink, UiStateComponent, TranslatePipe],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss',
 })
@@ -42,20 +43,20 @@ export class SettingsComponent implements OnInit {
 
   readonly adminContext = this.route.snapshot.data['settingsContext'] === 'admin';
   readonly backRoute = this.adminContext ? '/admin' : '/';
-  readonly backLabel = this.adminContext ? 'Quay lại bảng điều khiển Admin' : 'Quay lại bảng tin';
+  readonly backLabelKey = this.adminContext ? 'back_to_admin' : 'back_to_feed';
 
   readonly themeOptions: readonly ThemeOption[] = [
     {
       value: 'light',
       icon: 'bi-sun',
-      title: 'Sáng',
-      description: 'Giao diện sáng, rõ ràng và dễ đọc.',
+      titleKey: 'theme_light',
+      descriptionKey: 'theme_light_description',
     },
     {
       value: 'dark',
       icon: 'bi-moon-stars',
-      title: 'Tối',
-      description: 'Dịu mắt hơn trong môi trường thiếu sáng.',
+      titleKey: 'theme_dark',
+      descriptionKey: 'theme_dark_description',
     },
   ];
 
@@ -89,17 +90,17 @@ export class SettingsComponent implements OnInit {
 
   selectTheme(theme: Exclude<ThemePreference, 'system'>): void {
     this.themeService.setPreference(theme);
-    this.toastService.showSuccess(`Đã chuyển sang giao diện ${theme === 'dark' ? 'tối' : 'sáng'}.`);
+    this.toastService.showSuccess(this.languageService.translate(theme === 'dark' ? 'theme_dark' : 'theme_light'));
   }
 
   selectLanguage(language: PublicLanguage): void {
     this.languageService.setLanguage(language.code);
-    this.toastService.showSuccess(`Ngôn ngữ bảng tin đã đổi sang ${language.nativeName || language.name}.`);
+    this.toastService.showSuccess(`${this.languageService.translate('feed_language')}: ${language.nativeName || language.name}`);
   }
 
-  updatePreference(key: UserPreferenceKey, event: Event, message: string): void {
+  updatePreference(key: UserPreferenceKey, event: Event, messageKey: string): void {
     const enabled = (event.target as HTMLInputElement).checked;
     this.userPreferencesService.update(key, enabled);
-    this.toastService.showSuccess(`${message} đã được ${enabled ? 'bật' : 'tắt'}.`);
+    this.toastService.showSuccess(this.languageService.translate(messageKey));
   }
 }

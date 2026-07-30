@@ -2,13 +2,13 @@
 <div id="subscriptionsContent">
   <!-- Authors Carousel without colored ring -->
   <div class="carousel-wrapper position-relative">
-    <button class="carousel-control-prev" type="button" (click)="scrollCarousel('left')" aria-label="Cuộn trái"><i class="bi bi-chevron-left"></i></button>
-    <button class="carousel-control-next" type="button" (click)="scrollCarousel('right')" aria-label="Cuộn phải"><i class="bi bi-chevron-right"></i></button>
+    <button class="carousel-control-prev" type="button" (click)="scrollCarousel('left')" [attr.aria-label]="'back' | t"><i class="bi bi-chevron-left"></i></button>
+    <button class="carousel-control-next" type="button" (click)="scrollCarousel('right')" [attr.aria-label]="'continue' | t"><i class="bi bi-chevron-right"></i></button>
     
     <div class="authors-carousel-container" id="subscriptionsAuthorsCarousel" #carousel>
     <button class="author-carousel-item border-0 sticky-all-authors" [class.active]="!authorFilter" type="button" (click)="selectAuthor('')">
       <span class="author-carousel-avatar-wrapper d-flex align-items-center justify-content-center bg-body-tertiary"><i class="bi bi-people fs-4 text-main"></i></span>
-      <span class="author-carousel-name">All Authors</span>
+      <span class="author-carousel-name">{{ 'all_authors' | t }}</span>
     </button>
     @for (author of authors; track author.name) {
       <div class="author-tooltip-container position-relative">
@@ -21,15 +21,15 @@
     }
     <a href="/explore" class="author-carousel-item text-decoration-none">
       <span class="author-carousel-avatar-wrapper d-flex align-items-center justify-content-center"><i class="bi bi-plus-lg"></i></span>
-      <span class="author-carousel-name">Find more</span>
+      <span class="author-carousel-name">{{ 'find_more' | t }}</span>
     </a>
     </div>
   </div>
 
   <!-- 3-Tabs Navigation for Subscriptions Feed -->
   <div class="subscriptions-tabs-nav">
-    <button class="subscriptions-tab-btn" [class.active]="tab === 'all'" data-tab="all" (click)="tab = 'all'">Tất cả bài viết</button>
-    <button class="subscriptions-tab-btn" [class.active]="tab === 'manage'" data-tab="manage" (click)="tab = 'manage'">Đang theo dõi</button>
+    <button class="subscriptions-tab-btn" [class.active]="tab === 'all'" data-tab="all" (click)="tab = 'all'">{{ 'all_articles' | t }}</button>
+    <button class="subscriptions-tab-btn" [class.active]="tab === 'manage'" data-tab="manage" (click)="tab = 'manage'">{{ 'following' | t }}</button>
   </div>
 
   <!-- Posts or Manage Grid Container -->
@@ -37,21 +37,21 @@
     @if (authors.length === 0 && !loading) {
       <div class="text-center py-5 text-muted mt-5">
         <i class="bi bi-mailbox fs-1 d-block mb-3 text-secondary"></i>
-        <h4 class="fw-bold text-main mb-2">Bảng tin của bạn đang trống</h4>
-        <p class="mb-4">Hãy theo dõi các tác giả yêu thích để cập nhật ngay những bài viết mới nhất từ họ nhé.</p>
-        <a href="/explore" class="btn btn-primary rounded-pill px-4 py-2 fw-medium">Đi tới Khám phá</a>
+        <h4 class="fw-bold text-main mb-2">{{ 'empty_inbox_title' | t }}</h4>
+        <p class="mb-4">{{ 'empty_inbox_description' | t }}</p>
+        <a href="/explore" class="btn btn-primary rounded-pill px-4 py-2 fw-medium">{{ 'go_to_explore' | t }}</a>
       </div>
     } @else {
       @if (tab === 'all') {
         @for (post of visiblePosts; track post.id) {
           <app-post-card [post]="post"></app-post-card>
         } @empty {
-          <div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Không tìm thấy bài viết nào.</div>
+          <div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>{{ 'no_articles' | t }}</div>
         }
       } @else {
       <div class="mb-4 position-relative" style="max-width: 400px;">
         <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-        <input type="text" class="form-control rounded-pill ps-5 bg-body-tertiary border-0" placeholder="Tìm kiếm tác giả..." [(ngModel)]="manageSearchQuery">
+        <input type="text" class="form-control rounded-pill ps-5 bg-body-tertiary border-0" [placeholder]="'search_authors' | t" [(ngModel)]="manageSearchQuery">
       </div>
       <div class="row g-3">
         @for (author of visibleManageAuthors; track author.name) {
@@ -63,7 +63,7 @@
             <app-subscribe-button [authorId]="$any(author.id)" class="ms-2"></app-subscribe-button>
           </div></div>
         } @empty {
-          <div class="text-center py-5 text-muted">Không tìm thấy tác giả nào khớp với từ khóa.</div>
+          <div class="text-center py-5 text-muted">{{ 'no_matching_authors' | t }}</div>
         }
       </div>
     }

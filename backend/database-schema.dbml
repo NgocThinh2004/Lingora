@@ -41,6 +41,7 @@ Table languages {
   flag_code varchar(5)
   is_default boolean [not null, default: false]
   is_active boolean [not null, default: true]
+  activated_at timestamp
 }
 
 Table users {

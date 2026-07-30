@@ -22,7 +22,7 @@
   <!-- Footer: full-width follow button -->
   @if (isSelf) {
     <button class="btn btn-subscribe subscribed w-100" (click)="editProfile($event)">
-      <span class="btn-text">Chỉnh sửa hồ sơ</span>
+      <span class="btn-text">{{ 'edit_profile' | t }}</span>
     </button>
   } @else if (user) {
     <app-subscribe-button [authorId]="user.id" [fullWidth]="true" />

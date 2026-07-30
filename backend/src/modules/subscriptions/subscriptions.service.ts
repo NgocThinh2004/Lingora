@@ -12,7 +12,7 @@ export class SubscriptionsService {
     private readonly postsService: PublicPostsService,
   ) {}
 
-  async list(subscriberId: string) {
+  async list(subscriberId: string, lang?: string) {
     const subscriptions = await this.subscriptionModel.findAll({
       where: { subscriber_id: subscriberId },
       order: [['created_at', 'DESC']],
@@ -24,7 +24,7 @@ export class SubscriptionsService {
 
     // Query posts directly by authorIds instead of fetching global feed and filtering
     const posts = authorIds.length
-      ? await this.postsService.listFeedByAuthorIds(authorIds, { limit: 50 }, Number(subscriberId))
+      ? await this.postsService.listFeedByAuthorIds(authorIds, { limit: 50, lang }, Number(subscriberId))
       : [];
 
     return {

@@ -58,7 +58,7 @@ describe('AdminCategoriesComponent', () => {
         { provide: AdminCategoriesService, useValue: categoriesService },
         { provide: AdminLanguagesService, useValue: languagesService },
         { provide: ToastService, useValue: toast },
-        { provide: LocaleService, useValue: { selectedLocale: signal('en') } },
+        { provide: LocaleService, useValue: { selectedLocale: signal('en'), translate: (key: string) => key } },
       ],
     }).compileComponents();
 

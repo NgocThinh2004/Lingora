@@ -34,15 +34,17 @@ export class FeedPostsService {
       .pipe(map((res) => res.data));
   }
 
-  getById(id: number): Observable<Post> {
+  getById(id: number, lang?: string): Observable<Post> {
+    const params = lang ? new HttpParams().set('lang', lang) : undefined;
     return this.http
-      .get<ApiResponse<Post>>(`${this.baseUrl}/${id}`)
+      .get<ApiResponse<Post>>(`${this.baseUrl}/${id}`, { params })
       .pipe(map((res) => res.data));
   }
 
-  getRelated(id: number): Observable<Post[]> {
+  getRelated(id: number, lang?: string): Observable<Post[]> {
+    const params = lang ? new HttpParams().set('lang', lang) : undefined;
     return this.http
-      .get<ApiResponse<Post[]>>(`${this.baseUrl}/${id}/related`)
+      .get<ApiResponse<Post[]>>(`${this.baseUrl}/${id}/related`, { params })
       .pipe(map((res) => res.data));
   }
 

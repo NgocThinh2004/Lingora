@@ -261,6 +261,23 @@ export class AuthorPostsService {
     };
   }
 
+  async getAuthorPostFilterOptions(authorId: string) {
+    const [options, posts] = await Promise.all([
+      this.getPostOptions(),
+      this.postModel.findAll({
+        where: { author_id: authorId },
+        attributes: ['updated_at'],
+        order: [['updated_at', 'DESC']],
+      }),
+    ]);
+    const updatedMonths = [...new Set(posts.map(post => {
+      const date = new Date(post.updated_at);
+      return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+    }))];
+
+    return { ...options, updatedMonths };
+  }
+
   async updateAuthorPost(
     authorId: string,
     postId: string,
@@ -304,10 +321,11 @@ export class AuthorPostsService {
         transaction,
       );
 
-      if (dto.targetLanguageIds) {
-        await this.ensureTargetTranslations(
+      if (dto.targetLanguageIds !== undefined) {
+        await this.syncTargetTranslations(
           post.id,
           this.normalizeTargetLanguageIds(dto.targetLanguageIds, originalLanguageId),
+          originalLanguageId,
           sourceTranslation.id,
           transaction,
         );
@@ -579,6 +597,29 @@ export class AuthorPostsService {
         );
       }
     }
+  }
+
+  private async syncTargetTranslations(
+    postId: string,
+    targetLanguageIds: number[],
+    originalLanguageId: number,
+    sourceTranslationId: string,
+    transaction: Transaction,
+  ): Promise<void> {
+    const retainedLanguageIds = [originalLanguageId, ...targetLanguageIds];
+    await this.postTranslationModel.destroy({
+      where: {
+        post_id: postId,
+        language_id: { [Op.notIn]: retainedLanguageIds },
+      },
+      transaction,
+    });
+    await this.ensureTargetTranslations(
+      postId,
+      targetLanguageIds,
+      sourceTranslationId,
+      transaction,
+    );
   }
 
   private async markTargetTranslationsOutdated(
