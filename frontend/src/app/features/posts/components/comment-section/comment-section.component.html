@@ -69,9 +69,8 @@
             </button>
             
             @if (shouldShowTranslateButton(comment)) {
-              <button class="btn-reply btn-translate-toggle" (click)="toggleTranslate(comment)">
+              <button class="btn-reply btn-translate-toggle" (click)="toggleTranslate(comment)" [title]="isShowingTranslation(comment) ? ('original' | t) : ('translate' | t)">
                 <i class="bi" [class.bi-translate]="!isShowingTranslation(comment)" [class.bi-arrow-counterclockwise]="isShowingTranslation(comment)"></i>
-                @if (isShowingTranslation(comment)) { <span class="small ms-1">{{ 'original' | t }}</span> }
               </button>
             }
             
@@ -147,9 +146,8 @@
                     </button>
                     
                     @if (shouldShowTranslateButton(reply)) {
-                      <button class="btn-reply btn-translate-toggle" (click)="toggleTranslate(reply)">
+                      <button class="btn-reply btn-translate-toggle" (click)="toggleTranslate(reply)" [title]="isShowingTranslation(reply) ? ('original' | t) : ('translate' | t)">
                         <i class="bi" [class.bi-translate]="!isShowingTranslation(reply)" [class.bi-arrow-counterclockwise]="isShowingTranslation(reply)"></i>
-                        @if (isShowingTranslation(reply)) { <span class="small ms-1">{{ 'original' | t }}</span> }
                       </button>
                     }
                     
