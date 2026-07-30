@@ -56,14 +56,6 @@ export class SidebarComponent implements OnInit {
     return this.localeService.translate(key);
   }
 
-  signInLabel(): string {
-    switch (this.currentLanguage()) {
-      case 'vi': return 'Đăng nhập';
-      case 'zh': return '登录';
-      default: return 'Sign In';
-    }
-  }
-
   toggleLanguageMenu(event: Event): void {
     event.stopPropagation();
     this.moreMenuOpen.set(false);

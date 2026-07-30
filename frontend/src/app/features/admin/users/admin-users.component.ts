@@ -10,11 +10,14 @@ import { UiStateComponent } from '../../../shared/components/ui-state/ui-state.c
 import { AdminUser, AdminUserRole, AdminUserStatus } from './models/admin-user.model';
 import { AdminUsersService } from './services/admin-users.service';
 import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { LocaleService } from '../../../core/locale/locale.service';
+import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
 
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UiStateComponent, AssetImageDirective],
+  imports: [CommonModule, ReactiveFormsModule, UiStateComponent, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
   templateUrl: './admin-users.component.html',
   styleUrl: './admin-users.component.scss',
 })
@@ -24,6 +27,7 @@ export class AdminUsersComponent implements OnInit {
   private readonly adminUsersService = inject(AdminUsersService);
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
+  private readonly localeService = inject(LocaleService);
 
   readonly pageSize = 8;
   readonly users = signal<AdminUser[]>([]);
@@ -88,7 +92,7 @@ export class AdminUsersComponent implements OnInit {
         this.loading.set(false);
       },
       error: error => {
-        this.errorMessage.set(error.error?.meta?.error?.message || 'Unable to load users.');
+        this.errorMessage.set(this.localeService.translate('unable_load_users'));
         this.loading.set(false);
       },
     });
@@ -121,7 +125,7 @@ export class AdminUsersComponent implements OnInit {
       },
       error: error => {
         this.detailLoading.set(false);
-        this.errorMessage.set(error.error?.meta?.error?.message || 'Unable to load user details.');
+        this.errorMessage.set(this.localeService.translate('unable_load_user_details'));
       },
     });
   }
@@ -153,12 +157,12 @@ export class AdminUsersComponent implements OnInit {
       next: response => {
         this.replaceUser(response.data);
         this.setUpdating(user.id, false);
-        this.toastService.showSuccess(`${this.userName(response.data)} is now ${response.data.status}.`);
+        this.toastService.showSuccess(this.localeService.translate('user_status_changed', { name: this.userName(response.data), status: response.data.status }));
       },
       error: error => {
         input.checked = user.status === 'active';
         this.setUpdating(user.id, false);
-        this.toastService.showError(error.error?.meta?.error?.message || 'Unable to change account status.');
+        this.toastService.showError(this.localeService.translate('unable_change_account_status'));
       },
     });
   }
@@ -187,11 +191,11 @@ export class AdminUsersComponent implements OnInit {
         this.replaceUser(response.data);
         this.saving.set(false);
         this.closeDrawer();
-        this.toastService.showSuccess(`Changes to ${this.userName(response.data)} were saved.`);
+        this.toastService.showSuccess(this.localeService.translate('user_changes_saved', { name: this.userName(response.data) }));
       },
       error: error => {
         this.saving.set(false);
-        this.toastService.showError(error.error?.meta?.error?.message || 'Unable to update this user.');
+        this.toastService.showError(this.localeService.translate('unable_update_user'));
       },
     });
   }

@@ -42,7 +42,8 @@ describe('AdminLanguagesComponent', () => {
       'updateLanguage',
     ]);
     toast = jasmine.createSpyObj<ToastService>('ToastService', ['showSuccess', 'showError']);
-    locale = jasmine.createSpyObj<LocaleService>('LocaleService', ['refresh']);
+    locale = jasmine.createSpyObj<LocaleService>('LocaleService', ['refresh', 'translate']);
+    locale.translate.and.callFake((key: string) => key);
     service.getLanguages.and.returnValue(of({
       data: [english, vietnamese],
       meta: { pagination: { total: 2, page: 1, limit: 8, totalPages: 1 } },

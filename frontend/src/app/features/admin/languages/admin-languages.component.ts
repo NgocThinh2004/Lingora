@@ -5,6 +5,7 @@ import { PaginationMeta } from '../../../core/http/api-response.model';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { UiStateComponent } from '../../../shared/components/ui-state/ui-state.component';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import {
   AdminLanguage,
   CreateAdminLanguageRequest,
@@ -17,7 +18,7 @@ type LanguageDialog = 'add' | 'edit' | null;
 @Component({
   selector: 'app-admin-languages',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UiStateComponent],
+  imports: [CommonModule, ReactiveFormsModule, UiStateComponent, TranslatePipe],
   templateUrl: './admin-languages.component.html',
   styleUrl: './admin-languages.component.scss',
 })
@@ -82,7 +83,7 @@ export class AdminLanguagesComponent implements OnInit {
         this.loading.set(false);
       },
       error: error => {
-        this.errorMessage.set(error.error?.meta?.error?.message || 'Unable to load configured languages.');
+        this.errorMessage.set(this.localeService.translate('unable_load_languages'));
         this.loading.set(false);
       },
     });
@@ -154,13 +155,13 @@ export class AdminLanguagesComponent implements OnInit {
       next: response => {
         this.saving.set(false);
         this.closeDialog();
-        this.toastService.showSuccess(`${response.data.name} was added.`);
+        this.toastService.showSuccess(this.localeService.translate('language_added', { name: response.data.name }));
         this.localeService.refresh();
         this.loadLanguages(this.pagination().page);
       },
       error: error => {
         this.saving.set(false);
-        this.toastService.showError(error.error?.meta?.error?.message || 'Unable to add this language.');
+        this.toastService.showError(this.localeService.translate('unable_add_language'));
       },
     });
   }
@@ -184,13 +185,13 @@ export class AdminLanguagesComponent implements OnInit {
       next: response => {
         this.saving.set(false);
         this.closeDialog();
-        this.toastService.showSuccess(`${response.data.name} was updated.`);
+        this.toastService.showSuccess(this.localeService.translate('language_updated', { name: response.data.name }));
         this.localeService.refresh();
         this.loadLanguages(this.pagination().page);
       },
       error: error => {
         this.saving.set(false);
-        this.toastService.showError(error.error?.meta?.error?.message || 'Unable to update this language.');
+        this.toastService.showError(this.localeService.translate('unable_update_language'));
       },
     });
   }
@@ -203,13 +204,13 @@ export class AdminLanguagesComponent implements OnInit {
     this.languagesService.updateLanguage(language.id, { isDefault: true }).subscribe({
       next: response => {
         this.updatingLanguageId.set(null);
-        this.toastService.showSuccess(`${response.data.name} is now the default language.`);
+        this.toastService.showSuccess(this.localeService.translate('language_default_changed', { name: response.data.name }));
         this.localeService.refresh();
         this.loadLanguages(this.pagination().page);
       },
       error: error => {
         this.updatingLanguageId.set(null);
-        this.toastService.showError(error.error?.meta?.error?.message || 'Unable to change the default language.');
+        this.toastService.showError(this.localeService.translate('unable_change_default_language'));
       },
     });
   }

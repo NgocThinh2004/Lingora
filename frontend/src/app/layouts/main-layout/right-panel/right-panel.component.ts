@@ -5,11 +5,12 @@ import { SearchModalService } from '../../../features/search/search-modal.servic
 import { User } from '../../../features/users/models/user.model';
 import { UsersService } from '../../../features/users/services/users.service';
 import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-right-panel',
   standalone: true,
-  imports: [CommonModule, RouterLink, AssetImageDirective],
+  imports: [CommonModule, RouterLink, AssetImageDirective, TranslatePipe],
   templateUrl: './right-panel.component.html',
   styleUrl: './right-panel.component.scss',
 })

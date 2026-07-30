@@ -31,7 +31,7 @@ export class LocaleBundlesService {
     if (!language) {
       throw new NotFoundException('Active locale not found');
     }
-    const bundle = await this.readBundle(normalizedCode);
+    const bundle = await this.ensureCompleteBundle(normalizedCode);
     if (!bundle) {
       throw new NotFoundException('Locale bundle not found');
     }
@@ -42,19 +42,7 @@ export class LocaleBundlesService {
     const targetCode = this.normalizeCode(language.code);
     const sourceCode = this.translationSourceCode();
     const sourceLanguage = await this.languageModel.findOne({ where: { code: sourceCode } });
-    const existingTarget = await this.readBundle(targetCode);
-
-    let targetBundle = existingTarget;
-    if (!targetBundle) {
-      const sourceBundle = await this.readBundle(sourceCode);
-      if (!sourceBundle) {
-        throw new BadRequestException(`Canonical UI locale bundle is missing: ${sourceCode}`);
-      }
-      targetBundle = sourceCode === targetCode
-        ? sourceBundle
-        : await this.translateBundle(sourceBundle, sourceCode, targetCode);
-      await this.writeStorageBundle(targetCode, targetBundle);
-    }
+    await this.ensureCompleteBundle(targetCode);
 
     await this.provisionCategoryTranslations(
       language,
@@ -70,6 +58,43 @@ export class LocaleBundlesService {
         throw error;
       }
     });
+  }
+
+  private async ensureCompleteBundle(targetCode: string): Promise<UiLocaleBundle | null> {
+    const sourceCode = this.translationSourceCode();
+    const sourceBundle = await this.readBundle(sourceCode);
+    if (!sourceBundle) {
+      throw new BadRequestException(`Canonical UI locale bundle is missing: ${sourceCode}`);
+    }
+    if (targetCode === sourceCode) {
+      return sourceBundle;
+    }
+
+    const sourceControlledTarget = await this.readSourceBundle(targetCode);
+    const targetBundle = sourceControlledTarget
+      ?? await this.readJson(this.storageBundlePath(targetCode))
+      ?? {};
+    if (sourceControlledTarget) {
+      // Source-controlled locales are authoritative. Remove any obsolete
+      // generated copy so persistent storage contains dynamic locales only.
+      await this.removeGeneratedBundle(targetCode);
+    }
+    const missingSourceEntries = Object.entries(sourceBundle)
+      .filter(([key]) => typeof targetBundle[key] !== 'string' || !targetBundle[key].trim());
+    if (!missingSourceEntries.length) {
+      return targetBundle;
+    }
+
+    const translatedMissing = await this.translateBundle(
+      Object.fromEntries(missingSourceEntries),
+      sourceCode,
+      targetCode,
+    );
+    const completedBundle = { ...targetBundle, ...translatedMissing };
+    if (!sourceControlledTarget) {
+      await this.writeStorageBundle(targetCode, completedBundle);
+    }
+    return completedBundle;
   }
 
   private async translateBundle(
@@ -187,7 +212,13 @@ export class LocaleBundlesService {
   }
 
   private async readBundle(code: string): Promise<UiLocaleBundle | null> {
-    return await this.readJson(this.storageBundlePath(code)) ?? await this.readSourceBundle(code);
+    const [sourceBundle, generatedBundle] = await Promise.all([
+      this.readSourceBundle(code),
+      this.readJson(this.storageBundlePath(code)),
+    ]);
+    // A locale committed to resources is authoritative and never needs a
+    // generated copy in persistent storage. Storage is only for dynamic locales.
+    return sourceBundle ?? generatedBundle;
   }
 
   private async readSourceBundle(code: string): Promise<UiLocaleBundle | null> {

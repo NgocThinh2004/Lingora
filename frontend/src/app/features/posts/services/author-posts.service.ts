@@ -28,6 +28,12 @@ export class AuthorPostsService {
       .pipe(map(response => this.unwrapItem(response)));
   }
 
+  getAuthorPostFilterOptions(): Observable<PostOptions> {
+    return this.http
+      .get<ApiItemResponse<PostOptions | ApiItemResponse<PostOptions>>>(`${this.baseUrl}/author/posts/options/filters`)
+      .pipe(map(response => this.unwrapItem(response)));
+  }
+
   getAuthorPost(postId: string | number, includeDeleted = false): Observable<AuthorPost> {
     const params = includeDeleted ? new HttpParams().set('trash', 'true') : undefined;
 

@@ -10,7 +10,7 @@
             <div>
               <h2 class="profile-name">{{ profileForm.displayName }}</h2>
               <div class="profile-handle">{{ profileForm.username }}</div>
-              <p class="profile-bio">{{ profileForm.bio || 'No bio provided.' }}</p>
+              <p class="profile-bio">{{ profileForm.bio || ('no_bio_provided' | t) }}</p>
               <div class="profile-chip">
                 <span class="profile-avatar avatar-badge has-image">
                   <img [appAssetImage]="avatarUrl" [alt]="profileForm.displayName">
@@ -35,24 +35,24 @@
           <div class="profile-stats" aria-label="Profile statistics">
             <button class="profile-stat" type="button" (click)="openPeopleModal('followers', $event)">
               <strong>{{ followersCount() }}</strong>
-              <span data-i18n="followers">Followers</span>
+              <span>{{ 'followers' | t }}</span>
             </button>
             <button class="profile-stat" type="button" (click)="openPeopleModal('following', $event)">
               <strong>{{ followingCount() }}</strong>
-              <span data-i18n="following">Following</span>
+              <span>{{ 'following' | t }}</span>
             </button>
             <span class="profile-stat">
               <strong>{{ publicPostsCount() }}</strong>
-              <span data-i18n="posts">Posts</span>
+              <span>{{ 'posts' | t }}</span>
             </span>
           </div>
 
           @if (isOwnProfile()) {
           <div class="action-row">
             <a class="profile-action is-primary" routerLink="/workspace/create" [queryParams]="{ fresh: '1' }">
-              <span data-i18n="create">Create</span> <i class="bi bi-caret-down-fill"></i>
+              <span>{{ 'create' | t }}</span> <i class="bi bi-caret-down-fill"></i>
             </a>
-            <button class="profile-action" type="button" (click)="toggleEdit(true)" data-i18n="profile_edit_profile">Edit profile</button>
+            <button class="profile-action" type="button" (click)="toggleEdit(true)">{{ 'edit_profile' | t }}</button>
             <div class="profile-more">
               <button
                 class="profile-action is-icon"
@@ -68,7 +68,7 @@
                   role="menuitem"
                   (click)="openPasswordModal($event)">
                   <i class="bi bi-shield-lock"></i>
-                  <span data-i18n="change_password">Change password</span>
+                  <span>{{ 'change_password' | t }}</span>
                 </button>
               </div>
             </div>
@@ -83,7 +83,7 @@
             } @else {
               <div class="text-center text-muted p-4">
                 <i class="bi bi-inbox fs-1"></i>
-                <p class="mt-2">No posts available.</p>
+                <p class="mt-2">{{ 'no_posts' | t }}</p>
               </div>
             }
           </div>
@@ -96,8 +96,8 @@
       <section class="profile-page is-active" data-profile-edit>
         <div class="edit-shell">
           <header class="edit-heading">
-            <h1 data-i18n="profile_edit_title">Edit Profile</h1>
-            <button class="done-btn" type="button" (click)="saveProfile()" [disabled]="savingProfile() || uploadingAvatar()" data-i18n="profile_done">{{ savingProfile() ? 'Saving...' : 'Done' }}</button>
+            <h1>{{ 'edit_profile' | t }}</h1>
+            <button class="done-btn" type="button" (click)="saveProfile()" [disabled]="savingProfile() || uploadingAvatar()">{{ (savingProfile() ? 'saving' : 'done') | t }}</button>
           </header>
 
           <form id="profileForm">
@@ -117,33 +117,33 @@
 
             <div class="field-stack">
               <div class="field">
-                <label for="displayName" data-i18n="profile_name_label">Name</label>
+                <label for="displayName">{{ 'name' | t }}</label>
                 <input class="input" id="displayName" type="text" [(ngModel)]="profileForm.displayName" name="displayName" autocomplete="name">
               </div>
 
               <div class="field">
-                <label for="username" data-i18n="profile_handle_label">Handle</label>
+                <label for="username">{{ 'handle' | t }}</label>
                 <div class="input-row">
                   <input class="input" id="username" type="text" [value]="profileForm.username" readonly aria-readonly="true">
                   <button class="handle-edit-btn" type="button" (click)="showHandleModal.set(true)"
-                    data-i18n="profile_edit_handle">Edit</button>
+                    >{{ 'edit' | t }}</button>
                 </div>
               </div>
 
               <div class="field">
-                <label for="bio" data-i18n="profile_bio_label">Bio</label>
+                <label for="bio">{{ 'bio' | t }}</label>
                 <textarea class="textarea" id="bio" [(ngModel)]="profileForm.bio" name="bio"></textarea>
               </div>
             </div>
 
             <div class="divider"></div>
 
-            <h2 class="branding-title" data-i18n="profile_branding">Branding</h2>
-            <p class="branding-copy" data-i18n="profile_branding_desc">Customize the look of your profile.</p>
+            <h2 class="branding-title">{{ 'branding' | t }}</h2>
+            <p class="branding-copy">{{ 'branding_description' | t }}</p>
 
 
             <div class="brand-row">
-              <label for="accentColor" data-i18n="profile_accent_color">Accent color</label>
+              <label for="accentColor">{{ 'accent_color' | t }}</label>
               <div class="color-field" data-color-picker="accent"
                 [class.is-open]="openColorPicker() === 'accent'"
                 (click)="handleColorFieldClick($event, 'accent')">
@@ -152,7 +152,7 @@
                   aria-label="Choose accent color" [style.background]="accentColor()"
                   (click)="toggleColorPicker('accent', $event)"></button>
                 <div class="color-popover" aria-label="Accent color palette">
-                  <span class="color-popover-title" data-i18n="profile_accent_color">Accent color</span>
+                  <span class="color-popover-title">{{ 'accent_color' | t }}</span>
                   <div class="color-swatch-grid">
                     <button class="color-swatch" type="button" data-color-value="#FF6719" style="--swatch:#FF6719"
                       aria-label="#FF6719"></button>
@@ -214,17 +214,17 @@
             </div>
 
             <div class="brand-row">
-              <label for="backgroundColor" data-i18n="profile_background_color">Background color</label>
+              <label for="backgroundColor">{{ 'background_color' | t }}</label>
               <div class="color-field" data-color-picker="background"
                 [class.is-open]="openColorPicker() === 'background'"
                 (click)="handleColorFieldClick($event, 'background')">
-                <span id="backgroundColorText">{{ backgroundColor() || 'None' }}</span>
+                <span id="backgroundColorText">{{ backgroundColor() || ('none' | t) }}</span>
                 <button class="color-dot" id="backgroundColorButton" type="button"
                   [class.is-empty]="!backgroundColor()" [style.background]="backgroundColor() || 'transparent'"
                   aria-label="Choose background color"
                   (click)="toggleColorPicker('background', $event)"></button>
                 <div class="color-popover" aria-label="Background color palette">
-                  <span class="color-popover-title" data-i18n="profile_background_color">Background color</span>
+                  <span class="color-popover-title">{{ 'background_color' | t }}</span>
                   <div class="color-swatch-grid">
                     <button class="color-swatch is-none" type="button" data-color-value=""
                       aria-label="No background color"></button>
@@ -295,13 +295,13 @@
 
   <!-- Mobile Bottom Navigation -->
   <nav class="mobile-bottom-nav d-lg-none">
-    <a href="/home" class="nav-item" aria-label="Home">
+    <a href="/home" class="nav-item" [attr.aria-label]="'home' | t">
       <i class="bi bi-house"></i>
     </a>
-    <a href="/workspace/posts" class="nav-item" aria-label="My Articles">
+    <a href="/workspace/posts" class="nav-item" [attr.aria-label]="'my_posts' | t">
       <i class="bi bi-journal-text"></i>
     </a>
-    <a href="/settings" class="nav-item" aria-label="Settings">
+    <a href="/settings" class="nav-item" [attr.aria-label]="'settings' | t">
       <i class="bi bi-gear"></i>
     </a>
   </nav>
@@ -311,9 +311,9 @@
     <section class="handle-modal-panel" role="dialog" aria-modal="true" aria-labelledby="handleModalTitle">
       <header class="handle-modal-head">
         <div class="handle-modal-icon" aria-hidden="true">&#64;</div>
-        <button class="handle-modal-close" type="button" (click)="showHandleModal.set(false)" aria-label="Close">&times;</button>
-        <h2 class="handle-modal-title" id="handleModalTitle">Edit your handle</h2>
-        <p class="handle-modal-copy">Your handle helps people find and connect with you on Lingora.</p>
+        <button class="handle-modal-close" type="button" (click)="showHandleModal.set(false)" [attr.aria-label]="'close' | t">&times;</button>
+        <h2 class="handle-modal-title" id="handleModalTitle">{{ 'edit_handle' | t }}</h2>
+        <p class="handle-modal-copy">{{ 'handle_description' | t }}</p>
       </header>
 
       <div class="handle-option-list">
@@ -321,30 +321,30 @@
           <input type="radio" name="handleChoice" value="current" [(ngModel)]="handleOption">
           <span class="handle-option-main">
             <span class="handle-value">{{ profileForm.username }}</span>
-            <span class="handle-caption">Current Handle</span>
+            <span class="handle-caption">{{ 'current_handle' | t }}</span>
           </span>
         </label>
 
         <label class="handle-option">
           <input type="radio" name="handleChoice" value="suggested" [(ngModel)]="handleOption">
           <span class="handle-option-main">
-            <span class="handle-value">Suggested</span>
-            <span class="handle-caption">Auto-generated</span>
+            <span class="handle-value">{{ 'suggested' | t }}</span>
+            <span class="handle-caption">{{ 'auto_generated' | t }}</span>
           </span>
         </label>
 
         <label class="handle-option">
           <input type="radio" name="handleChoice" value="custom" [(ngModel)]="handleOption">
           <span class="handle-option-main">
-            <input class="handle-custom-input" type="text" placeholder="&#64; Enter a handle" autocomplete="off"
+            <input class="handle-custom-input" type="text" [placeholder]="'enter_handle' | t" autocomplete="off"
               spellcheck="false" [(ngModel)]="customHandle">
           </span>
         </label>
       </div>
 
       <div class="handle-modal-actions">
-        <button class="handle-submit" type="button" (click)="updateHandle()">Update handle</button>
-        <button class="handle-cancel" type="button" (click)="showHandleModal.set(false)">Cancel</button>
+        <button class="handle-submit" type="button" (click)="updateHandle()">{{ 'update_handle' | t }}</button>
+        <button class="handle-cancel" type="button" (click)="showHandleModal.set(false)">{{ 'cancel_action' | t }}</button>
       </div>
     </section>
   </div>
@@ -355,10 +355,10 @@
         (click)="$event.stopPropagation()">
         <header class="avatar-crop-header">
           <div>
-            <h2 id="avatarCropTitle">Adjust profile photo</h2>
-            <p>Drag and zoom the image to choose what appears in the circle.</p>
+            <h2 id="avatarCropTitle">{{ 'adjust_profile_photo' | t }}</h2>
+            <p>{{ 'adjust_profile_photo_description' | t }}</p>
           </div>
-          <button type="button" class="avatar-crop-close" aria-label="Close" (click)="cancelAvatarCrop()">
+          <button type="button" class="avatar-crop-close" [attr.aria-label]="'close' | t" (click)="cancelAvatarCrop()">
             <i class="bi bi-x-lg" aria-hidden="true"></i>
           </button>
         </header>
@@ -383,13 +383,13 @@
         <label class="avatar-crop-zoom">
           <i class="bi bi-image" aria-hidden="true"></i>
           <input type="range" min="1" max="3" step="0.01" [ngModel]="cropZoom()"
-            (ngModelChange)="updateCropZoom($event)" aria-label="Zoom image">
+            (ngModelChange)="updateCropZoom($event)" [attr.aria-label]="'zoom_image' | t">
           <i class="bi bi-image-fill" aria-hidden="true"></i>
         </label>
 
         <footer class="avatar-crop-actions">
-          <button type="button" class="avatar-crop-cancel" (click)="cancelAvatarCrop()">Cancel</button>
-          <button type="button" class="avatar-crop-confirm" (click)="confirmAvatarCrop()">Use photo</button>
+          <button type="button" class="avatar-crop-cancel" (click)="cancelAvatarCrop()">{{ 'cancel_action' | t }}</button>
+          <button type="button" class="avatar-crop-confirm" (click)="confirmAvatarCrop()">{{ 'use_photo' | t }}</button>
         </footer>
       </section>
     </div>
@@ -400,48 +400,46 @@
     <section class="password-modal-panel" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
       <header class="password-modal-head">
         <div class="password-modal-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></div>
-        <button class="password-modal-close" type="button" (click)="closePasswordModal()" aria-label="Close">&times;</button>
-        <h2 class="password-modal-title" id="passwordModalTitle" data-i18n="change_password">Change password</h2>
-        <p class="password-modal-copy" data-i18n="password_description_short">Update the password for your Lingora
-          account.</p>
+        <button class="password-modal-close" type="button" (click)="closePasswordModal()" [attr.aria-label]="'close' | t">&times;</button>
+        <h2 class="password-modal-title" id="passwordModalTitle">{{ 'change_password' | t }}</h2>
+        <p class="password-modal-copy">{{ 'change_password_description' | t }}</p>
       </header>
 
       <form class="password-form" (ngSubmit)="submitPassword()">
         <div class="password-field">
-          <label for="profileCurrentPassword" data-i18n="current_password_label">Current password</label>
+          <label for="profileCurrentPassword">{{ 'current_password' | t }}</label>
           <div class="password-input-wrap">
             <input id="profileCurrentPassword" [type]="passwordFieldType" autocomplete="current-password" [(ngModel)]="passwordForm.current" name="currentPassword">
-            <button class="password-toggle" type="button" aria-label="Show password" (click)="togglePasswordVisibility()">
+            <button class="password-toggle" type="button" [attr.aria-label]="'show_password' | t" (click)="togglePasswordVisibility()">
               <i class="bi" [ngClass]="passwordFieldType === 'password' ? 'bi-eye' : 'bi-eye-slash'" aria-hidden="true"></i>
             </button>
           </div>
         </div>
 
         <div class="password-field">
-          <label for="profileNewPassword" data-i18n="new_password_label">New password</label>
+          <label for="profileNewPassword">{{ 'new_password' | t }}</label>
           <div class="password-input-wrap">
             <input id="profileNewPassword" [type]="passwordFieldType" autocomplete="new-password" [(ngModel)]="passwordForm.new" name="newPassword">
-            <button class="password-toggle" type="button" aria-label="Show password" (click)="togglePasswordVisibility()">
+            <button class="password-toggle" type="button" [attr.aria-label]="'show_password' | t" (click)="togglePasswordVisibility()">
               <i class="bi" [ngClass]="passwordFieldType === 'password' ? 'bi-eye' : 'bi-eye-slash'" aria-hidden="true"></i>
             </button>
           </div>
-          <span id="profileNewPasswordHint" class="password-hint" data-i18n="password_min_hint">Use at least 8
-            characters.</span>
+          <span id="profileNewPasswordHint" class="password-hint">{{ 'password_min_8' | t }}</span>
         </div>
 
         <div class="password-field">
-          <label for="profileConfirmPassword" data-i18n="confirm_new_password_label">Confirm new password</label>
+          <label for="profileConfirmPassword">{{ 'confirm_new_password' | t }}</label>
           <div class="password-input-wrap">
             <input id="profileConfirmPassword" [type]="passwordFieldType" autocomplete="new-password" [(ngModel)]="passwordForm.confirm" name="confirmPassword">
-            <button class="password-toggle" type="button" aria-label="Show password" (click)="togglePasswordVisibility()">
+            <button class="password-toggle" type="button" [attr.aria-label]="'show_password' | t" (click)="togglePasswordVisibility()">
               <i class="bi" [ngClass]="passwordFieldType === 'password' ? 'bi-eye' : 'bi-eye-slash'" aria-hidden="true"></i>
             </button>
           </div>
         </div>
 
         <div class="password-actions">
-          <button class="password-cancel" type="button" (click)="closePasswordModal()" data-i18n="cancel">Cancel</button>
-          <button class="password-submit" type="submit" data-i18n="update_password" [disabled]="savingPassword() || !passwordForm.current || passwordForm.new.length < 8 || passwordForm.new !== passwordForm.confirm">{{ savingPassword() ? 'Updating...' : 'Update password' }}</button>
+          <button class="password-cancel" type="button" (click)="closePasswordModal()">{{ 'cancel_action' | t }}</button>
+          <button class="password-submit" type="submit" [disabled]="savingPassword() || !passwordForm.current || passwordForm.new.length < 8 || passwordForm.new !== passwordForm.confirm">{{ (savingPassword() ? 'updating_password' : 'update_password') | t }}</button>
         </div>
       </form>
     </section>
@@ -454,15 +452,15 @@
     <section class="password-modal-panel" role="dialog" aria-modal="true" aria-labelledby="subscribersModalTitle">
       <header class="password-modal-head" style="padding-bottom: 12px;">
         <button class="password-modal-close" type="button" (click)="closePeopleModal()"
-          aria-label="Close">&times;</button>
-        <h2 class="password-modal-title" id="subscribersModalTitle">{{ peopleModalTitle() }}</h2>
+          [attr.aria-label]="'close' | t">&times;</button>
+        <h2 class="password-modal-title" id="subscribersModalTitle">{{ peopleModalTitle() | t }}</h2>
         <div class="mt-3">
           <div class="right-search-box w-100" id="subscribersSearchWrap">
             <i class="bi bi-search"></i>
             <input
               type="text"
               id="subscribersSearchInput"
-              [placeholder]="peopleSearchPlaceholder()"
+              [placeholder]="peopleSearchPlaceholder() | t"
               [ngModel]="peopleSearch()"
               (ngModelChange)="peopleSearch.set($event)">
           </div>
@@ -472,7 +470,7 @@
         @if (peopleLoading()) {
           <div class="people-state">
             <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-            <span>Loading...</span>
+            <span>{{ 'loading' | t }}</span>
           </div>
         } @else {
           @for (person of filteredPeople(); track person.id) {
@@ -493,7 +491,7 @@
             </a>
           } @empty {
             <div class="people-state">
-              {{ peopleModalMode() === 'followers' ? 'No followers found.' : 'No followed authors found.' }}
+              {{ (peopleModalMode() === 'followers' ? 'no_followers_found' : 'no_followed_authors_found') | t }}
             </div>
           }
         }

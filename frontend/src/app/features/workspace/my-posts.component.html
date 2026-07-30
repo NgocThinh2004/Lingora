@@ -3,7 +3,7 @@
     <h1>{{ translate('my_posts_title') }}</h1>
     <a class="btn btn-primary btn-sm fw-medium px-3 rounded-pill" routerLink="/workspace/create" [queryParams]="{ fresh: '1' }">
       <i class="bi bi-plus-lg me-1"></i>
-      <span data-i18n="create">Create</span>
+      <span>{{ translate('create') }}</span>
     </a>
   </header>
           <div class="posts-toolbar">
@@ -47,8 +47,7 @@
                 <select aria-label="Filter by date" class="filter-select" name="dateFilter" [(ngModel)]="dateFilter"
                   (ngModelChange)="applyFilters()">
                   <option value="all">{{ translate('all_dates') }}</option>
-                  <option value="2026-07">July 2026</option>
-                  <option value="2026-06">June 2026</option>
+                  <option *ngFor="let month of dateOptions" [value]="month">{{ formatMonth(month) }}</option>
                 </select>
                 <select aria-label="Filter by category" class="filter-select" data-category-filter=""
                   name="categoryFilter" [(ngModel)]="categoryFilter" (ngModelChange)="applyFilters()">
@@ -121,7 +120,7 @@
                       <strong>{{ postTitle(post) }}</strong>
                       <span>{{ categoryLabel(post) }}</span>
                       <div *ngIf="post.reviewNote" class="post-row-actions" style="opacity: 1; transform: none;">
-                        <span class="row-link is-danger">Review note: {{ post.reviewNote }}</span>
+                        <span class="row-link is-danger">{{ translate('review_note') }}: {{ post.reviewNote }}</span>
                       </div>
                     </td>
                     <td><span class="status-badge" [ngClass]="statusBadgeClass(post)"><span>{{ statusLabel(post)
@@ -184,7 +183,7 @@
           </ul>
           <div class="empty-state" data-empty-state="" *ngIf="false">
             <i class="bi bi-search"></i>
-            <strong data-i18n="no_posts_found">No posts match your filters.</strong>
+            <strong>{{ translate('no_posts_found') }}</strong>
           </div>
           <div class="pagination-wrapper justify-content-end" *ngIf="(meta?.totalPages || 1) > 1">
             <ul class="pagination pagination-sm mb-0">

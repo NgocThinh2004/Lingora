@@ -7,12 +7,12 @@
           #searchInput
           type="text"
           class="search-modal-input"
-          placeholder="Tìm kiếm bài viết, tác giả, chuyên mục..."
+          [placeholder]="'search_all_content' | t"
           [value]="query()"
           (input)="onInput($any($event.target).value)"
         />
         @if (hasQuery()) {
-          <button type="button" class="search-modal-close" (click)="clear()" aria-label="Xóa">
+          <button type="button" class="search-modal-close" (click)="clear()" [attr.aria-label]="'clear' | t">
             <i class="bi bi-x-lg"></i>
           </button>
         }
@@ -22,7 +22,7 @@
         @if (!hasQuery()) {
           @if (trendingAuthors().length > 0) {
             <div>
-              <div class="search-section-title">Tác giả nổi bật</div>
+              <div class="search-section-title">{{ 'featured_authors' | t }}</div>
               <div class="search-avatar-scroll">
                 @for (author of trendingAuthors(); track author.id) {
                   <button type="button" class="search-avatar-item author-tooltip-container position-relative" (click)="goToAuthor(author.id)">
@@ -41,7 +41,7 @@
 
           @if (trendingCategories().length > 0) {
             <div>
-              <div class="search-section-title">Chuyên mục nổi bật</div>
+              <div class="search-section-title">{{ 'featured_categories' | t }}</div>
               <div class="search-trending-list">
                 @for (category of trendingCategories(); track category.id) {
                   <button type="button" class="search-trending-item" (click)="goToCategory(category.slug)">
@@ -55,15 +55,15 @@
         } @else {
           <div>
             @if (searching()) {
-              <div class="search-section-title">Đang tìm kiếm...</div>
+              <div class="search-section-title">{{ 'searching' | t }}</div>
             } @else {
               @if (results().users.length === 0 && results().categories.length === 0 && results().posts.length === 0) {
-                <div class="search-empty">Không tìm thấy kết quả phù hợp.</div>
+                <div class="search-empty">{{ 'no_matching_results' | t }}</div>
               } @else {
                 
                 @if (results().users.length > 0) {
                   <div class="mb-4">
-                    <div class="search-section-title">TÁC GIẢ</div>
+                    <div class="search-section-title">{{ 'authors_upper' | t }}</div>
                     <div class="search-avatar-scroll">
                       @for (author of results().users; track author.id) {
                         <button type="button" class="search-avatar-item author-tooltip-container position-relative" (click)="goToAuthor(author.id)">
@@ -78,7 +78,7 @@
 
                 @if (results().categories.length > 0) {
                   <div class="mb-4">
-                    <div class="search-section-title">CHUYÊN MỤC</div>
+                    <div class="search-section-title">{{ 'categories_upper' | t }}</div>
                     <div class="search-trending-list">
                       @for (cat of results().categories; track cat.id) {
                         <button type="button" class="search-trending-item" (click)="goToCategory(cat.slug)">
@@ -92,7 +92,7 @@
 
                 @if (results().posts.length > 0) {
                   <div class="mb-4">
-                    <div class="search-section-title">BÀI VIẾT</div>
+                    <div class="search-section-title">{{ 'articles_upper' | t }}</div>
                     <div class="search-results-list">
                       @for (post of results().posts; track post.id) {
                         <button type="button" class="search-result-item" (click)="goToPost(post.id)">

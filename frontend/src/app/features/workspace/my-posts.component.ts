@@ -59,6 +59,7 @@ export class MyPostsComponent implements OnInit {
   bulkActionBusy = false;
   categoryOptions: Array<{ id: number; label: string }> = [];
   languageOptions: Array<{ id: number; code: string; label: string; nativeLabel: string; flagCode: string | null }> = [];
+  dateOptions: string[] = [];
   confirmationAction: ConfirmationAction | null = null;
   confirmationPostIds: string[] = [];
   confirmationBusy = false;
@@ -69,10 +70,11 @@ export class MyPostsComponent implements OnInit {
   ngOnInit(): void {
     this.locale.load();
     this.restoreListState();
-    this.postsService.getPostOptions().subscribe({
+    this.postsService.getAuthorPostFilterOptions().subscribe({
       next: options => {
         this.categoryOptions = options.categories;
         this.languageOptions = options.languages;
+        this.dateOptions = options.updatedMonths ?? [];
         this.loadPosts();
       },
       error: () => this.loadPosts(),
@@ -125,9 +127,10 @@ export class MyPostsComponent implements OnInit {
 
     request$.subscribe({
       next: (updatedPost) => {
-        this.toast.showSuccess(
-          `Bài #${updatedPost.id} đã chuyển sang ${updatedPost.deletedAt ? 'thùng rác' : updatedPost.status}.`,
-        );
+        this.toast.showSuccess(this.locale.translate('post_status_changed', {
+          id: updatedPost.id,
+          status: updatedPost.deletedAt ? this.translate('status_trash') : this.statusLabel(updatedPost),
+        }));
         this.busyKey = '';
         this.loadPostCounts();
         this.loadPosts();
@@ -314,17 +317,22 @@ export class MyPostsComponent implements OnInit {
   }
 
   formatDate(value: string): string {
-    const localeCode: Record<string, string> = {
-      en: 'en-US',
-      vi: 'vi-VN',
-      zh: 'zh-CN',
-    };
-
-    return new Intl.DateTimeFormat(localeCode[this.locale.selectedLocale()] ?? 'en-US', {
+    return new Intl.DateTimeFormat(this.locale.selectedLocale(), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     }).format(new Date(value));
+  }
+
+  formatMonth(value: string): string {
+    const match = /^(\d{4})-(\d{2})$/.exec(value);
+    if (!match) return value;
+    const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1));
+    return new Intl.DateTimeFormat(this.locale.selectedLocale(), {
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(date);
   }
 
   visibleItemsLabel(): string {
@@ -465,11 +473,10 @@ export class MyPostsComponent implements OnInit {
     this.confirmationBusy = true;
     forkJoin(requests).subscribe({
       next: () => {
-        this.toast.showSuccess(
-          action === 'trash'
-            ? `Đã chuyển ${ids.length} bài vào thùng rác.`
-            : `Đã xóa vĩnh viễn ${ids.length} bài.`,
-        );
+        this.toast.showSuccess(this.locale.translate(
+          action === 'trash' ? 'posts_moved_to_trash' : 'posts_deleted_permanently',
+          { count: ids.length },
+        ));
         this.confirmationBusy = false;
         this.confirmationAction = null;
         this.confirmationPostIds = [];
@@ -679,6 +686,6 @@ export class MyPostsComponent implements OnInit {
   }
 
   private formatError(error: unknown): string {
-    return getApiErrorMessage(error, 'Có lỗi xảy ra, hãy kiểm tra backend đang chạy.');
+    return getApiErrorMessage(error, this.locale.translate('request_failed'), true);
   }
 }

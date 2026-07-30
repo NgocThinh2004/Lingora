@@ -5,11 +5,13 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { AuthLayoutComponent } from '../../../layouts/auth-layout/auth-layout.component';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { LocaleService } from '../../../core/locale/locale.service';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthLayoutComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthLayoutComponent, TranslatePipe],
   templateUrl: './reset-password.component.html',
   styleUrl: '../password-recovery.scss',
 })
@@ -36,6 +38,7 @@ export class ResetPasswordComponent implements OnDestroy {
     private readonly authService: AuthService,
     private readonly router: Router,
     private readonly toastService: ToastService,
+    private readonly localeService: LocaleService,
   ) {
     this.startCooldownTimer();
   }
@@ -74,12 +77,11 @@ export class ResetPasswordComponent implements OnDestroy {
         sessionStorage.setItem('password_reset_sent_at', Date.now().toString());
         this.resendSecondsRemaining = this.resendCooldownSeconds;
         this.startCooldownTimer();
-        this.toastService.showSuccess('A new reset code has been requested. Check your inbox.');
+        this.toastService.showSuccess(this.localeService.translate('reset_code_requested'));
       },
       error: error => {
         this.isResending = false;
-        this.errorMessage = error.error?.meta?.error?.message
-          || 'We could not resend the code. Please try again.';
+        this.errorMessage = this.localeService.translate('reset_code_resend_failed');
       },
     });
   }
@@ -111,8 +113,7 @@ export class ResetPasswordComponent implements OnDestroy {
       },
       error: error => {
         this.isSubmitting = false;
-        this.errorMessage = error.error?.meta?.error?.message
-          || 'The reset code is invalid or expired. Request a new code and try again.';
+        this.errorMessage = this.localeService.translate('reset_code_invalid');
       },
     });
   }

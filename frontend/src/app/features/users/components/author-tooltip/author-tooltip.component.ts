@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { SubscribeButtonComponent } from '../../../subscriptions/components/subscribe-button/subscribe-button.component';
 import { AssetImageDirective } from '../../../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 
 interface AuthorTooltipUser {
   id: number | string;
@@ -19,7 +20,7 @@ interface AuthorTooltipUser {
 @Component({
   selector: 'app-author-tooltip',
   standalone: true,
-  imports: [CommonModule, AssetImageDirective, SubscribeButtonComponent],
+  imports: [CommonModule, AssetImageDirective, SubscribeButtonComponent, TranslatePipe],
   templateUrl: './author-tooltip.component.html',
   styleUrl: './author-tooltip.component.scss'
 })

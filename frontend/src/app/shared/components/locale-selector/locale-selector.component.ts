@@ -1,11 +1,13 @@
 import { Component, ElementRef, EventEmitter, HostListener, Input, Output, inject, signal } from '@angular/core';
 import { LocaleOption } from '../../../core/locale/locale.model';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 export type LocaleMenuPosition = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
 
 @Component({
   selector: 'app-locale-selector',
   standalone: true,
+  imports: [TranslatePipe],
   templateUrl: './locale-selector.component.html',
   styleUrl: './locale-selector.component.scss'
 })

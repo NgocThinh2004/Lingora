@@ -1,17 +1,17 @@
-<aside class="admin-sidebar" [class.admin-sidebar--open]="isOpen" aria-label="Admin navigation">
+<aside class="admin-sidebar" [class.admin-sidebar--open]="isOpen" [attr.aria-label]="'admin_navigation' | t">
   <div class="admin-sidebar__top">
     <div class="admin-sidebar__brand">
       <div class="admin-brand-stack">
         <app-brand link="/home" />
-        <span class="admin-panel-badge">Admin</span>
+        <span class="admin-panel-badge">{{ 'admin' | t }}</span>
       </div>
-      <button class="admin-icon-button admin-sidebar__close" type="button" aria-label="Close admin navigation" (click)="closeMenu()">
+      <button class="admin-icon-button admin-sidebar__close" type="button" [attr.aria-label]="'close_admin_navigation' | t" (click)="closeMenu()">
         <i class="bi bi-x-lg" aria-hidden="true"></i>
       </button>
     </div>
 
     <nav class="admin-nav">
-      @for (item of navItems; track item.label) {
+      @for (item of navItems; track item.labelKey) {
         @if (item.route) {
           <a
             class="admin-nav__item"
@@ -20,12 +20,12 @@
             [routerLinkActiveOptions]="{ exact: true }"
             (click)="closeMenu()">
             <i class="bi {{ item.icon }}" aria-hidden="true"></i>
-            <span>{{ item.label }}</span>
+            <span>{{ item.labelKey | t }}</span>
           </a>
         } @else {
           <button class="admin-nav__item" type="button" aria-disabled="true">
             <i class="bi {{ item.icon }}" aria-hidden="true"></i>
-            <span>{{ item.label }}</span>
+            <span>{{ item.labelKey | t }}</span>
           </button>
         }
       }
@@ -52,14 +52,14 @@
         [attr.aria-expanded]="moreMenuOpen()"
         (click)="toggleMoreMenu($event)">
         <i class="bi bi-list" aria-hidden="true"></i>
-        <span>More</span>
+        <span>{{ 'more' | t }}</span>
       </button>
 
       @if (moreMenuOpen()) {
         <div class="admin-more__menu" role="menu">
-          <a routerLink="/" (click)="closeMoreMenu()"><i class="bi bi-arrow-left" aria-hidden="true"></i>Back to Feed</a>
-          <a routerLink="/admin/settings" (click)="closeMoreMenu()"><i class="bi bi-gear" aria-hidden="true"></i>Settings</a>
-          <button type="button" (click)="logout()"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>Sign Out</button>
+          <a routerLink="/" (click)="closeMoreMenu()"><i class="bi bi-arrow-left" aria-hidden="true"></i>{{ 'back_to_feed_menu' | t }}</a>
+          <a routerLink="/admin/settings" (click)="closeMoreMenu()"><i class="bi bi-gear" aria-hidden="true"></i>{{ 'settings' | t }}</a>
+          <button type="button" (click)="logout()"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>{{ 'sign_out' | t }}</button>
         </div>
       }
     </div>

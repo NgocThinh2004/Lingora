@@ -1,16 +1,16 @@
 <section class="settings-container">
   <header class="settings-header">
-    <h1>Cài đặt &amp; Tùy chọn</h1>
-    <p>Quản lý giao diện, ngôn ngữ hiển thị và trải nghiệm đọc bài viết trên Lingora.</p>
+    <h1>{{ 'settings_title' | t }}</h1>
+    <p>{{ 'settings_description' | t }}</p>
   </header>
 
   <article class="settings-card">
     <h2 class="settings-card-title">
       <i class="bi bi-palette" aria-hidden="true"></i>
-      Chế độ giao diện
+      {{ 'appearance_mode' | t }}
     </h2>
     <p class="settings-card-description">
-      Chọn chế độ màu phù hợp với môi trường và thói quen đọc của bạn.
+      {{ 'appearance_description' | t }}
     </p>
 
     <div class="option-grid option-grid--theme" aria-label="Chọn chế độ giao diện">
@@ -22,8 +22,8 @@
           [attr.aria-pressed]="activeTheme() === theme.value"
           (click)="selectTheme(theme.value)">
           <i class="bi {{ theme.icon }} option-icon" aria-hidden="true"></i>
-          <strong>{{ theme.title }}</strong>
-          <span>{{ theme.description }}</span>
+          <strong>{{ theme.titleKey | t }}</strong>
+          <span>{{ theme.descriptionKey | t }}</span>
         </button>
       }
     </div>
@@ -32,27 +32,27 @@
   <article class="settings-card">
     <h2 class="settings-card-title">
       <i class="bi bi-translate" aria-hidden="true"></i>
-      Ngôn ngữ bảng tin
+      {{ 'feed_language' | t }}
     </h2>
     <p class="settings-card-description">
-      Bảng tin chỉ hiển thị những bài viết có bản dịch của ngôn ngữ bạn chọn.
+      {{ 'feed_language_description' | t }}
     </p>
 
     @if (languagesLoading()) {
-      <app-ui-state kind="loading" title="Đang tải ngôn ngữ..."></app-ui-state>
+      <app-ui-state kind="loading" [title]="'loading_languages' | t"></app-ui-state>
     } @else if (languagesError()) {
       <app-ui-state
         kind="error"
-        title="Không thể tải ngôn ngữ"
-        description="Vui lòng kiểm tra kết nối và thử lại."
-        actionLabel="Thử lại"
+        [title]="'languages_load_error' | t"
+        [description]="'check_connection_retry' | t"
+        [actionLabel]="'try_again' | t"
         (action)="loadLanguages()">
       </app-ui-state>
     } @else if (languages().length === 0) {
       <app-ui-state
         kind="empty"
-        title="Chưa có ngôn ngữ khả dụng"
-        description="Ngôn ngữ sẽ xuất hiện sau khi được quản trị viên kích hoạt.">
+        [title]="'no_available_languages' | t"
+        [description]="'languages_appear_after_activation' | t">
       </app-ui-state>
     } @else {
       <div class="option-grid" aria-label="Chọn ngôn ngữ bảng tin">
@@ -67,7 +67,7 @@
             <strong>{{ language.nativeName || language.name }}</strong>
             <span>
               {{ language.name }}
-              @if (language.isDefault) { · Mặc định }
+              @if (language.isDefault) { · {{ 'default_label' | t }} }
             </span>
           </button>
         }
@@ -78,41 +78,41 @@
   <article class="settings-card">
     <h2 class="settings-card-title">
       <i class="bi bi-sliders" aria-hidden="true"></i>
-      Tùy chọn đọc
+      {{ 'reading_options' | t }}
     </h2>
     <p class="settings-card-description">
-      Tùy chỉnh cách bài viết và nội dung đa phương tiện xuất hiện trên bảng tin.
+      {{ 'reading_options_description' | t }}
     </p>
 
     <div class="preference-list">
       <div class="preference-row">
         <span>
-          <strong>Chế độ đọc gọn gàng</strong>
-          <small>Thu nhỏ hình ảnh và tăng mật độ bài viết trên bảng tin.</small>
+          <strong>{{ 'compact_reading' | t }}</strong>
+          <small>{{ 'compact_reading_description' | t }}</small>
         </span>
         <label class="perfect-switch">
           <input
             class="perfect-switch-input"
             type="checkbox"
-            aria-label="Chế độ đọc gọn gàng"
+            [attr.aria-label]="'compact_reading' | t"
             [checked]="preferences().compactView"
-            (change)="updatePreference('compactView', $event, 'Chế độ đọc gọn gàng')">
+            (change)="updatePreference('compactView', $event, 'compact_reading')">
           <span class="perfect-switch-track"><span class="perfect-switch-thumb"></span></span>
         </label>
       </div>
 
       <div class="preference-row">
         <span>
-          <strong>Tự động phát Video &amp; GIF</strong>
-          <small>Tự động phát nội dung động khi bạn cuộn qua bài viết.</small>
+          <strong>{{ 'autoplay_media' | t }}</strong>
+          <small>{{ 'autoplay_media_description' | t }}</small>
         </span>
         <label class="perfect-switch">
           <input
             class="perfect-switch-input"
             type="checkbox"
-            aria-label="Tự động phát Video và GIF"
+            [attr.aria-label]="'autoplay_media' | t"
             [checked]="preferences().autoPlayMedia"
-            (change)="updatePreference('autoPlayMedia', $event, 'Tự động phát nội dung')">
+            (change)="updatePreference('autoPlayMedia', $event, 'autoplay_media')">
           <span class="perfect-switch-track"><span class="perfect-switch-thumb"></span></span>
         </label>
       </div>
@@ -123,8 +123,8 @@
   <footer class="settings-footer">
     <a [routerLink]="backRoute" class="back-button">
       <i class="bi bi-arrow-left" aria-hidden="true"></i>
-      {{ backLabel }}
+      {{ backLabelKey | t }}
     </a>
-    <span><i class="bi bi-check2-all" aria-hidden="true"></i> Tự động lưu thay đổi</span>
+    <span><i class="bi bi-check2-all" aria-hidden="true"></i> {{ 'changes_saved_automatically' | t }}</span>
   </footer>
 </section>

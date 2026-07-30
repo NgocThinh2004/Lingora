@@ -37,14 +37,14 @@ describe('SettingsComponent', () => {
       ],
     });
     http.expectOne(request => request.url.endsWith('/locales/fr')).flush({
-      data: { settings: 'Paramètres' },
+      data: { settings: 'Paramètres', default_label: 'Default' },
     });
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Français');
     expect(text).toContain('French');
-    expect(text).toContain('Mặc định');
+    expect(text).toContain('Default');
     expect(localStorage.getItem('preferredLanguage')).toBe('fr');
     http.verify();
   });

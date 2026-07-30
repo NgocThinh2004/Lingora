@@ -4,11 +4,12 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
 import { BrandComponent } from '../../../shared/components/brand/brand.component';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-mobile-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, AssetImageDirective, BrandComponent],
+  imports: [CommonModule, RouterLink, AssetImageDirective, BrandComponent, TranslatePipe],
   templateUrl: './mobile-header.component.html',
   styleUrl: './mobile-header.component.scss',
 })

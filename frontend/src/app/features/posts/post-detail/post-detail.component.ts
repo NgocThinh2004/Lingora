@@ -16,11 +16,13 @@ import { AuthModalService } from '../../../core/auth/auth-modal.service';
 import { AuthorTooltipComponent } from '../../users/components/author-tooltip/author-tooltip.component';
 import { CompactNumberPipe } from '../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
 
 @Component({
   selector: 'app-post-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective],
+  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
 })
@@ -112,7 +114,7 @@ export class PostDetailComponent implements OnInit {
         }
       },
       error: (err) => {
-        this.error.set('Could not load post details. Please try again later.');
+        this.error.set(this.localeService.translate('post_details_load_failed'));
         this.loading.set(false);
       }
     });
@@ -145,7 +147,7 @@ export class PostDetailComponent implements OnInit {
         }
       },
       error: (err) => {
-        this.error.set('Could not load this article. It may have changed or been removed.');
+        this.error.set(this.localeService.translate('article_unavailable'));
         this.loading.set(false);
       },
     });

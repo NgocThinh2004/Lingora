@@ -13,12 +13,13 @@ import { FormsModule } from '@angular/forms';
 import { AuthorTooltipComponent } from '../users/components/author-tooltip/author-tooltip.component';
 import { SubscribeButtonComponent } from '../subscriptions/components/subscribe-button/subscribe-button.component';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { LocaleService } from '../../core/locale/locale.service';
 
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [CommonModule, RouterLink, PostCardComponent, FormsModule, AuthorTooltipComponent, SubscribeButtonComponent, AssetImageDirective],
+  imports: [CommonModule, RouterLink, PostCardComponent, FormsModule, AuthorTooltipComponent, SubscribeButtonComponent, AssetImageDirective, TranslatePipe],
   templateUrl: './explore.component.html',
   styleUrl: './explore.component.scss'
 })

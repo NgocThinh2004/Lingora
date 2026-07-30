@@ -10,11 +10,13 @@ import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { AuthorTooltipComponent } from '../../../users/components/author-tooltip/author-tooltip.component';
 import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { LocalizedDatePipe } from '../../../../shared/pipes/localized-date.pipe';
 
 @Component({
   selector: 'app-post-card',
   standalone: true,
-  imports: [CommonModule, RouterLink, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective],
+  imports: [CommonModule, RouterLink, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
   templateUrl: './post-card.component.html',
   styleUrl: './post-card.component.scss',
 })

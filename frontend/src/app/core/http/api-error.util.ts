@@ -9,7 +9,8 @@ type ErrorPayload = {
   };
 };
 
-export function getApiErrorMessage(error: unknown, fallback: string): string {
+export function getApiErrorMessage(error: unknown, fallback: string, preferFallback = false): string {
+  if (preferFallback) return fallback;
   if (!(error instanceof HttpErrorResponse)) {
     return fallback;
   }

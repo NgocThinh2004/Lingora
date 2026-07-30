@@ -1,7 +1,7 @@
 <app-auth-layout>
   <div auth-heading>
-    <h1 id="auth-page-title" class="auth-title mt-4 mb-2">Create your account</h1>
-    <p class="auth-subtitle text-muted mb-0">Join a global community of readers and independent writers.</p>
+    <h1 id="auth-page-title" class="auth-title mt-4 mb-2">{{ 'create_your_account' | t }}</h1>
+    <p class="auth-subtitle text-muted mb-0">{{ 'register_description' | t }}</p>
   </div>
 
   @if (errorMessage) {
@@ -13,7 +13,7 @@
 
   <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate>
     <div class="mb-3">
-      <label for="regName" class="form-label small fw-semibold">Full name</label>
+      <label for="regName" class="form-label small fw-semibold">{{ 'full_name' | t }}</label>
       <div class="input-group">
         <span class="input-group-text bg-transparent border-end-0 text-muted">
           <i class="bi bi-person" aria-hidden="true"></i>
@@ -21,12 +21,12 @@
         <input id="regName" class="form-control border-start-0 py-2" type="text" formControlName="fullName" [class.is-invalid]="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.invalid" [attr.aria-invalid]="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.invalid" placeholder="Elena Rostova" maxlength="80" autocomplete="name" required>
       </div>
       @if (registerForm.get('fullName')?.touched && registerForm.get('fullName')?.invalid) {
-        <div class="text-danger small mt-1" aria-live="polite">Enter at least 2 characters.</div>
+        <div class="text-danger small mt-1" aria-live="polite">{{ 'name_min_2' | t }}</div>
       }
     </div>
 
     <div class="mb-3">
-      <label for="regEmail" class="form-label small fw-semibold">Email</label>
+      <label for="regEmail" class="form-label small fw-semibold">{{ 'email' | t }}</label>
       <div class="input-group">
         <span class="input-group-text bg-transparent border-end-0 text-muted">
           <i class="bi bi-envelope" aria-hidden="true"></i>
@@ -34,41 +34,41 @@
         <input id="regEmail" class="form-control border-start-0 py-2" type="email" formControlName="email" [class.is-invalid]="registerForm.get('email')?.touched && registerForm.get('email')?.invalid" [attr.aria-invalid]="registerForm.get('email')?.touched && registerForm.get('email')?.invalid" placeholder="name@example.com" autocomplete="email" required>
       </div>
       @if (registerForm.get('email')?.touched && registerForm.get('email')?.invalid) {
-        <div class="text-danger small mt-1" aria-live="polite">Enter a valid email address.</div>
+        <div class="text-danger small mt-1" aria-live="polite">{{ 'enter_valid_email' | t }}</div>
       }
     </div>
 
     <div class="mb-3">
-      <label for="regPassword" class="form-label small fw-semibold">Password</label>
+      <label for="regPassword" class="form-label small fw-semibold">{{ 'password' | t }}</label>
       <div class="input-group">
         <span class="input-group-text bg-transparent border-end-0 text-muted">
           <i class="bi bi-lock" aria-hidden="true"></i>
         </span>
-        <input id="regPassword" class="form-control border-start-0 border-end-0 py-2" [type]="showPassword ? 'text' : 'password'" formControlName="password" [class.is-invalid]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" [attr.aria-invalid]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" placeholder="At least 8 characters" autocomplete="new-password" required>
-        <button type="button" class="btn border border-start-0 text-muted bg-transparent" [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'" (click)="togglePasswordVisibility('password')">
+        <input id="regPassword" class="form-control border-start-0 border-end-0 py-2" [type]="showPassword ? 'text' : 'password'" formControlName="password" [class.is-invalid]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" [attr.aria-invalid]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" [placeholder]="'password_min_8' | t" autocomplete="new-password" required>
+        <button type="button" class="btn border border-start-0 text-muted bg-transparent" [attr.aria-label]="(showPassword ? 'hide_password' : 'show_password') | t" (click)="togglePasswordVisibility('password')">
           <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
         </button>
       </div>
       @if (registerForm.get('password')?.touched && registerForm.get('password')?.invalid) {
-        <div class="text-danger small mt-1" aria-live="polite">Use at least 8 characters.</div>
+        <div class="text-danger small mt-1" aria-live="polite">{{ 'password_min_8' | t }}</div>
       }
     </div>
 
     <div class="mb-4">
-      <label for="regConfirmPassword" class="form-label small fw-semibold">Confirm password</label>
+      <label for="regConfirmPassword" class="form-label small fw-semibold">{{ 'confirm_password' | t }}</label>
       <div class="input-group">
         <span class="input-group-text bg-transparent border-end-0 text-muted">
           <i class="bi bi-shield-check" aria-hidden="true"></i>
         </span>
-        <input id="regConfirmPassword" class="form-control border-start-0 border-end-0 py-2" [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword" [class.is-invalid]="registerForm.get('confirmPassword')?.touched && (registerForm.get('confirmPassword')?.invalid || registerForm.hasError('mismatch'))" [attr.aria-invalid]="registerForm.get('confirmPassword')?.touched && (registerForm.get('confirmPassword')?.invalid || registerForm.hasError('mismatch'))" placeholder="Repeat your password" autocomplete="new-password" required>
-        <button type="button" class="btn border border-start-0 text-muted bg-transparent" [attr.aria-label]="showConfirmPassword ? 'Hide password' : 'Show password'" (click)="togglePasswordVisibility('confirm')">
+        <input id="regConfirmPassword" class="form-control border-start-0 border-end-0 py-2" [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword" [class.is-invalid]="registerForm.get('confirmPassword')?.touched && (registerForm.get('confirmPassword')?.invalid || registerForm.hasError('mismatch'))" [attr.aria-invalid]="registerForm.get('confirmPassword')?.touched && (registerForm.get('confirmPassword')?.invalid || registerForm.hasError('mismatch'))" [placeholder]="'repeat_password' | t" autocomplete="new-password" required>
+        <button type="button" class="btn border border-start-0 text-muted bg-transparent" [attr.aria-label]="(showConfirmPassword ? 'hide_password' : 'show_password') | t" (click)="togglePasswordVisibility('confirm')">
           <i class="bi" [ngClass]="showConfirmPassword ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
         </button>
       </div>
       @if (registerForm.get('confirmPassword')?.touched && registerForm.get('confirmPassword')?.hasError('required')) {
-        <div class="text-danger small mt-1" aria-live="polite">Confirm your password.</div>
+        <div class="text-danger small mt-1" aria-live="polite">{{ 'confirm_your_password' | t }}</div>
       } @else if (registerForm.get('confirmPassword')?.touched && registerForm.hasError('mismatch')) {
-        <div class="text-danger small mt-1" aria-live="polite">Passwords do not match.</div>
+        <div class="text-danger small mt-1" aria-live="polite">{{ 'passwords_do_not_match' | t }}</div>
       }
     </div>
 
@@ -76,12 +76,12 @@
       @if (isSubmitting) {
         <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
       }
-      {{ isSubmitting ? 'Creating account…' : 'Create account' }}
+      {{ (isSubmitting ? 'creating_account' : 'create_account') | t }}
     </button>
   </form>
 
   <p class="text-center text-muted small mb-0">
-    Already have an account?
-    <a routerLink="/auth/login" class="text-primary fw-semibold">Sign in</a>
+    {{ 'already_have_account' | t }}
+    <a routerLink="/auth/login" class="text-primary fw-semibold">{{ 'sign_in' | t }}</a>
   </p>
 </app-auth-layout>

@@ -261,6 +261,23 @@ export class AuthorPostsService {
     };
   }
 
+  async getAuthorPostFilterOptions(authorId: string) {
+    const [options, posts] = await Promise.all([
+      this.getPostOptions(),
+      this.postModel.findAll({
+        where: { author_id: authorId },
+        attributes: ['updated_at'],
+        order: [['updated_at', 'DESC']],
+      }),
+    ]);
+    const updatedMonths = [...new Set(posts.map(post => {
+      const date = new Date(post.updated_at);
+      return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+    }))];
+
+    return { ...options, updatedMonths };
+  }
+
   async updateAuthorPost(
     authorId: string,
     postId: string,

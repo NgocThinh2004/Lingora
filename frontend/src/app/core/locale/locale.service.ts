@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, map, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../http/api-response.model';
 import { LocaleOption, PublicLanguage } from './locale.model';
@@ -178,12 +178,15 @@ type UiLocaleBundle = Record<string, string>;
 
 @Injectable({ providedIn: 'root' })
 export class LocaleService {
-  private readonly http = inject(HttpClient);
+  private readonly http = inject(HttpClient, { optional: true });
   private readonly apiUrl = `${environment.apiUrl}/languages`;
   private readonly localesApiUrl = `${environment.apiUrl}/locales`;
   private loaded = false;
   private requestInProgress = false;
   private readonly bundleRequests = new Set<string>();
+  private readonly loadedBundleCodes = new Set<string>();
+  private readonly bundleLoadedCallbacks = new Map<string, Array<() => void>>();
+  private requestedLocaleCode = this.initialLocale();
 
   readonly bundles = signal<Record<string, UiLocaleBundle>>({
     en: UI_TRANSLATIONS.en,
@@ -192,7 +195,7 @@ export class LocaleService {
   });
 
   readonly options = signal<readonly LocaleOption[]>(FALLBACK_OPTIONS);
-  readonly selectedLocale = signal(this.initialLocale());
+  readonly selectedLocale = signal('en');
   readonly current = this.selectedLocale.asReadonly();
 
   constructor() {
@@ -200,6 +203,9 @@ export class LocaleService {
   }
 
   load(force = false): void {
+    if (!this.http) {
+      return;
+    }
     if (this.requestInProgress || (this.loaded && !force)) {
       return;
     }
@@ -211,12 +217,13 @@ export class LocaleService {
         this.options.set(options.length ? options : FALLBACK_OPTIONS);
         this.loaded = true;
         this.requestInProgress = false;
-        this.ensureValidSelection();
-        this.loadBundle(this.selectedLocale());
+        this.activateRequestedLocale();
       },
       error: () => {
         this.requestInProgress = false;
-        this.ensureValidSelection();
+        // The locale bundle endpoint may still be available when the language
+        // catalogue request fails, so do not leave the UI on the English fallback.
+        this.activateRequestedLocale();
       },
     });
   }
@@ -226,20 +233,22 @@ export class LocaleService {
   }
 
   findAll(): Observable<PublicLanguage[]> {
+    if (!this.http) {
+      return of([]);
+    }
     return this.http.get<ApiResponse<PublicLanguage[]>>(this.apiUrl).pipe(
       map(response => response.data),
       tap(languages => {
         const options = languages.map(language => this.toLocaleOption(language));
         this.options.set(options.length ? options : FALLBACK_OPTIONS);
         this.loaded = true;
-        this.ensureValidSelection();
-        this.loadBundle(this.selectedLocale());
+        this.activateRequestedLocale();
       }),
     );
   }
 
   setLanguage(code: string): void {
-    this.storeSelection(code.trim().toLowerCase());
+    this.requestSelection(code.trim().toLowerCase());
   }
 
   selectLocale(code: string): void {
@@ -247,13 +256,18 @@ export class LocaleService {
     if (!this.options().some(option => option.code === normalizedCode)) {
       return;
     }
-    this.storeSelection(normalizedCode);
+    this.requestSelection(normalizedCode);
   }
 
-  translate(key: UiTranslationKey): string {
+  translate(key: UiTranslationKey, params?: Record<string, string | number>): string {
     const locale = this.selectedLocale();
     const dictionaries = this.bundles();
-    return dictionaries[locale]?.[key] ?? dictionaries['en']?.[key] ?? key;
+    const value = dictionaries[locale]?.[key] ?? dictionaries['en']?.[key] ?? key;
+    if (!params) return value;
+    return Object.entries(params).reduce(
+      (message, [name, replacement]) => message.split(`{${name}}`).join(String(replacement)),
+      value,
+    );
   }
 
   private initialLocale(): string {
@@ -266,16 +280,25 @@ export class LocaleService {
       : 'en';
   }
 
-  private ensureValidSelection(): void {
+  private activateRequestedLocale(forceBundleReload = false): void {
     const options = this.options();
-    if (options.some(option => option.code === this.selectedLocale())) {
-      return;
-    }
+    const requested = options.find(option => option.code === this.requestedLocaleCode);
+    const target = requested ?? options.find(option => option.isDefault) ?? options[0];
+    if (!target) return;
+    this.requestedLocaleCode = target.code;
+    this.loadBundle(target.code, () => {
+      if (this.requestedLocaleCode === target.code) {
+        this.storeSelection(target.code);
+      }
+    }, forceBundleReload);
+  }
 
-    const fallback = options.find(option => option.isDefault) ?? options[0];
-    if (fallback) {
-      this.storeSelection(fallback.code);
-    }
+  private requestSelection(code: string): void {
+    this.requestedLocaleCode = code;
+    // A user-initiated selection must refresh the bundle. This prevents a
+    // previously cached locale from continuing to show newly added keys in
+    // the English fallback until the whole page is reloaded.
+    this.activateRequestedLocale(true);
   }
 
   private storeSelection(code: string): void {
@@ -289,19 +312,39 @@ export class LocaleService {
     }));
   }
 
-  private loadBundle(code: string): void {
+  private loadBundle(code: string, onLoaded?: () => void, force = false): void {
     const normalizedCode = code.trim().toLowerCase();
-    if (!normalizedCode || this.bundles()[normalizedCode] || this.bundleRequests.has(normalizedCode)) {
+    if (!this.http || !normalizedCode) {
       return;
     }
+    if (!force && this.loadedBundleCodes.has(normalizedCode)) {
+      onLoaded?.();
+      return;
+    }
+    if (onLoaded) {
+      const callbacks = this.bundleLoadedCallbacks.get(normalizedCode) ?? [];
+      callbacks.push(onLoaded);
+      this.bundleLoadedCallbacks.set(normalizedCode, callbacks);
+    }
+    if (this.bundleRequests.has(normalizedCode)) return;
     this.bundleRequests.add(normalizedCode);
     this.http.get<ApiResponse<UiLocaleBundle>>(`${this.localesApiUrl}/${encodeURIComponent(normalizedCode)}`)
       .subscribe({
         next: response => {
-          this.bundles.update(bundles => ({ ...bundles, [normalizedCode]: response.data }));
+          this.bundles.update(bundles => ({
+            ...bundles,
+            [normalizedCode]: { ...bundles[normalizedCode], ...response.data },
+          }));
+          this.loadedBundleCodes.add(normalizedCode);
           this.bundleRequests.delete(normalizedCode);
+          const callbacks = this.bundleLoadedCallbacks.get(normalizedCode) ?? [];
+          this.bundleLoadedCallbacks.delete(normalizedCode);
+          callbacks.forEach(callback => callback());
         },
-        error: () => this.bundleRequests.delete(normalizedCode),
+        error: () => {
+          this.bundleRequests.delete(normalizedCode);
+          this.bundleLoadedCallbacks.delete(normalizedCode);
+        },
       });
   }
 

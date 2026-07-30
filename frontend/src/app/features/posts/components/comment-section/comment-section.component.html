@@ -1,11 +1,11 @@
 <div class="mt-5 pt-3 border-top">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">Comments ({{ totalComments() }})</h4>
+    <h4 class="fw-bold mb-0">{{ 'comments' | t }} ({{ totalComments() }})</h4>
   </div>
 
   <div class="mb-4">
     <textarea id="newCommentInput" class="form-control mb-2" rows="3"
-      placeholder="Write a comment..."
+      [placeholder]="'write_comment' | t"
       [disabled]="isSubmitting()"
       (focus)="handleCommentFocus($event)"
       [(ngModel)]="newCommentText"></textarea>
@@ -16,7 +16,7 @@
         @if (isSubmitting()) {
           <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
         } @else {
-          Post Comment
+          {{ 'post_comment' | t }}
         }
       </button>
     </div>
@@ -36,22 +36,22 @@
                    class="rounded-circle border" style="width:36px;height:36px;object-fit:cover;" [alt]="comment.author.name">
               <span class="fw-bold fs-6 text-main">{{ comment.author.name }}</span>
               @if (isPostAuthor(comment)) {
-                <span class="badge bg-primary text-white rounded-pill px-2 py-1" style="font-size: 0.65rem; margin-top: 1px;">Author</span>
+                <span class="badge bg-primary text-white rounded-pill px-2 py-1" style="font-size: 0.65rem; margin-top: 1px;">{{ 'author' | t }}</span>
               }
               <app-author-tooltip [user]="comment.author"></app-author-tooltip>
             </div>
-            <span class="text-muted small ms-auto">{{ comment.created_at | date:'short' }}</span>
+            <span class="text-muted small ms-auto">{{ comment.created_at | localizedDate:'dateTime' }}</span>
           </div>
           <div class="mb-1 text-secondary comment-content-text">
             @if (editingCommentId() === comment.id) {
               <textarea class="form-control mb-2" rows="2" [(ngModel)]="editingCommentText"></textarea>
               <div class="d-flex gap-2 mb-2">
-                <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(comment)">Save</button>
-                <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">Cancel</button>
+                <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(comment)">{{ 'save' | t }}</button>
+                <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">{{ 'cancel_action' | t }}</button>
               </div>
             } @else {
               @if (isTranslating(comment)) {
-                <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> Translating...</span>
+                <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> {{ 'translating' | t }}</span>
               } @else if (isShowingTranslation(comment) && getTranslation(comment)) {
                 <span [innerHTML]="getTranslation(comment).content"></span>
               } @else {
@@ -70,7 +70,7 @@
             
             <button class="btn-reply btn-translate-toggle" (click)="toggleTranslate(comment)">
               <i class="bi" [class.bi-translate]="!isShowingTranslation(comment)" [class.bi-arrow-counterclockwise]="isShowingTranslation(comment)"></i>
-              @if (isShowingTranslation(comment)) { <span class="small ms-1">Original</span> }
+              @if (isShowingTranslation(comment)) { <span class="small ms-1">{{ 'original' | t }}</span> }
             </button>
             
             @if (canEdit(comment)) {
@@ -87,13 +87,13 @@
           @if (replyingToCommentId() === comment.id) {
             <div class="mt-3 pt-3 border-top w-100">
               <textarea class="form-control form-control-sm mb-2" rows="2"
-                        placeholder="Replying to {{ comment.author.name }}..."
+                        [placeholder]="'replying_to' | t:{ name: comment.author.name }"
                         [(ngModel)]="replyingToText"></textarea>
               <div class="d-flex justify-content-end gap-2">
-                <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply()">Cancel</button>
+                <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply()">{{ 'cancel_action' | t }}</button>
                 <button class="btn btn-sm btn-primary rounded-pill px-3 fw-medium"
                         [disabled]="!replyingToText().trim() || isSubmitting()"
-                        (click)="submitReply(comment)">Reply</button>
+                        (click)="submitReply(comment)">{{ 'reply' | t }}</button>
               </div>
             </div>
           }
@@ -109,11 +109,11 @@
                            class="rounded-circle border" style="width:28px;height:28px;object-fit:cover;" [alt]="reply.author.name">
                       <span class="fw-bold fs-6 text-main">{{ reply.author.name }}</span>
                       @if (isPostAuthor(reply)) {
-                        <span class="badge bg-primary text-white rounded-pill px-2 py-1" style="font-size: 0.65rem; margin-top: 1px;">Author</span>
+                        <span class="badge bg-primary text-white rounded-pill px-2 py-1" style="font-size: 0.65rem; margin-top: 1px;">{{ 'author' | t }}</span>
                       }
                       <app-author-tooltip [user]="reply.author"></app-author-tooltip>
                     </div>
-                    <span class="text-muted small ms-auto">{{ reply.created_at | date:'short' }}</span>
+                    <span class="text-muted small ms-auto">{{ reply.created_at | localizedDate:'dateTime' }}</span>
                   </div>
                   <div class="mb-1 text-secondary comment-content-text" style="font-size: 0.95rem;">
                     @if (reply.reply_to_username) {
@@ -122,12 +122,12 @@
                     @if (editingCommentId() === reply.id) {
                       <textarea class="form-control mb-2 mt-1" rows="2" [(ngModel)]="editingCommentText"></textarea>
                       <div class="d-flex gap-2 mb-2">
-                        <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(reply, comment)">Save</button>
-                        <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">Cancel</button>
+                        <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(reply, comment)">{{ 'save' | t }}</button>
+                        <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">{{ 'cancel_action' | t }}</button>
                       </div>
                     } @else {
                       @if (isTranslating(reply)) {
-                        <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> Translating...</span>
+                        <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> {{ 'translating' | t }}</span>
                       } @else if (isShowingTranslation(reply) && getTranslation(reply)) {
                         <span [innerHTML]="getTranslation(reply).content"></span>
                       } @else {
@@ -146,7 +146,7 @@
                     
                     <button class="btn-reply btn-translate-toggle" (click)="toggleTranslate(reply)">
                       <i class="bi" [class.bi-translate]="!isShowingTranslation(reply)" [class.bi-arrow-counterclockwise]="isShowingTranslation(reply)"></i>
-                      @if (isShowingTranslation(reply)) { <span class="small ms-1">Original</span> }
+                      @if (isShowingTranslation(reply)) { <span class="small ms-1">{{ 'original' | t }}</span> }
                     </button>
                     
                     @if (canEdit(reply)) {
@@ -163,13 +163,13 @@
                   @if (replyingToCommentId() === reply.id) {
                     <div class="mt-2 pt-2 border-top">
                       <textarea class="form-control form-control-sm mb-2" rows="2"
-                                placeholder="Replying to {{ reply.author.name }}..."
+                                [placeholder]="'replying_to' | t:{ name: reply.author.name }"
                                 [(ngModel)]="replyingToText"></textarea>
                       <div class="d-flex justify-content-end gap-2">
-                        <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply()">Cancel</button>
+                        <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply()">{{ 'cancel_action' | t }}</button>
                         <button class="btn btn-sm btn-primary rounded-pill px-3 fw-medium"
                                 [disabled]="!replyingToText().trim() || isSubmitting()"
-                                (click)="submitReply(reply)">Reply</button>
+                                (click)="submitReply(reply)">{{ 'reply' | t }}</button>
                       </div>
                     </div>
                   }
@@ -185,9 +185,9 @@
           <button class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-medium"
                   (click)="loadMore()" [disabled]="loading()">
             @if (loading()) {
-              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Loading...
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> {{ 'loading' | t }}
             } @else {
-              Load More Comments
+              {{ 'load_more_comments' | t }}
             }
           </button>
         </div>

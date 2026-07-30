@@ -99,6 +99,7 @@ export interface PostListParams {
 export interface PostOptions {
   languages: Array<{ id: number; code: string; label: string; nativeLabel: string; flagCode: string | null }>;
   categories: Array<{ id: number; label: string }>;
+  updatedMonths?: string[];
 }
 
 export interface FeedPostTranslation {

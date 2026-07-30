@@ -6,12 +6,13 @@ import { FormsModule } from '@angular/forms';
 import { Post } from '../posts/models/post.model';
 import { SubscribeButtonComponent } from './components/subscribe-button/subscribe-button.component';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { LocaleService } from '../../core/locale/locale.service';
 
 @Component({
   selector: 'app-subscriptions',
   standalone: true,
-  imports: [AuthorTooltipComponent, PostCardComponent, FormsModule, SubscribeButtonComponent, AssetImageDirective],
+  imports: [AuthorTooltipComponent, PostCardComponent, FormsModule, SubscribeButtonComponent, AssetImageDirective, TranslatePipe],
   templateUrl: './subscriptions.component.html',
   styleUrl: './subscriptions.component.scss'
 })

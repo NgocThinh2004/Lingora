@@ -9,11 +9,12 @@ import { Post } from '../posts/models/post.model';
 import { FeedPostsService } from '../posts/services/feed-posts.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, PostCardComponent, AssetImageDirective],
+  imports: [CommonModule, RouterLink, PostCardComponent, AssetImageDirective, TranslatePipe],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
@@ -68,9 +69,9 @@ export class HomeComponent implements OnDestroy {
 
   readonly selectedCategoryLabel = computed(() => {
     const slug = this.selectedCategorySlug();
-    if (!slug) return 'Dành cho bạn';
+    if (!slug) return this.languageService.translate('for_you');
     const cat = this.categories().find((c) => c.slug === slug);
-    return cat ? translateCategory(cat, this.currentLang()) : 'Dành cho bạn';
+    return cat ? translateCategory(cat, this.currentLang()) : this.languageService.translate('for_you');
   });
 
   constructor() {

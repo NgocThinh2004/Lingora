@@ -6,11 +6,13 @@ import { finalize } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { getApiErrorMessage } from '../../../core/http/api-error.util';
 import { AuthLayoutComponent } from '../../../layouts/auth-layout/auth-layout.component';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { LocaleService } from '../../../core/locale/locale.service';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthLayoutComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthLayoutComponent, TranslatePipe],
   templateUrl: './register.component.html'
 })
 export class RegisterComponent {
@@ -25,6 +27,7 @@ export class RegisterComponent {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
+    private localeService: LocaleService,
   ) {
     this.registerForm = this.fb.group({
       fullName: ['', [Validators.required, Validators.minLength(2)]],
@@ -67,7 +70,7 @@ export class RegisterComponent {
         });
       },
       error: error => {
-        this.errorMessage = getApiErrorMessage(error, 'Registration failed. Please try again.');
+        this.errorMessage = getApiErrorMessage(error, this.localeService.translate('registration_failed'), true);
       }
     });
   }
