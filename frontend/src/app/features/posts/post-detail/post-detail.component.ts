@@ -6,6 +6,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, switchMap, Subscription } from 'rxjs';
 import { FeedPostsService } from '../services/feed-posts.service';
 import { AuthorPost, Post, PostOptions, getPostTranslation } from '../models/post.model';
+import { translateCategory } from '../../categories/models/category.model';
 import { AuthorPostsService } from '../services/author-posts.service';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { Title } from '@angular/platform-browser';
@@ -279,7 +280,11 @@ export class PostDetailComponent implements OnDestroy {
     });
   }
 
-  getPostTranslationByLocale(p: Post): any {
-    return getPostTranslation(p, this.localeService.selectedLocale());
+  getPostTranslationByLocale(post: Post): import('../models/post.model').FeedPostTranslation | undefined {
+    return getPostTranslation(post, this.localeService.selectedLocale());
+  }
+
+  getCategoryTranslation(category: any): string {
+    return translateCategory(category, this.localeService.selectedLocale());
   }
 }
