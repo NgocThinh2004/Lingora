@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Output, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
 import { BrandComponent } from '../../../shared/components/brand/brand.component';
@@ -15,10 +15,24 @@ import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 })
 export class MobileHeaderComponent {
   private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   @Output() menuClick = new EventEmitter<void>();
 
   get profileAvatar(): string | null {
     return this.authService.currentUser()?.avatarUrl ?? null;
+  }
+
+  onHomeClick(event?: Event): void {
+    if (this.router.url === '/home' || this.router.url === '/') {
+      const centerFeed = document.querySelector('.center-feed');
+      if (centerFeed) {
+        centerFeed.scrollTo({ top: 0, behavior: 'auto' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
+    } else {
+      void this.router.navigate(['/home']);
+    }
   }
 }
