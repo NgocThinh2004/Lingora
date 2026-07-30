@@ -136,8 +136,8 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
         if (tab === 'top') {
           return forkJoin({
             posts: this.postsService.list({ q, category, lang, limit: 10, sort: 'trending' }).pipe(map(res => res.items)),
-            people: this.userService.getRecommended(q),
-            pubs: this.categoryService.findAll(q, lang)
+            people: this.userService.getRecommended(q, 2),
+            pubs: this.categoryService.findAll(q, lang, 2)
           }).pipe(map(res => ({ tab, data: res })));
         } else if (tab === 'posts') {
           return this.postsService.list({ q, category, lang, limit: 20, sort: 'trending', page: 1 }).pipe(
@@ -165,8 +165,8 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
 
       if (tab === 'top') {
         this.topPosts = data.posts;
-        this.featuredPeople = data.people.slice(0, 2);
-        this.featuredPublications = data.pubs.slice(0, 2);
+        this.featuredPeople = data.people;
+        this.featuredPublications = data.pubs;
       } else if (tab === 'posts') {
         this.posts = data.items;
         this.totalPages = data.meta.totalPages;

@@ -12,7 +12,7 @@ export class PublicUsersService {
     @InjectModel(Subscription) private readonly subscriptionModel: typeof Subscription,
   ) {}
 
-  async getRecommended(userId?: string | number, q?: string) {
+  async getRecommended(userId?: string | number, q?: string, limit?: number) {
     const whereClause: any = { status: 'active', deleted_at: null };
     if (q && q.trim()) {
       const keyword = `%${removeAccents(q.trim())}%`;
@@ -27,7 +27,7 @@ export class PublicUsersService {
       order: [
         [literal('(SELECT COUNT(*) FROM subscriptions WHERE author_id = User.id)'), 'DESC'],
       ],
-      limit: q ? 20 : 10,
+      limit: limit ? limit : (q ? 20 : 10),
     });
 
     const followingSet = await this.getFollowingSet(

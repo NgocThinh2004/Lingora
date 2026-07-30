@@ -11,16 +11,17 @@ export class CategoriesService {
 
   constructor(private readonly http: HttpClient) {}
 
-  findAll(q?: string, lang?: string): Observable<Category[]> {
+  findAll(q?: string, lang?: string, limit?: number): Observable<Category[]> {
     const params: any = {};
     if (q) params.q = q;
     if (lang) params.lang = lang;
+    if (limit) params.limit = limit.toString();
 
     const request = this.http
       .get<ApiResponse<Category[]>>(`${environment.apiUrl}/categories`, { params })
       .pipe(map((res) => res.data));
 
-    if (!q && !lang) {
+    if (!q && !lang && !limit) {
       if (!this.cache$) {
         this.cache$ = request.pipe(shareReplay(1));
       }
