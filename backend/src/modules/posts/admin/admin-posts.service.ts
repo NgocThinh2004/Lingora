@@ -87,6 +87,7 @@ export class AdminPostsService {
           ...(dto.decision === 'approve' ? { translation_status: { [Op.ne]: 'completed' } } : {}),
         },
         transaction,
+        individualHooks: true,
       });
     });
     return this.findOne(postId, language);

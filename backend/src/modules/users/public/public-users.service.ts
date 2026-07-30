@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { literal, Op } from 'sequelize';
 import { Subscription } from '../../subscriptions/models/subscription.model';
 import { User } from '../models/user.model';
+import { removeAccents } from '../../../utils/string.util';
 
 @Injectable()
 export class PublicUsersService {
@@ -14,9 +15,9 @@ export class PublicUsersService {
   async getRecommended(userId?: string | number, q?: string) {
     const whereClause: any = { status: 'active', deleted_at: null };
     if (q && q.trim()) {
-      const keyword = `%${q.trim()}%`;
+      const keyword = `%${removeAccents(q.trim())}%`;
       whereClause[Op.or] = [
-        { display_name: { [Op.like]: keyword } },
+        { unaccented_display_name: { [Op.like]: keyword } },
         { username: { [Op.like]: keyword } },
       ];
     }

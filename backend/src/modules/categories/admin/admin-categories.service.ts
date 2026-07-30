@@ -198,7 +198,7 @@ export class AdminCategoriesService {
             name: item.name.trim(),
             slug: this.slugify(item.slug || item.name),
           })),
-          { transaction },
+          { transaction, individualHooks: true },
         );
         return category.id;
       });

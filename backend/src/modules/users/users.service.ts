@@ -61,6 +61,7 @@ export class UsersService {
           id: userId,
           password_reset_otp_hash: expectedOtpHash,
         },
+        individualHooks: true,
       },
     );
   }

@@ -1,4 +1,5 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { BeforeSave, BeforeUpdate, Column, DataType, Model, Table } from 'sequelize-typescript';
+import { removeAccents } from '../../../utils/string.util';
 
 @Table({
   tableName: 'category_translations',
@@ -21,4 +22,15 @@ export class CategoryTranslation extends Model {
 
   @Column({ type: DataType.STRING(150), allowNull: false })
   declare slug: string;
+
+  @Column({ type: DataType.STRING(150), allowNull: true })
+  declare unaccented_name: string | null;
+
+  @BeforeSave
+  @BeforeUpdate
+  static generateUnaccented(instance: CategoryTranslation) {
+    if (instance.changed('name') && instance.name) {
+      instance.unaccented_name = removeAccents(instance.name);
+    }
+  }
 }

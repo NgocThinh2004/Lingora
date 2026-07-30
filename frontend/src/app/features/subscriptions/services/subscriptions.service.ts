@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map, Subject, tap, BehaviorSubject } from 'rxjs';
+import { Observable, map, tap, BehaviorSubject } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiItemResponse } from '../../../core/http/api-response.model';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -14,9 +14,6 @@ export class SubscriptionsService {
 
   private followedAuthorIds = new BehaviorSubject<Set<string>>(new Set());
   private initialized = false;
-
-  private subscriptionChangedSource = new Subject<{ authorId: string, subscribed: boolean }>();
-  subscriptionChanged$ = this.subscriptionChangedSource.asObservable();
 
   initFollowingState(): void {
     if (!this.authService.isAuthenticated()) return;
@@ -43,15 +40,15 @@ export class SubscriptionsService {
   }
 
 
-  followers(): Observable<SubscriptionAuthor[]> {
-    return this.http
-      .get<ApiItemResponse<SubscriptionAuthor[]>>(`${this.baseUrl}/followers`)
-      .pipe(map(response => response.data));
-  }
-
   following(): Observable<SubscriptionAuthor[]> {
     return this.http
       .get<ApiItemResponse<SubscriptionAuthor[]>>(`${this.baseUrl}/following`)
+      .pipe(map(response => response.data));
+  }
+
+  followers(): Observable<SubscriptionAuthor[]> {
+    return this.http
+      .get<ApiItemResponse<SubscriptionAuthor[]>>(`${this.baseUrl}/followers`)
       .pipe(map(response => response.data));
   }
 
@@ -61,7 +58,6 @@ export class SubscriptionsService {
         const set = new Set(this.followedAuthorIds.value);
         set.delete(String(authorId));
         this.followedAuthorIds.next(set);
-        this.subscriptionChangedSource.next({ authorId: String(authorId), subscribed: false });
       })
     );
   }
@@ -73,7 +69,6 @@ export class SubscriptionsService {
         const set = new Set(this.followedAuthorIds.value);
         set.add(String(authorId));
         this.followedAuthorIds.next(set);
-        this.subscriptionChangedSource.next({ authorId: String(authorId), subscribed: true });
       })
     );
   }
