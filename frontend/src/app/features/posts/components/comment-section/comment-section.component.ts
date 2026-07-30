@@ -260,9 +260,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   canEdit(comment: Comment): boolean {
-    const userId = this.authService.currentUser()?.id;
-    const authorId = comment.author?.id || comment.user_id;
-    return userId !== undefined && String(userId) === String(authorId);
+    return !!comment.permissions?.canEdit;
   }
 
   isPostAuthor(comment: Comment): boolean {
@@ -271,11 +269,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   canDelete(comment: Comment): boolean {
-    const user = this.authService.currentUser();
-    if (!user) return false;
-    if (user.role === 'admin') return true;
-    const authorId = comment.author?.id || comment.user_id;
-    return String(user.id) === String(authorId) || String(user.id) === String(this.postAuthorId);
+    return !!comment.permissions?.canDelete;
   }
 
   shouldShowTranslateButton(comment: Comment): boolean {

@@ -84,18 +84,31 @@ export class CommentsService {
       return created;
     });
 
-    return this.commentModel.findByPk(comment.id, {
+    const result = await this.commentModel.findByPk(comment.id, {
       include: [
         { model: User, as: 'author', attributes: ['id', 'username', 'display_name', 'avatar'] },
         { model: Language, as: 'originalLanguage', attributes: ['code'] }
       ],
     });
+    
+    if (result) {
+      const json = result.toJSON() as any;
+      json.permissions = {
+        canEdit: true, // They just created it
+        canDelete: true
+      };
+      return json;
+    }
+    return null;
   }
 
 
 
-  async getCommentsByPost(postId: string, page: number = 1, limit: number = 20, userId?: number) {
+  async getCommentsByPost(postId: string, page: number = 1, limit: number = 20, userId?: number, userRole?: string) {
     const offset = (page - 1) * limit;
+
+    const post = await this.postModel.findByPk(postId, { attributes: ['author_id'] });
+    const postAuthorId = post?.author_id;
 
     // Fetch root comments
     // Count all comments for this post (including replies) to return the true total
@@ -145,6 +158,16 @@ export class CommentsService {
       const json = comment.toJSON() as any;
       json.likeCount = comment.like_count || 0;
       json.liked = userLikes.has(String(comment.id));
+      
+      const isCommentAuthor = String(comment.user_id) === String(userId);
+      const isPostAuthor = String(postAuthorId) === String(userId);
+      const isAdmin = userRole === 'admin';
+
+      json.permissions = {
+        canEdit: isCommentAuthor,
+        canDelete: isCommentAuthor || isPostAuthor || isAdmin
+      };
+
       return json;
     };
 
