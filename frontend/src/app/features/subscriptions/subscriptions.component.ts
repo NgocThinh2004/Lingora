@@ -5,7 +5,7 @@ import { PostCardComponent } from '../posts/components/post-card/post-card.compo
 import { FormsModule } from '@angular/forms';
 import { Post } from '../posts/models/post.model';
 import { SubscribeButtonComponent } from './components/subscribe-button/subscribe-button.component';
-import { SubscriptionAuthorView } from './models/subscription.model';
+import { SubscriptionAuthorView, SubscriptionAuthor } from './models/subscription.model';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { LocaleService } from '../../core/locale/locale.service';
@@ -146,7 +146,7 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
     });
   }
 
-  private mapAuthors(items: SubscriptionAuthorView[]): SubscriptionAuthorView[] {
+  private mapAuthors(items: SubscriptionAuthor[]): SubscriptionAuthorView[] {
     return items.map(author => ({
       id: author.id,
       username: author.username,

@@ -11,8 +11,6 @@ coverage/
 !.env.example
 backend/storage/uploads/*
 !backend/storage/uploads/.gitkeep
-backend/storage/locales/*
-!backend/storage/locales/.gitkeep
 *.log
 
 # Editor and operating-system files
@@ -22,6 +20,5 @@ backend/storage/locales/*
 Thumbs.db
 
 # Generated documents
-*.md
 *.docx
 *.doc

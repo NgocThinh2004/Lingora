@@ -79,6 +79,27 @@ describe('AdminCategoriesComponent', () => {
     expect(component.translationForms.controls.every(group => group.controls.name.hasValidator(Validators.required))).toBeTrue();
   });
 
+  it('shows a newly active language as an optional blank field for an existing category', () => {
+    const japanese: AdminLanguage = {
+      ...english,
+      id: 3,
+      code: 'ja',
+      name: 'Japanese',
+      nativeName: '日本語',
+      flagCode: 'jp',
+      isDefault: false,
+    };
+    component.activeLanguages.set([english, vietnamese, japanese]);
+
+    component.openEditPanel(category);
+
+    const japaneseForm = component.translationForms.at(2);
+    expect(japaneseForm.controls.name.value).toBe('');
+    expect(japaneseForm.controls.slug.value).toBe('');
+    expect(japaneseForm.controls.name.hasValidator(Validators.required)).toBeFalse();
+    expect(japaneseForm.controls.slug.hasValidator(Validators.required)).toBeFalse();
+  });
+
   it('generates editable slugs and submits all translations in one request', () => {
     categoriesService.createCategory.and.returnValue(of({ data: category }));
     component.openAddPanel();

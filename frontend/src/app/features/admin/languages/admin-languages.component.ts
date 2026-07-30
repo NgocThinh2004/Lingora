@@ -151,6 +151,19 @@ export class AdminLanguagesComponent implements OnInit {
       isActive: true,
     };
     this.saving.set(true);
+    this.localeService.hasStaticBundle(payload.code).subscribe(exists => {
+      if (!exists) {
+        this.saving.set(false);
+        this.toastService.showError(this.localeService.translate('ui_locale_bundle_missing', {
+          code: payload.code,
+        }));
+        return;
+      }
+      this.submitCreateLanguage(payload);
+    });
+  }
+
+  private submitCreateLanguage(payload: CreateAdminLanguageRequest): void {
     this.languagesService.createLanguage(payload).subscribe({
       next: response => {
         this.saving.set(false);

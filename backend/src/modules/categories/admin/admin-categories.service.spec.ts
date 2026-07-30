@@ -100,7 +100,7 @@ describe('AdminCategoriesService', () => {
     expect(translationModel.bulkCreate).toHaveBeenCalledWith([
       { category_id: 7, language_id: 1, name: 'Technology', slug: 'technology' },
       { category_id: 7, language_id: 2, name: 'Công nghệ', slug: 'cong-nghe' },
-    ], { transaction });
+    ], { transaction, individualHooks: true });
     expect(result.id).toBe(7);
   });
 

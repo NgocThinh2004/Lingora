@@ -8,6 +8,15 @@ export interface SubscriptionAuthor {
   bio: string | null;
 }
 
+export interface SubscriptionAuthorsPage {
+  items: SubscriptionAuthor[];
+  meta: {
+    total: number;
+    page: number;
+    totalPages: number;
+  };
+}
+
 export interface SubscriptionData {
   authors: SubscriptionAuthor[];
   posts: Post[];
