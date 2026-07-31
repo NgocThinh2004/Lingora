@@ -6,6 +6,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PaginationMeta } from '../../../core/http/api-response.model';
 import { ToastService } from '../../../core/notifications/toast.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { UiStateComponent } from '../../../shared/components/ui-state/ui-state.component';
 import { AdminUser, AdminUserRole, AdminUserStatus } from './models/admin-user.model';
 import { AdminUsersService } from './services/admin-users.service';
@@ -17,7 +18,7 @@ import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UiStateComponent, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
+  imports: [CommonModule, ReactiveFormsModule, PaginationComponent, UiStateComponent, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
   templateUrl: './admin-users.component.html',
   styleUrl: './admin-users.component.scss',
 })
@@ -201,13 +202,6 @@ export class AdminUsersComponent implements OnInit {
         this.toastService.showError(this.localeService.translate('unable_update_user'));
       },
     });
-  }
-
-  pageNumbers(): number[] {
-    const { page, totalPages } = this.pagination();
-    const start = Math.max(1, Math.min(page - 2, totalPages - 4));
-    const end = Math.min(totalPages, start + 4);
-    return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index);
   }
 
   userName(user: AdminUser): string {

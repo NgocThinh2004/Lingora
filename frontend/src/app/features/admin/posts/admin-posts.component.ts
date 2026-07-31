@@ -5,6 +5,7 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { PaginationMeta } from '../../../core/http/api-response.model';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { ToastService } from '../../../core/notifications/toast.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { UiStateComponent } from '../../../shared/components/ui-state/ui-state.component';
 import { AdminCategory } from '../categories/models/admin-category.model';
 import { AdminCategoriesService } from '../categories/services/admin-categories.service';
@@ -17,7 +18,7 @@ import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
 @Component({
   selector: 'app-admin-posts',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UiStateComponent, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
+  imports: [CommonModule, ReactiveFormsModule, PaginationComponent, UiStateComponent, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
   templateUrl: './admin-posts.component.html',
   styleUrl: './admin-posts.component.scss',
 })
@@ -194,7 +195,4 @@ export class AdminPostsComponent implements OnInit, OnDestroy {
     return `P-${normalized || 'UNKNOWN'}`;
   }
 
-  pageNumbers(): number[] {
-    return Array.from({ length: this.pagination().totalPages }, (_, index) => index + 1);
-  }
 }

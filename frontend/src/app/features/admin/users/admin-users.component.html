@@ -122,20 +122,10 @@
       </table>
     </div>
 
-    @if (pagination().totalPages > 1) {
-      <nav class="admin-pagination" [attr.aria-label]="'user_pagination' | t">
-        <button class="admin-page-btn" type="button" [disabled]="pagination().page <= 1" (click)="loadUsers(pagination().page - 1)"
-          [attr.aria-label]="'previous_page' | t"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
-        @for (page of pageNumbers(); track page) {
-          <button class="admin-page-btn" type="button" [class.is-active]="page === pagination().page"
-            [attr.aria-current]="page === pagination().page ? 'page' : null" (click)="loadUsers(page)">{{ page }}</button>
-        }
-        <button class="admin-page-btn" type="button" [disabled]="pagination().page >= pagination().totalPages"
-          (click)="loadUsers(pagination().page + 1)" [attr.aria-label]="'next_page' | t">
-          <i class="bi bi-chevron-right" aria-hidden="true"></i>
-        </button>
-      </nav>
-    }
+    <app-pagination
+      [currentPage]="pagination().page"
+      [totalPages]="pagination().totalPages"
+      (pageChange)="loadUsers($event)" />
   }
 </div>
 

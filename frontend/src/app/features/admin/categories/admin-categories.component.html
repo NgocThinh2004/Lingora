@@ -123,21 +123,10 @@
       </table>
     </div>
 
-    @if (pagination().totalPages > 1) {
-      <nav class="admin-pagination" aria-label="Category pagination">
-        <button class="admin-page-btn" type="button" [disabled]="pagination().page <= 1" (click)="loadCategories(pagination().page - 1)" aria-label="Previous page">
-          <i class="bi bi-chevron-left" aria-hidden="true"></i>
-        </button>
-        @for (page of pageNumbers(); track page) {
-          <button class="admin-page-btn" type="button" [class.is-active]="page === pagination().page"
-            [attr.aria-current]="page === pagination().page ? 'page' : null" (click)="loadCategories(page)">{{ page }}</button>
-        }
-        <button class="admin-page-btn" type="button" [disabled]="pagination().page >= pagination().totalPages"
-          (click)="loadCategories(pagination().page + 1)" aria-label="Next page">
-          <i class="bi bi-chevron-right" aria-hidden="true"></i>
-        </button>
-      </nav>
-    }
+    <app-pagination
+      [currentPage]="pagination().page"
+      [totalPages]="pagination().totalPages"
+      (pageChange)="loadCategories($event)" />
   }
 </div>
 
