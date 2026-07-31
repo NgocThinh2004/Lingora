@@ -5,6 +5,7 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { PaginationMeta } from '../../../core/http/api-response.model';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { ToastService } from '../../../core/notifications/toast.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { UiStateComponent } from '../../../shared/components/ui-state/ui-state.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
@@ -25,7 +26,7 @@ type CategoryPanelMode = 'add' | 'edit' | null;
 @Component({
   selector: 'app-admin-categories',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UiStateComponent, TranslatePipe, LocalizedDatePipe],
+  imports: [CommonModule, ReactiveFormsModule, PaginationComponent, UiStateComponent, TranslatePipe, LocalizedDatePipe],
   templateUrl: './admin-categories.component.html',
   styleUrl: './admin-categories.component.scss',
 })
@@ -316,13 +317,6 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
     return /^[a-z]{2}$/.test(code)
       ? `https://flagcdn.com/w40/${code}.png`
       : 'assets/images/lingora-mark.svg';
-  }
-
-  pageNumbers(): number[] {
-    const { page, totalPages } = this.pagination();
-    const start = Math.max(1, Math.min(page - 2, totalPages - 4));
-    const end = Math.min(totalPages, start + 4);
-    return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index);
   }
 
   private createTranslationGroup(

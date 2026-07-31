@@ -81,15 +81,10 @@
         </tbody>
       </table>
     </div>
-    @if (pagination().totalPages > 1) {
-      <nav class="admin-pagination" aria-label="Post pagination">
-        <button class="admin-page-btn" type="button" [disabled]="pagination().page <= 1" (click)="loadPosts(pagination().page - 1)" aria-label="Previous page"><i class="bi bi-chevron-left"></i></button>
-        @for (page of pageNumbers(); track page) {
-          <button class="admin-page-btn" type="button" [class.is-active]="page === pagination().page" (click)="loadPosts(page)">{{ page }}</button>
-        }
-        <button class="admin-page-btn" type="button" [disabled]="pagination().page >= pagination().totalPages" (click)="loadPosts(pagination().page + 1)" aria-label="Next page"><i class="bi bi-chevron-right"></i></button>
-      </nav>
-    }
+    <app-pagination
+      [currentPage]="pagination().page"
+      [totalPages]="pagination().totalPages"
+      (pageChange)="loadPosts($event)" />
   }
 </div>
 

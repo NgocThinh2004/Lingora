@@ -180,35 +180,10 @@
             <i class="bi bi-search"></i>
             <strong>{{ translate('no_posts_found') }}</strong>
           </div>
-          <div class="pagination-wrapper justify-content-end" *ngIf="(meta?.totalPages || 1) > 1">
-            <ul class="pagination pagination-sm mb-0">
-              <li class="page-item" [class.disabled]="page <= 1">
-                <a class="page-link" href="#" [attr.aria-disabled]="page <= 1"
-                  [attr.tabindex]="page <= 1 ? -1 : null" aria-label="Previous"
-                  (click)="$event.preventDefault(); goToPage(page - 1)">
-                  <i class="bi bi-chevron-left"></i>
-                </a>
-              </li>
-              <li *ngIf="hasPreviousPageGap()" class="page-item disabled">
-                <span class="page-link pagination-ellipsis">...</span>
-              </li>
-              <li *ngFor="let pageNumber of paginationPages()" class="page-item"
-                [class.active]="pageNumber === page" [attr.aria-current]="pageNumber === page ? 'page' : null">
-                <a class="page-link" href="#" (click)="$event.preventDefault(); goToPage(pageNumber)">{{
-                  pageNumber }}</a>
-              </li>
-              <li *ngIf="hasNextPageGap()" class="page-item disabled">
-                <span class="page-link pagination-ellipsis">...</span>
-              </li>
-              <li class="page-item" [class.disabled]="page >= (meta?.totalPages || 1)">
-                <a class="page-link" href="#" [attr.aria-disabled]="page >= (meta?.totalPages || 1)"
-                  [attr.tabindex]="page >= (meta?.totalPages || 1) ? -1 : null" aria-label="Next"
-                  (click)="$event.preventDefault(); goToPage(page + 1)">
-                  <i class="bi bi-chevron-right"></i>
-                </a>
-              </li>
-            </ul>
-          </div>
+          <app-pagination
+            [currentPage]="page"
+            [totalPages]="meta?.totalPages || 1"
+            (pageChange)="goToPage($event)" />
         </section>
 
   <div *ngIf="confirmationAction" class="confirmation-backdrop" role="presentation"
