@@ -74,7 +74,7 @@
     </article>
 
     @if (!authorPreview()) {
-      <app-comment-section [postId]="p.id" [postAuthorId]="p.authorId"></app-comment-section>
+      <app-comment-section [postId]="p.id" [postAuthorId]="p.author.id"></app-comment-section>
     }
 
     <!-- Related Posts Section (Same Category) -->

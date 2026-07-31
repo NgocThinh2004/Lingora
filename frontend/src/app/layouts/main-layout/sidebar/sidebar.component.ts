@@ -100,6 +100,20 @@ export class SidebarComponent implements OnInit {
     this.moreMenuOpen.set(false);
   }
 
+  onHomeClick(event?: Event): void {
+    this.closeMenus();
+    if (this.router.url === '/home' || this.router.url === '/') {
+      const centerFeed = document.querySelector('.center-feed');
+      if (centerFeed) {
+        centerFeed.scrollTo({ top: 0, behavior: 'auto' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
+    } else {
+      void this.router.navigate(['/home']);
+    }
+  }
+
   @HostListener('document:click', ['$event'])
   closeMenusOnOutsideClick(event: Event): void {
     const target = event.target as HTMLElement | null;

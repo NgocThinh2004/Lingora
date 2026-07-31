@@ -499,5 +499,6 @@
     "replying_to": "Respondiendo a {name}...",
     "dismiss_notification": "Descartar notificación",
     "enter_handle": "@ Introduzca un identificador",
-    "zoom_image": "Ampliar imagen"
+    "zoom_image": "Ampliar imagen",
+    "edited": "Editado"
 }

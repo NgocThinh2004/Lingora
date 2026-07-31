@@ -14,7 +14,7 @@ function withCoverImage(content, imageUrl, title) {
 module.exports = {
   async up(queryInterface, Sequelize) {
     const now = new Date();
-    const passwordHash = '$2b$10$e8K7E6U3Z.4zQ9H0H9wQ1e8K7E6U3Z.4zQ9H0H9wQ1e8K7E6U3Z.';
+    const passwordHash = '$2b$10$3e7Bf6a1qFBuC43hi5Rnt.vfj5u5UsrMObMFYiBxBE4vSOod1fBt.';
 
     // 1. ROLES
     await queryInterface.bulkInsert(

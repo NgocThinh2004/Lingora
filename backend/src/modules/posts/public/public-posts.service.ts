@@ -336,7 +336,7 @@ export class PublicPostsService {
       await this.cacheManager.set(cacheKey, true, 3600000).catch(() => null);
     }
 
-    const result = await this.listFeed({ page: 1, limit: 1, lang }, id, userId);
+    const result = await this.listFeed({ page: 1, limit: 1 }, id, userId);
     const found = result.items.find((p) => p.id === Number(id));
     if (!found) throw new NotFoundException('Post details not found');
     return found;
