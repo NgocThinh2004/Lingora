@@ -95,7 +95,7 @@
                   <img [appAssetImage]="person.avatarUrl" class="explore-card-avatar" [alt]="person.name">
                   <div class="explore-card-info">
                     <div class="explore-card-title fw-bold fs-6 mb-1">{{ person.name }}</div>
-                    <div class="text-muted small"><i class="bi bi-journal-text me-1"></i>{{ person.handle ? '@'+person.handle : ('0 ' + ('article_count' | t)) }}</div>
+                    <div class="text-muted small">{{ person.handle ? '@'+person.handle : ('0 ' + ('article_count' | t)) }}</div>
                   </div>
                 </a>
                 <app-author-tooltip [user]="person"></app-author-tooltip>
@@ -171,7 +171,7 @@
               <img [appAssetImage]="person.avatarUrl" class="explore-card-avatar" [alt]="person.name">
               <div class="explore-card-info">
                 <div class="explore-card-title fw-bold fs-6 mb-1">{{ person.name }}</div>
-                <div class="text-muted small"><i class="bi bi-journal-text me-1"></i>{{ person.handle ? '@'+person.handle : ('0 ' + ('article_count' | t)) }}</div>
+                <div class="text-muted small">{{ person.handle ? '@'+person.handle : ('0 ' + ('article_count' | t)) }}</div>
               </div>
             </a>
             <app-author-tooltip [user]="person"></app-author-tooltip>
