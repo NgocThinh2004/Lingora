@@ -40,7 +40,12 @@
               }
               <app-author-tooltip [user]="comment.author"></app-author-tooltip>
             </div>
-            <span class="text-muted small ms-auto">{{ comment.created_at | localizedDate:'dateTime' }}</span>
+            <span class="text-muted small ms-auto">
+              @if (isCommentEdited(comment)) {
+                <span class="fst-italic me-1">{{ 'edited' | t }}</span>
+              }
+              {{ comment.created_at | localizedDate:'dateTime' }}
+            </span>
           </div>
           <div class="mb-1 text-secondary comment-content-text">
             @if (editingCommentId() === comment.id) {

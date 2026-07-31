@@ -496,5 +496,6 @@
   "replying_to": "正在回复{name}...",
   "dismiss_notification": "关闭通知",
   "enter_handle": "@ 输入用户名",
-  "zoom_image": "缩放图片"
+  "zoom_image": "缩放图片",
+  "edited": "已编辑"
 }

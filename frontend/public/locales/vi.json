@@ -496,5 +496,6 @@
   "replying_to": "Đang trả lời {name}...",
   "dismiss_notification": "Đóng thông báo",
   "enter_handle": "@ Nhập tên định danh",
-  "zoom_image": "Thu phóng ảnh"
+  "zoom_image": "Thu phóng ảnh",
+  "edited": "Đã chỉnh sửa"
 }

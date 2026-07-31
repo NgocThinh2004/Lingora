@@ -290,6 +290,13 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     return String(authorId) === String(this.postAuthorId);
   }
 
+  isCommentEdited(comment: Comment): boolean {
+    if (!comment.updated_at || !comment.created_at) return false;
+    const created = new Date(comment.created_at).getTime();
+    const updated = new Date(comment.updated_at).getTime();
+    return (updated - created) > 2000;
+  }
+
   canDelete(comment: Comment): boolean {
     return !!comment.permissions?.canDelete;
   }

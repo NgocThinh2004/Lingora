@@ -12,6 +12,7 @@ export interface Comment {
   original_language_id: number | null;
   status: string;
   created_at: string;
+  updated_at?: string;
   author: User;
   replies?: Comment[];
   likeCount?: number;
