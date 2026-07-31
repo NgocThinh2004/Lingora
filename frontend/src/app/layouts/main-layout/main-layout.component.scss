@@ -109,8 +109,18 @@
   width: min(320px, 85vw);
   background-color: var(--bg-sidebar);
   z-index: 1050;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-sidebar-header {
+  height: 60px;
+  flex-shrink: 0;
+}
+
+.mobile-sidebar-content {
+  flex-grow: 1;
   overflow-y: auto;
-  padding-top: 1rem;
 }
 
 :host ::ng-deep .mobile-sidebar-panel .left-sidebar {
@@ -119,17 +129,6 @@
   width: 100%;
   height: 100%;
   border-right: 0;
-}
-
-.close-btn {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: transparent;
-  border: none;
-  color: var(--text-main);
-  font-size: 1rem;
-  z-index: 1;
 }
 
 
