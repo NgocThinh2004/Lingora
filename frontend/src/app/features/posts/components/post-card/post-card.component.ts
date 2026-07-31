@@ -70,6 +70,15 @@ export class PostCardComponent implements OnDestroy, AfterViewInit {
       ?? p.translations?.find(t => t.languageCode === p.originalLanguage)
       ?? p.translations?.[0];
   });
+
+  readonly isFallback = computed(() => {
+    const languageCode = this.translation()?.languageCode;
+    return Boolean(languageCode && languageCode !== this.currentLang());
+  });
+
+  readonly fallbackLanguageCode = computed(() =>
+    this.translation()?.languageCode || this._post().originalLanguage || '',
+  );
   
   readonly categoryLabel = computed(() => translateCategory(this._post().category, this.currentLang()));
   

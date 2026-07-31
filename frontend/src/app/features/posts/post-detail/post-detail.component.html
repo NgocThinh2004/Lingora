@@ -33,6 +33,13 @@
         {{ displayedTranslation()?.title }}
       </h1>
 
+      @if (isFallback()) {
+        <div class="alert alert-warning py-2 px-3 mb-4 d-flex align-items-center" style="font-size: 0.9rem; border-radius: var(--radius-md); background-color: rgba(255, 193, 7, 0.1); color: #b78a00; border-color: rgba(255, 193, 7, 0.2);">
+          <i class="bi bi-info-circle me-2"></i>
+          <span>{{ 'fallback_warning_tooltip' | t }}</span>
+        </div>
+      }
+
       <div class="substack-post-header mb-3 pb-3 border-bottom d-flex align-items-center justify-content-between">
         <div class="author-badge-group d-flex align-items-center position-relative author-tooltip-container" style="z-index: 2;">
           <a [routerLink]="['/profile', p.author.id]" class="d-flex align-items-center text-decoration-none">
