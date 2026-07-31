@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { debounceTime, distinctUntilChanged, forkJoin, Subject } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LocaleService, UiTranslationKey } from '../../core/locale/locale.service';
 import { getApiErrorMessage } from '../../core/http/api-error.util';
 import { PaginationMeta } from '../../core/http/api-response.model';
@@ -26,6 +27,8 @@ export class MyPostsComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly searchChanges = new Subject<string>();
 
   readonly statuses: Array<PostStatus | 'all'> = [
     'all',
@@ -48,8 +51,8 @@ export class MyPostsComponent implements OnInit {
   page = 1;
   status: PostStatus | 'all' | 'public' = 'all';
   search = '';
+  searchInput = '';
   languageFilter = 'all';
-  dateFilter = 'all';
   categoryFilter = 'all';
   trash = false;
   loading = false;
@@ -59,7 +62,6 @@ export class MyPostsComponent implements OnInit {
   bulkActionBusy = false;
   categoryOptions: Array<{ id: number; label: string }> = [];
   languageOptions: Array<{ id: number; code: string; label: string; nativeLabel: string; flagCode: string | null }> = [];
-  dateOptions: string[] = [];
   confirmationAction: ConfirmationAction | null = null;
   confirmationPostIds: string[] = [];
   confirmationBusy = false;
@@ -69,12 +71,18 @@ export class MyPostsComponent implements OnInit {
 
   ngOnInit(): void {
     this.locale.load();
+    this.searchChanges
+      .pipe(
+        debounceTime(250),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(value => this.applySearch(value));
     this.restoreListState();
     this.postsService.getAuthorPostFilterOptions().subscribe({
       next: options => {
         this.categoryOptions = options.categories;
         this.languageOptions = options.languages;
-        this.dateOptions = options.updatedMonths ?? [];
         this.loadPosts();
       },
       error: () => this.loadPosts(),
@@ -324,17 +332,6 @@ export class MyPostsComponent implements OnInit {
     }).format(new Date(value));
   }
 
-  formatMonth(value: string): string {
-    const match = /^(\d{4})-(\d{2})$/.exec(value);
-    if (!match) return value;
-    const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1));
-    return new Intl.DateTimeFormat(this.locale.selectedLocale(), {
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'UTC',
-    }).format(date);
-  }
-
   visibleItemsLabel(): string {
     const count = this.meta?.total ?? this.visiblePosts().length;
     return `${count} ${this.translate(count === 1 ? 'item' : 'items')}`;
@@ -519,7 +516,12 @@ export class MyPostsComponent implements OnInit {
     return this.busyKey === `${post.id}:${action}`;
   }
 
-  applySearch(): void {
+  onSearchInput(value: string): void {
+    this.searchChanges.next(value.trim());
+  }
+
+  applySearch(value = this.searchInput): void {
+    this.search = value.trim();
     this.selectedPostIds.clear();
     this.page = 1;
     this.syncListState();
@@ -625,7 +627,6 @@ export class MyPostsComponent implements OnInit {
       search: this.search.trim() || undefined,
       originalLanguageId: selectedLanguage?.id,
       categoryId: this.categoryFilter === 'all' ? undefined : Number(this.categoryFilter),
-      updatedMonth: this.dateFilter === 'all' ? undefined : this.dateFilter,
       page,
       limit,
     };
@@ -643,8 +644,8 @@ export class MyPostsComponent implements OnInit {
     this.trash = params.get('trash') === 'true';
     this.page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
     this.search = params.get('search') ?? '';
+    this.searchInput = this.search;
     this.languageFilter = params.get('language') ?? 'all';
-    this.dateFilter = params.get('date') ?? 'all';
     this.categoryFilter = params.get('category') ?? 'all';
   }
 
@@ -671,7 +672,6 @@ export class MyPostsComponent implements OnInit {
       trash: this.trash || null,
       search: this.search.trim() || null,
       language: this.languageFilter !== 'all' ? this.languageFilter : null,
-      date: this.dateFilter !== 'all' ? this.dateFilter : null,
       category: this.categoryFilter !== 'all' ? this.categoryFilter : null,
     };
   }

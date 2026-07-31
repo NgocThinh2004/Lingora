@@ -24,6 +24,7 @@ import { LocaleService } from '../../core/locale/locale.service';
 import { getApiErrorMessage } from '../../core/http/api-error.util';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
+import { environment } from '../../../environments/environment';
 
 type SaveMode = 'draft' | 'submit';
 type BaselineFormat = 'normal' | 'superscript' | 'subscript';
@@ -61,9 +62,18 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly codeProtectedCommands = new Set(['bold', 'italic', 'strikeThrough']);
   private currentPostId: string | null = null;
   private autosaveTimer: number | null = null;
+  private serverAutosaveTimer: number | null = null;
   private autosaveDirty = false;
   private autosaveState: AutosaveState = 'idle';
   private readonly autosaveDelayMs = 500;
+  private readonly serverAutosaveDelayMs = 900;
+  private serverAutosaveInFlight = false;
+  private serverAutosaveQueued = false;
+  private pendingExplicitSaveMode: SaveMode | null = null;
+  private editorRevision = 0;
+  private serverSavedRevision = 0;
+  private suppressAutosave = false;
+  private unloadAutosaveRequested = false;
   private restoredAutosave = false;
   readonly titleWordLimit = 20;
   readonly bodyWordLimit = 3000;
@@ -138,6 +148,9 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       next: options => {
         this.languageOptions = options.languages;
         this.categoryOptions = options.categories;
+        if (!this.currentPostId && !this.draft.categoryId && this.categoryOptions.length > 0) {
+          this.draft.categoryId = this.categoryOptions[0].id;
+        }
         if (!this.currentPostId && !this.restoredAutosave) {
           this.useSelectedLocaleAsOriginalLanguage();
         }
@@ -166,6 +179,8 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.flushAutosave();
+    this.persistServerAutosaveOnUnload();
+    this.cancelServerAutosaveTimer();
     document.body.classList.remove('editor-page', 'preview-modal-open', 'publish-modal-open', 'draft-modal-open');
   }
 
@@ -716,6 +731,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   discardDraft(): void {
+    this.suppressAutosave = true;
     this.clearAutosaveSnapshots();
     this.showDraftConfirm = false;
     this.updateBodyModalClasses();
@@ -737,7 +753,16 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @HostListener('window:beforeunload')
   onBeforeUnload(): void {
+    this.syncContentFromEditor();
     this.flushAutosave();
+    this.persistServerAutosaveOnUnload();
+  }
+
+  @HostListener('window:pagehide')
+  onPageHide(): void {
+    this.syncContentFromEditor();
+    this.flushAutosave();
+    this.persistServerAutosaveOnUnload();
   }
 
   @HostListener('document:click', ['$event'])
@@ -839,6 +864,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private save(mode: SaveMode): void {
     this.syncContentFromEditor();
     this.flushAutosave();
+    this.cancelServerAutosaveTimer();
     const payload = this.buildPayload();
     if (!payload.title.trim() || !this.hasMeaningfulContent(payload.content)) {
       this.toast.showError(this.localeService.translate('title_content_required'));
@@ -848,6 +874,12 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       this.toast.showError(
         this.localeService.translate('editor_word_limits', { title: this.titleWordLimit, body: this.bodyWordLimit }),
       );
+      return;
+    }
+
+    if (this.serverAutosaveInFlight) {
+      this.pendingExplicitSaveMode = mode;
+      this.saveMode = mode;
       return;
     }
 
@@ -875,6 +907,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           const wasNewPost = !this.currentPostId;
           this.createdPost = post;
           this.currentPostId = String(post.id);
+          this.serverSavedRevision = this.editorRevision;
           this.clearAutosaveSnapshots(post.id);
           this.saveMode = null;
           this.autosaveState = 'saved';
@@ -882,6 +915,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             this.location.replaceState(`/workspace/posts/${post.id}/edit`);
           }
           if (mode === 'submit') {
+            this.suppressAutosave = true;
             this.navigateToMyPosts(this.localeService.translate('post_submitted_review', { id: post.id }));
             return;
           }
@@ -1951,12 +1985,18 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private scheduleAutosave(): void {
+    this.editorRevision += 1;
     this.autosaveDirty = true;
     this.autosaveState = 'saving';
     if (this.autosaveTimer !== null) {
       window.clearTimeout(this.autosaveTimer);
     }
     this.autosaveTimer = window.setTimeout(() => this.persistAutosave(), this.autosaveDelayMs);
+    this.cancelServerAutosaveTimer();
+    this.serverAutosaveTimer = window.setTimeout(
+      () => this.persistServerAutosave(),
+      this.serverAutosaveDelayMs,
+    );
   }
 
   private flushAutosave(): void {
@@ -2003,6 +2043,143 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.autosaveDirty = false;
   }
 
+  private persistServerAutosave(): void {
+    this.serverAutosaveTimer = null;
+    if (
+      this.suppressAutosave ||
+      this.saveMode !== null ||
+      !this.canPersistServerDraft()
+    ) {
+      return;
+    }
+    if (this.serverAutosaveInFlight) {
+      this.serverAutosaveQueued = true;
+      return;
+    }
+
+    const payload = this.buildPayload();
+    const savingRevision = this.editorRevision;
+    const wasNewPost = !this.currentPostId;
+    this.serverAutosaveInFlight = true;
+    this.autosaveState = 'saving';
+
+    const request$ = this.postsService.autosaveAuthorPost(
+      payload,
+      this.createdPost?.id ?? this.currentPostId ?? undefined,
+    );
+
+    request$.subscribe({
+      next: post => {
+        this.createdPost = post;
+        this.currentPostId = String(post.id);
+        this.previewDate = new Date(post.createdAt);
+        this.serverSavedRevision = savingRevision;
+        this.serverAutosaveInFlight = false;
+
+        if (wasNewPost) {
+          this.location.replaceState(`/workspace/posts/${post.id}/edit`);
+          this.removeAutosaveSnapshot(null);
+        }
+
+        const explicitMode = this.pendingExplicitSaveMode;
+        this.pendingExplicitSaveMode = null;
+        if (explicitMode) {
+          this.saveMode = null;
+          this.save(explicitMode);
+          return;
+        }
+
+        if (this.serverAutosaveQueued || this.editorRevision > savingRevision) {
+          this.serverAutosaveQueued = false;
+          this.autosaveDirty = true;
+          this.persistAutosave();
+          this.serverAutosaveTimer = window.setTimeout(
+            () => this.persistServerAutosave(),
+            0,
+          );
+          return;
+        }
+
+        this.removeAutosaveSnapshot(post.id);
+        this.autosaveState = 'saved';
+      },
+      error: () => {
+        this.serverAutosaveInFlight = false;
+        this.serverAutosaveQueued = false;
+        const explicitMode = this.pendingExplicitSaveMode;
+        this.pendingExplicitSaveMode = null;
+        if (explicitMode) {
+          this.saveMode = null;
+          this.save(explicitMode);
+          return;
+        }
+
+        // The local snapshot remains the recovery source while the API is unavailable.
+        this.autosaveState = this.autosaveDirty ? 'saving' : 'saved';
+      },
+    });
+  }
+
+  private persistServerAutosaveOnUnload(): void {
+    if (
+      this.unloadAutosaveRequested ||
+      this.suppressAutosave ||
+      this.saveMode !== null ||
+      this.serverAutosaveInFlight ||
+      this.editorRevision <= this.serverSavedRevision ||
+      !this.canPersistServerDraft()
+    ) {
+      return;
+    }
+
+    const token = this.authService.getToken();
+    if (!token) {
+      return;
+    }
+
+    this.unloadAutosaveRequested = true;
+    this.cancelServerAutosaveTimer();
+    const postId = this.createdPost?.id ?? this.currentPostId;
+    const url = postId
+      ? `${environment.apiUrl}/author/posts/${postId}/autosave`
+      : `${environment.apiUrl}/author/posts/autosave`;
+
+    void fetch(url, {
+      method: postId ? 'PATCH' : 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(this.buildPayload()),
+      keepalive: true,
+    }).catch(() => {
+      // localStorage remains available for recovery if keepalive is rejected.
+    });
+  }
+
+  private canPersistServerDraft(): boolean {
+    if (
+      this.createdPost &&
+      this.createdPost.status !== 'draft' &&
+      this.createdPost.status !== 'rejected'
+    ) {
+      return false;
+    }
+
+    return Boolean(
+      (this.draft.title.trim() || this.hasMeaningfulContent(this.draft.content)) &&
+      !this.isTitleOverLimit &&
+      !this.isBodyOverLimit,
+    );
+  }
+
+  private cancelServerAutosaveTimer(): void {
+    if (this.serverAutosaveTimer !== null) {
+      window.clearTimeout(this.serverAutosaveTimer);
+      this.serverAutosaveTimer = null;
+    }
+  }
+
   private readAutosaveSnapshot(postId: string | null): EditorAutosaveSnapshot | null {
     try {
       const rawSnapshot = localStorage.getItem(this.autosaveStorageKey(postId));
@@ -2046,6 +2223,12 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.hydrateEditorFromDraft();
     this.autosaveDirty = false;
     this.autosaveState = 'saved';
+    this.editorRevision += 1;
+    this.cancelServerAutosaveTimer();
+    this.serverAutosaveTimer = window.setTimeout(
+      () => this.persistServerAutosave(),
+      this.serverAutosaveDelayMs,
+    );
   }
 
   private hydrateEditorFromDraft(): void {
@@ -2104,6 +2287,8 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     if (postId !== undefined) {
       this.removeAutosaveSnapshot(postId);
     }
+    this.cancelServerAutosaveTimer();
+    this.serverAutosaveQueued = false;
     this.autosaveDirty = false;
   }
 

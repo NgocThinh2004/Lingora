@@ -140,7 +140,12 @@ export interface PaginatedResult<T> {
   };
 }
 
-/** Select only the requested public display translation. */
+/** Prefer the requested locale, then fall back to the original article language. */
 export function getPostTranslation(post: Post, lang: string): FeedPostTranslation | undefined {
-  return post.translations?.find(translation => translation.languageCode === lang);
+  const availableTranslations = post.translations?.filter(translation =>
+    Boolean(translation.title?.trim() || translation.contentHtml?.trim()),
+  ) ?? [];
+  return availableTranslations.find(translation => translation.languageCode === lang)
+    ?? availableTranslations.find(translation => translation.languageCode === post.originalLanguage)
+    ?? availableTranslations[0];
 }

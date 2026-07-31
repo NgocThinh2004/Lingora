@@ -3,6 +3,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } f
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { AuthorPostsQueryDto } from './dto/author-posts-query.dto';
+import { AutosaveAuthorPostDto } from './dto/autosave-author-post.dto';
 import { CreateAuthorPostDto } from './dto/create-author-post.dto';
 import { UpdateAuthorPostDto } from './dto/update-author-post.dto';
 import { AuthorPostsService } from './author-posts.service';
@@ -15,6 +16,11 @@ export class AuthorPostsController {
   @Post()
   async create(@CurrentUser('id') userId: string, @Body() dto: CreateAuthorPostDto) {
     return { data: await this.postsService.createAuthorPost(userId, dto) };
+  }
+
+  @Post('autosave')
+  async autosaveNew(@CurrentUser('id') userId: string, @Body() dto: AutosaveAuthorPostDto) {
+    return { data: await this.postsService.autosaveAuthorPost(userId, dto) };
   }
 
   @Get()
@@ -46,6 +52,15 @@ export class AuthorPostsController {
     @Body() dto: UpdateAuthorPostDto,
   ) {
     return { data: await this.postsService.updateAuthorPost(userId, postId, dto) };
+  }
+
+  @Patch(':id/autosave')
+  async autosaveExisting(
+    @CurrentUser('id') userId: string,
+    @Param('id') postId: string,
+    @Body() dto: AutosaveAuthorPostDto,
+  ) {
+    return { data: await this.postsService.autosaveAuthorPost(userId, dto, postId) };
   }
 
   @Post(':id/submit')

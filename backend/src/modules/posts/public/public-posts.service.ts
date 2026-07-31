@@ -86,29 +86,6 @@ export class PublicPostsService {
       matchingPostIds = matchingPostIds.filter(id => allowed.has(id));
     };
 
-    // Only expose posts with a completed translation in the selected locale.
-    if (query.lang?.trim()) {
-      const selectedLanguage = languages.find(language =>
-        language.code === query.lang!.trim().toLowerCase(),
-      );
-      if (!selectedLanguage) {
-        intersectPostIds([]);
-      } else {
-        const localizedTranslations = await this.postTranslationModel.findAll({
-          where: {
-            language_id: selectedLanguage.id,
-            translation_status: 'completed',
-            [Op.and]: [
-              literal("TRIM(title) != ''"),
-              literal("TRIM(content) != ''"),
-            ],
-          },
-          attributes: ['post_id'],
-        });
-        intersectPostIds(localizedTranslations.map(item => Number(item.post_id)));
-      }
-    }
-
     if (query.q && query.q.trim()) {
       const keyword = `%${removeAccents(query.q.trim())}%`;
       const translationWhere: any = {
