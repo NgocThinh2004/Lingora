@@ -70,16 +70,13 @@ export class PostCardComponent implements OnDestroy, AfterViewInit {
   });
 
   readonly isFallback = computed(() => {
-    const p = this._post();
-    if (!p) return false;
-    const trans = this.translation();
-    if (!trans) return false;
-    return trans.languageCode !== this.currentLang();
+    const languageCode = this.translation()?.languageCode;
+    return Boolean(languageCode && languageCode !== this.currentLang());
   });
 
   readonly fallbackLanguageCode = computed(() => {
     if (!this.isFallback()) return null;
-    return this.translation()?.languageCode;
+    return this.translation()?.languageCode || this._post().originalLanguage || null;
   });
   
   readonly categoryLabel = computed(() => translateCategory(this._post().category, this.currentLang()));

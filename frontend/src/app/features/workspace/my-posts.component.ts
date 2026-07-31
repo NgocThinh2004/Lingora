@@ -10,6 +10,7 @@ import { PaginationMeta } from '../../core/http/api-response.model';
 import { AuthorPost, PostListParams, PostStatus, PostTranslation } from '../posts/models/post.model';
 import { AuthorPostsService } from '../posts/services/author-posts.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 
 type AuthorAction = 'submit' | 'archive' | 'restore' | 'trash' | 'restore-trash';
 type ConfirmationAction = 'trash' | 'delete-permanent';
@@ -17,7 +18,7 @@ type ConfirmationAction = 'trash' | 'delete-permanent';
 @Component({
   selector: 'app-my-posts',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, PaginationComponent],
   templateUrl: './my-posts.component.html',
   styleUrl: './my-posts.component.scss',
 })
@@ -335,27 +336,6 @@ export class MyPostsComponent implements OnInit {
   visibleItemsLabel(): string {
     const count = this.meta?.total ?? this.visiblePosts().length;
     return `${count} ${this.translate(count === 1 ? 'item' : 'items')}`;
-  }
-
-  paginationPages(): number[] {
-    const totalPages = this.meta?.totalPages ?? 1;
-    let startPage = Math.max(1, this.page - 2);
-    const endPage = Math.min(totalPages, startPage + 4);
-
-    if (endPage - startPage < 4) {
-      startPage = Math.max(1, endPage - 4);
-    }
-
-    return Array.from({ length: endPage - startPage + 1 }, (_, index) => startPage + index);
-  }
-
-  hasPreviousPageGap(): boolean {
-    return (this.paginationPages()[0] ?? 1) > 1;
-  }
-
-  hasNextPageGap(): boolean {
-    const pages = this.paginationPages();
-    return (pages[pages.length - 1] ?? 1) < (this.meta?.totalPages ?? 1);
   }
 
   trackPost(_index: number, post: AuthorPost): string {

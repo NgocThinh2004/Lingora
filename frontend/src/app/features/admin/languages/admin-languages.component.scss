@@ -45,11 +45,6 @@
 .default-pill { border: 1px solid #fed7aa; color: #b54708; background: #fff7ed; }
 .language-action { display: inline-grid; width: 34px; height: 34px; padding: 0; place-items: center; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); background: var(--bg-body); }
 
-.admin-pagination { display: flex; margin-top: 1.25rem; justify-content: center; gap: .35rem; }
-.admin-pagination button { display: grid; min-width: 38px; height: 38px; padding: 0 .5rem; place-items: center; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); background: var(--bg-panel); }
-.admin-pagination button.is-active { border-color: var(--primary-color); color: var(--accent-contrast, #fff); background: var(--primary-color); }
-.admin-pagination button:disabled { cursor: not-allowed; opacity: .45; }
-
 /* Right Slide-Out Panel & Backdrop */
 .dialog-backdrop {
   position: fixed;

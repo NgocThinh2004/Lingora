@@ -904,39 +904,6 @@ select.form-select-sm {
 }
 .admin-header p { margin: 0; color: var(--text-muted); }
 
-/* Compact pagination shared by admin directory pages. */
-.admin-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: .35rem;
-  min-height: 38px;
-  margin-top: 1rem;
-}
-.admin-pagination[hidden] { display: none !important; }
-.admin-page-btn {
-  min-width: 36px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 .55rem;
-  border: 1px solid var(--border-color);
-  border-radius: 9px;
-  color: var(--text-main);
-  background: var(--bg-panel);
-  font-size: .82rem;
-  font-weight: 650;
-  transition: border-color .15s ease, background-color .15s ease, color .15s ease;
-}
-.admin-page-btn:hover:not(:disabled) { border-color: var(--primary-color); color: var(--primary-color); }
-.admin-page-btn.is-active { border-color: var(--primary-color); color: var(--accent-contrast, #fff); background: var(--primary-color); }
-.admin-page-btn:disabled { opacity: .42; cursor: not-allowed; }
-.admin-page-gap { min-width: 24px; color: var(--text-muted); text-align: center; }
-@media (max-width: 575px) {
-  .admin-pagination { gap: .25rem; }
-  .admin-page-btn { min-width: 34px; height: 34px; padding-inline: .45rem; }
-}
 @media (max-width: 767.98px) {
   .admin-container { padding: 1rem .75rem 2rem; }
 }
