@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { parseDocument } from 'htmlparser2';
+import { type AnyNode, isTag, isText } from 'domhandler';
 import {
   DEFAULT_TRANSLATION_PROVIDER_ORDER,
   DEFAULT_TRANSLATION_PROVIDER_TIMEOUT_MS,
@@ -38,8 +40,36 @@ type TranslationProviderFailure = {
   errorMessage: string;
 };
 
+type TranslationPlan = {
+  segments: string[];
+  render: (translatedSegments: string[]) => string;
+};
+
+type HtmlTextReplacement = {
+  start: number;
+  end: number;
+  segmentOffset: number;
+  segmentCount: number;
+};
+
 @Injectable()
 export class TranslationProviderService {
+  private readonly protectedHtmlTags = new Set([
+    'audio',
+    'canvas',
+    'code',
+    'embed',
+    'iframe',
+    'math',
+    'object',
+    'pre',
+    'script',
+    'style',
+    'svg',
+    'textarea',
+    'video',
+  ]);
+
   constructor(private readonly configService: ConfigService) {}
 
   getProviderOrder(): string[] {
@@ -87,8 +117,58 @@ export class TranslationProviderService {
       return { ok: true, texts: [...request.texts] };
     }
 
+    const normalizedProvider = provider.trim().toLowerCase();
     try {
-      switch (provider.trim().toLowerCase()) {
+      const chunkSize = this.getChunkSize(normalizedProvider);
+      const plans = request.texts.map(text => (
+        request.format === 'html'
+          ? this.createHtmlTranslationPlan(text, chunkSize)
+          : this.createTextTranslationPlan(text, chunkSize)
+      ));
+      const segments = plans.flatMap(plan => plan.segments);
+      if (!segments.length) {
+        return { ok: true, texts: [...request.texts] };
+      }
+
+      const translatedSegments: string[] = [];
+      for (const batch of this.createBatches(segments, chunkSize)) {
+        const batchResult = await this.translatePreparedTexts(normalizedProvider, {
+          ...request,
+          texts: batch,
+          format: 'text',
+        });
+        if (!batchResult.ok) {
+          return batchResult;
+        }
+        if (batchResult.texts.length !== batch.length) {
+          return this.failure('failed', 'Translation provider returned an unexpected segment count');
+        }
+        translatedSegments.push(...batchResult.texts);
+      }
+
+      let offset = 0;
+      return {
+        ok: true,
+        texts: plans.map(plan => {
+          const translated = translatedSegments.slice(offset, offset + plan.segments.length);
+          offset += plan.segments.length;
+          return plan.render(translated);
+        }),
+      };
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return this.failure('timeout', 'Translation provider request timed out');
+      }
+      return this.failure('failed', this.safeErrorMessage(error));
+    }
+  }
+
+  private async translatePreparedTexts(
+    provider: string,
+    request: TranslationSegmentsRequest,
+  ): Promise<TranslationSegmentsResult> {
+    try {
+      switch (provider) {
         case 'mock-fail':
           return this.failure('failed', 'Mock provider forced failure');
         case 'mock-rate-limit':
@@ -121,6 +201,149 @@ export class TranslationProviderService {
       }
       return this.failure('failed', this.safeErrorMessage(error));
     }
+  }
+
+  private createTextTranslationPlan(text: string, chunkSize: number): TranslationPlan {
+    const segments = text.trim() ? this.splitText(text, chunkSize) : [];
+    return {
+      segments,
+      render: translatedSegments => translatedSegments.length ? translatedSegments.join('') : text,
+    };
+  }
+
+  private createHtmlTranslationPlan(html: string, chunkSize: number): TranslationPlan {
+    const document = parseDocument(html, {
+      decodeEntities: false,
+      withEndIndices: true,
+      withStartIndices: true,
+    });
+    const segments: string[] = [];
+    const replacements: HtmlTextReplacement[] = [];
+
+    const visit = (node: AnyNode, insideProtectedTag: boolean): void => {
+      const protectedNode = insideProtectedTag
+        || (isTag(node) && this.protectedHtmlTags.has(node.name.toLowerCase()));
+
+      if (isText(node) && !protectedNode && node.data.trim() && node.startIndex !== null && node.endIndex !== null) {
+        const nodeSegments = this.splitText(node.data, chunkSize);
+        replacements.push({
+          start: node.startIndex,
+          end: node.endIndex + 1,
+          segmentOffset: segments.length,
+          segmentCount: nodeSegments.length,
+        });
+        segments.push(...nodeSegments);
+        return;
+      }
+
+      if ('children' in node) {
+        node.children.forEach(child => visit(child, protectedNode));
+      }
+    };
+    visit(document, false);
+
+    return {
+      segments,
+      render: translatedSegments => {
+        if (!replacements.length) {
+          return html;
+        }
+        return [...replacements]
+          .reverse()
+          .reduce((renderedHtml, replacement) => {
+            const translatedText = translatedSegments
+              .slice(
+                replacement.segmentOffset,
+                replacement.segmentOffset + replacement.segmentCount,
+              )
+              .join('');
+            return renderedHtml.slice(0, replacement.start)
+              + translatedText
+              + renderedHtml.slice(replacement.end);
+          }, html);
+      },
+    };
+  }
+
+  private splitText(text: string, maxLength: number): string[] {
+    if (text.length <= maxLength) {
+      return [text];
+    }
+
+    const chunks: string[] = [];
+    let offset = 0;
+    while (offset < text.length) {
+      const remainingLength = text.length - offset;
+      if (remainingLength <= maxLength) {
+        chunks.push(text.slice(offset));
+        break;
+      }
+
+      const candidate = text.slice(offset, offset + maxLength);
+      const minimumBoundary = Math.floor(maxLength * 0.55);
+      const boundaryPattern = /(?:\r?\n+|[.!?;:,。！？；，、]\s*|\s+)/g;
+      let splitAt = 0;
+      let match: RegExpExecArray | null;
+      while ((match = boundaryPattern.exec(candidate)) !== null) {
+        const boundary = match.index + match[0].length;
+        if (boundary >= minimumBoundary) {
+          splitAt = boundary;
+        }
+      }
+      if (!splitAt) {
+        splitAt = maxLength;
+      }
+      chunks.push(text.slice(offset, offset + splitAt));
+      offset += splitAt;
+    }
+    return chunks;
+  }
+
+  private createBatches(segments: string[], chunkSize: number): string[][] {
+    const configuredCharLimit = Number(this.configService.get<string>('TRANSLATION_BATCH_CHAR_LIMIT'));
+    const charLimit = Number.isFinite(configuredCharLimit) && configuredCharLimit > 0
+      ? Math.max(chunkSize, configuredCharLimit)
+      : 10_000;
+    const configuredSegmentLimit = Number(this.configService.get<string>('TRANSLATION_BATCH_SEGMENT_LIMIT'));
+    const segmentLimit = Number.isFinite(configuredSegmentLimit) && configuredSegmentLimit > 0
+      ? Math.floor(configuredSegmentLimit)
+      : 50;
+    const batches: string[][] = [];
+    let currentBatch: string[] = [];
+    let currentLength = 0;
+
+    for (const segment of segments) {
+      if (
+        currentBatch.length
+        && (currentBatch.length >= segmentLimit || currentLength + segment.length > charLimit)
+      ) {
+        batches.push(currentBatch);
+        currentBatch = [];
+        currentLength = 0;
+      }
+      currentBatch.push(segment);
+      currentLength += segment.length;
+    }
+    if (currentBatch.length) {
+      batches.push(currentBatch);
+    }
+    return batches;
+  }
+
+  private getChunkSize(provider: string): number {
+    const configuredChunkSize = Number(this.configService.get<string>('TRANSLATION_CHUNK_SIZE'));
+    const defaultChunkSize = Number.isFinite(configuredChunkSize) && configuredChunkSize > 0
+      ? Math.floor(configuredChunkSize)
+      : 2500;
+    if (!['google', 'google-free', 'google-legacy'].includes(provider)) {
+      return defaultChunkSize;
+    }
+
+    const configuredGoogleMax = Number(this.configService.get<string>('GOOGLE_FREE_MAX_TEXT_LENGTH'));
+    const googleMax = Number.isFinite(configuredGoogleMax) && configuredGoogleMax > 0
+      ? Math.floor(configuredGoogleMax)
+      : 3000;
+    return Math.min(defaultChunkSize, googleMax);
   }
 
   private async translateWithDeepL(request: TranslationSegmentsRequest): Promise<TranslationSegmentsResult> {

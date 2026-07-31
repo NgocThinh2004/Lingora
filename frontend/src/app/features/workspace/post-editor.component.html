@@ -628,7 +628,6 @@
         <div class="publish-form-group mb-4">
           <h3 class="fb-modal-heading">{{ 'post_category' | t }}</h3>
           <select class="form-select category-select" id="post_category" name="postCategory" style="width: 100%;" [(ngModel)]="draft.categoryId" (ngModelChange)="updateCategoryId($event)">
-            <option [ngValue]="undefined">{{ 'no_category' | t }}</option>
             <option *ngFor="let category of categoryOptions" [ngValue]="category.id">{{ category.label }}</option>
           </select>
         </div>

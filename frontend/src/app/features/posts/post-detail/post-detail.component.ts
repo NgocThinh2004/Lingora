@@ -107,11 +107,7 @@ export class PostDetailComponent implements OnDestroy {
     const currentPost = this.post();
     if (!currentPost) return null;
     const selectedLocale = this.localeService.selectedLocale();
-    const trans = this.authorPreview()
-      ? getPostTranslation(currentPost, selectedLocale)
-        ?? currentPost.translations.find(item => item.languageCode === currentPost.originalLanguage)
-        ?? currentPost.translations[0]
-      : currentPost.translations.find(item => item.languageCode === selectedLocale);
+    const trans = getPostTranslation(currentPost, selectedLocale);
     if (!trans) return null;
     
     return {

@@ -64,6 +64,16 @@ describe('AuthorPostsService state machine', () => {
     expect(() => service.assertEditorContentLimits('Title', '<video controls src="/uploads/test.mp4"></video>')).not.toThrow();
   });
 
+  it('allows autosave with only a title or only meaningful content', () => {
+    expect(() => service.assertAutosaveContentLimits('Incomplete title', '')).not.toThrow();
+    expect(() => service.assertAutosaveContentLimits('', '<p>Incomplete content</p>')).not.toThrow();
+    expect(() => service.assertAutosaveContentLimits('', '<img src="/uploads/draft.png">')).not.toThrow();
+  });
+
+  it('rejects an entirely empty autosave snapshot', () => {
+    expect(() => service.assertAutosaveContentLimits('', '<p><br></p>')).toThrow(BadRequestException);
+  });
+
   it('returns distinct post update months for the current author', async () => {
     const postModel = {
       findAll: jest.fn().mockResolvedValue([

@@ -51,6 +51,33 @@ describe('AuthorPostsService', () => {
     expect(result).toBe(post);
   });
 
+  it('creates and updates incomplete drafts through the autosave endpoints', () => {
+    const payload = {
+      title: 'Incomplete title',
+      originalLanguageId: 1,
+      content: '',
+    };
+    const created = { id: '9', status: 'draft' } as AuthorPost;
+    const updated = { id: '9', status: 'draft' } as AuthorPost;
+    let createResult: AuthorPost | undefined;
+    let updateResult: AuthorPost | undefined;
+
+    service.autosaveAuthorPost(payload).subscribe(value => createResult = value);
+    const createRequest = httpTesting.expectOne(`${environment.apiUrl}/author/posts/autosave`);
+    expect(createRequest.request.method).toBe('POST');
+    createRequest.flush({ data: created });
+
+    service.autosaveAuthorPost(payload, created.id).subscribe(value => updateResult = value);
+    const updateRequest = httpTesting.expectOne(
+      `${environment.apiUrl}/author/posts/${created.id}/autosave`,
+    );
+    expect(updateRequest.request.method).toBe('PATCH');
+    updateRequest.flush({ data: updated });
+
+    expect(createResult).toBe(created);
+    expect(updateResult).toBe(updated);
+  });
+
   it('loads the current author filter months from the API', () => {
     let months: string[] | undefined;
 
