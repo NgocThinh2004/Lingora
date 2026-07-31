@@ -1,13 +1,13 @@
 
 <aside class="left-sidebar">
   <div>
-    <div class="substack-logo-container">
-      <app-brand link="/home" />
+    <div class="substack-logo-container d-none d-lg-block" (click)="onHomeClick($event)">
+      <app-brand link="/home" style="pointer-events: none;" />
     </div>
 
     <nav class="sidebar-nav">
       <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
-        class="sidebar-nav-item" (click)="closeMenus()">
+        class="sidebar-nav-item" (click)="onHomeClick($event)">
         <i class="bi bi-house-door-fill"></i><span>{{ translate('home') }}</span>
       </a>
       <a routerLink="/subscriptions" routerLinkActive="active" class="sidebar-nav-item" (click)="closeMenus()">

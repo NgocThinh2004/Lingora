@@ -5,6 +5,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
 import { BrandComponent } from '../../../shared/components/brand/brand.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { SearchModalService } from '../../../features/search/search-modal.service';
 
 @Component({
   selector: 'app-mobile-header',
@@ -16,6 +17,7 @@ import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 export class MobileHeaderComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  readonly searchModalService = inject(SearchModalService);
 
   @Output() menuClick = new EventEmitter<void>();
 

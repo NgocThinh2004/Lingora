@@ -23,9 +23,16 @@
 @if (mobileSidebarOpen()) {
   <div class="mobile-sidebar-backdrop" (click)="closeMobileSidebar()"></div>
   <div class="mobile-sidebar-panel">
-    <button type="button" class="close-btn" (click)="closeMobileSidebar()" [attr.aria-label]="'close_menu' | t">
-      <i class="bi bi-x-lg"></i>
-    </button>
-    <app-sidebar></app-sidebar>
+    <div class="mobile-sidebar-header d-flex justify-content-between align-items-center px-3 py-2 border-bottom border-secondary" style="border-bottom-color: var(--border-color) !important;">
+      <div (click)="onHomeClick($event); closeMobileSidebar()" style="cursor: pointer;">
+        <app-brand link="/home" style="pointer-events: none;" />
+      </div>
+      <button type="button" class="btn btn-link text-reset p-0 m-0 d-inline-flex align-items-center" (click)="closeMobileSidebar()" [attr.aria-label]="'close_menu' | t">
+        <i class="bi bi-x-lg fs-5"></i>
+      </button>
+    </div>
+    <div class="mobile-sidebar-content">
+      <app-sidebar></app-sidebar>
+    </div>
   </div>
 }

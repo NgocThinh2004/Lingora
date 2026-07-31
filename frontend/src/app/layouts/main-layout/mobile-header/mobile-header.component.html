@@ -4,10 +4,25 @@
       <i class="bi bi-list fs-3"></i>
     </button>
     
-    <app-brand link="/" />
+    <div (click)="onHomeClick($event)">
+      <app-brand link="/home" style="pointer-events: none;" />
+    </div>
+
+    <div class="d-none d-sm-flex flex-grow-1 justify-content-center px-3">
+      <div class="header-search-box w-100" style="max-width: 400px;" (click)="searchModalService.open()">
+        <i class="bi bi-search"></i>
+        <input type="text" readonly [placeholder]="'search_lingora' | t" (focus)="searchModalService.open()">
+      </div>
+    </div>
     
-    <div class="d-flex align-items-center ms-auto gap-2">
-      <a routerLink="/workspace/create" [queryParams]="{ fresh: '1' }" class="btn btn-primary btn-sm fw-medium px-2 px-sm-3 rounded-pill d-inline-flex align-items-center me-1">
+    <div class="d-flex align-items-center ms-auto gap-3">
+      <button type="button" class="btn btn-link text-reset p-0 d-inline-flex align-items-center d-sm-none" 
+              (click)="searchModalService.open()" 
+              [attr.aria-label]="'search_lingora' | t">
+        <i class="bi bi-search fs-5"></i>
+      </button>
+
+      <a routerLink="/workspace/create" [queryParams]="{ fresh: '1' }" class="btn btn-primary btn-sm fw-medium px-2 px-sm-3 rounded-pill d-inline-flex align-items-center">
         <i class="bi bi-plus-lg me-1"></i> <span>{{ 'create' | t }}</span>
       </a>
 
