@@ -41,7 +41,7 @@ export class SubscriptionsService {
   }
 
   async subscribe(subscriberId: string, authorId: string) {
-    if (subscriberId === authorId) {
+    if (String(subscriberId) === String(authorId)) {
       throw new ConflictException('You cannot subscribe to yourself');
     }
     const author = await this.userModel.findOne({ where: { id: authorId, status: 'active', deleted_at: null } });
