@@ -13,12 +13,17 @@ import {
   UpdateAdminLanguageDto,
 } from './admin/dto/admin-languages.dto';
 import { Language } from './models/language.model';
+import {
+  LanguageTranslationCoverage,
+  TranslationMetricsService,
+} from '../translations/translation-metrics.service';
 
 @Injectable()
 export class LanguagesService {
   constructor(
     private readonly sequelize: Sequelize,
     @InjectModel(Language) private readonly languageModel: typeof Language,
+    private readonly translationMetricsService: TranslationMetricsService,
   ) {}
 
   async findActive() {
@@ -36,9 +41,15 @@ export class LanguagesService {
       limit: query.limit,
       offset: (query.page - 1) * query.limit,
     });
+    const coverageByLanguage = await this.translationMetricsService.getLanguageCoverage(
+      rows.map(language => language.id),
+    );
 
     return {
-      data: rows.map(language => this.toAdminLanguage(language)),
+      data: rows.map(language => this.toAdminLanguage(
+        language,
+        coverageByLanguage.get(language.id),
+      )),
       meta: {
         pagination: {
           total: count,
@@ -55,7 +66,8 @@ export class LanguagesService {
     if (!language) {
       throw new NotFoundException('Language not found');
     }
-    return this.toAdminLanguage(language);
+    const coverageByLanguage = await this.translationMetricsService.getLanguageCoverage([language.id]);
+    return this.toAdminLanguage(language, coverageByLanguage.get(language.id));
   }
 
   async create(dto: CreateAdminLanguageDto) {
@@ -169,7 +181,10 @@ export class LanguagesService {
     });
   }
 
-  private toAdminLanguage(language: Language) {
+  private toAdminLanguage(
+    language: Language,
+    coverage?: LanguageTranslationCoverage,
+  ) {
     return {
       id: language.id,
       code: language.code,
@@ -180,10 +195,10 @@ export class LanguagesService {
       isActive: language.is_active,
       activatedAt: language.activated_at,
       translationCoverage: {
-        translatedPosts: 0,
-        totalPosts: 0,
-        percent: 0,
-        available: false,
+        translatedPosts: coverage?.translatedPosts ?? 0,
+        totalPosts: coverage?.totalPosts ?? 0,
+        percent: coverage?.percent ?? 0,
+        available: true,
       },
     };
   }

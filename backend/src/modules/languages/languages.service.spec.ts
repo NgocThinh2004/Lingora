@@ -12,6 +12,7 @@ describe('LanguagesService', () => {
     create: jest.Mock;
     update: jest.Mock;
   };
+  let translationMetricsService: { getLanguageCoverage: jest.Mock };
   let service: LanguagesService;
 
   const makeLanguage = (overrides: Record<string, unknown> = {}) => {
@@ -46,9 +47,13 @@ describe('LanguagesService', () => {
       create: jest.fn(),
       update: jest.fn().mockResolvedValue([0]),
     };
+    translationMetricsService = {
+      getLanguageCoverage: jest.fn().mockResolvedValue(new Map()),
+    };
     service = new LanguagesService(
       sequelize as never,
       languageModel as never,
+      translationMetricsService as never,
     );
   });
 
@@ -71,9 +76,12 @@ describe('LanguagesService', () => {
     expect(result[0]).not.toHaveProperty('translationCoverage');
   });
 
-  it('returns a paginated language directory without querying post metrics', async () => {
+  it('returns a paginated language directory with translation coverage', async () => {
     const language = makeLanguage();
     languageModel.findAndCountAll.mockResolvedValue({ rows: [language], count: 1 });
+    translationMetricsService.getLanguageCoverage.mockResolvedValue(new Map([
+      [language.id, { translatedPosts: 3, totalPosts: 4, percent: 75 }],
+    ]));
 
     const result = await service.findAll({ page: 1, limit: 8 });
 
@@ -88,11 +96,31 @@ describe('LanguagesService', () => {
       limit: 8,
       totalPages: 1,
     });
+    expect(translationMetricsService.getLanguageCoverage).toHaveBeenCalledWith([language.id]);
     expect(result.data[0]).toEqual(expect.objectContaining({
       code: 'vi',
       nativeName: 'Tiếng Việt',
-      translationCoverage: expect.objectContaining({ available: false }),
+      translationCoverage: {
+        translatedPosts: 3,
+        totalPosts: 4,
+        percent: 75,
+        available: true,
+      },
     }));
+  });
+
+  it('returns an available zero coverage when a language has no translation targets', async () => {
+    const language = makeLanguage();
+    languageModel.findAndCountAll.mockResolvedValue({ rows: [language], count: 1 });
+
+    const result = await service.findAll({ page: 1, limit: 8 });
+
+    expect(result.data[0].translationCoverage).toEqual({
+      translatedPosts: 0,
+      totalPosts: 0,
+      percent: 0,
+      available: true,
+    });
   });
 
   it('rejects a duplicate language code', async () => {
