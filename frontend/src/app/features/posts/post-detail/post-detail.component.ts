@@ -121,7 +121,9 @@ export class PostDetailComponent implements OnDestroy {
   readonly isFallback = computed(() => {
     const currentPost = this.post();
     if (!currentPost) return false;
-    return !getPostTranslation(currentPost, this.localeService.selectedLocale());
+    const trans = this.displayedTranslation();
+    if (!trans) return false;
+    return trans.languageCode !== this.localeService.selectedLocale();
   });
 
 
