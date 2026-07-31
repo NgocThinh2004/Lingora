@@ -7,6 +7,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 import { MobileHeaderComponent } from './mobile-header/mobile-header.component';
 import { RightPanelComponent } from './right-panel/right-panel.component';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
+import { BrandComponent } from '../../shared/components/brand/brand.component';
 
 @Component({
   selector: 'app-main-layout',
@@ -18,6 +19,7 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
     MobileHeaderComponent,
     RightPanelComponent,
     TranslatePipe,
+    BrandComponent,
   ],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss',
@@ -56,6 +58,19 @@ export class MainLayoutComponent {
 
   closeMobileSidebar(): void {
     this.mobileSidebarOpen.set(false);
+  }
+
+  onHomeClick(event?: Event): void {
+    if (this.router.url === '/home' || this.router.url === '/') {
+      const centerFeed = document.querySelector('.center-feed');
+      if (centerFeed) {
+        centerFeed.scrollTo({ top: 0, behavior: 'auto' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
+    } else {
+      void this.router.navigate(['/home']);
+    }
   }
 
   private handleNavigation(event: NavigationEnd): void {
