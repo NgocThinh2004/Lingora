@@ -1,9 +1,18 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .post-card {
   padding: 1.75rem 0;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-width: 0;
+  width: 100%;
 }
 .post-header {
   display: flex;
@@ -54,6 +63,8 @@
 .post-body-link {
   display: block;
   color: var(--text-main);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .post-title {
@@ -80,22 +91,22 @@
   overflow: hidden;
   border: 1px solid var(--border-color);
   background: #000;
+  width: 100%;
+  max-width: 100%;
 
   img {
     width: 100%;
-    max-height: 360px;
-    object-fit: cover;
+    height: auto;
     display: block;
   }
 
   video {
     width: 100%;
-    aspect-ratio: 16 / 9;
+    max-width: 100%;
     max-height: 360px;
     object-fit: contain;
     display: block;
     background: #000;
-    border-radius: var(--radius-md);
   }
 }
 .post-footer {

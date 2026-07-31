@@ -383,8 +383,10 @@ app-profile {
       }
 
       #profilePostsContainer {
-        display: grid;
-        gap: 18px;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        max-width: 100%;
       }
 
       #profilePostsContainer .substack-post {
