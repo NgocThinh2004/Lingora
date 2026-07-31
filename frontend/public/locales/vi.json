@@ -497,5 +497,6 @@
   "dismiss_notification": "Đóng thông báo",
   "enter_handle": "@ Nhập tên định danh",
   "zoom_image": "Thu phóng ảnh",
-  "edited": "Đã chỉnh sửa"
+  "edited": "Đã chỉnh sửa",
+  "fallback_warning_tooltip": "Bài viết này chưa có bản dịch trong ngôn ngữ hiện tại. Đang hiển thị bằng ngôn ngữ gốc."
 }

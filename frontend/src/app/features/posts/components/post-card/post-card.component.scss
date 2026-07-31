@@ -141,3 +141,30 @@
     text-align: center;
   }
 }
+
+.fallback-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-sm);
+  vertical-align: middle;
+  margin-bottom: 0.15rem;
+  cursor: help;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+
+  &:hover {
+    color: var(--text-main);
+    border-color: var(--text-muted);
+  }
+
+  i {
+    margin-right: 3px;
+    font-size: 0.7rem;
+  }
+}
+
