@@ -66,9 +66,7 @@ export class PostCardComponent implements OnDestroy, AfterViewInit {
   readonly translation = computed(() => {
     const p = this._post();
     if (!p) return undefined;
-    return getPostTranslation(p, this.currentLang())
-      ?? p.translations?.find(t => t.languageCode === p.originalLanguage)
-      ?? p.translations?.[0];
+    return getPostTranslation(p, this.currentLang());
   });
 
   readonly isFallback = computed(() => {
