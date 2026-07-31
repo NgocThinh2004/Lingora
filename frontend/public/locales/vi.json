@@ -1,4 +1,4 @@
-{
+﻿{
   "home": "Trang chủ",
   "explore": "Khám phá",
   "subscriptions": "Đang theo dõi",
@@ -408,7 +408,7 @@
   "allow_user_access": "Cho phép người dùng này truy cập Lingora.",
   "category_add_translation_help": "Nhập mọi bản dịch để danh mục sẵn sàng bằng tất cả các ngôn ngữ đang hoạt động.",
   "category_edit_translation_help": "Các bản dịch hiện có là bắt buộc. Một ngôn ngữ mới được kích hoạt có thể được hoàn thành sau đó.",
-  "no_bio_provided": "Không có sinh học được cung cấp.",
+  "no_bio_provided": "Chưa có tiểu sử.",
   "no_followers_found": "Không tìm thấy người theo dõi.",
   "no_followed_authors_found": "Không tìm thấy tác giả nào được theo dõi",
   "repeat_password": "Lặp lại mật khẩu của bạn",
