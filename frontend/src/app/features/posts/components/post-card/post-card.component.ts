@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, computed, inject, OnDestroy, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, Input, computed, inject, OnDestroy, AfterViewInit, ElementRef, ViewChild, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { LocaleService } from '../../../../core/locale/locale.service';
@@ -26,7 +26,16 @@ export class PostCardComponent implements OnDestroy, AfterViewInit {
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);
 
-  @Input({ required: true }) post!: Post;
+  private _post = signal<Post>({} as Post);
+  
+  @Input({ required: true })
+  set post(value: Post) {
+    this._post.set(value);
+  }
+  get post(): Post {
+    return this._post();
+  }
+  
   @ViewChild('videoEl') videoElRef?: ElementRef<HTMLVideoElement>;
 
   private videoObserver?: IntersectionObserver;
@@ -54,23 +63,14 @@ export class PostCardComponent implements OnDestroy, AfterViewInit {
 
   readonly currentLang = computed(() => this.languageService.current());
   
+  readonly translation = computed(() => getPostTranslation(this._post(), this.currentLang()));
+  
+  readonly categoryLabel = computed(() => translateCategory(this._post().category, this.currentLang()));
+  
   readonly excerpt = computed(() => {
-    const translation = getPostTranslation(this.post, this.currentLang());
-    if (translation?.contentHtml) {
-      // Strip HTML tags and decode common entities for a clean text excerpt
-      let stripped = translation.contentHtml.replace(/<[^>]*>?/gm, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-      return stripped.length > 200 ? stripped.substring(0, 200) + '...' : stripped;
-    }
-    return '';
+    // 17. FE tự cắt excerpt từ HTML content -> Đã xử lý bằng cách lấy BE excerpt
+    return this.translation()?.excerpt || '';
   });
-
-  get translation() {
-    return getPostTranslation(this.post, this.currentLang());
-  }
-
-  get categoryLabel() {
-    return translateCategory(this.post.category, this.currentLang());
-  }
 
 
   toggleLike(event: Event) {
@@ -84,19 +84,20 @@ export class PostCardComponent implements OnDestroy, AfterViewInit {
       return;
     }
 
-    const previousLiked = this.post.liked === true;   // guard: undefined → false
-    const previousLikeCount = this.post.likeCount ?? 0;
+    const currentPost = this.post;
+    const previousLiked = currentPost.liked === true;   // guard: undefined → false
+    const previousLikeCount = currentPost.likeCount ?? 0;
     const nextLiked = !previousLiked;
     const nextLikeCount = nextLiked ? previousLikeCount + 1 : Math.max(0, previousLikeCount - 1);
 
-    this.post = { ...this.post, liked: nextLiked, likeCount: nextLikeCount, isLiking: true };
+    this._post.set({ ...currentPost, liked: nextLiked, likeCount: nextLikeCount, isLiking: true });
 
-    this.likeService.togglePostLike(this.post.id).subscribe({
+    this.likeService.togglePostLike(currentPost.id).subscribe({
       next: (status) => {
-        this.post = { ...this.post, liked: status.liked, likeCount: status.likeCount, isLiking: false };
+        this._post.set({ ...this._post(), liked: status.liked, likeCount: status.likeCount, isLiking: false });
       },
       error: () => {
-        this.post = { ...this.post, liked: previousLiked, likeCount: previousLikeCount, isLiking: false };
+        this._post.set({ ...this._post(), liked: previousLiked, likeCount: previousLikeCount, isLiking: false });
       }
     });
   }

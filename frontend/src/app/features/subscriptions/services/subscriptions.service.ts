@@ -4,7 +4,8 @@ import { Observable, map, tap, BehaviorSubject } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiItemResponse } from '../../../core/http/api-response.model';
 import { AuthService } from '../../../core/auth/auth.service';
-import { SubscriptionAuthor, SubscriptionAuthorsPage } from '../models/subscription.model';
+import { SubscriptionAuthor, SubscriptionAuthorsPage, SubscriptionAuthorView } from '../models/subscription.model';
+import { Post } from '../../posts/models/post.model';
 
 @Injectable({ providedIn: 'root' })
 export class SubscriptionsService {
@@ -33,13 +34,13 @@ export class SubscriptionsService {
     return this.followedAuthorIds.asObservable().pipe(map(set => set.has(String(authorId))));
   }
 
-  getFeed(author?: string, lang?: string, page?: number, limit?: number): Observable<any> {
+  getFeed(author?: string, lang?: string, page?: number, limit?: number): Observable<{ items: Post[], meta: any }> {
     let params = new HttpParams();
     if (author) params = params.set('author', author);
     if (lang) params = params.set('lang', lang);
     if (page) params = params.set('page', page);
     if (limit) params = params.set('limit', limit);
-    return this.http.get<ApiItemResponse<any>>(`${this.baseUrl}/feed`, { params })
+    return this.http.get<ApiItemResponse<{ items: Post[], meta: any }>>(`${this.baseUrl}/feed`, { params })
       .pipe(map(response => response.data));
   }
 

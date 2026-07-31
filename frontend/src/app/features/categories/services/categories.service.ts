@@ -30,4 +30,10 @@ export class CategoriesService {
 
     return request;
   }
+
+  findBySlug(slug: string): Observable<Category> {
+    return this.http
+      .get<ApiResponse<Category>>(`${environment.apiUrl}/categories/${slug}`)
+      .pipe(map((res) => res.data));
+  }
 }

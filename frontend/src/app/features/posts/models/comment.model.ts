@@ -19,4 +19,8 @@ export interface Comment {
   isLiking?: boolean;
   translations?: any[];
   originalLanguage?: { code: string };
+  permissions?: {
+    canEdit: boolean;
+    canDelete: boolean;
+  };
 }

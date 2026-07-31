@@ -1,10 +1,12 @@
-import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal, ViewChild, ElementRef, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, switchMap, Subscription } from 'rxjs';
 import { FeedPostsService } from '../services/feed-posts.service';
 import { AuthorPost, Post, PostOptions, getPostTranslation } from '../models/post.model';
+import { translateCategory } from '../../categories/models/category.model';
 import { AuthorPostsService } from '../services/author-posts.service';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { Title } from '@angular/platform-browser';
@@ -26,7 +28,7 @@ import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
 })
-export class PostDetailComponent implements OnInit, OnDestroy {
+export class PostDetailComponent implements OnDestroy {
   private route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly postService = inject(FeedPostsService);
@@ -37,6 +39,11 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private sanitizer = inject(DomSanitizer);
   private authModalService = inject(AuthModalService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
+
+  @ViewChild('articleContent') articleContentRef?: ElementRef<HTMLElement>;
+  @ViewChild('centerFeed') centerFeedRef?: ElementRef<HTMLElement>;
 
   post = signal<Post | null>(null);
   relatedPosts = signal<Post[]>([]);
@@ -44,10 +51,12 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   error = signal<string | null>(null);
   authorPreview = signal(false);
 
+  private likeSub?: Subscription;
   private videoObservers: IntersectionObserver[] = [];
 
   ngOnDestroy(): void {
     this.cleanupVideoObservers();
+    this.likeSub?.unsubscribe();
   }
 
   private cleanupVideoObservers(): void {
@@ -62,7 +71,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
 
     // Wait one tick for Angular to render [innerHTML]
     setTimeout(() => {
-      const articleEl = document.querySelector('.article-content');
+      const articleEl = this.articleContentRef?.nativeElement;
       if (!articleEl) return;
 
       articleEl.querySelectorAll<HTMLVideoElement>('video').forEach(videoEl => {
@@ -116,82 +125,64 @@ export class PostDetailComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.authorPreview.set(Boolean(this.route.snapshot.data['authorPreview']));
-    this.route.paramMap.subscribe(params => {
-      const id = params.get('id') || this.route.snapshot.queryParamMap.get('id');
-      if (id) {
-        if (this.authorPreview()) {
-          this.loadAuthorPost(Number(id));
-        } else {
-          this.loadPost(Number(id));
-        }
-      }
-    });
-  }
 
-  private loadPost(id: number): void {
-    this.loading.set(true);
-    this.error.set(null);
-    
-    const language = this.localeService.selectedLocale();
-    forkJoin({
-      post: this.postService.getById(id, language),
-      related: this.postService.getRelated(id, language)
-    }).subscribe({
-      next: ({ post, related }) => {
-        this.post.set(post);
-        this.relatedPosts.set(related);
+    // switchMap cancels the previous request if the user navigates to another post
+    // before the previous one finishes loading — prevents race condition.
+    this.route.paramMap.pipe(
+      switchMap(params => {
+        const id = Number(params.get('id') || this.route.snapshot.queryParamMap.get('id'));
+        this.loading.set(true);
+        this.error.set(null);
+        const language = this.localeService.selectedLocale();
+
+        if (this.authorPreview()) {
+          const includeDeleted = this.route.snapshot.queryParamMap.get('trash') === 'true';
+          return forkJoin({
+            post: this.authorPostsService.getAuthorPost(id, includeDeleted),
+            options: this.authorPostsService.getPostOptions(),
+            mode: Promise.resolve('author' as const),
+          });
+        } else {
+          return forkJoin({
+            post: this.postService.getById(id, language),
+            related: this.postService.getRelated(id, language),
+            mode: Promise.resolve('public' as const),
+          });
+        }
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: (result) => {
+        if (result.mode === 'author') {
+          const { post, options } = result as any;
+          const previewPost = this.toPreviewPost(post, options);
+          this.post.set(previewPost);
+          this.relatedPosts.set([]);
+        } else {
+          const { post, related } = result as any;
+          this.post.set(post);
+          this.relatedPosts.set(related);
+        }
         this.loading.set(false);
-        
+
         const title = this.displayedTranslation()?.title;
         if (title) this.titleService.setTitle(`${title} - Lingora`);
-        
-        // Scroll the center-feed container to top
-        const scrollContainer = document.querySelector('.center-feed');
-        if (scrollContainer) {
-          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+
+        // Scroll center-feed to top
+        const scrollContainer = this.document.querySelector('.center-feed');
+        if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+
         this.setupVideoObservers();
       },
-      error: (err) => {
-        this.error.set(this.localeService.translate('post_details_load_failed'));
+      error: () => {
+        this.error.set(this.localeService.translate(
+          this.authorPreview() ? 'article_unavailable' : 'post_details_load_failed'
+        ));
         this.loading.set(false);
       }
     });
   }
 
-  private loadAuthorPost(id: number): void {
-    this.loading.set(true);
-    this.error.set(null);
-    const includeDeleted = this.route.snapshot.queryParamMap.get('trash') === 'true';
-
-    forkJoin({
-      post: this.authorPostsService.getAuthorPost(id, includeDeleted),
-      options: this.authorPostsService.getPostOptions(),
-    }).subscribe({
-      next: ({ post, options }) => {
-        const previewPost = this.toPreviewPost(post, options);
-        this.post.set(previewPost);
-        this.relatedPosts.set([]);
-        this.loading.set(false);
-
-        const title = this.displayedTranslation()?.title;
-        if (title) {
-          this.titleService.setTitle(`${title} - Lingora`);
-        }
-        
-        // Scroll the center-feed container to top
-        const scrollContainer = document.querySelector('.center-feed');
-        if (scrollContainer) {
-          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-        this.setupVideoObservers();
-      },
-      error: (err) => {
-        this.error.set(this.localeService.translate('article_unavailable'));
-        this.loading.set(false);
-      },
-    });
-  }
 
   private toPreviewPost(post: AuthorPost, options: PostOptions): Post {
     const currentUser = this.authService.currentUser();
@@ -268,7 +259,10 @@ export class PostDetailComponent implements OnInit, OnDestroy {
 
     this.post.set({ ...p, liked: nextLiked, likeCount: nextLikeCount, isLiking: true });
 
-    this.likeService.togglePostLike(p.id).subscribe({
+    this.likeSub?.unsubscribe();
+    this.likeSub = this.likeService.togglePostLike(p.id).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (status) => {
         // Sync with server state
         const updatedPost = this.post();
@@ -286,7 +280,11 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  getPostTranslationByLocale(p: Post): any {
-    return getPostTranslation(p, this.localeService.selectedLocale());
+  getPostTranslationByLocale(post: Post): import('../models/post.model').FeedPostTranslation | undefined {
+    return getPostTranslation(post, this.localeService.selectedLocale());
+  }
+
+  getCategoryTranslation(category: any): string {
+    return translateCategory(category, this.localeService.selectedLocale());
   }
 }

@@ -14,13 +14,13 @@
       <app-author-tooltip [user]="post.author"></app-author-tooltip>
     </div>
 
-    @if (categoryLabel) {
-      <span class="category-badge">{{ categoryLabel }}</span>
+    @if (categoryLabel()) {
+      <span class="category-badge">{{ categoryLabel() }}</span>
     }
   </header>
 
   <a [routerLink]="['/post', post.id]" class="post-body-link">
-    <h2 class="post-title">{{ translation?.title }}</h2>
+    <h2 class="post-title">{{ translation()?.title }}</h2>
     <div class="post-excerpt text-muted mb-3">{{ excerpt() }}</div>
 
     @if (post.coverVideoUrl) {
@@ -29,7 +29,7 @@
       </div>
     } @else if (post.coverImageUrl) {
       <div class="post-media">
-        <img [src]="post.coverImageUrl" [alt]="translation?.title" />
+        <img [src]="post.coverImageUrl" [alt]="translation()?.title" />
       </div>
     }
   </a>

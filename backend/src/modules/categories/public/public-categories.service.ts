@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { literal, Op } from 'sequelize';
 import { Category } from '../models/category.model';
@@ -82,5 +82,38 @@ export class PublicCategoriesService {
           slug: t.slug,
         })),
     }));
+  }
+
+  async findBySlug(slug: string) {
+    const postCountSubquery = `(SELECT COUNT(*) FROM posts WHERE category_id = Category.id AND status IN ('published', 'approved') AND deleted_at IS NULL)`;
+    const category = await this.categoryModel.findOne({
+      where: { slug, status: 'active' },
+      attributes: {
+        include: [[literal(postCountSubquery), 'postCount']]
+      }
+    });
+
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+
+    const [translations, languages] = await Promise.all([
+      this.translationModel.findAll({ where: { category_id: category.id } }),
+      this.languageModel.findAll({ where: { is_active: true } }),
+    ]);
+    const languageMap = new Map(languages.map((l) => [l.id, l.code]));
+
+    return {
+      id: category.id,
+      slug: category.slug,
+      postCount: Number(category.get('postCount')) || 0,
+      isActive: true,
+      translations: translations.map((t) => ({
+        id: Number(t.id),
+        languageCode: languageMap.get(t.language_id) || 'en',
+        name: t.name,
+        slug: t.slug,
+      })),
+    };
   }
 }

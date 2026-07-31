@@ -1,5 +1,7 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, inject, ChangeDetectorRef, HostBinding } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject, ChangeDetectorRef, HostBinding } from '@angular/core';
+import { ReplaySubject } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { SubscriptionsService } from '../../services/subscriptions.service';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -13,7 +15,7 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
   templateUrl: './subscribe-button.component.html',
   styleUrl: './subscribe-button.component.scss'
 })
-export class SubscribeButtonComponent implements OnInit, OnDestroy, OnChanges {
+export class SubscribeButtonComponent implements OnChanges {
   @Input({ required: true }) authorId!: number | string;
   @Input() fullWidth = false;
   @Output() followChange = new EventEmitter<boolean>();
@@ -29,33 +31,21 @@ export class SubscribeButtonComponent implements OnInit, OnDestroy, OnChanges {
   private readonly authModalService = inject(AuthModalService);
   private readonly cdr = inject(ChangeDetectorRef);
   
-  private subChangeSub?: Subscription;
+  private readonly authorId$ = new ReplaySubject<number | string>(1);
 
-  ngOnInit(): void {
-    if (!this.authorId) return;
-    
-    // Use the robust global state for instant sync
-    this.subChangeSub = this.subscriptionsService.isFollowingState(this.authorId).subscribe(isSub => {
+  constructor() {
+    this.authorId$.pipe(
+      switchMap(id => this.subscriptionsService.isFollowingState(id)),
+      takeUntilDestroyed()
+    ).subscribe(isSub => {
       this.isSubscribed = isSub;
       this.cdr.markForCheck();
     });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['authorId'] && !changes['authorId'].firstChange) {
-      if (this.subChangeSub) {
-        this.subChangeSub.unsubscribe();
-      }
-      this.subChangeSub = this.subscriptionsService.isFollowingState(this.authorId).subscribe(isSub => {
-        this.isSubscribed = isSub;
-        this.cdr.markForCheck();
-      });
-    }
-  }
-
-  ngOnDestroy(): void {
-    if (this.subChangeSub) {
-      this.subChangeSub.unsubscribe();
+    if (changes['authorId']) {
+      this.authorId$.next(changes['authorId'].currentValue);
     }
   }
 

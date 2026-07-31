@@ -27,7 +27,7 @@ export class CommentsController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Req() req: any,
   ) {
-    return this.commentsService.getCommentsByPost(postId, page, limit, req.user?.id);
+    return this.commentsService.getCommentsByPost(postId, page, limit, req.user?.id, req.user?.role);
   }
 
 
