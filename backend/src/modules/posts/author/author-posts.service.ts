@@ -6,6 +6,7 @@ import { Sequelize } from 'sequelize-typescript';
 import { Category, CategoryTranslation, Language, Post, PostTranslation } from '../../../database/models';
 import { TranslationStatus } from '../../translations/translations.constants';
 import { AuthorPostsQueryDto } from './dto/author-posts-query.dto';
+import { AutosaveAuthorPostDto } from './dto/autosave-author-post.dto';
 import { CreateAuthorPostDto } from './dto/create-author-post.dto';
 import { UpdateAuthorPostDto } from './dto/update-author-post.dto';
 import {
@@ -109,6 +110,20 @@ export class AuthorPostsService {
     }
   }
 
+  assertAutosaveContentLimits(title: string, content: string): void {
+    if (!title.trim() && !this.hasMeaningfulEditorContent(content)) {
+      throw new BadRequestException('An autosaved draft must contain a title or content');
+    }
+    if (this.countWords(title) > 20) {
+      throw new BadRequestException('Title must contain no more than 20 words');
+    }
+
+    const plainContent = sanitizeHtml(content, { allowedTags: [], allowedAttributes: {} });
+    if (this.countWords(plainContent) > 3000) {
+      throw new BadRequestException('Content must contain no more than 3000 words');
+    }
+  }
+
   buildTranslationMatrix(
     translations: Array<{
       language_id: number;
@@ -160,6 +175,84 @@ export class AuthorPostsService {
         sourceTranslation.id,
         transaction,
       );
+
+      return this.getAuthorPost(authorId, post.id, transaction);
+    });
+  }
+
+  async autosaveAuthorPost(
+    authorId: string,
+    dto: AutosaveAuthorPostDto,
+    postId?: string,
+  ): Promise<AuthorPostResponse> {
+    return this.sequelize.transaction(async transaction => {
+      const now = new Date();
+      const post = postId
+        ? await this.findAuthorPostOrThrow(authorId, postId, transaction)
+        : await this.postModel.create(
+            {
+              author_id: authorId,
+              category_id: dto.categoryId ?? null,
+              original_language_id: dto.originalLanguageId,
+              view_count: 0,
+              status: 'draft',
+              review_note: null,
+              published_at: null,
+              created_at: now,
+              updated_at: now,
+              deleted_at: null,
+            },
+            { transaction },
+          );
+
+      if (post.status !== 'draft' && post.status !== 'rejected') {
+        throw new BadRequestException('Only draft or rejected posts can be autosaved');
+      }
+
+      const originalLanguageId = dto.originalLanguageId ?? post.original_language_id;
+      const currentSource = await this.findSourceTranslation(
+        post.id,
+        post.original_language_id,
+        transaction,
+      );
+      const title = dto.title ?? currentSource?.title ?? '';
+      const content = this.sanitizeContent(dto.content ?? currentSource?.content ?? '');
+      this.assertAutosaveContentLimits(title, content);
+
+      await post.update(
+        {
+          category_id: dto.categoryId === undefined ? post.category_id : dto.categoryId,
+          original_language_id: originalLanguageId,
+          review_note: null,
+          updated_at: now,
+        },
+        { transaction },
+      );
+
+      const sourceChanged = this.hasSourceChanged(currentSource, {
+        languageId: originalLanguageId,
+        title,
+        content,
+      });
+      const sourceTranslation = await this.upsertSourceTranslation(
+        post.id,
+        originalLanguageId,
+        { title, content },
+        transaction,
+      );
+
+      if (dto.targetLanguageIds !== undefined) {
+        await this.syncTargetTranslations(
+          post.id,
+          this.normalizeTargetLanguageIds(dto.targetLanguageIds, originalLanguageId),
+          originalLanguageId,
+          sourceTranslation.id,
+          transaction,
+        );
+      }
+      if (sourceChanged) {
+        await this.markTargetTranslationsOutdated(post.id, originalLanguageId, transaction);
+      }
 
       return this.getAuthorPost(authorId, post.id, transaction);
     });

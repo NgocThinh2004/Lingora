@@ -17,9 +17,9 @@
 
 .my-posts-top {
   min-height: 60px;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
   margin: 0 0 0.75rem;
   border-bottom: 1px solid var(--border-color);
@@ -29,12 +29,20 @@
   background-color: var(--bg-body);
 }
 
+.my-posts-top::before {
+  content: "";
+}
+
 .my-posts-top h1 {
   margin: 0;
   color: var(--text-main);
   font-size: 28px;
   line-height: 1;
   letter-spacing: 0;
+}
+
+.my-posts-top > a {
+  justify-self: end;
 }
 
 .command-btn {

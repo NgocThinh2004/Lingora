@@ -31,7 +31,7 @@
                 <label class="post-search">
                   <i class="bi bi-search"></i>
                   <input data-post-search="" [placeholder]="translate('search_posts')" type="search"
-                    name="search" [(ngModel)]="search" (search)="applySearch()" (keyup.enter)="applySearch()" />
+                    name="search" [(ngModel)]="searchInput" (ngModelChange)="onSearchInput($event)" />
                 </label>
               </div>
             </div>
@@ -43,11 +43,6 @@
                   <option *ngFor="let language of languageOptions" [value]="language.code.toLowerCase()">
                     {{ language.nativeLabel || language.label }}
                   </option>
-                </select>
-                <select aria-label="Filter by date" class="filter-select" name="dateFilter" [(ngModel)]="dateFilter"
-                  (ngModelChange)="applyFilters()">
-                  <option value="all">{{ translate('all_dates') }}</option>
-                  <option *ngFor="let month of dateOptions" [value]="month">{{ formatMonth(month) }}</option>
                 </select>
                 <select aria-label="Filter by category" class="filter-select" data-category-filter=""
                   name="categoryFilter" [(ngModel)]="categoryFilter" (ngModelChange)="applyFilters()">

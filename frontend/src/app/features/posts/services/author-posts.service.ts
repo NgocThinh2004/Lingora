@@ -51,6 +51,20 @@ export class AuthorPostsService {
       .pipe(map(response => this.unwrapItem(response)));
   }
 
+  autosaveAuthorPost(payload: CreatePostPayload, postId?: string | number): Observable<AuthorPost> {
+    const request = postId
+      ? this.http.patch<ApiItemResponse<AuthorPost | ApiItemResponse<AuthorPost>>>(
+          `${this.baseUrl}/author/posts/${postId}/autosave`,
+          payload,
+        )
+      : this.http.post<ApiItemResponse<AuthorPost | ApiItemResponse<AuthorPost>>>(
+          `${this.baseUrl}/author/posts/autosave`,
+          payload,
+        );
+
+    return request.pipe(map(response => this.unwrapItem(response)));
+  }
+
   updateAuthorPost(postId: string | number, payload: UpdatePostPayload): Observable<AuthorPost> {
     return this.http
       .patch<ApiItemResponse<AuthorPost | ApiItemResponse<AuthorPost>>>(
