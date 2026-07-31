@@ -498,5 +498,6 @@
   "dismiss_notification": "Descartar notificación",
   "enter_handle": "@ Introduzca un identificador",
   "zoom_image": "Ampliar imagen",
-  "edited": "Editado"
+  "edited": "Editado",
+  "fallback_warning_tooltip": "Esta publicación no tiene una traducción en el idioma actual. Mostrando en el idioma original."
 }

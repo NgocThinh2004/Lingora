@@ -497,5 +497,6 @@
   "dismiss_notification": "关闭通知",
   "enter_handle": "@ 输入用户名",
   "zoom_image": "缩放图片",
-  "edited": "已编辑"
+  "edited": "已编辑",
+  "fallback_warning_tooltip": "该文章没有当前语言的翻译。以原语言显示。"
 }

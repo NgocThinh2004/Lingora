@@ -120,6 +120,12 @@ export class PostDetailComponent implements OnDestroy {
     };
   });
 
+  readonly isFallback = computed(() => {
+    const currentPost = this.post();
+    if (!currentPost) return false;
+    return !getPostTranslation(currentPost, this.localeService.selectedLocale());
+  });
+
 
   ngOnInit(): void {
     this.authorPreview.set(Boolean(this.route.snapshot.data['authorPreview']));

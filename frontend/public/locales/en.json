@@ -497,5 +497,6 @@
   "dismiss_notification": "Dismiss notification",
   "enter_handle": "@ Enter a handle",
   "zoom_image": "Zoom image",
-  "edited": "Edited"
+  "edited": "Edited",
+  "fallback_warning_tooltip": "This post does not have a translation in the current language. Displaying in original language."
 }
