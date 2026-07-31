@@ -4,6 +4,7 @@ import { Language, Post, PostTranslation } from '../../database/models';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UsersModule } from '../users/users.module';
 import { TranslationProviderService } from './translation-provider.service';
+import { TranslationMetricsService } from './translation-metrics.service';
 import { TranslationsController } from './translations.controller';
 import { TranslationsService } from './translations.service';
 
@@ -13,7 +14,7 @@ import { TranslationsService } from './translations.service';
     SequelizeModule.forFeature([Post, PostTranslation, Language]),
   ],
   controllers: [TranslationsController],
-  providers: [TranslationsService, TranslationProviderService, RolesGuard],
-  exports: [TranslationsService, TranslationProviderService],
+  providers: [TranslationsService, TranslationProviderService, TranslationMetricsService, RolesGuard],
+  exports: [TranslationsService, TranslationProviderService, TranslationMetricsService],
 })
 export class TranslationsModule {}

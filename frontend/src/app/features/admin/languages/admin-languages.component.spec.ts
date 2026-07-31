@@ -21,7 +21,7 @@ describe('AdminLanguagesComponent', () => {
     flagCode: 'gb',
     isDefault: true,
     isActive: true,
-    translationCoverage: { translatedPosts: 0, totalPosts: 0, percent: 0, available: false },
+    translationCoverage: { translatedPosts: 3, totalPosts: 4, percent: 75, available: true },
   };
 
   const vietnamese: AdminLanguage = {
@@ -32,7 +32,7 @@ describe('AdminLanguagesComponent', () => {
     flagCode: 'vn',
     isDefault: false,
     isActive: true,
-    translationCoverage: { translatedPosts: 0, totalPosts: 0, percent: 0, available: false },
+    translationCoverage: { translatedPosts: 0, totalPosts: 0, percent: 0, available: true },
   };
 
   beforeEach(async () => {
@@ -68,6 +68,17 @@ describe('AdminLanguagesComponent', () => {
     expect(service.getLanguages).toHaveBeenCalledWith(1, 8);
     expect(component.languages()).toEqual([english, vietnamese]);
     expect(component.loading()).toBeFalse();
+  });
+
+  it('renders translation coverage values including an empty zero metric', () => {
+    const coverageCells = [...fixture.nativeElement.querySelectorAll('.coverage-cell')]
+      .map((element: HTMLElement) => element.textContent?.replace(/\s+/g, ' ').trim());
+
+    expect(coverageCells[0]).toContain('3 / 4');
+    expect(coverageCells[0]).toContain('75%');
+    expect(coverageCells[1]).toContain('0 / 0');
+    expect(coverageCells[1]).toContain('0%');
+    expect(coverageCells.join(' ')).not.toContain('awaiting_translation_metrics');
   });
 
   it('uses the same flag images as the static prototype', () => {
