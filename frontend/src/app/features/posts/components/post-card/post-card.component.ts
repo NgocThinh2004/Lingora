@@ -63,7 +63,13 @@ export class PostCardComponent implements OnDestroy, AfterViewInit {
 
   readonly currentLang = computed(() => this.languageService.current());
   
-  readonly translation = computed(() => getPostTranslation(this._post(), this.currentLang()));
+  readonly translation = computed(() => {
+    const p = this._post();
+    if (!p) return undefined;
+    return getPostTranslation(p, this.currentLang())
+      ?? p.translations?.find(t => t.languageCode === p.originalLanguage)
+      ?? p.translations?.[0];
+  });
   
   readonly categoryLabel = computed(() => translateCategory(this._post().category, this.currentLang()));
   
