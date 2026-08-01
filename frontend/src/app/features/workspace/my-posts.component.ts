@@ -135,11 +135,8 @@ export class MyPostsComponent implements OnInit {
               : this.postsService.restoreAuthorPostFromTrash(post.id);
 
     request$.subscribe({
-      next: (updatedPost) => {
-        this.toast.showSuccess(this.locale.translate('post_status_changed', {
-          id: updatedPost.id,
-          status: updatedPost.deletedAt ? this.translate('status_trash') : this.statusLabel(updatedPost),
-        }));
+      next: () => {
+        this.toast.showSuccess(this.locale.translate('post_status_changed'));
         this.busyKey = '';
         this.loadPostCounts();
         this.loadPosts();

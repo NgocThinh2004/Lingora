@@ -520,6 +520,19 @@ export class AuthorPostsService {
     });
   }
 
+  async discardAuthorDraft(authorId: string, postId: string): Promise<{ id: string }> {
+    return this.sequelize.transaction(async transaction => {
+      const post = await this.findAuthorPostOrThrow(authorId, postId, transaction);
+      if (post.status !== 'draft' && post.status !== 'rejected') {
+        throw new BadRequestException('Only draft or rejected posts can be discarded');
+      }
+
+      const id = post.id;
+      await post.destroy({ transaction });
+      return { id };
+    });
+  }
+
   async getAuthorPreview(
     authorId: string,
     postId: string,

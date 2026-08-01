@@ -70,6 +70,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private serverAutosaveInFlight = false;
   private serverAutosaveQueued = false;
   private pendingExplicitSaveMode: SaveMode | null = null;
+  private discardAfterAutosave = false;
   private editorRevision = 0;
   private serverSavedRevision = 0;
   private suppressAutosave = false;
@@ -113,6 +114,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   showPublishOptions = false;
   showLinkModal = false;
   showDraftConfirm = false;
+  discardingDraft = false;
   previewMode: 'desktop' | 'mobile' = 'desktop';
   previewLanguageId = 1;
   previewTranslatedTitle: string | null = null;
@@ -726,16 +728,28 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   closeDraftConfirm(): void {
+    if (this.discardingDraft) {
+      return;
+    }
     this.showDraftConfirm = false;
     this.updateBodyModalClasses();
   }
 
   discardDraft(): void {
+    if (this.discardingDraft) {
+      return;
+    }
+
     this.suppressAutosave = true;
+    this.discardingDraft = true;
+    this.pendingExplicitSaveMode = null;
     this.clearAutosaveSnapshots();
-    this.showDraftConfirm = false;
-    this.updateBodyModalClasses();
-    void this.router.navigateByUrl(this.myPostsReturnUrl());
+    if (this.serverAutosaveInFlight) {
+      this.discardAfterAutosave = true;
+      return;
+    }
+
+    this.deletePersistedDraftAndLeave();
   }
 
   saveDraftAndLeave(): void {
@@ -916,15 +930,15 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           }
           if (mode === 'submit') {
             this.suppressAutosave = true;
-            this.navigateToMyPosts(this.localeService.translate('post_submitted_review', { id: post.id }));
+            this.navigateToMyPosts(this.localeService.translate('post_submitted_review'));
             return;
           }
           if (this.navigateAfterSave) {
             this.navigateAfterSave = false;
-            this.navigateToMyPosts(this.localeService.translate('draft_saved', { id: post.id }));
+            this.navigateToMyPosts(this.localeService.translate('draft_saved'));
             return;
           }
-          this.toast.showSuccess(this.localeService.translate('draft_saved', { id: post.id }));
+          this.toast.showSuccess(this.localeService.translate('draft_saved'));
         },
         error: (error: unknown) => {
           this.toast.showError(this.formatError(error));
@@ -2076,6 +2090,12 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         this.serverSavedRevision = savingRevision;
         this.serverAutosaveInFlight = false;
 
+        if (this.discardAfterAutosave) {
+          this.discardAfterAutosave = false;
+          this.deletePersistedDraftAndLeave();
+          return;
+        }
+
         if (wasNewPost) {
           this.location.replaceState(`/workspace/posts/${post.id}/edit`);
           this.removeAutosaveSnapshot(null);
@@ -2106,6 +2126,13 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       error: () => {
         this.serverAutosaveInFlight = false;
         this.serverAutosaveQueued = false;
+
+        if (this.discardAfterAutosave) {
+          this.discardAfterAutosave = false;
+          this.deletePersistedDraftAndLeave();
+          return;
+        }
+
         const explicitMode = this.pendingExplicitSaveMode;
         this.pendingExplicitSaveMode = null;
         if (explicitMode) {
@@ -2171,6 +2198,35 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       !this.isTitleOverLimit &&
       !this.isBodyOverLimit,
     );
+  }
+
+  private deletePersistedDraftAndLeave(): void {
+    const postId = this.createdPost?.id ?? this.currentPostId;
+    if (!postId) {
+      this.finishDiscardAndLeave();
+      return;
+    }
+
+    this.postsService.discardAuthorDraft(postId).subscribe({
+      next: () => this.finishDiscardAndLeave(),
+      error: error => {
+        this.discardingDraft = false;
+        this.suppressAutosave = false;
+        this.showDraftConfirm = true;
+        this.updateBodyModalClasses();
+        this.toast.showError(this.formatError(error));
+      },
+    });
+  }
+
+  private finishDiscardAndLeave(): void {
+    this.clearAutosaveSnapshots(this.createdPost?.id ?? this.currentPostId ?? undefined);
+    this.createdPost = null;
+    this.currentPostId = null;
+    this.discardingDraft = false;
+    this.showDraftConfirm = false;
+    this.updateBodyModalClasses();
+    this.navigateToMyPosts(this.localeService.translate('draft_deleted'));
   }
 
   private cancelServerAutosaveTimer(): void {

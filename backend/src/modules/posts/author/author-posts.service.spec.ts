@@ -101,4 +101,53 @@ describe('AuthorPostsService state machine', () => {
       where: { author_id: 'author-1' },
     }));
   });
+
+  it('permanently discards an owned draft', async () => {
+    const destroy = jest.fn().mockResolvedValue(undefined);
+    const transaction = {};
+    const postModel = {
+      findOne: jest.fn().mockResolvedValue({ id: 'draft-1', status: 'draft', destroy }),
+    };
+    const sequelize = {
+      transaction: jest.fn((callback: (value: unknown) => unknown) => callback(transaction)),
+    };
+    const draftService = new AuthorPostsService(
+      sequelize as never,
+      postModel as never,
+      undefined as never,
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+
+    await expect(draftService.discardAuthorDraft('author-1', 'draft-1')).resolves.toEqual({
+      id: 'draft-1',
+    });
+    expect(postModel.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'draft-1', author_id: 'author-1', deleted_at: null },
+      transaction,
+    }));
+    expect(destroy).toHaveBeenCalledWith({ transaction });
+  });
+
+  it('does not discard a post that is already pending review', async () => {
+    const postModel = {
+      findOne: jest.fn().mockResolvedValue({ id: 'pending-1', status: 'pending_review' }),
+    };
+    const sequelize = {
+      transaction: jest.fn((callback: (value: unknown) => unknown) => callback({})),
+    };
+    const draftService = new AuthorPostsService(
+      sequelize as never,
+      postModel as never,
+      undefined as never,
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+
+    await expect(draftService.discardAuthorDraft('author-1', 'pending-1')).rejects.toThrow(
+      BadRequestException,
+    );
+  });
 });

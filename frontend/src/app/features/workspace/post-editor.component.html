@@ -660,12 +660,12 @@
 </section>
 </div>
 <!-- Draft Confirm Modal -->
-<div aria-label="Confirm draft" aria-modal="true" class="draft-confirm-modal" data-draft-modal="" [hidden]="!showDraftConfirm" role="dialog">
+<div aria-label="Confirm draft" aria-modal="true" class="draft-confirm-modal" data-draft-modal="" [hidden]="!showDraftConfirm" role="dialog" [attr.aria-busy]="discardingDraft">
 <div class="draft-confirm-backdrop" data-draft-close="" (click)="closeDraftConfirm()"></div>
 <section class="draft-confirm-panel">
 <header class="draft-confirm-header">
 <h2 class="draft-confirm-title">{{ 'save_draft_prompt' | t }}</h2>
-<button aria-label="Close" class="draft-confirm-close" data-draft-close="" type="button" (click)="closeDraftConfirm()">
+<button aria-label="Close" class="draft-confirm-close" data-draft-close="" type="button" (click)="closeDraftConfirm()" [disabled]="discardingDraft">
 <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20"><line x1="18" x2="6" y1="6" y2="18"></line><line x1="6" x2="18" y1="6" y2="18"></line></svg>
 </button>
 </header>
@@ -673,8 +673,8 @@
 <p>{{ 'discard_warning' | t }}</p>
 </main>
 <footer class="draft-confirm-footer">
-<button class="btn fb-btn-text-light" data-draft-action="discard" type="button" (click)="discardDraft()"><span>{{ 'delete_draft' | t }}</span></button>
-<button class="btn fb-btn-primary" data-draft-action="save" type="button" (click)="saveDraftAndLeave()"><span>{{ 'save_as_draft' | t }}</span></button>
+<button class="btn fb-btn-text-light" data-draft-action="discard" type="button" (click)="discardDraft()" [disabled]="discardingDraft"><span>{{ 'delete_draft' | t }}</span></button>
+<button class="btn fb-btn-primary" data-draft-action="save" type="button" (click)="saveDraftAndLeave()" [disabled]="discardingDraft"><span>{{ 'save_as_draft' | t }}</span></button>
 </footer>
 </section>
 </div>
