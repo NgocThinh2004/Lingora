@@ -278,6 +278,7 @@
   "save_draft_prompt": "Save this article as a draft?",
   "discard_warning": "If you discard now, you will lose this article.",
   "delete_draft": "Delete draft",
+  "draft_deleted": "Draft deleted.",
   "save_as_draft": "Save as draft",
   "comments": "Comments",
   "write_comment": "Write a comment...",

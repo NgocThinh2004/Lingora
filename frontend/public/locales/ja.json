@@ -276,6 +276,7 @@
   "save_draft_prompt": "この記事を下書きとして保存しますか?",
   "discard_warning": "今破棄すると、この記事は失われます。",
   "delete_draft": "下書きの削除",
+  "draft_deleted": "下書きを削除しました。",
   "save_as_draft": "下書きとして保存",
   "comments": "コメント",
   "write_comment": "コメントを書いてください...",

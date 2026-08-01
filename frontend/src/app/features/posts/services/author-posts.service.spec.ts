@@ -88,4 +88,16 @@ describe('AuthorPostsService', () => {
 
     expect(months).toEqual(['2026-07', '2026-06']);
   });
+
+  it('discards a persisted draft through the dedicated endpoint', () => {
+    let completed = false;
+
+    service.discardAuthorDraft('9').subscribe(() => completed = true);
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/author/posts/9/draft`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush({ data: { id: '9' } });
+
+    expect(completed).toBe(true);
+  });
 });

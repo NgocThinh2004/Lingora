@@ -88,6 +88,11 @@ export class AuthorPostsController {
     return { data: await this.postsService.restoreAuthorPostFromTrash(userId, postId) };
   }
 
+  @Delete(':id/draft')
+  async discardDraft(@CurrentUser('id') userId: string, @Param('id') postId: string) {
+    return { data: await this.postsService.discardAuthorDraft(userId, postId) };
+  }
+
   @Delete(':id')
   async deletePermanently(@CurrentUser('id') userId: string, @Param('id') postId: string) {
     return { data: await this.postsService.deleteAuthorPostPermanently(userId, postId) };
