@@ -100,6 +100,12 @@ export class AuthorPostsService {
       .pipe(map(() => undefined));
   }
 
+  discardAuthorDraft(postId: string | number): Observable<void> {
+    return this.http
+      .delete<ApiItemResponse<{ id: string }>>(`${this.baseUrl}/author/posts/${postId}/draft`)
+      .pipe(map(() => undefined));
+  }
+
   private authorPostAction(postId: string | number, action: string): Observable<AuthorPost> {
     return this.http
       .post<ApiItemResponse<AuthorPost | ApiItemResponse<AuthorPost>>>(

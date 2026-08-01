@@ -276,6 +276,7 @@
   "save_draft_prompt": "¿Guardar este artículo como borrador?",
   "discard_warning": "Si descartas ahora, perderás este artículo.",
   "delete_draft": "Eliminar borrador",
+  "draft_deleted": "Borrador eliminado.",
   "save_as_draft": "Guardar como borrador",
   "comments": "Comentarios",
   "write_comment": "Escribe un comentario...",

@@ -278,6 +278,7 @@
   "save_draft_prompt": "将这篇文章保存为草稿吗？",
   "discard_warning": "如果你现在放弃，你将失去这篇文章。",
   "delete_draft": "删除草稿",
+  "draft_deleted": "草稿已删除。",
   "save_as_draft": "另存为草稿",
   "comments": "评论",
   "write_comment": "写评论...",
