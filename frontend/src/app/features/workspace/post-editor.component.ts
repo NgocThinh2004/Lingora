@@ -930,15 +930,15 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           }
           if (mode === 'submit') {
             this.suppressAutosave = true;
-            this.navigateToMyPosts(this.localeService.translate('post_submitted_review', { id: post.id }));
+            this.navigateToMyPosts(this.localeService.translate('post_submitted_review'));
             return;
           }
           if (this.navigateAfterSave) {
             this.navigateAfterSave = false;
-            this.navigateToMyPosts(this.localeService.translate('draft_saved', { id: post.id }));
+            this.navigateToMyPosts(this.localeService.translate('draft_saved'));
             return;
           }
-          this.toast.showSuccess(this.localeService.translate('draft_saved', { id: post.id }));
+          this.toast.showSuccess(this.localeService.translate('draft_saved'));
         },
         error: (error: unknown) => {
           this.toast.showError(this.formatError(error));
