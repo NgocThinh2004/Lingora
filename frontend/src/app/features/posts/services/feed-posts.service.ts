@@ -5,6 +5,10 @@ import { environment } from '../../../../environments/environment';
 import { PaginatedResult, Post } from '../models/post.model';
 import { ApiResponse } from '../../../core/http/api-response.model';
 
+/**
+ * Interface chứa các điều kiện truy vấn khi lấy danh sách bài viết.
+ * Dùng làm đầu vào (input) cho các hàm lấy danh sách từ API.
+ */
 export interface PostQuery {
   lang?: string;
   category?: string;
@@ -15,15 +19,37 @@ export interface PostQuery {
   limit?: number;
 }
 
+/**
+ * FeedPostsService - Service xử lý việc gọi API liên quan đến bài viết (Post)
+ * 
+ * Mục đích: Tập trung toàn bộ logic tương tác HTTP cho việc lấy danh sách, chi tiết và bài viết liên quan,
+ * chuyển đổi định dạng và truyền về component sử dụng.
+ * 
+ * - Service này sử dụng RxJS (cụ thể là `map` operator) để pipe (lọc/chuyển đổi) response `ApiResponse<T>` từ backend,
+ *   chỉ lấy đúng phần data (`res.data`) trước khi đưa cho các Component.
+ * 
+ * DB: Các API này tương tác chủ yếu với bảng `posts` (thông tin gốc của bài viết), 
+ * bảng `post_translations` (nội dung đa ngôn ngữ), và bảng `categories`.
+ * Lượt xem (view count) được ghi nhận và chống spam thông qua bảng `post_views` (thường check theo IP hoặc userId).
+ */
 @Injectable({ providedIn: 'root' })
 export class FeedPostsService {
   private readonly baseUrl = `${environment.apiUrl}/posts`;
 
   constructor(private readonly http: HttpClient) {}
 
+  /**
+   * Lấy danh sách bài viết có phân trang dựa trên các tham số truyền vào.
+   * Chuyển đổi PostQuery thành HttpParams để gửi lên API.
+   * Dữ liệu Input: đối tượng PostQuery
+   * Dữ liệu Output: Observable của một PaginatedResult chứa mảng bài viết và meta data phân trang
+   * 
+   * RxJS: Dùng pipe và map để trích xuất `data` từ ApiResponse.
+   */
   list(query: PostQuery = {}): Observable<PaginatedResult<Post>> {
     let params = new HttpParams();
     Object.entries(query).forEach(([key, value]) => {
+      // Chỉ thêm tham số nếu có giá trị thực (không bị null, undefined hoặc rỗng)
       if (value !== undefined && value !== null && value !== '') {
         params = params.set(key, String(value));
       }
@@ -34,6 +60,10 @@ export class FeedPostsService {
       .pipe(map((res) => res.data));
   }
 
+  /**
+   * Lấy chi tiết một bài viết theo ID.
+   * Tham số lang được sử dụng để lấy nội dung bài viết theo ngôn ngữ ưu tiên của người đọc.
+   */
   getById(id: number, lang?: string): Observable<Post> {
     const params = lang ? new HttpParams().set('lang', lang) : undefined;
     return this.http
@@ -41,6 +71,10 @@ export class FeedPostsService {
       .pipe(map((res) => res.data));
   }
 
+  /**
+   * Lấy danh sách các bài viết liên quan (thường dựa trên danh mục, thẻ, hoặc độ tương đồng).
+   * Cũng hỗ trợ tham số lang để lọc nội dung đúng ngôn ngữ.
+   */
   getRelated(id: number, lang?: string): Observable<Post[]> {
     const params = lang ? new HttpParams().set('lang', lang) : undefined;
     return this.http

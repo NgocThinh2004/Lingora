@@ -15,6 +15,15 @@ import { AssetImageDirective } from '../../../../shared/directives/asset-image.d
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../shared/pipes/localized-date.pipe';
 
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * COMPONENT TỔNG QUAN: CommentSectionComponent
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Component chịu trách nhiệm quản lý hiển thị, tạo mới, chỉnh sửa, xóa và
+ * xử lý các tương tác (like, reply, dịch thuật) cho các bình luận của bài viết.
+ * 
+ * Hỗ trợ cấu trúc comment 2 cấp (Level 1: Root comments, Level 2: Replies).
+ */
 @Component({
   selector: 'app-comment-section',
   standalone: true,
@@ -33,16 +42,27 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   private authModalService = inject(AuthModalService);
   private toastService = inject(ToastService);
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GLOBAL STATE / DB FIELD MAPPING
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  // comments (Signal): Danh sách bình luận gốc (Root comments).
+  // - map từ bảng comments có parent_id = null.
+  // - Mỗi comment chứa mảng `replies` map từ các comments có parent_id = id_của_nó.
   comments = signal<Comment[]>([]);
+  
+  // totalComments: map từ COUNT() các records liên quan trong DB.
   totalComments = signal<number>(0);
   loading = signal<boolean>(false);
   
+  // Trạng thái phân trang
   currentPage = signal<number>(1);
   hasMore = signal<boolean>(false);
 
   newCommentText = '';
   isSubmitting = signal<boolean>(false);
 
+  // ID của comment đang được người dùng bấm 'Reply' (map từ comment.id / comments.id)
   replyingToCommentId = signal<string | null>(null);
   replyingToText = '';
 
@@ -61,17 +81,29 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['postId'] && !changes['postId'].isFirstChange()) {
       this.comments.set([]);
-      this.loadComments(1);
+      this.loadComments(1); // Reset và load lại nếu chuyển sang bài viết khác
     }
   }
 
+  /**
+   * ══════════════════════════════════════════════════════
+   * PIPELINE LOAD COMMENTS
+   * ══════════════════════════════════════════════════════
+   * API 1: getCommentsByPost(postId, page) → lấy danh sách root comments & replies
+   * Map từ DB:
+   * - parent_id IS NULL -> Root Comments
+   * - parent_id IS NOT NULL -> Nằm trong mảng `replies`
+   */
   loadComments(page: number = 1): void {
     if (page === 1) this.loading.set(true);
     this.commentService.getCommentsByPost(this.postId.toString(), page).subscribe({
       next: (res) => {
         if (page === 1) {
+          // Trang 1: Thay thế toàn bộ mảng
           this.comments.set(res.items);
         } else {
+          // Trang > 1: Lấy mảng cũ, trải nghiệm (spread) và nối kết quả mới vào cuối mảng.
+          // Đây là kỹ thuật Load More (Append), giữ nguyên những gì người dùng đang xem.
           this.comments.update(prev => [...prev, ...res.items]);
         }
         this.totalComments.set(res.meta.total);
@@ -90,6 +122,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     this.loadComments(this.currentPage() + 1);
   }
 
+  // Gán ID comment mục tiêu khi người dùng nhấn "Trả lời"
   setReplyTarget(comment: Comment): void {
     if (!this.authService.isAuthenticated()) {
       this.authModalService.open();
@@ -111,6 +144,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     this.replyingToText = '';
   }
 
+  /**
+   * Đăng một bình luận gốc (Root comment) mới
+   */
   submitComment(): void {
     const content = this.newCommentText.trim();
     if (!content) return;
@@ -125,6 +161,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
       next: (newComment) => {
         this.isSubmitting.set(false);
         this.newCommentText = '';
+        // Đẩy comment mới lên đầu mảng
         this.comments.update(prev => [newComment, ...prev]);
         this.totalComments.update(t => t + 1);
       },
@@ -134,6 +171,12 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     });
   }
 
+  /**
+   * submitReply() - Gửi bình luận trả lời (Reply)
+   * Phía BE áp dụng thiết kế Flat-Thread (chuỗi phẳng):
+   * `parent_id` của comment mới luôn là Root.id. 
+   * Update ngay trên local mảng replies của root tương ứng.
+   */
   submitReply(target: Comment): void {
     const content = this.replyingToText.trim();
     if (!content) return;
@@ -150,14 +193,19 @@ export class CommentSectionComponent implements OnInit, OnChanges {
         this.replyingToText = '';
         this.replyingToCommentId.set(null);
         
-        // Mutate array
+        // Cập nhật State UI cục bộ (Mutate array):
         this.comments.update(prev => {
           const arr = [...prev];
+          // Nếu `target` là một reply, parentId của nó sẽ là ID của Root comment.
+          // Ngược lại, nếu `target` chính là Root, lấy ID của nó.
           const parentId = target.parent_id || target.id;
+          
+          // Tìm index của Root comment trong danh sách
           const parentIdx = arr.findIndex(c => c.id === parentId);
           if (parentIdx > -1) {
             arr[parentIdx] = { ...arr[parentIdx] };
             if (!arr[parentIdx].replies) arr[parentIdx].replies = [];
+            // Push reply mới vào đúng mảng `rootComment.replies[]`
             arr[parentIdx].replies.push(newComment);
           }
           return arr;
@@ -170,6 +218,15 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     });
   }
 
+  /**
+   * ═══════════════════════════════════════════════════════════════════════════
+   * CƠ CHẾ OPTIMISTIC UPDATE (khi like/unlike comment)
+   * ═══════════════════════════════════════════════════════════════════════════
+   * 1. Lập tức đổi UI (liked = !liked, likeCount ± 1) TRƯỚC KHI gọi API.
+   * 2. Gọi API thay đổi dữ liệu trong table `comment_likes`
+   * 3. Thành công → cập nhật lại likeCount chính xác từ DB.
+   * 4. Thất bại → Rollback UI về trạng thái cũ.
+   */
   toggleLike(comment: Comment): void {
     if (comment.isLiking) return;
 
@@ -183,10 +240,12 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     const nextLiked = !previousLiked;
     const nextLikeCount = nextLiked ? previousLikeCount + 1 : Math.max(0, previousLikeCount - 1);
 
+    // FE optimistic: thay đổi trước
     comment.liked = nextLiked;
     comment.likeCount = nextLikeCount;
     comment.isLiking = true;
 
+    // Thay đổi comment_likes table phía BE
     this.likeService.toggleCommentLike(this.postId, Number(comment.id)).subscribe({
       next: (res) => {
         comment.liked = res.liked;
@@ -201,9 +260,10 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     });
   }
 
+  // Xóa bình luận
   deleteComment(comment: Comment, parent?: Comment): void {
     this.commentToDelete.set({ comment, parent });
-    document.body.classList.add('modal-open');
+    document.body.classList.add('modal-open'); // Hiển thị modal confirm
   }
 
   cancelDelete(): void {
@@ -211,6 +271,30 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     document.body.classList.remove('modal-open');
   }
 
+  /**
+   * ═══════════════════════════════════════════════════════════════════════════
+   * HÀNH ĐỘNG: USER XÁC NHẬN "XÓA" BÌNH LUẬN (confirmDelete)
+   * ═══════════════════════════════════════════════════════════════════════════
+   * Điều gì xảy ra khi user bấm nút đỏ "Xóa" trên Modal?
+   * 
+   * 1. GỌI API: Gửi DELETE request lên BE (`/comments/:id`).
+   * 2. XỬ LÝ BE (như đã nói ở CommentsService):
+   *    - DB xóa comment (nếu là comment cha thì DB tự xóa luôn các reply con nhờ CASCADE).
+   *    - BE trừ `comment_count` của post.
+   * 3. XỬ LÝ FE (Sau khi API báo thành công):
+   *    - Tắt Modal (`cancelDelete`).
+   *    - Hiện thông báo Toast xanh "Đã xóa bình luận".
+   *    - CẬP NHẬT GIAO DIỆN KHÔNG CẦN TẢI LẠI TRANG (Mutate Array):
+   *      + TRƯỜNG HỢP XÓA COMMENT CON (REPLY): 
+   *        -> Tìm thằng Root Comment (parent) của nó.
+   *        -> Lọc (filter) bỏ comment bị xóa ra khỏi mảng `replies` của thằng Root.
+   *      + TRƯỜNG HỢP XÓA COMMENT CHA (ROOT):
+   *        -> Lọc (filter) bỏ comment đó ra khỏi mảng `comments` gốc ngoài cùng.
+   *        -> Kéo theo việc toàn bộ mảng `replies` con của nó biến mất khỏi UI.
+   *    - Giảm tổng số `totalComments` trên giao diện đi 1 (Lưu ý: FE cũng bị chung 
+   *      tình trạng với BE là chỉ trừ 1, mặc dù nếu xoá cha thì mất thêm cả chục cái con).
+   * ═══════════════════════════════════════════════════════════════════════════
+   */
   confirmDelete(): void {
     const target = this.commentToDelete();
     if (!target) return;
@@ -220,6 +304,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
       this.cancelDelete();
       this.toastService.showSuccess(this.localeService.translate('comment_deleted'));
       this.comments.update(prev => {
+        // Tương tự submitReply, nếu xóa reply thì phải vào trong array replies của cha để filter loại bỏ nó
         if (parent) {
           const arr = [...prev];
           const parentIdx = arr.findIndex(c => c.id === parent.id);
@@ -231,6 +316,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
           }
           return arr;
         }
+        // Nếu xóa root comment thì filter trực tiếp trên mảng ngoài cùng
         return prev.filter(c => c.id !== comment.id);
       });
       this.totalComments.update(t => t - 1);
@@ -256,6 +342,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     this.commentService.updateComment(this.postId.toString(), comment.id, text).subscribe({
       next: (updatedComment) => {
         this.cancelEdit();
+        // Cập nhật lại UI sau khi sửa thành công bằng cách thay thế đối tượng comment trong mảng
         this.comments.update(prev => {
           if (parent) {
             const arr = [...prev];
@@ -306,14 +393,38 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     if (comment.originalLanguage?.code) {
       return comment.originalLanguage.code !== currentLangCode;
     }
-    // Fallback if originalLanguage is missing or null
     return true;
   }
 
+  /**
+   * ═══════════════════════════════════════════════════════════════════════════
+   * HÀNH ĐỘNG: USER BẤM "DỊCH BÌNH LUẬN" (toggleTranslate)
+   * ═══════════════════════════════════════════════════════════════════════════
+   * Điều gì xảy ra khi user click vào nút "Dịch"?
+   * 
+   * 1. NẾU BẢN DỊCH ĐANG MỞ -> Bấm để tắt:
+   *    - Loại bỏ ID của comment khỏi tập hợp `showingTranslationIds`.
+   *    - Giao diện (HTML) thấy ID bị loại -> ẩn thẻ chứa bản dịch, hiện text gốc.
+   * 
+   * 2. NẾU ĐÃ DỊCH TỪ TRƯỚC VÀ ĐANG CACHE TRONG BỘ NHỚ (FE):
+   *    - Check biến `comment.translations` xem có bản dịch của ngôn ngữ hiện tại chưa.
+   *    - Nếu có -> chỉ việc thêm ID vào `showingTranslationIds` để bật UI, 
+   *      KHÔNG gọi API để tránh tốn tài nguyên.
+   * 
+   * 3. NẾU CHƯA DỊCH BAO GIỜ (Hoặc chưa có ngôn ngữ này):
+   *    - Thêm ID vào `translatingIds` -> UI hiện hiệu ứng Spinner Loading "Đang dịch...".
+   *    - GỌI API: GET /translations/:commentId?lang=vi
+   *    - (Phía BE sẽ check DB xem có cache chưa, nếu chưa sẽ gọi Google/DeepL).
+   *    - SAU KHI API TRẢ VỀ:
+   *      + Lưu bản dịch (res) vào mảng `comment.translations` để lần sau bấm sẽ dùng cache (Bước 2).
+   *      + Xóa ID khỏi `translatingIds` (Tắt loading).
+   *      + Thêm ID vào `showingTranslationIds` (Hiện text đã dịch).
+   * ═══════════════════════════════════════════════════════════════════════════
+   */
   toggleTranslate(comment: Comment): void {
     const currentLangCode = this.localeService.selectedLocale();
     
-    // Check if already showing, then just toggle off
+    // Nếu đang hiện thì tắt đi
     if (this.isShowingTranslation(comment)) {
       this.showingTranslationIds.update(set => {
         const newSet = new Set(set);
@@ -323,14 +434,14 @@ export class CommentSectionComponent implements OnInit, OnChanges {
       return;
     }
 
-    // Check if already in cache
+    // Nếu đã dịch và cache rồi thì chỉ bật lên
     const existingTrans = this.getTranslation(comment);
     if (existingTrans) {
       this.showingTranslationIds.update(set => new Set(set).add(comment.id));
       return;
     }
 
-    // Call API
+    // Nếu chưa dịch thì gọi API backend dịch máy
     this.translatingIds.update(set => new Set(set).add(comment.id));
     this.commentService.translateComment(this.postId.toString(), comment.id, currentLangCode).subscribe({
       next: (res) => {

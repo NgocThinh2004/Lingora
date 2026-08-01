@@ -10,6 +10,7 @@
           [placeholder]="'search_all_content' | t"
           [value]="query()"
           (input)="onInput($any($event.target).value)"
+          (keydown.enter)="onEnter()"
         />
         @if (hasQuery()) {
           <button type="button" class="search-modal-close" (click)="clear()" [attr.aria-label]="'clear' | t">

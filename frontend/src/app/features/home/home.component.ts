@@ -13,6 +13,12 @@ import { AuthService } from '../../core/auth/auth.service';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
+/**
+ * HomeComponent - Component trang chủ hiển thị danh sách bài viết (feed)
+ * 
+ * Component này quản lý việc tải danh sách bài viết theo trang, theo danh mục và ngôn ngữ.
+ * Tích hợp tính năng cuộn vô hạn (infinite scroll) để tự động tải thêm dữ liệu.
+ */
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -21,8 +27,27 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
   styleUrl: './home.component.scss',
 })
 export class HomeComponent {
+  // ══════════════════════════════════════════════════════
+  // Global State / DB Field Mapping / RxJS Pipeline
+  // ══════════════════════════════════════════════════════
+  // GIẢI THÍCH SIGNAL STATES VÀ DB FIELD MAPPING:
+  // - posts: Mảng chứa bài viết (Post[]). 
+  //   DB Mapping: Dữ liệu được gộp từ các bảng `posts`, `post_translations`, `users`, `categories`.
+  // - page: Trang hiện tại. Map tới query param phân trang của API (vd: ?page=1).
+  // - totalPages: Tổng số trang, do Backend trả về (thường tính bằng Math.ceil(total/limit)).
+  // - loading: State đang tải khi gọi API lần đầu (page = 1).
+  // - loadingMore: State đang tải thêm khi cuộn (page > 1).
+  // ══════════════════════════════════════════════════════
+
   private observer?: IntersectionObserver;
 
+  // ══════════════════════════════════════════════════════
+  // CƠ CHẾ INTERSECTION OBSERVER (INFINITE SCROLL)
+  // ══════════════════════════════════════════════════════
+  // Tại sao dùng IntersectionObserver?
+  // - Trình duyệt tự xử lý ở background thread, không block main thread như việc dùng sự kiện scroll truyền thống.
+  // - rootMargin: '400px' -> kích hoạt tải dữ liệu trước khi thực sự chạm đáy 400px (pre-fetch), mang lại trải nghiệm mượt mà.
+  // ══════════════════════════════════════════════════════
   @ViewChild('scrollTrigger') set scrollTrigger(el: ElementRef<HTMLElement> | undefined) {
     if (el) {
       if (!this.observer) {
@@ -53,7 +78,6 @@ export class HomeComponent {
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
 
-  // Subject carries {page, category, lang} — switchMap cancels in-flight requests
   private readonly feedTrigger$ = new Subject<{ page: number; category: string; lang: string }>();
 
   readonly posts = signal<Post[]>([]);
@@ -78,7 +102,6 @@ export class HomeComponent {
   });
 
   constructor() {
-    // Load categories once
     this.categoryService.findAll().pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
@@ -86,8 +109,28 @@ export class HomeComponent {
       error: () => this.categories.set([]),
     });
 
-    // switchMap automatically cancels the previous in-flight request
-    // when a new filter arrives (category/lang change or loadMore).
+    // ══════════════════════════════════════════════════════
+    // HÀNH ĐỘNG: TẢI FEED BÀI VIẾT TẠI TRANG CHỦ (RxJS PIPELINE)
+    // ══════════════════════════════════════════════════════
+    // Luồng dữ liệu và Phân trang (Pagination):
+    // 1. Tải bao nhiêu bài? 
+    //    -> Tham số `limit: 10`. Nghĩa là mỗi lần mở trang chủ hoặc cuộn trang, API chỉ lấy ĐÚNG 10 bài.
+    // 2. Tại sao lại là 10?
+    //    -> Vừa đủ che phủ màn hình, giúp FE render mượt mà, BE không bị quá tải khi JOIN bảng.
+    // 3. Hiển thị lên màn hình ra sao?
+    //    -> Lần đầu tải (page=1): Màn hình có 10 bài.
+    //    -> Cuộn xuống đáy (page=2): Nối thêm 10 bài, màn hình có 20 bài. Cứ thế tăng lên (30, 40...).
+    // 4. Khi nào thì dừng cuộn?
+    //    -> Backend sẽ trả về `totalPages` = Math.ceil(Tổng số bài viết / limit). Ví dụ DB có 55 bài -> totalPages = 6.
+    //    -> Khi người dùng cuộn đến trang 6, biến `this.page() < this.totalPages()` trả về FALSE, hệ thống ngừng gọi API.
+    //
+    // Flow cụ thể trong Code:
+    // feedTrigger$.next({ page, category, lang })
+    //       ↓
+    // switchMap(...) → Gọi API với limit: 10. Tự Hủy request cũ nếu user đổi tab nhanh.
+    //       ↓
+    // .subscribe(res) → Merge 10 bài mới vào mảng 10 bài cũ (Infinite scroll)
+    // ══════════════════════════════════════════════════════
     this.feedTrigger$.pipe(
       switchMap(({ page, category, lang }) => {
         this.loading.set(page === 1);
@@ -99,6 +142,13 @@ export class HomeComponent {
       next: (res) => {
         const currentPage = res?.meta?.page || 1;
         const items = res?.items || [];
+        
+        // ══════════════════════════════════════════════════════
+        // PHÂN TÁCH LOGIC XỬ LÝ KẾT QUẢ THEO TRANG
+        // ══════════════════════════════════════════════════════
+        // - page === 1: Người dùng load trang đầu hoặc đổi bộ lọc -> overwrite toàn bộ mảng.
+        // - page > 1: Người dùng scroll xuống cuối -> append bằng spread operator ([...cũ, ...mới]).
+        // ══════════════════════════════════════════════════════
         this.posts.set(currentPage === 1 ? items : [...this.posts(), ...items]);
         this.page.set(currentPage);
         this.totalPages.set(res?.meta?.totalPages || 1);
@@ -111,7 +161,6 @@ export class HomeComponent {
       },
     });
 
-    // Trigger initial load and re-load on language change
     effect(() => {
       const lang = this.currentLang();
       untracked(() => {
@@ -143,4 +192,3 @@ export class HomeComponent {
     return translateCategory(category, this.currentLang());
   }
 }
-
