@@ -15,7 +15,12 @@
     </div>
 
     @if (categoryLabel()) {
-      <span class="category-badge">{{ categoryLabel() }}</span>
+      <div class="category-badges">
+        <span class="category-badge">{{ categoryLabel() }}</span>
+        @if (categoryIsHidden()) {
+          <span class="category-hidden-badge"><i class="bi bi-eye-slash" aria-hidden="true"></i>{{ 'hidden_category' | t }}</span>
+        }
+      </div>
     }
   </header>
 

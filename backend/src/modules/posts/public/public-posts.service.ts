@@ -90,6 +90,9 @@ export class PublicPostsService {
       languageMap.set(Number(l.id), l.code);
       languageMap.set(String(l.id), l.code);
     });
+    const canViewHiddenCategories = Boolean(
+      query.authorId && userId && Number(query.authorId) === Number(userId),
+    );
 
     // Step 3: Xử lý bộ lọc danh mục (Category)
     // Nếu client truyền query category (có thể là slug chuỗi hoặc ID số), tìm ID tương ứng để thêm vào điều kiện lọc.
@@ -98,13 +101,17 @@ export class PublicPostsService {
     if (query.category) {
       const cat = await this.categoryModel.findOne({
         where: {
+          ...(!canViewHiddenCategories ? { status: 'active' } : {}),
           [Op.or]: [
             { slug: query.category }, // categories.slug
             ...(isNaN(Number(query.category)) ? [] : [{ id: Number(query.category) }]),
           ],
         },
       });
-      if (cat) categoryId = cat.id;
+      if (!cat) {
+        return { items: [], meta: { page, limit, total: 0, totalPages: 0 } };
+      }
+      categoryId = cat.id;
     }
 
     // Step 4: Khởi tạo điều kiện WHERE cho bảng posts
@@ -117,6 +124,14 @@ export class PublicPostsService {
     // Gắn điều kiện category và tác giả vào Where
     if (categoryId) {
       where.category_id = categoryId; // SQL: AND category_id = ...
+    } else if (!canViewHiddenCategories) {
+      const visibleCategories = await this.categoryModel.findAll({
+        attributes: ['id'],
+        where: { status: 'active' },
+      });
+      where.category_id = {
+        [Op.in]: visibleCategories.length ? visibleCategories.map(category => category.id) : [0],
+      };
     }
     if (query.authorId) {
       where.author_id = query.authorId; // SQL: AND author_id = ...
@@ -411,6 +426,10 @@ export class PublicPostsService {
     if (!post) {
       throw new NotFoundException('Post not found');
     }
+    const isAuthor = Boolean(userId && Number(post.author_id) === Number(userId));
+    if (!await this.canAccessCategory(post.category_id, isAuthor)) {
+      throw new NotFoundException('Post not found');
+    }
 
     // Lưu ý: Logic tăng view_count đã được TÁCH HOÀN TOÀN ra khỏi hàm này.
     // View chỉ được ghi nhận khi người dùng cuộn đọc >= 50% bài viết,
@@ -418,7 +437,11 @@ export class PublicPostsService {
     // Mục đích: Tách biệt rõ "lấy dữ liệu" và "ghi nhận hành vi đọc thực sự".
 
     // Tái sử dụng hàm listFeed để lấy full data (kèm relationship) về bài viết này
-    const result = await this.listFeed({ page: 1, limit: 1 }, id, userId);
+    const result = await this.listFeed({
+      page: 1,
+      limit: 1,
+      ...(isAuthor ? { authorId: Number(post.author_id) } : {}),
+    }, id, userId);
     const found = result.items.find((p) => p.id === Number(id));
     if (!found) throw new NotFoundException('Post details not found');
     return found;
@@ -447,10 +470,14 @@ export class PublicPostsService {
   async recordView(id: number, userId?: number, ip?: string): Promise<{ counted: boolean }> {
     const post = await this.postModel.findOne({
       where: { id, deleted_at: null },
-      attributes: ['id'], // Chỉ cần xác nhận bài tồn tại, không cần SELECT toàn bộ cột
+      attributes: ['id', 'author_id', 'category_id'],
     });
 
     if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+    const isAuthor = Boolean(userId && Number(post.author_id) === Number(userId));
+    if (!await this.canAccessCategory(post.category_id, isAuthor)) {
       throw new NotFoundException('Post not found');
     }
 
@@ -491,11 +518,20 @@ export class PublicPostsService {
       where: { id, deleted_at: null, status: { [Op.in]: ['approved', 'published'] } },
     });
     if (!post) throw new NotFoundException('Post not found');
+    const isAuthor = Boolean(userId && Number(post.author_id) === Number(userId));
+    if (!await this.canAccessCategory(post.category_id, isAuthor)) {
+      throw new NotFoundException('Post not found');
+    }
 
     // 1. Tìm các bài viết cùng category với giới hạn limit 4 (để khi loại trừ chính bài đang xem vẫn dư đủ 3)
     const query = post.category_id
-      ? { category: String(post.category_id), limit: 4, lang }
-      : { limit: 4, lang };
+      ? {
+          category: String(post.category_id),
+          limit: 4,
+          lang,
+          ...(isAuthor ? { authorId: Number(post.author_id) } : {}),
+        }
+      : { limit: 4, lang, ...(isAuthor ? { authorId: Number(post.author_id) } : {}) };
 
     const feed = await this.listFeed(query, undefined, userId);
     // 2. Lọc bỏ bài viết đang xem hiện tại và chỉ lấy tối đa 3 bài
@@ -513,5 +549,14 @@ export class PublicPostsService {
 
     // Trộn hai mảng lại và ngắt lấy 3 kết quả
     return [...related, ...fallback].slice(0, 3);
+  }
+
+  private async canAccessCategory(categoryId: number | null, isAuthor: boolean): Promise<boolean> {
+    if (isAuthor) return true;
+    if (!categoryId) return false;
+    return Boolean(await this.categoryModel.findOne({
+      attributes: ['id'],
+      where: { id: categoryId, status: 'active' },
+    }));
   }
 }

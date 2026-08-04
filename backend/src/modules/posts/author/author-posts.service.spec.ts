@@ -102,6 +102,39 @@ describe('AuthorPostsService state machine', () => {
     }));
   });
 
+  it('includes hidden categories used by the author in filter options', async () => {
+    const postModel = {
+      findAll: jest.fn().mockResolvedValue([
+        { category_id: 8, updated_at: new Date('2026-07-29T08:00:00Z') },
+      ]),
+    };
+    const languageModel = { findAll: jest.fn().mockResolvedValue([]) };
+    const categoryModel = {
+      findAll: jest.fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 8, slug: 'technology', status: 'inactive' }]),
+    };
+    const categoryTranslationModel = {
+      findAll: jest.fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ category_id: 8, language_id: 1, name: 'Technology' }]),
+    };
+    const optionsService = new AuthorPostsService(
+      undefined as never,
+      postModel as never,
+      undefined as never,
+      languageModel as never,
+      categoryModel as never,
+      categoryTranslationModel as never,
+    );
+
+    await expect(optionsService.getAuthorPostFilterOptions('author-1')).resolves.toEqual({
+      languages: [],
+      categories: [{ id: 8, label: 'Technology', isActive: false }],
+      updatedMonths: ['2026-07'],
+    });
+  });
+
   it('permanently discards an owned draft', async () => {
     const destroy = jest.fn().mockResolvedValue(undefined);
     const transaction = {};

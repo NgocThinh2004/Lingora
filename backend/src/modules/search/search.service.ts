@@ -72,10 +72,16 @@ export class SearchService {
       limit: 20,
     });
     const postIds = postTranslations.map(t => Number(t.post_id));
+    const activeCategoryRows = await this.categoryModel.findAll({
+      where: { status: 'active' },
+      attributes: ['id'],
+    });
+    const activeCategoryIds = activeCategoryRows.map(category => category.id);
 
     const posts = await this.postModel.findAll({
       where: {
         id: { [Op.in]: postIds.length ? postIds : [0] },
+        category_id: { [Op.in]: activeCategoryIds.length ? activeCategoryIds : [0] },
         status: { [Op.in]: ['approved', 'published'] },
         deleted_at: null
       },

@@ -17,6 +17,8 @@ import {
   LanguageTranslationCoverage,
   TranslationMetricsService,
 } from '../translations/translation-metrics.service';
+import { CategoryAutoTranslationService } from '../categories/category-auto-translation.service';
+import { CategoriesCacheService } from '../categories/categories-cache.service';
 
 @Injectable()
 export class LanguagesService {
@@ -24,6 +26,8 @@ export class LanguagesService {
     private readonly sequelize: Sequelize,
     @InjectModel(Language) private readonly languageModel: typeof Language,
     private readonly translationMetricsService: TranslationMetricsService,
+    private readonly categoryAutoTranslation: CategoryAutoTranslationService,
+    private readonly categoriesCache: CategoriesCacheService,
   ) {}
 
   async findActive() {
@@ -100,7 +104,7 @@ export class LanguagesService {
         const isActive = shouldActivate || isDefault;
         const now = new Date();
 
-        return this.languageModel.create(
+        const language = await this.languageModel.create(
           {
             code: dto.code,
             name: dto.name,
@@ -112,7 +116,10 @@ export class LanguagesService {
           },
           { transaction },
         );
+        await this.categoryAutoTranslation.createMissingTranslationsForLanguage(language, transaction);
+        return language;
       });
+      await this.categoriesCache.invalidate();
       return this.toAdminLanguage(language);
     } catch (error) {
       if (error instanceof UniqueConstraintError) {
@@ -137,7 +144,7 @@ export class LanguagesService {
     if (!current) {
       throw new NotFoundException('Language not found');
     }
-    return this.sequelize.transaction(async transaction => {
+    const language = await this.sequelize.transaction(async transaction => {
       const configuredLanguages = await this.languageModel.findAll({
         order: [['id', 'ASC']],
         transaction,
@@ -163,6 +170,7 @@ export class LanguagesService {
         );
       }
 
+      const wasActive = language.is_active;
       await language.update(
         {
           name: dto.name ?? language.name,
@@ -176,9 +184,14 @@ export class LanguagesService {
         },
         { transaction },
       );
+      if (!wasActive && language.is_active) {
+        await this.categoryAutoTranslation.createMissingTranslationsForLanguage(language, transaction);
+      }
 
-      return this.toAdminLanguage(language);
+      return language;
     });
+    await this.categoriesCache.invalidate();
+    return this.toAdminLanguage(language);
   }
 
   private toAdminLanguage(

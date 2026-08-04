@@ -7,11 +7,13 @@ import { AdminLanguagesController } from './admin/admin-languages.controller';
 import { PublicLanguagesController } from './public/public-languages.controller';
 import { LanguagesService } from './languages.service';
 import { Language } from './models/language.model';
+import { CategoriesModule } from '../categories/categories.module';
 
 @Module({
   imports: [
     UsersModule,
     TranslationsModule,
+    CategoriesModule,
     SequelizeModule.forFeature([Language]),
   ],
   controllers: [PublicLanguagesController, AdminLanguagesController],

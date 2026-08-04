@@ -106,7 +106,11 @@ export class PostCardComponent implements OnDestroy, AfterViewInit {
   });
   
   // Dịch tên danh mục bài viết
-  readonly categoryLabel = computed(() => translateCategory(this._post().category, this.currentLang()));
+  readonly categoryLabel = computed(() => {
+    return translateCategory(this._post().category, this.currentLang());
+  });
+
+  readonly categoryIsHidden = computed(() => this._post().category?.isActive === false);
   
   // Lấy đoạn trích (excerpt) đã được Backend tạo sẵn
   readonly excerpt = computed(() => {
