@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { ToastService } from '../../../core/notifications/toast.service';
@@ -53,6 +54,7 @@ describe('AdminLanguagesComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AdminLanguagesComponent],
       providers: [
+        provideRouter([]),
         { provide: AdminLanguagesService, useValue: service },
         { provide: ToastService, useValue: toast },
         { provide: LocaleService, useValue: locale },

@@ -7,6 +7,7 @@ import { ToastService } from '../../../core/notifications/toast.service';
 import { AuthLayoutComponent } from '../../../layouts/auth-layout/auth-layout.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { LocaleService } from '../../../core/locale/locale.service';
+import { strongPasswordValidator } from '../../../shared/validators/password.validator';
 
 @Component({
   selector: 'app-reset-password',
@@ -23,7 +24,7 @@ export class ResetPasswordComponent implements OnDestroy {
   readonly resetPasswordForm = this.fb.nonNullable.group({
     email: [sessionStorage.getItem('password_reset_email') ?? '', [Validators.required, Validators.email]],
     otp: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
-    newPassword: ['', [Validators.required, Validators.minLength(8)]],
+    newPassword: ['', [Validators.required, strongPasswordValidator]],
     confirmPassword: ['', [Validators.required]],
   }, { validators: this.passwordsMatch });
 

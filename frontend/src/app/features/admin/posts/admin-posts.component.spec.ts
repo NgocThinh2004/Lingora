@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Subject, of } from 'rxjs';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { ToastService } from '../../../core/notifications/toast.service';
@@ -35,6 +36,7 @@ describe('AdminPostsComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AdminPostsComponent],
       providers: [
+        provideRouter([]),
         { provide: AdminPostsService, useValue: postsService },
         { provide: AdminCategoriesService, useValue: categories },
         { provide: ToastService, useValue: toast },

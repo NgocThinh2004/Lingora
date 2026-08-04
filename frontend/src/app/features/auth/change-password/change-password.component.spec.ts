@@ -31,7 +31,7 @@ describe('ChangePasswordComponent', () => {
   it('rejects a confirmation password that does not match', () => {
     component.form.setValue({
       currentPassword: 'current-password',
-      newPassword: 'new-password',
+      newPassword: 'New-password1!',
       confirmPassword: 'different-password',
     });
 
@@ -43,15 +43,15 @@ describe('ChangePasswordComponent', () => {
     const navigateSpy = spyOn(router, 'navigate').and.resolveTo(true);
     component.form.setValue({
       currentPassword: 'current-password',
-      newPassword: 'new-password',
-      confirmPassword: 'new-password',
+      newPassword: 'New-password1!',
+      confirmPassword: 'New-password1!',
     });
 
     component.changePassword();
 
     expect(authService.changePassword).toHaveBeenCalledOnceWith({
       currentPassword: 'current-password',
-      newPassword: 'new-password',
+      newPassword: 'New-password1!',
     });
     expect(authService.expireSession).toHaveBeenCalled();
     expect(navigateSpy).toHaveBeenCalledWith(['/auth/login'], {
