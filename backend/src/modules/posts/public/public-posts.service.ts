@@ -403,7 +403,7 @@ export class PublicPostsService {
    *    - Nếu ĐÃ CÓ: Nghĩa là người này mới xem gần đây, bỏ qua việc tăng view.
    * ═══════════════════════════════════════════════════════════════════════════
    */
-  async getById(id: number, userId?: number, lang?: string, ip?: string) {
+  async getById(id: number, userId?: number, lang?: string) {
     const post = await this.postModel.findOne({
       where: { id, deleted_at: null },
     });
@@ -412,34 +412,74 @@ export class PublicPostsService {
       throw new NotFoundException('Post not found');
     }
 
-    // Step 1: Xử lý cơ chế chống spam view
-    // Tại sao cần cơ chế này? Nếu user F5 liên tục, view sẽ tăng ảo (spam). Ta phải giới hạn lại.
-    // DB: bảng post_views - hoặc trong trường hợp này, dùng in-memory cache (RAM) với key định danh
-    // Biến định danh: Ưu tiên dùng UserID (nếu đã đăng nhập). Nếu ẩn danh, dùng IP.
-    const viewerId = userId ? `user:${userId}` : (ip ? `ip:${ip}` : `ip:unknown`);
-
-    // Key lưu trong in-memory cache (RAM) (cache manager). Ví dụ: "view:post:15:user:99"
-    const cacheKey = `view:post:${id}:${viewerId}`;
-
-    // Đọc cache xem user này đã xem bài viết này chưa
-    const alreadyViewed = await this.cacheManager.get(cacheKey);
-
-    // Điều kiện KHÔNG tăng view: Nếu alreadyViewed trả về có giá trị -> người này vừa xem xong, ta bỏ qua không cộng view.
-    if (!alreadyViewed) {
-      // Nếu chưa xem, tăng trường view_count lên 1
-      // SQL: UPDATE posts SET view_count = view_count + 1 WHERE id = ...
-      post.increment('view_count', { by: 1 }).catch(() => null);
-
-      // Step 2: Cập nhật biến cache, thiết lập thời gian sống (TTL) là 1 giờ (3600000 ms)
-      // Ý nghĩa: Sau 1 giờ, key bị xóa khỏi in-memory cache (RAM). Người này nếu xem lại sẽ được tính là view mới.
-      await this.cacheManager.set(cacheKey, true, 3600000).catch(() => null);
-    }
+    // Lưu ý: Logic tăng view_count đã được TÁCH HOÀN TOÀN ra khỏi hàm này.
+    // View chỉ được ghi nhận khi người dùng cuộn đọc >= 50% bài viết,
+    // thông qua endpoint riêng POST /posts/:id/view → recordView().
+    // Mục đích: Tách biệt rõ "lấy dữ liệu" và "ghi nhận hành vi đọc thực sự".
 
     // Tái sử dụng hàm listFeed để lấy full data (kèm relationship) về bài viết này
     const result = await this.listFeed({ page: 1, limit: 1 }, id, userId);
     const found = result.items.find((p) => p.id === Number(id));
     if (!found) throw new NotFoundException('Post details not found');
     return found;
+  }
+
+  /**
+   * ═══════════════════════════════════════════════════════════════════════════
+   * HÀNH ĐỘNG: GHI NHẬN VIEW THỰC SỰ (SCROLL DEPTH >= 50%)
+   * ═══════════════════════════════════════════════════════════════════════════
+   * recordView() - Được gọi khi Frontend xác nhận người dùng đã đọc >= 50% bài.
+   *
+   * CƠ CHẾ HOẠT ĐỘNG:
+   * 1. Frontend dùng IntersectionObserver quan sát một "sentinel" element đặt tại
+   *    điểm giữa bài viết. Khi sentinel vào viewport VÀ người dùng đã ở trang >= 3 giây,
+   *    Frontend mới gọi POST /posts/:id/view.
+   * 2. Backend nhận request, tạo viewerId từ userId (nếu đã đăng nhập) hoặc IP (nếu ẩn danh).
+   * 3. Kiểm tra Redis: key "view:post:{id}:{viewerId}" đã tồn tại chưa?
+   *    - Nếu ĐÃ CÓ (trong 24h qua): Bỏ qua, trả về { counted: false }.
+   *    - Nếu CHƯA CÓ: Tăng view_count trong DB, lưu key vào Redis với TTL 24 giờ.
+   * 4. Lý do dùng Redis (thay vì In-Memory cũ):
+   *    - Tồn tại qua restart server (In-Memory mất toàn bộ khi server khởi động lại).
+   *    - Đồng bộ khi scale nhiều instance (mỗi instance In-Memory là độc lập nhau).
+   *    - TTL chính xác tuyệt đối (không bị ảnh hưởng bởi Node.js garbage collection).
+   * ═══════════════════════════════════════════════════════════════════════════
+   */
+  async recordView(id: number, userId?: number, ip?: string): Promise<{ counted: boolean }> {
+    const post = await this.postModel.findOne({
+      where: { id, deleted_at: null },
+      attributes: ['id'], // Chỉ cần xác nhận bài tồn tại, không cần SELECT toàn bộ cột
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    // Ưu tiên định danh bằng UserID (chính xác nhất).
+    // Người dùng ẩn danh → dùng IP (có thể nhiều người chung IP, nhưng chấp nhận được).
+    const viewerId = userId ? `user:${userId}` : (ip ? `ip:${ip}` : `ip:unknown`);
+
+    // Định dạng key Redis: "view:post:{postId}:{viewerId}"
+    // Ví dụ: "view:post:42:user:99" hoặc "view:post:42:ip:192.168.1.1"
+    const cacheKey = `view:post:${id}:${viewerId}`;
+
+    // Kiểm tra trong Redis: người dùng này đã xem bài trong 24 giờ qua chưa?
+    const alreadyViewed = await this.cacheManager.get(cacheKey);
+
+    if (alreadyViewed) {
+      // Đã xem trong 24h → không tính thêm view để tránh spam
+      return { counted: false };
+    }
+
+    // Chưa xem → tăng view_count lên 1 trong DB
+    // SQL: UPDATE posts SET view_count = view_count + 1 WHERE id = ?
+    // Dùng .catch() để đảm bảo lỗi DB không làm crash toàn bộ request
+    post.increment('view_count', { by: 1 }).catch(() => null);
+
+    // Lưu key vào Redis với TTL = 24 giờ (86_400_000 ms)
+    // Sau 24 giờ, key tự động bị xóa khỏi Redis → lần xem tiếp theo sẽ được tính là view mới
+    await this.cacheManager.set(cacheKey, true, 86_400_000).catch(() => null);
+
+    return { counted: true };
   }
 
   /**

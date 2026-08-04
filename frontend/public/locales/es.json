@@ -499,5 +499,8 @@
   "enter_handle": "@ Introduzca un identificador",
   "zoom_image": "Ampliar imagen",
   "edited": "Editado",
-  "fallback_warning_tooltip": "Esta publicación no tiene una traducción en el idioma actual. Mostrando en el idioma original."
+  "fallback_warning_tooltip": "Esta publicación no tiene una traducción en el idioma actual. Mostrando en el idioma original.",
+  "show_less": "Mostrar menos",
+  "view_translation": "Ver traducción",
+  "view_original": "Ver original"
 }

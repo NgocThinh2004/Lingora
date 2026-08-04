@@ -498,5 +498,8 @@
   "enter_handle": "@ 输入用户名",
   "zoom_image": "缩放图片",
   "edited": "已编辑",
-  "fallback_warning_tooltip": "该文章没有当前语言的翻译。以原语言显示。"
+  "fallback_warning_tooltip": "该文章没有当前语言的翻译。以原语言显示。",
+  "show_less": "收起",
+  "view_translation": "查看翻译",
+  "view_original": "查看原文"
 }

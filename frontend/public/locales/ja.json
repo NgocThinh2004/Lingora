@@ -496,5 +496,8 @@
   "enter_handle": "@ハンドルを入力してください",
   "zoom_image": "画像を拡大する",
   "edited": "編集済み",
-  "fallback_warning_tooltip": "この記事には現在の言語の翻訳がありません。元の言語で表示しています。"
+  "fallback_warning_tooltip": "この記事には現在の言語の翻訳がありません。元の言語で表示しています。",
+  "show_less": "表示を減らす",
+  "view_translation": "翻訳を見る",
+  "view_original": "原文を見る"
 }

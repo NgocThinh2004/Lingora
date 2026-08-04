@@ -20,6 +20,7 @@ import { CompactNumberPipe } from '../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
+import { PostCardComponent } from '../components/post-card/post-card.component';
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -31,7 +32,7 @@ import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
 @Component({
   selector: 'app-post-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
+  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective, TranslatePipe, LocalizedDatePipe, PostCardComponent],
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
 })
@@ -76,9 +77,20 @@ export class PostDetailComponent implements OnDestroy {
   private likeSub?: Subscription;
   private videoObservers: IntersectionObserver[] = [];
 
+  // ── Scroll-depth view tracking ──────────────────────────────────────────────
+  // Observer theo dõi sentinel element tại 50% bài viết
+  private scrollDepthObserver?: IntersectionObserver;
+
+  // Flag tránh gọi trackView nhiều lần cho cùng 1 bài
+  private viewTracked = false;
+  // ID bài đang xem, reset flag khi chuyển sang bài khác
+  private trackedPostId?: number;
+  // ────────────────────────────────────────────────────────────────────────────
+
   ngOnDestroy(): void {
     // Dọn dẹp các observers và subscriptions khi component bị hủy để tránh memory leak
     this.cleanupVideoObservers();
+    this.cleanupScrollTracker();
     this.likeSub?.unsubscribe();
   }
 
@@ -116,6 +128,116 @@ export class PostDetailComponent implements OnDestroy {
         this.videoObservers.push(obs);
       });
     }, 100);
+  }
+
+  /**
+   * ═══════════════════════════════════════════════════════════════════════════
+   * SCROLL-DEPTH VIEW TRACKING
+   * ═══════════════════════════════════════════════════════════════════════════
+   * Cơ chế:
+   * 1. Đặt một sentinel <div> ẩn (0px, pointer-events: none) tại điểm GIỮA
+   *    của bài viết (được tạo động bằng cách chèn vào giữa DOM của article).
+   * 2. IntersectionObserver quan sát sentinel. Khi nó vào viewport lần đầu
+   *    → bật bộ đếm giờ 3 giây.
+   * 3. Nếu người dùng vẫn ở trang sau 3 giây → gọi trackView() → hủy observer.
+   * 4. Nếu người dùng rời trang/đổi bài trước 3 giây → clearTimeout → không đếm.
+   *
+   * Edge case - Bài siêu ngắn (1-2 dòng, toàn bộ nội dung hiển thị luôn):
+   * Khi article ngắn hơn 1 màn hình, sentinel ở giữa bài sẽ NGAY LẬP TỨC vào
+   * viewport khi render xong (không cần cuộn). Điều này ĐÚNG VÀ HỢP LÝ vì
+   * người dùng đã "thấy" 100% nội dung ngay rồi. Điều kiện 3 giây vẫn được
+   * giữ lại để chặn bot hoặc mở nhầm tab.
+   * ═══════════════════════════════════════════════════════════════════════════
+   */
+  private setupScrollTracker(postId: number): void {
+    if (typeof document === 'undefined' || this.authorPreview()) return;
+
+    // Reset khi chuyển sang bài mới
+    if (this.trackedPostId !== postId) {
+      this.cleanupScrollTracker();
+      this.viewTracked = false;
+      this.trackedPostId = postId;
+    }
+
+    // Nếu bài này đã được tính view trong phiên hiện tại → không setup lại
+    if (this.viewTracked) return;
+
+    // Đợi DOM render xong rồi mới inject sentinel và bắt đầu quan sát
+    // 300ms: đủ để Angular hoàn tất change detection + render [innerHTML] kể cả bài nặng
+    setTimeout(() => {
+      const articleEl = this.articleContentRef?.nativeElement;
+      if (!articleEl) return;
+
+      // Xóa sentinel cũ nếu có (tránh duplicate khi chuyển bài)
+      articleEl.querySelector('[data-scroll-sentinel]')?.remove();
+
+      // Lấy tất cả các phần tử con trực tiếp của article (paragraphs, headings, images, etc.)
+      const children = Array.from(articleEl.children);
+
+      // Guard: nếu innerHTML chưa render xong (children rỗng), dừng lại.
+      // Điều này ngăn view bị đếm ở bài "rỗng" khi browser chưa kịp paint.
+      // setupScrollTracker sẽ được gọi lại ở lần route navigate tiếp theo.
+      if (children.length === 0) return;
+
+      // Tạo sentinel element — một thẻ div vô hình (0px height, không ảnh hưởng layout)
+      // Đặt tại điểm GIỮA (50%) chiều dài bài viết bằng cách tính toán vị trí DOM
+      const sentinel = document.createElement('div');
+      sentinel.setAttribute('data-scroll-sentinel', '');
+      sentinel.style.cssText = 'height:0;overflow:hidden;pointer-events:none;visibility:hidden;';
+
+      if (children.length === 1) {
+        // Bài chỉ có 1 phần tử (VD: 1 đoạn văn ngắn) → append vào cuối
+        // IntersectionObserver sẽ trigger ngay khi render (hợp lý: user thấy toàn bộ bài)
+        articleEl.appendChild(sentinel);
+      } else {
+        // Bài nhiều phần tử → chèn sentinel vào VỊ TRÍ GIỮA (index = Math.floor(length / 2))
+        // Ví dụ: 10 paragraphs → chèn trước paragraph thứ 5
+        const midIndex = Math.floor(children.length / 2);
+        articleEl.insertBefore(sentinel, children[midIndex]);
+      }
+
+      // ── BUG FIX: root phải là .center-feed, KHÔNG phải window ──────────────
+      // Lý do: bài viết nằm trong một scrollable div (.center-feed), không phải
+      // cuộn theo window. Nếu dùng root mặc định (window), IntersectionObserver
+      // sẽ coi sentinel là "visible" ngay khi DOM render xong (ngoài scroll area),
+      // dẫn đến view bị đếm sai ngay khi mở bài mà chưa cuộn tới 50%.
+      // ───────────────────────────────────────────────────────────────────────
+      const scrollRoot = this.document.querySelector<HTMLElement>('.center-feed') ?? null;
+
+      this.scrollDepthObserver = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting && !this.viewTracked) {
+            // Sentinel vào viewport (người dùng đã cuộn tới 50%) → ghi nhận view ngay lập tức
+            this.viewTracked = true;
+
+            // Hủy observer ngay để không trigger lại khi cuộn lên xuống
+            this.scrollDepthObserver?.disconnect();
+            this.scrollDepthObserver = undefined;
+
+            // Gọi API POST /posts/:id/view — bắt lỗi silently để không làm crash UX
+            this.postService.trackView(postId).subscribe({
+              next: () => { /* View được ghi nhận thành công, không cần xử lý gì thêm */ },
+              error: () => { /* Lỗi mạng — bỏ qua, không thông báo người dùng */ },
+            });
+          }
+        },
+        {
+          // root: scrollRoot → quan sát trong context của .center-feed, không phải window
+          // Nếu không tìm thấy .center-feed (SSR, test), fallback về null (= window)
+          root: scrollRoot,
+          // threshold: 0 → trigger ngay khi 1px của sentinel vào viewport của root
+          threshold: 0,
+        }
+      );
+
+      this.scrollDepthObserver.observe(sentinel);
+    }, 300); // 300ms: đủ để Angular render [innerHTML] kể cả bài viết nặng
+  }
+
+  /** Dọn dẹp scroll observer để tránh memory leak */
+  private cleanupScrollTracker(): void {
+    this.scrollDepthObserver?.disconnect();
+    this.scrollDepthObserver = undefined;
   }
 
   // Xử lý nút quay lại
@@ -231,6 +353,13 @@ export class PostDetailComponent implements OnDestroy {
         if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
 
         this.setupVideoObservers();
+
+        // Khởi động scroll tracker để ghi nhận view khi người dùng đọc >= 50%
+        // Chỉ áp dụng cho bài viết công khai (không áp dụng cho bản xem trước của tác giả)
+        if (result.mode === 'public') {
+          const { post } = result as any;
+          this.setupScrollTracker(post.id);
+        }
       },
       error: () => {
         this.error.set(this.localeService.translate(

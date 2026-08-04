@@ -8,7 +8,7 @@
  * Lưu ý: Dù là public, vẫn dùng OptionalJwtAuthGuard để kiểm tra nếu user gửi Token hợp lệ, 
  * sẽ đọc ID của user đó để xác định họ "Đã Like" bài viết hay chưa.
  */
-import { Controller, Get, Param, ParseIntPipe, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, ParseIntPipe, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthorPostsService } from '../author/author-posts.service';
 import { PublicPostsService } from './public-posts.service';
 import { PublicPostsQueryDto } from './dto/public-posts.dto';
@@ -61,8 +61,10 @@ export class PublicPostsController {
 
   /**
    * API: GET /posts/:id
-   * Mục đích: Lấy chi tiết nội dung của một bài viết, tự động tăng view count.
-   * Dữ liệu trả về sẽ kèm theo tất cả các relationship (tác giả, chuyên mục, bản dịch).
+   * Mục đích: Lấy chi tiết nội dung của một bài viết (tác giả, danh mục, bản dịch).
+   * Lưu ý: Endpoint này KHÔNG tăng view_count nữa.
+   * View chỉ được ghi nhận khi người dùng cuộn đọc >= 50% nội dung
+   * thông qua endpoint riêng POST /posts/:id/view.
    */
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
@@ -71,12 +73,27 @@ export class PublicPostsController {
     @Req() req: any,
     @Query('lang') lang?: string,
   ) {
-    // Xử lý lấy IP thật của người dùng để chống spam view:
-    // Nếu server chạy sau một Reverse Proxy (như Nginx) hoặc Load Balancer, IP thực của client sẽ nằm trong header `x-forwarded-for`.
-    // Nếu kết nối trực tiếp (ví dụ môi trường dev), ta dùng `req.socket.remoteAddress`.
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    
-    // Gửi ID bài viết, ID user (có thể null), lang và IP xuống tầng service xử lý.
-    return this.postsService.getById(id, req.user?.id, lang, ip);
+    return this.postsService.getById(id, req.user?.id, lang);
+  }
+
+  /**
+   * API: POST /posts/:id/view
+   * Mục đích: Ghi nhận 1 lượt xem hợp lệ khi người dùng đã đọc >= 50% bài viết.
+   * Được Frontend gọi khi IntersectionObserver phát hiện sentinel element tại giữa bài
+   * đã vào viewport và người dùng đã ở trang ít nhất 3 giây.
+   * Không yêu cầu xác thực (OptionalJwtAuthGuard) — cả user đã đăng nhập lẫn khách ẩn danh đều được tính view.
+   */
+  @Post(':id/view')
+  @UseGuards(OptionalJwtAuthGuard)
+  recordView(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
+  ) {
+    // x-forwarded-for có thể chứa nhiều IP cách nhau dấu phẩy (VD: "203.0.113.1, 70.41.3.18")
+    // khi request đi qua nhiều proxy/load-balancer. Ta luôn lấy địa chỉ ĐẦU TIÊN (IP gốc của client)
+    // để đảm bảo Redis key luôn nhất quán — tránh cùng 1 user tạo ra nhiều key khác nhau.
+    const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    const ip = String(rawIp).split(',')[0].trim();
+    return this.postsService.recordView(id, req.user?.id, ip);
   }
 }

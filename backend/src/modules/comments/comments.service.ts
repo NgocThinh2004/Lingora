@@ -389,13 +389,23 @@ export class CommentsService {
 
     // THỰC THI TRANSACTION
     await this.sequelize.transaction(async (transaction) => {
+      // Đếm số lượng reply bị xóa theo (nếu đây là root comment)
+      let deletedCount = 1;
+      if (!comment.parent_id) {
+        const repliesCount = await this.commentModel.count({
+          where: { parent_id: comment.id },
+          transaction
+        });
+        deletedCount += repliesCount;
+      }
+
       // Step 1: Xóa bình luận
       // DB: DELETE FROM "comments" WHERE id = commentId
       await comment.destroy({ transaction });
 
       // Step 2: Giảm tổng số comment hiển thị trên bài viết
-      // DB: UPDATE "posts" SET comment_count = comment_count - 1 WHERE id = post_id
-      await this.postModel.decrement('comment_count', { by: 1, where: { id: comment.post_id }, transaction });
+      // DB: UPDATE "posts" SET comment_count = comment_count - deletedCount WHERE id = post_id
+      await this.postModel.decrement('comment_count', { by: deletedCount, where: { id: comment.post_id }, transaction });
     });
 
     return { success: true };

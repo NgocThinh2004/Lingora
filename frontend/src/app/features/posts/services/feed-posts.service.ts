@@ -28,9 +28,9 @@ export interface PostQuery {
  * - Service này sử dụng RxJS (cụ thể là `map` operator) để pipe (lọc/chuyển đổi) response `ApiResponse<T>` từ backend,
  *   chỉ lấy đúng phần data (`res.data`) trước khi đưa cho các Component.
  * 
- * DB: Các API này tương tác chủ yếu với bảng `posts` (thông tin gốc của bài viết), 
+ * DB: Các API này tương tác chủ yếu với bảng `posts` (thông tin gốc của bài viết),
  * bảng `post_translations` (nội dung đa ngôn ngữ), và bảng `categories`.
- * Lượt xem (view count) được ghi nhận và chống spam thông qua bảng `post_views` (thường check theo IP hoặc userId).
+ * Lượt xem (view count) được ghi nhận qua endpoint POST /posts/:id/view và chống spam bằng Redis (TTL 24h).
  */
 @Injectable({ providedIn: 'root' })
 export class FeedPostsService {
@@ -79,6 +79,19 @@ export class FeedPostsService {
     const params = lang ? new HttpParams().set('lang', lang) : undefined;
     return this.http
       .get<ApiResponse<Post[]>>(`${this.baseUrl}/${id}/related`, { params })
+      .pipe(map((res) => res.data));
+  }
+
+  /**
+   * Ghi nhận 1 lượt xem hợp lệ khi người dùng đã đọc >= 50% nội dung bài viết.
+   * Được gọi từ PostDetailComponent sau khi:
+   *   (1) IntersectionObserver phát hiện sentinel tại giữa bài đã vào viewport
+   *   (2) Người dùng đã ở trang ít nhất 3 giây
+   * Backend sẽ tự kiểm tra Redis để chống spam (TTL 24h).
+   */
+  trackView(id: number): Observable<{ counted: boolean }> {
+    return this.http
+      .post<ApiResponse<{ counted: boolean }>>(`${this.baseUrl}/${id}/view`, {})
       .pipe(map((res) => res.data));
   }
 

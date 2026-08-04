@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CommentService } from '../../services/comment.service';
@@ -74,6 +74,24 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   translatingIds = signal<Set<string>>(new Set());
   showingTranslationIds = signal<Set<string>>(new Set());
 
+  // Set lưu trữ ID của các bình luận đang được mở rộng (Read More)
+  expandedCommentIds = signal<Set<string>>(new Set());
+
+  toggleExpand(commentId: string): void {
+    const current = this.expandedCommentIds();
+    const next = new Set(current);
+    if (next.has(commentId)) {
+      next.delete(commentId);
+    } else {
+      next.add(commentId);
+    }
+    this.expandedCommentIds.set(next);
+  }
+
+  isExpanded(commentId: string): boolean {
+    return this.expandedCommentIds().has(commentId);
+  }
+
   ngOnInit(): void {
     this.loadComments(1);
   }
@@ -123,13 +141,18 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   // Gán ID comment mục tiêu khi người dùng nhấn "Trả lời"
-  setReplyTarget(comment: Comment): void {
+  setReplyTarget(comment: Comment, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     if (!this.authService.isAuthenticated()) {
       this.authModalService.open();
       return;
     }
     this.replyingToCommentId.set(comment.id);
     this.replyingToText = '';
+    this.editingCommentId.set(null);
+    this.editingCommentText = '';
   }
 
   handleCommentFocus(event: FocusEvent): void {
@@ -303,6 +326,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     this.commentService.deleteComment(this.postId.toString(), comment.id).subscribe(() => {
       this.cancelDelete();
       this.toastService.showSuccess(this.localeService.translate('comment_deleted'));
+      
+      let deletedCount = 1;
+      
       this.comments.update(prev => {
         // Tương tự submitReply, nếu xóa reply thì phải vào trong array replies của cha để filter loại bỏ nó
         if (parent) {
@@ -317,15 +343,27 @@ export class CommentSectionComponent implements OnInit, OnChanges {
           return arr;
         }
         // Nếu xóa root comment thì filter trực tiếp trên mảng ngoài cùng
+        // Đồng thời đếm số lượng replies bị xóa theo
+        const targetRoot = prev.find(c => c.id === comment.id);
+        if (targetRoot && targetRoot.replies) {
+          deletedCount += targetRoot.replies.length;
+        }
+        
         return prev.filter(c => c.id !== comment.id);
       });
-      this.totalComments.update(t => t - 1);
+      this.totalComments.update(t => t - deletedCount);
     });
   }
 
-  startEdit(comment: Comment): void {
+  // Bắt đầu chỉnh sửa bình luận
+  startEdit(comment: Comment, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.editingCommentId.set(comment.id);
     this.editingCommentText = comment.content;
+    this.replyingToCommentId.set(null);
+    this.replyingToText = '';
   }
 
   cancelEdit(): void {
@@ -353,7 +391,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
                 const rIdx = arr[pIdx].replies.findIndex((r: Comment) => r.id === comment.id);
                 if (rIdx > -1) {
                   arr[pIdx].replies = [...arr[pIdx].replies];
-                  arr[pIdx].replies[rIdx] = updatedComment;
+                  arr[pIdx].replies[rIdx] = { ...arr[pIdx].replies[rIdx], ...updatedComment };
                 }
               }
             }
@@ -361,7 +399,15 @@ export class CommentSectionComponent implements OnInit, OnChanges {
           }
           const arr = [...prev];
           const idx = arr.findIndex(c => c.id === comment.id);
-          if (idx > -1) arr[idx] = updatedComment;
+          if (idx > -1) {
+            arr[idx] = { 
+              ...arr[idx], 
+              ...updatedComment, 
+              replies: arr[idx].replies, 
+              likeCount: arr[idx].likeCount !== undefined ? arr[idx].likeCount : updatedComment.likeCount,
+              liked: arr[idx].liked !== undefined ? arr[idx].liked : updatedComment.liked
+            };
+          }
           return arr;
         });
       }
@@ -381,7 +427,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     if (!comment.updated_at || !comment.created_at) return false;
     const created = new Date(comment.created_at).getTime();
     const updated = new Date(comment.updated_at).getTime();
-    return (updated - created) > 2000;
+    return updated > created;
   }
 
   canDelete(comment: Comment): boolean {
@@ -393,7 +439,24 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     if (comment.originalLanguage?.code) {
       return comment.originalLanguage.code !== currentLangCode;
     }
-    return true;
+    return false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    
+    if (this.replyingToCommentId()) {
+      if (!target.closest('.reply-container')) {
+        this.cancelReply();
+      }
+    }
+    
+    if (this.editingCommentId()) {
+      if (!target.closest('.edit-container')) {
+        this.cancelEdit();
+      }
+    }
   }
 
   /**

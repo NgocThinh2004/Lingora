@@ -90,27 +90,7 @@
         <h4 class="fw-bold mb-4">{{ 'related_posts' | t }}</h4>
         <div id="relatedPostsContainer" class="d-flex flex-column gap-3">
           @for (rel of relatedPosts(); track rel.id) {
-            <a [routerLink]="['/post', rel.id]" class="related-post-card text-reset text-decoration-none p-3 rounded-4 border border-light-subtle d-block transition-all hover-shadow">
-              <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-0.5 rounded-pill small category-label">
-                  {{ getCategoryTranslation(rel.category) }}
-                </span>
-                <span class="text-muted small post-timestamp">{{ rel.createdAt | localizedDate }}</span>
-              </div>
-              <h5 class="fw-bold mb-2 text-main">
-                {{ getPostTranslationByLocale(rel)?.title || ('untitled' | t) }}
-              </h5>
-              <div class="d-flex align-items-center gap-2 text-muted small mt-3">
-                <div class="author-tooltip-container position-relative d-flex align-items-center gap-2">
-                  <img [appAssetImage]="rel.author.avatarUrl"
-                       class="rounded-circle" width="24" height="24" style="object-fit:cover;" [alt]="rel.author.name">
-                  <span class="fw-medium text-main">{{ rel.author.name }}</span>
-                  <app-author-tooltip [user]="rel.author"></app-author-tooltip>
-                </div>
-                <span class="ms-auto"><i class="bi bi-heart me-1"></i>{{ rel.likeCount | compactNumber }}</span>
-                <span class="ms-2"><i class="bi bi-chat me-1"></i>{{ rel.commentCount | compactNumber }}</span>
-              </div>
-            </a>
+            <app-post-card [post]="rel"></app-post-card>
           }
         </div>
       </div>
