@@ -16,6 +16,7 @@ export interface AdminCategory {
   createdAt: string;
   updatedAt: string;
   postCount: number;
+  isSystem: boolean;
   translations: AdminCategoryTranslation[];
 }
 

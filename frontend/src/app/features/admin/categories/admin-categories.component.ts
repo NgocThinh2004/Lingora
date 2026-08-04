@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
@@ -58,6 +58,13 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
   readonly postsMeta = signal({ total: 0, shown: 0 });
   readonly pagination = signal<PaginationMeta>({ total: 0, page: 1, limit: 8, totalPages: 0 });
   readonly selectedLocale = this.localeService.selectedLocale;
+  readonly editorLanguages = computed(() => {
+    const languages = this.activeLanguages();
+    const selected = languages.find(language => language.code === this.selectedLocale())
+      ?? languages.find(language => language.isDefault)
+      ?? languages[0];
+    return selected ? [selected] : [];
+  });
 
   readonly filters = this.fb.nonNullable.group({
     search: [''],
@@ -169,6 +176,7 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
       return;
     }
     this.selectedCategory.set(null);
+    this.categoryForm.controls.isActive.enable({ emitEvent: false });
     this.categoryForm.controls.isActive.setValue(true);
     this.rebuildTranslationForms(null);
     this.showPanel('add');
@@ -177,6 +185,11 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
   openEditPanel(category: AdminCategory): void {
     this.selectedCategory.set(category);
     this.categoryForm.controls.isActive.setValue(category.isActive);
+    if (category.isSystem) {
+      this.categoryForm.controls.isActive.disable({ emitEvent: false });
+    } else {
+      this.categoryForm.controls.isActive.enable({ emitEvent: false });
+    }
     this.rebuildTranslationForms(category);
     this.showPanel('edit');
   }
@@ -184,8 +197,12 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
   openEditFromKeyboard(event: KeyboardEvent, category: AdminCategory): void {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      this.openEditPanel(category);
+      this.openCategory(category);
     }
+  }
+
+  openCategory(category: AdminCategory): void {
+    this.openEditPanel(category);
   }
 
   closePanel(): void {
@@ -230,8 +247,10 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
     }
     const payload: UpdateAdminCategoryRequest = {
       isActive: this.categoryForm.controls.isActive.value,
-      translations,
     };
+    if (this.hasTranslationChanges(category, translations[0])) {
+      payload.translations = translations;
+    }
     this.categoriesService.updateCategory(category.id, payload).subscribe({
       next: response => this.finishSave(this.localeService.translate('category_updated', { name: this.displayName(response.data) })),
       error: () => this.failSave('unable_update_category'),
@@ -239,6 +258,7 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
   }
 
   requestDelete(category: AdminCategory): void {
+    if (category.isSystem) return;
     this.pendingDelete.set(category);
   }
 
@@ -371,7 +391,7 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
 
   private rebuildTranslationForms(category: AdminCategory | null): void {
     this.translationForms.clear();
-    for (const language of this.activeLanguages()) {
+    for (const language of this.editorLanguages()) {
       const translation = category?.translations.find(item => item.languageId === language.id);
       this.translationForms.push(this.createTranslationGroup(
         language,
@@ -399,6 +419,13 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
       payload.push({ languageId: value.languageId, name, slug });
     }
     return payload.length ? payload : null;
+  }
+
+  private hasTranslationChanges(category: AdminCategory, source: CategoryTranslationRequest): boolean {
+    const current = category.translations.find(item => item.languageId === source.languageId);
+    return !current
+      || current.name.trim() !== source.name.trim()
+      || current.slug.trim() !== (source.slug ?? '').trim();
   }
 
   private showPanel(mode: Exclude<CategoryPanelMode, null>): void {

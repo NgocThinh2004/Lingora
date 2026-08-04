@@ -12,6 +12,7 @@ describe('AdminCategoriesService', () => {
   let postTranslationModel: any;
   let userModel: any;
   let categoriesCache: any;
+  let categoryAutoTranslation: any;
   let service: AdminCategoriesService;
 
   beforeEach(() => {
@@ -23,9 +24,11 @@ describe('AdminCategoriesService', () => {
       findOne: jest.fn(),
       findByPk: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     };
     translationModel = {
       findAll: jest.fn(),
+      findOne: jest.fn(),
       bulkCreate: jest.fn(),
       create: jest.fn(),
     };
@@ -33,10 +36,11 @@ describe('AdminCategoriesService', () => {
       findAll: jest.fn(),
       findOne: jest.fn(),
     };
-    postModel = { findAll: jest.fn(), count: jest.fn() };
+    postModel = { findAll: jest.fn(), count: jest.fn(), update: jest.fn() };
     postTranslationModel = { findAll: jest.fn() };
     userModel = { findAll: jest.fn() };
     categoriesCache = { invalidate: jest.fn().mockResolvedValue(undefined) };
+    categoryAutoTranslation = { translateFromSource: jest.fn() };
     service = new AdminCategoriesService(
       sequelize,
       categoryModel,
@@ -46,6 +50,7 @@ describe('AdminCategoriesService', () => {
       postTranslationModel,
       userModel,
       categoriesCache,
+      categoryAutoTranslation,
     );
   });
 
@@ -77,9 +82,11 @@ describe('AdminCategoriesService', () => {
       { id: 1, code: 'en', is_default: true },
       { id: 2, code: 'vi', is_default: false },
     ];
-    languageModel.findAll
-      .mockResolvedValueOnce(languages)
-      .mockResolvedValueOnce(languages);
+    languageModel.findAll.mockResolvedValue(languages);
+    categoryAutoTranslation.translateFromSource.mockResolvedValue([
+      { languageId: 1, name: 'Technology', slug: 'technology' },
+      { languageId: 2, name: 'Công nghệ', slug: 'cong-nghe' },
+    ]);
     categoryModel.findOne.mockResolvedValue(null);
     categoryModel.create.mockResolvedValue({ id: 7 });
     categoryModel.findAll.mockResolvedValue([
@@ -93,10 +100,7 @@ describe('AdminCategoriesService', () => {
 
     const result = await service.create({
       isActive: true,
-      translations: [
-        { languageId: 1, name: 'Technology' },
-        { languageId: 2, name: 'Công nghệ' },
-      ],
+      translations: [{ languageId: 1, name: 'Technology' }],
     });
 
     expect(sequelize.transaction).toHaveBeenCalledTimes(1);
@@ -108,11 +112,8 @@ describe('AdminCategoriesService', () => {
     expect(categoriesCache.invalidate).toHaveBeenCalledTimes(1);
   });
 
-  it('requires a translation for every active language on create', async () => {
-    languageModel.findAll.mockResolvedValue([
-      { id: 1, is_default: true },
-      { id: 2, is_default: false },
-    ]);
+  it('requires at least one active system language on create', async () => {
+    languageModel.findAll.mockResolvedValue([]);
 
     await expect(service.create({
       isActive: true,
@@ -121,13 +122,18 @@ describe('AdminCategoriesService', () => {
     expect(categoryModel.create).not.toHaveBeenCalled();
   });
 
-  it('deletes a category so database foreign keys can cascade translations and null post category ids', async () => {
+  it('moves posts to the system category before deleting a category', async () => {
     const destroy = jest.fn();
-    categoryModel.findByPk.mockResolvedValue({ destroy });
+    categoryModel.findByPk.mockResolvedValue({ destroy, is_system: false });
+    categoryModel.findOne.mockResolvedValue({ id: 1, is_system: true });
 
     await service.remove(4);
 
     expect(destroy).toHaveBeenCalledWith({ transaction });
+    expect(postModel.update).toHaveBeenCalledWith(
+      { category_id: 1 },
+      { where: { category_id: 4 }, transaction },
+    );
     expect(categoriesCache.invalidate).toHaveBeenCalledTimes(1);
   });
 
@@ -175,5 +181,101 @@ describe('AdminCategoriesService', () => {
   it('returns not found when deleting an unknown category', async () => {
     categoryModel.findByPk.mockResolvedValue(null);
     await expect(service.remove(99)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('does not delete the system uncategorized category', async () => {
+    categoryModel.findByPk.mockResolvedValue({ id: 1, is_system: true });
+
+    await expect(service.remove(1)).rejects.toBeInstanceOf(BadRequestException);
+    expect(postModel.update).not.toHaveBeenCalled();
+  });
+
+  it('does not hide the system uncategorized category', async () => {
+    categoryModel.findByPk.mockResolvedValue({ id: 1, is_system: true });
+
+    await expect(service.update(1, { isActive: false })).rejects.toBeInstanceOf(BadRequestException);
+    expect(categoriesCache.invalidate).not.toHaveBeenCalled();
+  });
+
+  it('does not call automatic translation when the submitted source is unchanged', async () => {
+    const update = jest.fn().mockResolvedValue(undefined);
+    const category = {
+      id: 7,
+      slug: 'technology',
+      status: 'active',
+      is_system: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+      update,
+    };
+    const sourceTranslation = {
+      id: '71',
+      category_id: 7,
+      language_id: 1,
+      name: 'Technology',
+      slug: 'technology',
+    };
+    translationModel.findOne.mockResolvedValue(sourceTranslation);
+    categoryModel.findByPk.mockResolvedValue(category);
+    categoryModel.findAll.mockResolvedValue([category]);
+    translationModel.findAll.mockResolvedValue([sourceTranslation]);
+    languageModel.findAll.mockResolvedValue([
+      { id: 1, code: 'en', name: 'English', native_name: 'English', flag_code: 'gb' },
+    ]);
+    postModel.findAll.mockResolvedValue([]);
+
+    await service.update(7, {
+      isActive: true,
+      translations: [{ languageId: 1, name: 'Technology', slug: 'technology' }],
+    });
+
+    expect(categoryAutoTranslation.translateFromSource).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalled();
+    expect(categoriesCache.invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it('updates only the source slug without translating category names again', async () => {
+    const updateCategory = jest.fn().mockResolvedValue(undefined);
+    const updateTranslation = jest.fn().mockResolvedValue(undefined);
+    const category = {
+      id: 7,
+      slug: 'technology',
+      status: 'active',
+      is_system: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+      update: updateCategory,
+    };
+    const sourceTranslation = {
+      id: '71',
+      category_id: 7,
+      language_id: 1,
+      name: 'Technology',
+      slug: 'technology',
+      update: updateTranslation,
+    };
+    translationModel.findOne.mockResolvedValue(sourceTranslation);
+    categoryModel.findByPk.mockResolvedValue(category);
+    categoryModel.findAll.mockResolvedValue([category]);
+    translationModel.findAll.mockResolvedValue([sourceTranslation]);
+    languageModel.findOne.mockResolvedValue({ id: 1, is_default: true, is_active: true });
+    languageModel.findAll.mockResolvedValue([
+      { id: 1, code: 'en', name: 'English', native_name: 'English', flag_code: 'gb' },
+    ]);
+    postModel.findAll.mockResolvedValue([]);
+
+    await service.update(7, {
+      translations: [{ languageId: 1, name: 'Technology', slug: 'tech' }],
+    });
+
+    expect(categoryAutoTranslation.translateFromSource).not.toHaveBeenCalled();
+    expect(updateTranslation).toHaveBeenCalledWith(
+      { name: 'Technology', slug: 'tech' },
+      { transaction },
+    );
+    expect(updateCategory).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: 'tech' }),
+      { transaction },
+    );
   });
 });

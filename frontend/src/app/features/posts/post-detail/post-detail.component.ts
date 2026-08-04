@@ -522,4 +522,8 @@ export class PostDetailComponent implements OnDestroy {
   getCategoryTranslation(category: any): string {
     return translateCategory(category, this.localeService.selectedLocale());
   }
+
+  categoryIsHidden(category: any): boolean {
+    return category?.isActive === false;
+  }
 }

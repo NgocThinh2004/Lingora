@@ -39,6 +39,7 @@ export class AdminLanguagesComponent implements OnInit {
   readonly dialog = signal<LanguageDialog>(null);
   readonly dialogVisible = signal(false);
   readonly selectedLanguage = signal<AdminLanguage | null>(null);
+  readonly selectedBundleAvailable = signal<boolean | null>(null);
   readonly updatingLanguageId = signal<number | null>(null);
   readonly pagination = signal<PaginationMeta>({ total: 0, page: 1, limit: 8, totalPages: 0 });
 
@@ -60,6 +61,10 @@ export class AdminLanguagesComponent implements OnInit {
     this.editForm.controls.isDefault.valueChanges.subscribe(isDefault => {
       const language = this.selectedLanguage();
       if (language?.isDefault) {
+        return;
+      }
+      if (this.selectedBundleAvailable() === false) {
+        this.editForm.controls.isDefault.setValue(false, { emitEvent: false });
         return;
       }
       if (isDefault) {
@@ -112,6 +117,7 @@ export class AdminLanguagesComponent implements OnInit {
 
   openEditDialog(language: AdminLanguage): void {
     this.selectedLanguage.set(language);
+    this.selectedBundleAvailable.set(null);
     this.editForm.controls.isActive.enable({ emitEvent: false });
     this.editForm.controls.isDefault.enable({ emitEvent: false });
     this.editForm.reset({
@@ -124,7 +130,26 @@ export class AdminLanguagesComponent implements OnInit {
     if (language.isDefault) {
       this.editForm.controls.isActive.disable({ emitEvent: false });
       this.editForm.controls.isDefault.disable({ emitEvent: false });
+    } else {
+      this.editForm.controls.isActive.disable({ emitEvent: false });
+      this.editForm.controls.isDefault.disable({ emitEvent: false });
     }
+    this.localeService.hasStaticBundle(language.code).subscribe(exists => {
+      if (this.selectedLanguage()?.id !== language.id) {
+        return;
+      }
+      this.selectedBundleAvailable.set(exists);
+      if (language.isDefault) {
+        return;
+      }
+      if (!exists) {
+        this.editForm.controls.isActive.setValue(false, { emitEvent: false });
+        this.editForm.controls.isDefault.setValue(false, { emitEvent: false });
+        return;
+      }
+      this.editForm.controls.isActive.enable({ emitEvent: false });
+      this.editForm.controls.isDefault.enable({ emitEvent: false });
+    });
     this.dialogVisible.set(false);
     this.dialog.set('edit');
     this.revealDialog('edit');
@@ -141,6 +166,7 @@ export class AdminLanguagesComponent implements OnInit {
     this.dialogVisible.set(false);
     this.dialog.set(null);
     this.selectedLanguage.set(null);
+    this.selectedBundleAvailable.set(null);
   }
 
   private revealDialog(expectedDialog: Exclude<LanguageDialog, null>): void {
@@ -162,27 +188,22 @@ export class AdminLanguagesComponent implements OnInit {
       name: values.name.trim(),
       nativeName: values.nativeName.trim(),
       ...(values.flagCode.trim() ? { flagCode: values.flagCode.trim().toLowerCase() } : {}),
-      isActive: true,
     };
     this.saving.set(true);
     this.localeService.hasStaticBundle(payload.code).subscribe(exists => {
-      if (!exists) {
-        this.saving.set(false);
-        this.toastService.showError(this.localeService.translate('ui_locale_bundle_missing', {
-          code: payload.code,
-        }));
-        return;
-      }
-      this.submitCreateLanguage(payload);
+      this.submitCreateLanguage({ ...payload, isActive: exists }, exists);
     });
   }
 
-  private submitCreateLanguage(payload: CreateAdminLanguageRequest): void {
+  private submitCreateLanguage(payload: CreateAdminLanguageRequest, bundleAvailable: boolean): void {
     this.languagesService.createLanguage(payload).subscribe({
       next: response => {
         this.saving.set(false);
         this.closeDialog();
-        this.toastService.showSuccess(this.localeService.translate('language_added', { name: response.data.name }));
+        this.toastService.showSuccess(this.localeService.translate(
+          bundleAvailable ? 'language_added' : 'language_added_inactive_missing_bundle',
+          { name: response.data.name },
+        ));
         this.localeService.refresh();
         this.loadLanguages(this.pagination().page);
       },
@@ -228,6 +249,19 @@ export class AdminLanguagesComponent implements OnInit {
       return;
     }
     this.updatingLanguageId.set(language.id);
+    this.localeService.hasStaticBundle(language.code).subscribe(exists => {
+      if (!exists) {
+        this.updatingLanguageId.set(null);
+        this.toastService.showError(this.localeService.translate('ui_locale_bundle_missing', {
+          code: language.code,
+        }));
+        return;
+      }
+      this.submitMakeDefault(language);
+    });
+  }
+
+  private submitMakeDefault(language: AdminLanguage): void {
     this.languagesService.updateLanguage(language.id, { isDefault: true }).subscribe({
       next: response => {
         this.updatingLanguageId.set(null);

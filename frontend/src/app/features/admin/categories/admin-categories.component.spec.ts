@@ -32,6 +32,7 @@ describe('AdminCategoriesComponent', () => {
     createdAt: '2026-07-21T00:00:00.000Z',
     updatedAt: '2026-07-21T00:00:00.000Z',
     postCount: 3,
+    isSystem: false,
     translations: [
       { id: '91', languageId: 1, languageCode: 'en', languageName: 'English', languageNativeName: 'English', flagCode: 'gb', name: 'Technology', slug: 'technology' },
       { id: '92', languageId: 2, languageCode: 'vi', languageName: 'Vietnamese', languageNativeName: 'Tiếng Việt', flagCode: 'vn', name: 'Công nghệ', slug: 'cong-nghe' },
@@ -75,51 +76,45 @@ describe('AdminCategoriesComponent', () => {
     expect(component.displayName(category)).toBe('Technology');
   });
 
-  it('builds one required translation group per active language when creating', () => {
+  it('builds one required translation group for the current system language', () => {
     component.openAddPanel();
-    expect(component.translationForms.length).toBe(2);
+    expect(component.translationForms.length).toBe(1);
+    expect(component.translationForms.at(0).controls.languageId.value).toBe(english.id);
     expect(component.translationForms.controls.every(group => group.controls.name.hasValidator(Validators.required))).toBeTrue();
   });
 
-  it('shows a newly active language as an optional blank field for an existing category', () => {
-    const japanese: AdminLanguage = {
-      ...english,
-      id: 3,
-      code: 'ja',
-      name: 'Japanese',
-      nativeName: '日本語',
-      flagCode: 'jp',
-      isDefault: false,
-    };
-    component.activeLanguages.set([english, vietnamese, japanese]);
-
+  it('edits only the current system language', () => {
     component.openEditPanel(category);
 
-    const japaneseForm = component.translationForms.at(2);
-    expect(japaneseForm.controls.name.value).toBe('');
-    expect(japaneseForm.controls.slug.value).toBe('');
-    expect(japaneseForm.controls.name.hasValidator(Validators.required)).toBeFalse();
-    expect(japaneseForm.controls.slug.hasValidator(Validators.required)).toBeFalse();
+    expect(component.translationForms.length).toBe(1);
+    expect(component.translationForms.at(0).controls.name.value).toBe('Technology');
+    expect(component.translationForms.at(0).controls.name.hasValidator(Validators.required)).toBeTrue();
   });
 
-  it('generates editable slugs and submits all translations in one request', () => {
+  it('submits one source translation for automatic backend translation', () => {
     categoriesService.createCategory.and.returnValue(of({ data: category }));
     component.openAddPanel();
     component.translationForms.at(0).controls.name.setValue('Technology');
     component.suggestSlug(0);
-    component.translationForms.at(1).controls.name.setValue('Công nghệ');
-    component.suggestSlug(1);
 
     component.saveCategory();
 
     expect(categoriesService.createCategory).toHaveBeenCalledWith({
       isActive: true,
-      translations: [
-        { languageId: 1, name: 'Technology', slug: 'technology' },
-        { languageId: 2, name: 'Công nghệ', slug: 'cong-nghe' },
-      ],
+      translations: [{ languageId: 1, name: 'Technology', slug: 'technology' }],
     });
     expect(toast.showSuccess).toHaveBeenCalled();
+  });
+
+  it('does not request automatic translation when the source text is unchanged', () => {
+    categoriesService.updateCategory.and.returnValue(of({ data: category }));
+    component.openEditPanel(category);
+
+    component.saveCategory();
+
+    expect(categoriesService.updateCategory).toHaveBeenCalledWith(category.id, {
+      isActive: true,
+    });
   });
 
   it('slides the editor from the right and closes through the close button', fakeAsync(() => {
@@ -182,5 +177,16 @@ describe('AdminCategoriesComponent', () => {
     fixture.detectChanges();
 
     expect(categoriesService.deleteCategory).toHaveBeenCalledOnceWith(category.id);
+  });
+
+  it('allows editing the system category but keeps status and deletion locked', () => {
+    const systemCategory: AdminCategory = { ...category, id: 1, isSystem: true };
+
+    component.openCategory(systemCategory);
+    component.requestDelete(systemCategory);
+
+    expect(component.panelMode()).toBe('edit');
+    expect(component.categoryForm.controls.isActive.disabled).toBeTrue();
+    expect(component.pendingDelete()).toBeNull();
   });
 });

@@ -114,6 +114,9 @@
                     <td class="post-title-cell">
                       <strong>{{ postTitle(post) }}</strong>
                       <span>{{ categoryLabel(post) }}</span>
+                      <span *ngIf="categoryIsHidden(post)" class="hidden-category-state">
+                        <i class="bi bi-eye-slash" aria-hidden="true"></i>{{ translate('hidden_category') }}
+                      </span>
                       <div *ngIf="post.reviewNote" class="post-row-actions" style="opacity: 1; transform: none;">
                         <span class="row-link is-danger">{{ translate('review_note') }}: {{ post.reviewNote }}</span>
                       </div>

@@ -16,6 +16,9 @@ export class Category extends Model {
   @Column({ type: DataType.STRING(20), allowNull: false, defaultValue: 'active' })
   declare status: string;
 
+  @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
+  declare is_system: boolean;
+
   @Column({ type: DataType.DATE, allowNull: false })
   declare created_at: Date;
 
