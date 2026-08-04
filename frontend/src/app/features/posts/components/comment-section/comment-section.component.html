@@ -4,7 +4,7 @@
   </div>
 
   <div class="mb-4">
-    <textarea id="newCommentInput" class="form-control mb-2" rows="3"
+    <textarea id="newCommentInput" class="form-control mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;"
       [placeholder]="'write_comment' | t"
       [disabled]="isSubmitting()"
       maxlength="5000"
@@ -51,7 +51,7 @@
           <div class="mb-1 text-secondary comment-content-text">
             @if (editingCommentId() === comment.id) {
               <div class="edit-container">
-                <textarea class="form-control mb-2" rows="2" maxlength="5000" [(ngModel)]="editingCommentText"></textarea>
+                <textarea class="form-control mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000" [(ngModel)]="editingCommentText"></textarea>
                 <div class="d-flex justify-content-end gap-2 mb-2">
                   <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">{{ 'cancel_action' | t }}</button>
                   <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(comment)">{{ 'save' | t }}</button>
@@ -68,9 +68,7 @@
                 }
               </div>
               @if (comment.content.length > 300) {
-                <button class="btn btn-link btn-sm p-0 text-decoration-none text-primary mt-1 fw-medium" style="font-size: 0.85rem;" (click)="toggleExpand(comment.id)">
-                  {{ isExpanded(comment.id) ? ('show_less' | t) : ('read_more' | t) }}
-                </button>
+                <span class="text-primary mt-1 fw-medium d-block" style="font-size: 0.85rem; cursor: pointer;" (click)="toggleExpand(comment.id)">{{ isExpanded(comment.id) ? ('show_less' | t) : ('read_more' | t) }}</span>
               }
             }
           </div>
@@ -102,7 +100,7 @@
           </div>
           @if (replyingToCommentId() === comment.id) {
             <div class="mt-3 pt-3 border-top w-100 reply-container">
-              <textarea class="form-control form-control-sm mb-2" rows="2" maxlength="5000"
+              <textarea class="form-control form-control-sm mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000"
                         [(ngModel)]="replyingToText"></textarea>
               <div class="d-flex justify-content-end gap-2">
                 <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply()">{{ 'cancel_action' | t }}</button>
@@ -133,7 +131,7 @@
                   <div class="mb-1 text-secondary comment-content-text" style="font-size: 0.95rem;">
                     @if (editingCommentId() === reply.id) {
                       <div class="edit-container">
-                        <textarea class="form-control mb-2 mt-1" rows="2" maxlength="5000" [(ngModel)]="editingCommentText"></textarea>
+                        <textarea class="form-control mb-2 mt-1" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000" [(ngModel)]="editingCommentText"></textarea>
                         <div class="d-flex justify-content-end gap-2 mb-2">
                           <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">{{ 'cancel_action' | t }}</button>
                           <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(reply, comment)">{{ 'save' | t }}</button>
@@ -153,9 +151,7 @@
                         }
                       </div>
                       @if (reply.content.length > 300) {
-                        <button class="btn btn-link btn-sm p-0 text-decoration-none text-primary mt-1 fw-medium" style="font-size: 0.85rem;" (click)="toggleExpand(reply.id)">
-                          {{ isExpanded(reply.id) ? ('show_less' | t) : ('read_more' | t) }}
-                        </button>
+                        <span class="text-primary mt-1 fw-medium d-block" style="font-size: 0.85rem; cursor: pointer;" (click)="toggleExpand(reply.id)">{{ isExpanded(reply.id) ? ('show_less' | t) : ('read_more' | t) }}</span>
                       }
                     }
                   </div>
@@ -187,7 +183,7 @@
                   </div>
                   @if (replyingToCommentId() === reply.id) {
                     <div class="mt-2 pt-2 border-top reply-container">
-                      <textarea class="form-control form-control-sm mb-2" rows="2" maxlength="5000"
+                      <textarea class="form-control form-control-sm mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000"
                                 [(ngModel)]="replyingToText"></textarea>
                       <div class="d-flex justify-content-end gap-2">
                         <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply()">{{ 'cancel_action' | t }}</button>
