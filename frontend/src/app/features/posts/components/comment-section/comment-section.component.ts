@@ -14,6 +14,7 @@ import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe'
 import { AssetImageDirective } from '../../../../shared/directives/asset-image.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../shared/pipes/localized-date.pipe';
+import { AutosizeDirective } from '../../../../shared/directives/autosize.directive';
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -27,7 +28,7 @@ import { LocalizedDatePipe } from '../../../../shared/pipes/localized-date.pipe'
 @Component({
   selector: 'app-comment-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, RouterLink, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
+  imports: [CommonModule, FormsModule, RouterModule, RouterLink, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective, TranslatePipe, LocalizedDatePipe, AutosizeDirective],
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss']
 })
