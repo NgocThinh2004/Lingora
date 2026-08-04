@@ -30,14 +30,15 @@
   margin: 2rem 0; /* Add margin so images don't touch text tightly */
   border: 1px solid var(--border-color, #e5e8e6);
   border-radius: 12px; /* Ensure rounded corners */
-  object-fit: cover;
-  background: #000;
+  object-fit: contain;
+  background: transparent;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* Add subtle shadow for premium feel */
 }
 
 :host ::ng-deep .article-content video {
   aspect-ratio: 16 / 9;
   object-fit: contain;
+  background: #000;
 }
 
 :host ::ng-deep .article-content figcaption {

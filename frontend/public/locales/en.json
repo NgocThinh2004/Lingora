@@ -499,5 +499,8 @@
   "enter_handle": "@ Enter a handle",
   "zoom_image": "Zoom image",
   "edited": "Edited",
-  "fallback_warning_tooltip": "This post does not have a translation in the current language. Displaying in original language."
+  "fallback_warning_tooltip": "This post does not have a translation in the current language. Displaying in original language.",
+  "show_less": "Show less",
+  "view_translation": "View translation",
+  "view_original": "View original"
 }

@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import Keyv from 'keyv';
+import KeyvRedis from '@keyv/redis';
 import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -22,9 +24,23 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    CacheModule.register({
+    CacheModule.registerAsync({
       isGlobal: true,
-      ttl: 300000, // 5 minutes default
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        // Kết nối Redis qua ioredis, địa chỉ đọc từ biến môi trường
+        // Docker container redis-lingora đang expose port 6379 → 6379
+        const redisUrl = `redis://${config.get('REDIS_HOST', '127.0.0.1')}:${config.get('REDIS_PORT', 6379)}`;
+        return {
+          stores: [
+            new Keyv({
+              store: new KeyvRedis(redisUrl),
+              // TTL mặc định 5 phút (tính bằng ms) cho các cache dùng chung (không liên quan đến view)
+              ttl: 300_000,
+            }),
+          ],
+        };
+      },
     }),
     ThrottlerModule.forRoot([{
       ttl: 60000, // 1 minute

@@ -1,4 +1,4 @@
-.comment-card {
+﻿.comment-card {
   padding: 1rem 0;
   border-bottom: 1px solid var(--border-color);
 }
@@ -22,6 +22,8 @@
   font-size: 0.95rem;
   line-height: 1.5;
   color: var(--text-main) !important;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .btn-reply {
   background: transparent;
@@ -57,3 +59,9 @@
   font-size: 0.8rem;
 }
 
+.comment-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

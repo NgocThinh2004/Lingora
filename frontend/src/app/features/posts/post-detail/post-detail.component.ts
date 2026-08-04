@@ -20,11 +20,19 @@ import { CompactNumberPipe } from '../../../shared/pipes/compact-number.pipe';
 import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
+import { PostCardComponent } from '../components/post-card/post-card.component';
 
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * COMPONENT TỔNG QUAN: PostDetailComponent
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Component chịu trách nhiệm tải chi tiết bài viết, hiển thị nội dung HTML,
+ * tự động quản lý video autoplay qua IntersectionObserver, và xử lý tương tác like.
+ */
 @Component({
   selector: 'app-post-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective, TranslatePipe, LocalizedDatePipe],
+  imports: [CommonModule, RouterModule, CommentSectionComponent, AuthorTooltipComponent, CompactNumberPipe, AssetImageDirective, TranslatePipe, LocalizedDatePipe, PostCardComponent],
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
 })
@@ -45,8 +53,23 @@ export class PostDetailComponent implements OnDestroy {
   @ViewChild('articleContent') articleContentRef?: ElementRef<HTMLElement>;
   @ViewChild('centerFeed') centerFeedRef?: ElementRef<HTMLElement>;
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GLOBAL STATE / DB FIELD MAPPING
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Các tín hiệu (signals) lưu trữ trạng thái dữ liệu của component
+  
+  // post (Signal): Dữ liệu chi tiết bài viết hiện tại.
+  // - id: map từ posts.id
+  // - viewCount: map từ posts.view_count
+  // - likeCount: map từ posts.like_count
+  // - liked: map từ bảng post_likes (kiểm tra xem user hiện tại đã like chưa)
   post = signal<Post | null>(null);
+  
+  // relatedPosts (Signal): Danh sách bài viết liên quan.
+  // - Lấy từ DB dựa trên cùng category_id với bài viết hiện tại.
   relatedPosts = signal<Post[]>([]);
+  
+  // loading / error / authorPreview: Trạng thái UI cơ bản.
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
   authorPreview = signal(false);
@@ -54,8 +77,20 @@ export class PostDetailComponent implements OnDestroy {
   private likeSub?: Subscription;
   private videoObservers: IntersectionObserver[] = [];
 
+  // ── Scroll-depth view tracking ──────────────────────────────────────────────
+  // Observer theo dõi sentinel element tại 50% bài viết
+  private scrollDepthObserver?: IntersectionObserver;
+
+  // Flag tránh gọi trackView nhiều lần cho cùng 1 bài
+  private viewTracked = false;
+  // ID bài đang xem, reset flag khi chuyển sang bài khác
+  private trackedPostId?: number;
+  // ────────────────────────────────────────────────────────────────────────────
+
   ngOnDestroy(): void {
+    // Dọn dẹp các observers và subscriptions khi component bị hủy để tránh memory leak
     this.cleanupVideoObservers();
+    this.cleanupScrollTracker();
     this.likeSub?.unsubscribe();
   }
 
@@ -64,12 +99,16 @@ export class PostDetailComponent implements OnDestroy {
     this.videoObservers = [];
   }
 
-  /** Call after post content is rendered to observe all videos in the article */
+  /** 
+   * Hàm này được gọi sau khi nội dung bài viết đã render xong
+   * Dùng IntersectionObserver để tự động play/pause các video trong bài viết
+   * khi chúng xuất hiện hoặc bị khuất khỏi màn hình (threshold 0.25)
+   */
   private setupVideoObservers(): void {
     if (typeof document === 'undefined') return;
     this.cleanupVideoObservers();
 
-    // Wait one tick for Angular to render [innerHTML]
+    // Đợi 1 tick (100ms) để Angular hoàn tất việc render [innerHTML]
     setTimeout(() => {
       const articleEl = this.articleContentRef?.nativeElement;
       if (!articleEl) return;
@@ -91,6 +130,117 @@ export class PostDetailComponent implements OnDestroy {
     }, 100);
   }
 
+  /**
+   * ═══════════════════════════════════════════════════════════════════════════
+   * SCROLL-DEPTH VIEW TRACKING
+   * ═══════════════════════════════════════════════════════════════════════════
+   * Cơ chế:
+   * 1. Đặt một sentinel <div> ẩn (0px, pointer-events: none) tại điểm GIỮA
+   *    của bài viết (được tạo động bằng cách chèn vào giữa DOM của article).
+   * 2. IntersectionObserver quan sát sentinel. Khi nó vào viewport lần đầu
+   *    → bật bộ đếm giờ 3 giây.
+   * 3. Nếu người dùng vẫn ở trang sau 3 giây → gọi trackView() → hủy observer.
+   * 4. Nếu người dùng rời trang/đổi bài trước 3 giây → clearTimeout → không đếm.
+   *
+   * Edge case - Bài siêu ngắn (1-2 dòng, toàn bộ nội dung hiển thị luôn):
+   * Khi article ngắn hơn 1 màn hình, sentinel ở giữa bài sẽ NGAY LẬP TỨC vào
+   * viewport khi render xong (không cần cuộn). Điều này ĐÚNG VÀ HỢP LÝ vì
+   * người dùng đã "thấy" 100% nội dung ngay rồi. Điều kiện 3 giây vẫn được
+   * giữ lại để chặn bot hoặc mở nhầm tab.
+   * ═══════════════════════════════════════════════════════════════════════════
+   */
+  private setupScrollTracker(postId: number): void {
+    if (typeof document === 'undefined' || this.authorPreview()) return;
+
+    // Reset khi chuyển sang bài mới
+    if (this.trackedPostId !== postId) {
+      this.cleanupScrollTracker();
+      this.viewTracked = false;
+      this.trackedPostId = postId;
+    }
+
+    // Nếu bài này đã được tính view trong phiên hiện tại → không setup lại
+    if (this.viewTracked) return;
+
+    // Đợi DOM render xong rồi mới inject sentinel và bắt đầu quan sát
+    // 300ms: đủ để Angular hoàn tất change detection + render [innerHTML] kể cả bài nặng
+    setTimeout(() => {
+      const articleEl = this.articleContentRef?.nativeElement;
+      if (!articleEl) return;
+
+      // Xóa sentinel cũ nếu có (tránh duplicate khi chuyển bài)
+      articleEl.querySelector('[data-scroll-sentinel]')?.remove();
+
+      // Lấy tất cả các phần tử con trực tiếp của article (paragraphs, headings, images, etc.)
+      const children = Array.from(articleEl.children);
+
+      // Guard: nếu innerHTML chưa render xong (children rỗng), dừng lại.
+      // Điều này ngăn view bị đếm ở bài "rỗng" khi browser chưa kịp paint.
+      // setupScrollTracker sẽ được gọi lại ở lần route navigate tiếp theo.
+      if (children.length === 0) return;
+
+      // Tạo sentinel element — một thẻ div vô hình (0px height, không ảnh hưởng layout)
+      // Đặt tại điểm GIỮA (50%) chiều dài bài viết bằng cách tính toán vị trí DOM
+      const sentinel = document.createElement('div');
+      sentinel.setAttribute('data-scroll-sentinel', '');
+      sentinel.style.cssText = 'height:0;overflow:hidden;pointer-events:none;visibility:hidden;';
+
+      if (children.length === 1) {
+        // Bài chỉ có 1 phần tử (VD: 1 đoạn văn ngắn) → append vào cuối
+        // IntersectionObserver sẽ trigger ngay khi render (hợp lý: user thấy toàn bộ bài)
+        articleEl.appendChild(sentinel);
+      } else {
+        // Bài nhiều phần tử → chèn sentinel vào VỊ TRÍ GIỮA (index = Math.floor(length / 2))
+        // Ví dụ: 10 paragraphs → chèn trước paragraph thứ 5
+        const midIndex = Math.floor(children.length / 2);
+        articleEl.insertBefore(sentinel, children[midIndex]);
+      }
+
+      // ── BUG FIX: root phải là .center-feed, KHÔNG phải window ──────────────
+      // Lý do: bài viết nằm trong một scrollable div (.center-feed), không phải
+      // cuộn theo window. Nếu dùng root mặc định (window), IntersectionObserver
+      // sẽ coi sentinel là "visible" ngay khi DOM render xong (ngoài scroll area),
+      // dẫn đến view bị đếm sai ngay khi mở bài mà chưa cuộn tới 50%.
+      // ───────────────────────────────────────────────────────────────────────
+      const scrollRoot = this.document.querySelector<HTMLElement>('.center-feed') ?? null;
+
+      this.scrollDepthObserver = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting && !this.viewTracked) {
+            // Sentinel vào viewport (người dùng đã cuộn tới 50%) → ghi nhận view ngay lập tức
+            this.viewTracked = true;
+
+            // Hủy observer ngay để không trigger lại khi cuộn lên xuống
+            this.scrollDepthObserver?.disconnect();
+            this.scrollDepthObserver = undefined;
+
+            // Gọi API POST /posts/:id/view — bắt lỗi silently để không làm crash UX
+            this.postService.trackView(postId).subscribe({
+              next: () => { /* View được ghi nhận thành công, không cần xử lý gì thêm */ },
+              error: () => { /* Lỗi mạng — bỏ qua, không thông báo người dùng */ },
+            });
+          }
+        },
+        {
+          // root: scrollRoot → quan sát trong context của .center-feed, không phải window
+          // Nếu không tìm thấy .center-feed (SSR, test), fallback về null (= window)
+          root: scrollRoot,
+          // threshold: 0 → trigger ngay khi 1px của sentinel vào viewport của root
+          threshold: 0,
+        }
+      );
+
+      this.scrollDepthObserver.observe(sentinel);
+    }, 300); // 300ms: đủ để Angular render [innerHTML] kể cả bài viết nặng
+  }
+
+  /** Dọn dẹp scroll observer để tránh memory leak */
+  private cleanupScrollTracker(): void {
+    this.scrollDepthObserver?.disconnect();
+    this.scrollDepthObserver = undefined;
+  }
+
+  // Xử lý nút quay lại
   goBack(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
     const destination = returnUrl && /^\/workspace\/posts(?:\?|$)/.test(returnUrl)
@@ -102,7 +252,10 @@ export class PostDetailComponent implements OnDestroy {
     void this.router.navigateByUrl(destination);
   }
 
-  // Computed signal to automatically update translation when language changes
+  /**
+   * Computed signal để tự động lấy bản dịch tương ứng với ngôn ngữ đang chọn
+   * Render nội dung HTML an toàn thông qua DomSanitizer
+   */
   displayedTranslation = computed(() => {
     const currentPost = this.post();
     if (!currentPost) return null;
@@ -112,12 +265,18 @@ export class PostDetailComponent implements OnDestroy {
     
     return {
       ...trans,
+      // Giải thích DomSanitizer.bypassSecurityTrustHtml():
+      // Angular mặc định chặn render HTML có chứa script hoặc thẻ nguy hiểm để tránh lỗi XSS (Cross-Site Scripting).
+      // Ở đây ta gọi bypassSecurityTrustHtml() để cho Angular biết đoạn HTML này ĐÃ AN TOÀN và có thể render trực tiếp.
+      // Lý do nó an toàn: Nội dung HTML `trans.contentHtml` đã được đi qua hàm preparePostDetailHtml() để 
+      // lọc bỏ các mã độc và chỉ giữ lại cấu trúc hợp lệ từ BE. Nếu không bypass, Angular sẽ loại bỏ các CSS/style/video hợp lệ.
       safeContentHtml: this.sanitizer.bypassSecurityTrustHtml(
         preparePostDetailHtml(trans.contentHtml || ''),
       )
     };
   });
 
+  // Kiểm tra xem bài viết có đang phải dùng ngôn ngữ fallback (không khớp với ngôn ngữ hiện tại) không
   readonly isFallback = computed(() => {
     const currentPost = this.post();
     if (!currentPost) return false;
@@ -130,8 +289,11 @@ export class PostDetailComponent implements OnDestroy {
   ngOnInit(): void {
     this.authorPreview.set(Boolean(this.route.snapshot.data['authorPreview']));
 
-    // switchMap cancels the previous request if the user navigates to another post
-    // before the previous one finishes loading — prevents race condition.
+    /**
+     * Quá trình load bài viết:
+     * Lắng nghe sự thay đổi của route parameters (ví dụ: chuyển từ bài A sang bài B).
+     * switchMap: hủy request cũ nếu có request mới tới, ngăn ngừa lỗi race condition.
+     */
     this.route.paramMap.pipe(
       switchMap(params => {
         const id = Number(params.get('id') || this.route.snapshot.queryParamMap.get('id'));
@@ -141,12 +303,25 @@ export class PostDetailComponent implements OnDestroy {
 
         if (this.authorPreview()) {
           const includeDeleted = this.route.snapshot.queryParamMap.get('trash') === 'true';
+          
+          // ══════════════════════════════════════════════════════
+          // PIPELINE LOAD BÀI VIẾT TÁC GIẢ (forkJoin)
+          // ══════════════════════════════════════════════════════
+          // API 1: getAuthorPost() → lấy thông tin nháp/bản xem trước
+          // API 2: getPostOptions() → lấy danh mục, ngôn ngữ hỗ trợ
+          // forkJoin: Chạy các APIs này song song và gom kết quả khi tất cả xong.
           return forkJoin({
             post: this.authorPostsService.getAuthorPost(id, includeDeleted),
             options: this.authorPostsService.getPostOptions(),
             mode: Promise.resolve('author' as const),
           });
         } else {
+          // ══════════════════════════════════════════════════════
+          // PIPELINE LOAD BÀI VIẾT (forkJoin)
+          // ══════════════════════════════════════════════════════
+          // API 1: getById(id) → lấy post details (chứa views, likes, tác giả, category, nội dung)
+          // API 2: getRelated(id) → lấy posts liên quan (cùng category_id)
+          // forkJoin đảm bảo render màn hình khi có TẤT CẢ thông tin cần thiết.
           return forkJoin({
             post: this.postService.getById(id, language),
             related: this.postService.getRelated(id, language),
@@ -169,14 +344,22 @@ export class PostDetailComponent implements OnDestroy {
         }
         this.loading.set(false);
 
+        // Đặt tiêu đề tab trình duyệt theo tên bài viết
         const title = this.displayedTranslation()?.title;
         if (title) this.titleService.setTitle(`${title} - Lingora`);
 
-        // Scroll center-feed to top
+        // Scroll cuộn trang lên đầu
         const scrollContainer = this.document.querySelector('.center-feed');
         if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
 
         this.setupVideoObservers();
+
+        // Khởi động scroll tracker để ghi nhận view khi người dùng đọc >= 50%
+        // Chỉ áp dụng cho bài viết công khai (không áp dụng cho bản xem trước của tác giả)
+        if (result.mode === 'public') {
+          const { post } = result as any;
+          this.setupScrollTracker(post.id);
+        }
       },
       error: () => {
         this.error.set(this.localeService.translate(
@@ -187,7 +370,7 @@ export class PostDetailComponent implements OnDestroy {
     });
   }
 
-
+  // Convert định dạng từ AuthorPost sang Post dùng cho preview
   private toPreviewPost(post: AuthorPost, options: PostOptions): Post {
     const currentUser = this.authService.currentUser();
     const originalLanguageCode =
@@ -245,37 +428,83 @@ export class PostDetailComponent implements OnDestroy {
     };
   }
 
+  /**
+   * ═══════════════════════════════════════════════════════════════════════════
+   * HÀNH ĐỘNG: USER BẤM "LIKE" BÀI VIẾT
+   * ═══════════════════════════════════════════════════════════════════════════
+   * Cơ chế Optimistic Update (Cập nhật lạc quan) được áp dụng tại đây:
+   * Bản chất: Cập nhật giao diện (UI state) NGAY LẬP TỨC để phản hồi cho User, 
+   * TRƯỚC KHI request mạng được gọi tới Server. Mục đích là loại bỏ hoàn toàn
+   * độ trễ (latency), giúp ứng dụng có cảm giác mượt mà tức thì.
+   * 
+   * Quy trình xử lý cụ thể:
+   * 
+   * 1. PRE-CHECK & KHÓA UI TẠM THỜI:
+   *    - Kiểm tra `p.isLiking` để ngăn user bấm spam (bấm liên tục nhiều lần 
+   *      trong một giây). Chỉ cho phép 1 request được xử lý tại 1 thời điểm.
+   *    - Nếu chưa login, bật popup yêu cầu đăng nhập.
+   * 
+   * 2. UI MUTATE (Thay đổi UI ngầm định TRƯỚC API):
+   *    - Lưu lại trạng thái cũ: `previousLiked` và `previousLikeCount`.
+   *    - Tính toán trạng thái mới: Đảo ngược liked (`nextLiked = !previousLiked`), 
+   *      tăng/giảm like count (`nextLikeCount`).
+   *    - Thực hiện mutate: `this.post.set(...)` cập nhật state NGAY LẬP TỨC. 
+   *      Tại thời điểm này, nút Like trên màn hình đã sáng lên, số Like đã tăng.
+   * 
+   * 3. BACKGROUND API CALL (Gọi API ngầm):
+   *    - `likeService.togglePostLike(p.id)` gửi request mạng tới Server (POST / DELETE).
+   *    - User không hề phải xem vòng quay (loading spinner) nào cả.
+   * 
+   * 4. SYNC HOẶC ROLLBACK (Xử lý kết quả từ Server):
+   *    - NẾU THÀNH CÔNG (next): 
+   *      Server sẽ trả về `likeCount` thực tế và chính xác nhất (ví dụ có thể có 
+   *      người khác vừa like cùng lúc). Ta cập nhật lại UI state để đồng bộ hoàn toàn.
+   *      Mở khóa `isLiking = false`.
+   *    
+   *    - NẾU THẤT BẠI (error): 
+   *      Ví dụ rớt mạng, lỗi 500. Ta phải thực hiện ROLLBACK (Hoàn tác).
+   *      Khôi phục state bài viết về lại biến `previousLiked` và `previousLikeCount` 
+   *      đã lưu ở bước 2. Số like trên màn hình sẽ tụt về như ban đầu, nút like tắt.
+   *      Mở khóa `isLiking = false` để user thử lại.
+   */
   toggleLike(): void {
     const p = this.post();
     if (!p) return;
-    if (p.isLiking) return; // Throttling: prevent spam clicks
+    if (p.isLiking) return; // Throttling: ngăn chặn spam click liên tục
 
+    // Yêu cầu đăng nhập nếu chưa có tài khoản
     if (!this.authService.isAuthenticated()) {
       this.authModalService.open();
       return;
     }
 
-    // Optimistic UI update
+    // BƯỚC 1 & 2: Chuẩn bị dữ liệu và Mutate UI ngay lập tức (Optimistic UI update)
     const previousLiked = p.liked;
     const previousLikeCount = p.likeCount || 0;
     const nextLiked = !previousLiked;
+    // Tính toán số lượng like mới, đảm bảo không bị âm
     const nextLikeCount = nextLiked ? previousLikeCount + 1 : Math.max(0, previousLikeCount - 1);
 
+    // Lưu state UI mới ngay trước khi gọi API, giúp UI phản hồi tức thời
     this.post.set({ ...p, liked: nextLiked, likeCount: nextLikeCount, isLiking: true });
 
     this.likeSub?.unsubscribe();
+    
+    // BƯỚC 3: Gọi API ngầm dưới nền
     this.likeSub = this.likeService.togglePostLike(p.id).pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
       next: (status) => {
-        // Sync with server state
+        // BƯỚC 4 (Thành công): Sync with server state
+        // Gọi API thành công, đồng bộ dữ liệu chính xác từ server (lấy likeCount chuẩn xác từ DB)
         const updatedPost = this.post();
         if (updatedPost && updatedPost.id === p.id) {
           this.post.set({ ...updatedPost, liked: status.liked, likeCount: status.likeCount, isLiking: false });
         }
       },
       error: (err) => {
-        // Rollback on error
+        // BƯỚC 4 (Thất bại): Rollback on error
+        // Trả về trạng thái cũ nếu API gọi lỗi (như rớt mạng, lỗi máy chủ)
         const currentPost = this.post();
         if (currentPost && currentPost.id === p.id) {
           this.post.set({ ...currentPost, liked: previousLiked, likeCount: previousLikeCount, isLiking: false });
@@ -284,10 +513,12 @@ export class PostDetailComponent implements OnDestroy {
     });
   }
 
+  // Helper lấy bản dịch bài viết
   getPostTranslationByLocale(post: Post): import('../models/post.model').FeedPostTranslation | undefined {
     return getPostTranslation(post, this.localeService.selectedLocale());
   }
 
+  // Helper lấy bản dịch category
   getCategoryTranslation(category: any): string {
     return translateCategory(category, this.localeService.selectedLocale());
   }

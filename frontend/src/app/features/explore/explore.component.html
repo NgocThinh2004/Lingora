@@ -48,7 +48,7 @@
 <div id="exploreResultsContainer" class="explore-results-list pb-5 mt-4" [style.opacity]="loading ? 0.3 : 1" style="transition: opacity 0.15s ease-in-out">
   
   <!-- SKELETON LOADING -->
-  @if (loading) {
+  @if (loading && isCurrentTabEmpty()) {
     <div class="px-2">
       <div class="skeleton-line mb-3 w-50" style="height: 24px; border-radius: 4px;"></div>
       <div class="d-flex align-items-center mb-4">
@@ -69,8 +69,8 @@
   }
 
   <!-- TOP TAB -->
-  @if (tab === 'top' && !loading) {
-    @if (topPosts.length === 0 && featuredPeople.length === 0 && featuredPublications.length === 0) {
+  @if (tab === 'top') {
+    @if (topPosts.length === 0 && featuredPeople.length === 0 && featuredPublications.length === 0 && hasInitialized) {
       <div class="text-center py-5 text-muted">
         <i class="bi bi-search fs-1 d-block mb-2"></i>
         <span>{{ 'no_matching_results' | t }}</span>
@@ -149,8 +149,8 @@
   }
 
   <!-- POSTS TAB -->
-  @if (tab === 'posts' && !loading) {
-    @if (posts.length === 0) {
+  @if (tab === 'posts') {
+    @if (posts.length === 0 && hasInitialized) {
       <div class="text-center py-5 text-muted">{{ 'no_articles' | t }}</div>
     }
     @for (post of posts; track post.id) {
@@ -159,8 +159,8 @@
   }
 
   <!-- PEOPLE TAB -->
-  @if (tab === 'people' && !loading) {
-    @if (people.length === 0) {
+  @if (tab === 'people') {
+    @if (people.length === 0 && hasInitialized) {
       <div class="text-center py-5 text-muted">{{ 'no_matching_authors' | t }}</div>
     }
     @for (person of people; track person.id) {
@@ -186,8 +186,8 @@
   }
 
   <!-- PUBLICATIONS TAB -->
-  @if (tab === 'publications' && !loading) {
-    @if (publications.length === 0) {
+  @if (tab === 'publications') {
+    @if (publications.length === 0 && hasInitialized) {
       <div class="text-center py-5 text-muted">{{ 'no_categories' | t }}</div>
     }
     @for (pub of publications; track pub.id) {
@@ -215,4 +215,5 @@
     }
   }
 </div>
+
 
