@@ -5,6 +5,7 @@ import { Category } from '../models/category.model';
 import { CategoryTranslation } from '../models/category-translation.model';
 import { Language } from '../../languages/models/language.model';
 import { removeAccents } from '../../../utils/string.util';
+import { CategoriesCacheService } from '../categories-cache.service';
 
 @Injectable()
 export class PublicCategoriesService {
@@ -13,9 +14,21 @@ export class PublicCategoriesService {
     @InjectModel(CategoryTranslation)
     private readonly translationModel: typeof CategoryTranslation,
     @InjectModel(Language) private readonly languageModel: typeof Language,
+    private readonly categoriesCache: CategoriesCacheService,
   ) {}
 
   async findActive(q?: string, lang?: string, limit?: number) {
+    const normalizedQuery = q?.trim() ?? '';
+    const normalizedLanguage = lang?.trim().toLowerCase() ?? '';
+    const normalizedLimit = limit ?? 0;
+    const key = `list:${JSON.stringify([normalizedQuery, normalizedLanguage, normalizedLimit])}`;
+    return this.categoriesCache.getOrLoad(
+      key,
+      () => this.loadActive(normalizedQuery, normalizedLanguage, limit),
+    );
+  }
+
+  private async loadActive(q?: string, lang?: string, limit?: number) {
     let categoryIdsFilter: number[] | undefined;
 
     if (q && q.trim()) {
@@ -85,6 +98,13 @@ export class PublicCategoriesService {
   }
 
   async findBySlug(slug: string) {
+    return this.categoriesCache.getOrLoad(
+      `slug:${encodeURIComponent(slug)}`,
+      () => this.loadBySlug(slug),
+    );
+  }
+
+  private async loadBySlug(slug: string) {
     const postCountSubquery = `(SELECT COUNT(*) FROM posts WHERE category_id = Category.id AND status IN ('published', 'approved') AND deleted_at IS NULL)`;
     const category = await this.categoryModel.findOne({
       where: { slug, status: 'active' },

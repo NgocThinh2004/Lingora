@@ -21,6 +21,7 @@ import { SubscribeButtonComponent } from '../subscriptions/components/subscribe-
 import { PostCardComponent } from '../posts/components/post-card/post-card.component';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { LocaleService } from '../../core/locale/locale.service';
+import { isStrongPassword } from '../../shared/validators/password.validator';
 
 @Component({
   selector: 'app-profile',
@@ -131,6 +132,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   // Settings
   passwordForm = { current: '', new: '', confirm: '' };
+  passwordFormSubmitted = signal(false);
+  passwordErrors = signal<Partial<Record<'current' | 'new' | 'confirm' | 'form', string>>>({});
   handleOption = 'current';
   customHandle = '';
 
@@ -358,29 +361,77 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   submitPassword() {
-    if (this.passwordForm.new.length >= 8 && this.passwordForm.new === this.passwordForm.confirm) {
-      this.savingPassword.set(true);
-      this.authService.changePassword({
-        currentPassword: this.passwordForm.current,
-        newPassword: this.passwordForm.new,
-      }).subscribe({
-        next: () => {
-          this.passwordForm = { current: '', new: '', confirm: '' };
-          this.savingPassword.set(false);
-          this.closePasswordModal();
-          this.authService.expireSession();
-          void this.router.navigate(['/auth/login'], {
-            queryParams: { messageKey: 'password_updated_sign_in_again' },
-          });
-        },
-        error: err => {
-          this.toast.showError(this.formatError(err));
-          this.savingPassword.set(false);
-        },
-      });
-    } else {
-      this.toast.showError(this.localeService.translate('new_passwords_invalid'));
+    if (this.savingPassword()) {
+      return;
     }
+
+    this.passwordFormSubmitted.set(true);
+    this.passwordErrors.set({});
+    if (this.passwordError('current') || this.passwordError('new') || this.passwordError('confirm')) {
+      return;
+    }
+
+    this.savingPassword.set(true);
+    this.authService.changePassword({
+      currentPassword: this.passwordForm.current,
+      newPassword: this.passwordForm.new,
+    }).subscribe({
+      next: () => {
+        this.passwordForm = { current: '', new: '', confirm: '' };
+        this.savingPassword.set(false);
+        this.closePasswordModal();
+        this.authService.expireSession();
+        void this.router.navigate(['/auth/login'], {
+          queryParams: { messageKey: 'password_updated_sign_in_again' },
+        });
+      },
+      error: err => {
+        const message = getApiErrorMessage(err, '').toLowerCase();
+        if (message.includes('current password is incorrect')) {
+          this.passwordErrors.set({ current: this.localeService.translate('current_password_incorrect') });
+        } else if (message.includes('different from current password')) {
+          this.passwordErrors.set({ new: this.localeService.translate('new_password_must_differ') });
+        } else {
+          this.passwordErrors.set({ form: this.localeService.translate('password_update_failed') });
+        }
+        this.savingPassword.set(false);
+      },
+    });
+  }
+
+  passwordError(field: 'current' | 'new' | 'confirm'): string {
+    const serverError = this.passwordErrors()[field];
+    if (serverError) {
+      return serverError;
+    }
+    if (!this.passwordFormSubmitted()) {
+      return '';
+    }
+    if (field === 'current') {
+      return this.passwordForm.current
+        ? ''
+        : this.localeService.translate('enter_current_password');
+    }
+    if (field === 'new') {
+      return isStrongPassword(this.passwordForm.new)
+        ? ''
+        : this.localeService.translate('password_requirements');
+    }
+    if (!this.passwordForm.confirm) {
+      return this.localeService.translate('confirm_your_password');
+    }
+    return this.passwordForm.new === this.passwordForm.confirm
+      ? ''
+      : this.localeService.translate('passwords_do_not_match');
+  }
+
+  clearPasswordError(field: 'current' | 'new' | 'confirm'): void {
+    this.passwordErrors.update(errors => {
+      const next = { ...errors };
+      delete next[field];
+      delete next.form;
+      return next;
+    });
   }
 
   togglePasswordVisibility() {
@@ -397,6 +448,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     event?.stopPropagation();
     this.profileMoreOpen.set(false);
     this.passwordForm = { current: '', new: '', confirm: '' };
+    this.passwordFormSubmitted.set(false);
+    this.passwordErrors.set({});
     this.passwordFieldType = 'password';
     this.showPasswordModal.set(true);
     document.body.classList.add('profile-modal-open');
@@ -410,6 +463,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     this.showPasswordModal.set(false);
     this.passwordFieldType = 'password';
+    this.passwordFormSubmitted.set(false);
+    this.passwordErrors.set({});
     document.body.classList.remove('profile-modal-open');
   }
 

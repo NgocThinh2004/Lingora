@@ -8,6 +8,7 @@ import { getApiErrorMessage } from '../../../core/http/api-error.util';
 import { AuthLayoutComponent } from '../../../layouts/auth-layout/auth-layout.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { LocaleService } from '../../../core/locale/locale.service';
+import { strongPasswordValidator } from '../../../shared/validators/password.validator';
 
 @Component({
   selector: 'app-register',
@@ -32,7 +33,7 @@ export class RegisterComponent {
     this.registerForm = this.fb.group({
       fullName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [Validators.required, strongPasswordValidator]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
   }

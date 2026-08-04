@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { PaginationMeta } from '../../../core/http/api-response.model';
 import { LocaleService } from '../../../core/locale/locale.service';
@@ -37,6 +38,8 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
   private readonly localeService = inject(LocaleService);
   private readonly toastService = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly categories = signal<AdminCategory[]>([]);
   readonly activeLanguages = signal<AdminLanguage[]>([]);
@@ -58,9 +61,9 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
 
   readonly filters = this.fb.nonNullable.group({
     search: [''],
-    status: ['all' as const],
-    postFilter: ['all' as const],
-    sort: ['newest' as const],
+    status: ['all' as 'all' | 'active' | 'inactive'],
+    postFilter: ['all' as 'all' | 'with-posts' | 'without-posts'],
+    sort: ['newest' as 'newest' | 'oldest' | 'name' | 'posts'],
   });
 
   readonly categoryForm = this.fb.nonNullable.group({
@@ -73,8 +76,19 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const status = params.get('status');
+    const postFilter = params.get('postFilter');
+    const sort = params.get('sort');
+    this.filters.setValue({
+      search: params.get('search') ?? '',
+      status: status === 'active' || status === 'inactive' ? status : 'all',
+      postFilter: postFilter === 'with-posts' || postFilter === 'without-posts' ? postFilter : 'all',
+      sort: sort === 'oldest' || sort === 'name' || sort === 'posts' ? sort : 'newest',
+    }, { emitEvent: false });
+
     this.loadLanguages();
-    this.loadCategories();
+    this.loadCategories(this.readPage(params.get('page')));
     this.filters.valueChanges
       .pipe(debounceTime(250), takeUntil(this.destroy$))
       .subscribe(() => this.loadCategories(1));
@@ -89,6 +103,7 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.errorMessage.set('');
     const filters = this.filters.getRawValue();
+    this.syncQueryParams(page, filters);
     this.categoriesService.getCategories({
       search: filters.search.trim(),
       status: filters.status,
@@ -127,6 +142,25 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
 
   clearFilters(): void {
     this.filters.reset({ search: '', status: 'all', postFilter: 'all', sort: 'newest' });
+  }
+
+  private syncQueryParams(page: number, filters = this.filters.getRawValue()): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      replaceUrl: true,
+      queryParams: {
+        search: filters.search.trim() || null,
+        status: filters.status !== 'all' ? filters.status : null,
+        postFilter: filters.postFilter !== 'all' ? filters.postFilter : null,
+        sort: filters.sort !== 'newest' ? filters.sort : null,
+        page: page > 1 ? page : null,
+      },
+    });
+  }
+
+  private readPage(value: string | null): number {
+    const page = Number(value);
+    return Number.isInteger(page) && page > 0 ? page : 1;
   }
 
   openAddPanel(): void {

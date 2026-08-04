@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { PaginationMeta } from '../../../core/http/api-response.model';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { ToastService } from '../../../core/notifications/toast.service';
@@ -28,6 +29,8 @@ export class AdminLanguagesComponent implements OnInit {
   private readonly languagesService = inject(AdminLanguagesService);
   private readonly localeService = inject(LocaleService);
   private readonly toastService = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly languages = signal<AdminLanguage[]>([]);
   readonly loading = signal(true);
@@ -69,10 +72,15 @@ export class AdminLanguagesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadLanguages();
+    this.loadLanguages(this.readPage(this.route.snapshot.queryParamMap.get('page')));
   }
 
   loadLanguages(page = 1): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      replaceUrl: true,
+      queryParams: { page: page > 1 ? page : null },
+    });
     this.loading.set(true);
     this.errorMessage.set('');
     this.languagesService.getLanguages(page, this.pagination().limit).subscribe({
@@ -88,6 +96,11 @@ export class AdminLanguagesComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  private readPage(value: string | null): number {
+    const page = Number(value);
+    return Number.isInteger(page) && page > 0 ? page : 1;
   }
 
   openAddDialog(): void {

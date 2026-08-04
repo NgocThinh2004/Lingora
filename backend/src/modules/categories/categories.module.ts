@@ -12,6 +12,7 @@ import { PublicCategoriesController } from './public/public-categories.controlle
 import { PublicCategoriesService } from './public/public-categories.service';
 import { CategoryTranslation } from './models/category-translation.model';
 import { Category } from './models/category.model';
+import { CategoriesCacheService } from './categories-cache.service';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { Category } from './models/category.model';
     SequelizeModule.forFeature([Category, CategoryTranslation, Language, Post, PostTranslation, User]),
   ],
   controllers: [AdminCategoriesController, PublicCategoriesController],
-  providers: [AdminCategoriesService, PublicCategoriesService, RolesGuard],
+  providers: [AdminCategoriesService, PublicCategoriesService, CategoriesCacheService, RolesGuard],
   exports: [AdminCategoriesService, PublicCategoriesService],
 })
 export class CategoriesModule {}

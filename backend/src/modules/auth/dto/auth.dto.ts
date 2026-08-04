@@ -1,5 +1,8 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsByteLength, IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+
+const STRONG_PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S{8,72}$/;
+const STRONG_PASSWORD_MESSAGE = 'password must be 8-72 characters and include uppercase, lowercase, number, and special character without spaces';
 
 export class RegisterDto {
   @IsString()
@@ -14,6 +17,9 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
+  @MaxLength(72)
+  @IsByteLength(0, 72)
+  @Matches(STRONG_PASSWORD_PATTERN, { message: STRONG_PASSWORD_MESSAGE })
   password!: string;
 }
 
@@ -53,6 +59,9 @@ export class ResetPasswordDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
+  @MaxLength(72)
+  @IsByteLength(0, 72)
+  @Matches(STRONG_PASSWORD_PATTERN, { message: STRONG_PASSWORD_MESSAGE })
   newPassword!: string;
 }
 
@@ -64,6 +73,9 @@ export class ChangePasswordDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
+  @MaxLength(72)
+  @IsByteLength(0, 72)
+  @Matches(STRONG_PASSWORD_PATTERN, { message: STRONG_PASSWORD_MESSAGE })
   newPassword!: string;
 }
 

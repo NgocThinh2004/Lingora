@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PaginationMeta } from '../../../core/http/api-response.model';
@@ -29,6 +30,8 @@ export class AdminUsersComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
   private readonly localeService = inject(LocaleService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly pageSize = 8;
   readonly users = signal<AdminUser[]>([]);
@@ -59,6 +62,15 @@ export class AdminUsersComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const role = params.get('role');
+    const status = params.get('status');
+    this.filterForm.setValue({
+      search: params.get('search') ?? '',
+      role: role === 'admin' || role === 'member' ? role : '',
+      status: status === 'active' || status === 'inactive' ? status : '',
+    }, { emitEvent: false });
+
     this.filterForm.valueChanges.pipe(
       debounceTime(300),
       distinctUntilChanged((previous, current) => JSON.stringify(previous) === JSON.stringify(current)),
@@ -69,11 +81,12 @@ export class AdminUsersComponent implements OnInit {
       takeUntilDestroyed(this.destroyRef),
     ).subscribe(role => this.applyRoleProtection(role));
 
-    this.loadUsers(1);
+    this.loadUsers(this.readPage(params.get('page')));
   }
 
   loadUsers(page = this.pagination().page): void {
     const filters = this.filterForm.getRawValue();
+    this.syncQueryParams(page, filters);
     this.loading.set(true);
     this.errorMessage.set('');
 
@@ -101,6 +114,24 @@ export class AdminUsersComponent implements OnInit {
 
   clearFilters(): void {
     this.filterForm.setValue({ search: '', role: '', status: '' });
+  }
+
+  private syncQueryParams(page: number, filters = this.filterForm.getRawValue()): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      replaceUrl: true,
+      queryParams: {
+        search: filters.search.trim() || null,
+        role: filters.role || null,
+        status: filters.status || null,
+        page: page > 1 ? page : null,
+      },
+    });
+  }
+
+  private readPage(value: string | null): number {
+    const page = Number(value);
+    return Number.isInteger(page) && page > 0 ? page : 1;
   }
 
   openUser(user: AdminUser): void {

@@ -11,6 +11,7 @@ describe('AdminCategoriesService', () => {
   let postModel: any;
   let postTranslationModel: any;
   let userModel: any;
+  let categoriesCache: any;
   let service: AdminCategoriesService;
 
   beforeEach(() => {
@@ -35,6 +36,7 @@ describe('AdminCategoriesService', () => {
     postModel = { findAll: jest.fn(), count: jest.fn() };
     postTranslationModel = { findAll: jest.fn() };
     userModel = { findAll: jest.fn() };
+    categoriesCache = { invalidate: jest.fn().mockResolvedValue(undefined) };
     service = new AdminCategoriesService(
       sequelize,
       categoryModel,
@@ -43,6 +45,7 @@ describe('AdminCategoriesService', () => {
       postModel,
       postTranslationModel,
       userModel,
+      categoriesCache,
     );
   });
 
@@ -102,6 +105,7 @@ describe('AdminCategoriesService', () => {
       { category_id: 7, language_id: 2, name: 'Công nghệ', slug: 'cong-nghe' },
     ], { transaction, individualHooks: true });
     expect(result.id).toBe(7);
+    expect(categoriesCache.invalidate).toHaveBeenCalledTimes(1);
   });
 
   it('requires a translation for every active language on create', async () => {
@@ -124,6 +128,7 @@ describe('AdminCategoriesService', () => {
     await service.remove(4);
 
     expect(destroy).toHaveBeenCalledWith({ transaction });
+    expect(categoriesCache.invalidate).toHaveBeenCalledTimes(1);
   });
 
   it('returns the latest posts in a category using the requested language', async () => {

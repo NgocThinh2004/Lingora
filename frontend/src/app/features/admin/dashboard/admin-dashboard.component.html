@@ -101,7 +101,7 @@
                 <a [routerLink]="['/profile', user.id]" [attr.aria-label]="'Open profile: ' + (user.displayName || user.username)">
                   <span class="follower-rank">{{ index + 1 }}</span>
                   <span class="follower-avatar">
-                    @if (user.avatarUrl) { <img [src]="user.avatarUrl" [alt]="user.displayName || user.username" /> }
+                    @if (user.avatarUrl) { <img [appAssetImage]="user.avatarUrl" [alt]="user.displayName || user.username" /> }
                     @else { <i class="bi bi-person-fill" aria-hidden="true"></i> }
                   </span>
                   <span class="follower-copy"><strong>{{ user.displayName || user.username }}</strong><small>&#64;{{ user.username }}</small></span>

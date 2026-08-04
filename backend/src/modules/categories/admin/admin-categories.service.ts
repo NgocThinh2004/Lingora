@@ -11,6 +11,7 @@ import { Language } from '../../languages/models/language.model';
 import { PostTranslation } from '../../posts/models/post-translation.model';
 import { Post } from '../../posts/models/post.model';
 import { User } from '../../users/models/user.model';
+import { CategoriesCacheService } from '../categories-cache.service';
 import {
   AdminCategoriesQueryDto,
   CategoryTranslationInputDto,
@@ -51,6 +52,7 @@ export class AdminCategoriesService {
     @InjectModel(Post) private readonly postModel: typeof Post,
     @InjectModel(PostTranslation) private readonly postTranslationModel: typeof PostTranslation,
     @InjectModel(User) private readonly userModel: typeof User,
+    private readonly categoriesCache: CategoriesCacheService,
   ) {}
 
   async findAll(query: AdminCategoriesQueryDto) {
@@ -203,6 +205,7 @@ export class AdminCategoriesService {
         );
         return category.id;
       });
+      await this.categoriesCache.invalidate();
       return this.findOne(categoryId);
     } catch (error) {
       this.rethrowConstraint(error);
@@ -280,6 +283,7 @@ export class AdminCategoriesService {
           updated_at: new Date(),
         }, { transaction });
       });
+      await this.categoriesCache.invalidate();
       return this.findOne(categoryId);
     } catch (error) {
       this.rethrowConstraint(error);
@@ -297,6 +301,7 @@ export class AdminCategoriesService {
       }
       await category.destroy({ transaction });
     });
+    await this.categoriesCache.invalidate();
   }
 
   private async buildCategoryViews(categoryIds?: number[]): Promise<CategoryView[]> {
