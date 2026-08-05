@@ -18,6 +18,7 @@ import { AuthorPost, CreatePostPayload, PostTranslation } from '../posts/models/
 import { EditorMediaType } from './models/editor-upload.model';
 import { AuthorPostsService } from '../posts/services/author-posts.service';
 import { EditorUploadsService } from './services/editor-uploads.service';
+import { validateUploadFile } from './utils/upload-validator';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TranslationsService } from '../posts/services/translations.service';
 import { LocaleService } from '../../core/locale/locale.service';
@@ -543,6 +544,17 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     input.value = '';
 
     if (!file) {
+      return;
+    }
+
+    const validation = validateUploadFile(file, mediaType);
+    if (!validation.valid) {
+      this.toast.showError(
+        this.localeService.translate(
+          validation.errorKey ?? 'request_failed',
+          validation.params,
+        ),
+      );
       return;
     }
 
