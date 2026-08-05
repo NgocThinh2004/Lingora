@@ -1,5 +1,7 @@
 import {
+  Body,
   Controller,
+  Delete,
   Post,
   UploadedFiles,
   UseGuards,
@@ -20,6 +22,20 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 @Controller('uploads')
 export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
+
+  @Delete('editor-media')
+  async deleteEditorMedia(@Body() body: { url: string }) {
+    return {
+      data: await this.uploadsService.deleteEditorMedia(body.url),
+    };
+  }
+
+  @Post('import-external')
+  async importExternalImage(@Body() body: { url: string }) {
+    return {
+      data: await this.uploadsService.importExternalImage(body.url),
+    };
+  }
 
   @Post('editor-image')
   @UseInterceptors(

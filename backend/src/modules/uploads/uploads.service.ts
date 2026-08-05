@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { mkdir, writeFile } from 'fs/promises';
+import { mkdir, writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import { UploadResponseDto } from './dto/upload-response.dto';
 import {
@@ -30,6 +30,59 @@ export class UploadsService {
 
   async saveEditorImage(file: Express.Multer.File | undefined): Promise<UploadResponseDto> {
     return this.saveEditorMedia(file, ['image']);
+  }
+
+  async deleteEditorMedia(urlOrFilename: string): Promise<{ message: string }> {
+    if (!urlOrFilename || typeof urlOrFilename !== 'string') {
+      throw new BadRequestException('Media URL or filename is required');
+    }
+
+    const filename = urlOrFilename.replace(/\\/g, '/').split('/').pop()?.split('?')[0];
+    if (!filename || filename.includes('..')) {
+      throw new BadRequestException('Invalid filename');
+    }
+
+    const filePath = join(process.cwd(), 'storage', 'uploads', filename);
+
+    try {
+      await unlink(filePath);
+      return { message: 'Media deleted successfully' };
+    } catch {
+      return { message: 'Media deleted' };
+    }
+  }
+
+  async importExternalImage(url: string): Promise<UploadResponseDto> {
+    if (!url || typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
+      throw new BadRequestException('Invalid external image URL');
+    }
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new BadRequestException('Unable to fetch external image');
+      }
+
+      const mimeType =
+        response.headers.get('content-type')?.split(';')[0]?.toLowerCase() ||
+        'image/jpeg';
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const fakeFile: Express.Multer.File = {
+        mimetype: mimeType,
+        buffer,
+        size: buffer.length,
+        originalname: url.split('/').pop()?.split('?')[0] || 'external-image',
+      } as Express.Multer.File;
+
+      return await this.saveEditorImage(fakeFile);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to download external image');
+    }
   }
 
   async saveEditorMedia(
