@@ -213,10 +213,8 @@ export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
       // Lấy tất cả các phần tử con trực tiếp của article (paragraphs, headings, images, etc.)
       const children = Array.from(articleEl.children);
 
-      // Guard: nếu innerHTML chưa render xong (children rỗng), dừng lại.
-      // Điều này ngăn view bị đếm ở bài "rỗng" khi browser chưa kịp paint.
-      // setupScrollTracker sẽ được gọi lại ở lần route navigate tiếp theo.
-      if (children.length === 0) return;
+      // Guard: nếu innerHTML chưa render xong, dừng lại.
+      if (children.length === 0 && !articleEl.textContent?.trim()) return;
 
       // Tạo sentinel element — một thẻ div vô hình (0px height, không ảnh hưởng layout)
       // Đặt tại điểm GIỮA (50%) chiều dài bài viết bằng cách tính toán vị trí DOM
@@ -224,8 +222,8 @@ export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
       sentinel.setAttribute('data-scroll-sentinel', '');
       sentinel.style.cssText = 'height:0;overflow:hidden;pointer-events:none;visibility:hidden;';
 
-      if (children.length === 1) {
-        // Bài chỉ có 1 phần tử (VD: 1 đoạn văn ngắn) → append vào cuối
+      if (children.length <= 1) {
+        // Bài chỉ có 1 phần tử (VD: 1 đoạn văn ngắn) hoặc chỉ có text trần → append vào cuối
         // IntersectionObserver sẽ trigger ngay khi render (hợp lý: user thấy toàn bộ bài)
         articleEl.appendChild(sentinel);
       } else {
