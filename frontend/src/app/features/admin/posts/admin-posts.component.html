@@ -94,7 +94,7 @@
     <header class="panel-header"><h2 id="review-title">{{ 'review_post' | t }}</h2><button class="panel-close" type="button" (click)="closePanel($event)" [attr.aria-label]="'close' | t"><i class="bi bi-x-lg"></i></button></header>
     <div class="panel-body">
       @if (detailLoading()) {
-        <app-ui-state kind="loading" title="Loading post"></app-ui-state>
+        <app-ui-state kind="loading" [title]="'loading_post' | t"></app-ui-state>
       } @else {
         @if (selectedPost(); as post) {
         <span class="status-pill status-{{ post.status }}">{{ post.status | titlecase }}</span>

@@ -112,7 +112,8 @@
                 <button
                   class="language-action"
                   type="button"
-                  title="Edit language"
+                  [title]="'edit_language' | t"
+                  [attr.aria-label]="'edit_language' | t"
                   [attr.aria-label]="'Edit ' + language.name"
                   (click)="$event.stopPropagation(); openEditDialog(language)">
                   <i class="bi bi-pencil" aria-hidden="true"></i>

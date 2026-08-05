@@ -31,9 +31,10 @@ export class CategoriesService {
     return request;
   }
 
-  findBySlug(slug: string): Observable<Category> {
+  findBySlug(slug: string, lang?: string): Observable<Category> {
+    const params = lang ? { lang } : undefined;
     return this.http
-      .get<ApiResponse<Category>>(`${environment.apiUrl}/categories/${slug}`)
+      .get<ApiResponse<Category>>(`${environment.apiUrl}/categories/${slug}`, { params })
       .pipe(map((res) => res.data));
   }
 }

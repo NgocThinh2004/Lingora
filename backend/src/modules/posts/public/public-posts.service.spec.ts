@@ -2,12 +2,12 @@ import { Op } from 'sequelize';
 import { PublicPostsService } from './public-posts.service';
 
 describe('PublicPostsService locale filtering', () => {
-  it('keeps published posts available when the selected locale is not translated yet', async () => {
+  it('excludes posts that have no completed translation in the selected active language', async () => {
     const postModel = {
       findAndCountAll: jest.fn().mockResolvedValue({ rows: [], count: 0 }),
     };
     const postTranslationModel = {
-      findAll: jest.fn(),
+      findAll: jest.fn().mockResolvedValue([]),
     };
     const languageModel = {
       findAll: jest.fn().mockResolvedValue([
@@ -32,10 +32,16 @@ describe('PublicPostsService locale filtering', () => {
     const result = await service.listFeed({ lang: 'ja', page: 1, limit: 10 });
 
     const postQuery = postModel.findAndCountAll.mock.calls[0][0];
-    expect(postQuery.where.id).toBeUndefined();
+    expect(postQuery.where.id).toEqual({ [Op.in]: [0] });
     expect(postQuery.where.status).toEqual({ [Op.in]: ['approved', 'published'] });
     expect(postQuery.where.category_id).toEqual({ [Op.in]: [1] });
-    expect(postTranslationModel.findAll).not.toHaveBeenCalled();
+    expect(postTranslationModel.findAll).toHaveBeenCalledWith({
+      where: {
+        language_id: { [Op.in]: [4] },
+        translation_status: 'completed',
+      },
+      attributes: ['post_id'],
+    });
     expect(result.items).toEqual([]);
   });
 

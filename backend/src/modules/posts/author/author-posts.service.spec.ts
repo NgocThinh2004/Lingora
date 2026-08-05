@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { Op } from 'sequelize';
 import { AuthorPostsService } from './author-posts.service';
 
 jest.mock('sanitize-html', () => ({
@@ -132,6 +133,46 @@ describe('AuthorPostsService state machine', () => {
       languages: [],
       categories: [{ id: 8, label: 'Technology', isActive: false }],
       updatedMonths: ['2026-07'],
+    });
+  });
+
+  it('includes inactive original languages used by existing author posts', async () => {
+    const postModel = {
+      findAll: jest.fn().mockResolvedValue([
+        {
+          category_id: null,
+          original_language_id: 2,
+          updated_at: new Date('2026-07-29T08:00:00Z'),
+        },
+      ]),
+    };
+    const languageModel = {
+      findAll: jest.fn()
+        .mockResolvedValueOnce([{ id: 1, code: 'en', name: 'English', native_name: 'English', flag_code: 'gb' }])
+        .mockResolvedValueOnce([{ id: 2, code: 'vi', name: 'Vietnamese', native_name: 'Tiếng Việt', flag_code: 'vn' }]),
+    };
+    const categoryModel = { findAll: jest.fn().mockResolvedValue([]) };
+    const categoryTranslationModel = { findAll: jest.fn().mockResolvedValue([]) };
+    const optionsService = new AuthorPostsService(
+      undefined as never,
+      postModel as never,
+      undefined as never,
+      languageModel as never,
+      categoryModel as never,
+      categoryTranslationModel as never,
+    );
+
+    await expect(optionsService.getAuthorPostFilterOptions('author-1')).resolves.toEqual({
+      languages: [
+        { id: 1, code: 'en', label: 'English', nativeLabel: 'English', flagCode: 'gb' },
+        { id: 2, code: 'vi', label: 'Vietnamese', nativeLabel: 'Tiếng Việt', flagCode: 'vn' },
+      ],
+      categories: [],
+      updatedMonths: ['2026-07'],
+    });
+    expect(languageModel.findAll).toHaveBeenLastCalledWith({
+      where: { id: { [Op.in]: [2] }, is_active: false },
+      order: [['id', 'ASC']],
     });
   });
 

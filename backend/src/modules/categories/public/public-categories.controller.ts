@@ -15,7 +15,7 @@ export class PublicCategoriesController {
   }
 
   @Get(':slug')
-  findBySlug(@Param('slug') slug: string) {
-    return this.categoriesService.findBySlug(slug);
+  findBySlug(@Param('slug') slug: string, @Query('lang') lang?: string) {
+    return this.categoriesService.findBySlug(slug, lang);
   }
 }

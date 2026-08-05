@@ -17,5 +17,5 @@ export interface Category {
 export function translateCategory(category: Category | undefined | null, lang: string): string {
   if (!category) return '';
   const t = category.translations?.find((tr) => tr.languageCode === lang);
-  return t?.name ?? category.translations?.[0]?.name ?? category.slug;
+  return t?.name ?? category.slug;
 }

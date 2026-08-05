@@ -143,19 +143,25 @@
                     <td>
                       <div class="action-group">
                         <a class="action-btn" [routerLink]="postDetailLink(post)"
-                          [queryParams]="postDetailQueryParams()" title="Open"><i
+                          [queryParams]="postDetailQueryParams()" [title]="translate('open_article')"
+                          [attr.aria-label]="translate('open_article')"><i
                             class="bi bi-box-arrow-up-right"></i></a>
                         <a *ngIf="!trash && canEdit(post)" class="action-btn"
                           [routerLink]="['/workspace/posts', post.id, 'edit']"
-                          [queryParams]="editQueryParams()" title="Edit"><i class="bi bi-pencil"></i></a>
-                        <span *ngIf="!trash && !canEdit(post)" class="action-btn is-disabled" title="Edit unavailable"
+                          [queryParams]="editQueryParams()" [title]="translate('edit')"
+                          [attr.aria-label]="translate('edit')"><i class="bi bi-pencil"></i></a>
+                        <span *ngIf="!trash && !canEdit(post)" class="action-btn is-disabled"
+                          [title]="translate('edit_unavailable')" [attr.aria-label]="translate('edit_unavailable')"
                           aria-disabled="true"><i class="bi bi-pencil"></i></span>
-                        <a *ngIf="!trash" class="action-btn text-danger" href="#" title="Trash"
+                        <a *ngIf="!trash" class="action-btn text-danger" href="#" [title]="translate('trash')"
+                          [attr.aria-label]="translate('trash')"
                           (click)="$event.preventDefault(); requestTrash(post)"><i class="bi bi-trash"></i></a>
-                        <a *ngIf="trash" class="action-btn" href="#" title="Restore"
+                        <a *ngIf="trash" class="action-btn" href="#" [title]="translate('restore')"
+                          [attr.aria-label]="translate('restore')"
                           (click)="$event.preventDefault(); runAction(post, 'restore-trash')"><i
                             class="bi bi-arrow-counterclockwise"></i></a>
-                        <a *ngIf="trash" class="action-btn text-danger" href="#" title="Delete permanently"
+                        <a *ngIf="trash" class="action-btn text-danger" href="#" [title]="translate('delete_permanently')"
+                          [attr.aria-label]="translate('delete_permanently')"
                           (click)="$event.preventDefault(); requestPermanentDelete(post)"><i
                             class="bi bi-trash3"></i></a>
                       </div>

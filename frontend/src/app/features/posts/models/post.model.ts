@@ -147,6 +147,7 @@ export interface Post {
   authorId: number;
   categoryId: number | null;
   originalLanguage: string;
+  availableLanguages?: string[];
   coverImageUrl?: string | null;
   coverVideoUrl?: string | null;
   status: 'draft' | 'published';

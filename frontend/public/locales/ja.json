@@ -514,5 +514,17 @@
   "fallback_warning_tooltip": "この記事には現在の言語の翻訳がありません。元の言語で表示しています。",
   "show_less": "表示を減らす",
   "view_translation": "翻訳を見る",
-  "view_original": "原文を見る"
+  "view_original": "原文を見る",
+  "available_languages": "対応言語",
+  "post_translation_unavailable": "この記事は選択した言語に対応していません。ホームに戻ります。",
+  "open_article": "記事を開く",
+  "edit_unavailable": "編集できません",
+  "restore": "復元",
+  "delete_permanently": "完全に削除",
+  "loading_post": "記事を読み込み中",
+  "activate_user": "{name}を有効にする",
+  "deactivate_user": "{name}を無効にする",
+  "delete_media": "メディアを削除",
+  "delete_code_block": "コードブロックを削除",
+  "missing_translation": "翻訳がありません"
 }
