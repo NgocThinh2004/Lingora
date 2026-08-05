@@ -21,6 +21,20 @@ export class EditorUploadsService {
       .pipe(map((response) => response.data));
   }
 
+  importExternalImage(url: string): Observable<UploadResponse> {
+    return this.http
+      .post<ApiItemResponse<UploadResponse>>(`${this.baseUrl}/uploads/import-external`, { url })
+      .pipe(map((response) => response.data));
+  }
+
+  deleteEditorMedia(url: string): Observable<{ message: string }> {
+    return this.http
+      .request<ApiItemResponse<{ message: string }>>('delete', `${this.baseUrl}/uploads/editor-media`, {
+        body: { url },
+      })
+      .pipe(map((response) => response.data));
+  }
+
   toAbsoluteUrl(url: string): string {
     if (/^https?:\/\//i.test(url)) {
       return url;

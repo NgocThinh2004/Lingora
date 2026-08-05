@@ -37,6 +37,13 @@ export class BrandingService {
     }
   }
 
+  resetToDefault(): void {
+    this.accentSignal.set(DEFAULT_ACCENT);
+    if (this.browser) {
+      localStorage.removeItem(ACCENT_STORAGE_KEY);
+    }
+  }
+
   private applyAccentVariables(color: string): void {
     const root = this.document.documentElement;
     const accent = this.normalizeHex(color);
