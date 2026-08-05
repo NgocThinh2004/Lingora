@@ -49,7 +49,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private observer?: IntersectionObserver;
   private routeSubscription?: Subscription;
   private feedSubscription?: Subscription;
-  private previousAccent = this.branding.accent();
   viewedUserId: string | null = null;
   private cropSourceImage: HTMLImageElement | null = null;
   private cropSourceFile: File | null = null;
@@ -162,9 +161,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.feedSubscription?.unsubscribe();
     this.observer?.disconnect();
     this.clearBrandingVariables();
-    if (!this.isOwnProfile()) {
-      this.branding.setAccent(this.previousAccent, false);
-    }
     document.body.classList.remove('profile-modal-open');
     this.releaseCropImage();
   }
@@ -791,7 +787,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const serverAccent = this.normalizeHex(profile?.accentColor || '');
     const serverBackground = this.normalizeHex(profile?.backgroundColor || '');
     if (!this.isOwnProfile()) {
-      this.accentColor.set(serverAccent || '#FF6719');
+      // Accent color is viewer's accent color. Background color is profile owner's background color.
+      this.accentColor.set(this.branding.accent());
       this.backgroundColor.set(serverBackground);
       this.applyBranding();
       return;
@@ -827,7 +824,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const background = this.backgroundColor();
     const isLightBackground = background ? this.isLightColor(background) : false;
 
-    this.branding.setAccent(accent, this.isOwnProfile());
+    if (this.isOwnProfile()) {
+      this.branding.setAccent(accent, true);
+    }
 
     if (background) {
       const text = isLightBackground ? '#111111' : '#ffffff';

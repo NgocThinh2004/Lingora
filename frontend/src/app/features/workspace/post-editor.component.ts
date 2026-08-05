@@ -175,9 +175,13 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    if (!this.currentPostId && this.draft.content) {
-      queueMicrotask(() => this.hydrateEditorFromDraft());
-    }
+    requestAnimationFrame(() => {
+      this.hydrateEditorFromDraft();
+      const title = document.getElementById('postTitle') as HTMLTextAreaElement | null;
+      if (title) {
+        this.resizeTitleTextarea(title);
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -275,15 +279,21 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   autoResizeTitle(event: Event): void {
     const textarea = event.target as HTMLTextAreaElement;
+    this.resizeTitleTextarea(textarea);
+    this.scheduleAutosave();
+  }
+
+  private resizeTitleTextarea(textarea: HTMLTextAreaElement | null): void {
+    if (!textarea) {
+      return;
+    }
     const limitedTitle = this.trimToWordLimit(textarea.value, this.titleWordLimit);
     if (textarea.value !== limitedTitle) {
       textarea.value = limitedTitle;
       this.draft.title = limitedTitle;
-      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
     }
     textarea.style.height = 'auto';
-    textarea.style.height = `${textarea.scrollHeight}px`;
-    this.scheduleAutosave();
+    textarea.style.height = `${Math.max(48, textarea.scrollHeight)}px`;
   }
 
   saveDraft(): void {
@@ -669,9 +679,18 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     if (mediaRemove) {
       event.preventDefault();
       const mediaWrapper = mediaRemove.closest('.editor-media-wrapper');
-      this.removeEmptyParagraphAfter(mediaWrapper);
-      mediaWrapper?.remove();
-      this.syncContentFromEditor();
+      if (mediaWrapper) {
+        const mediaEl = mediaWrapper.querySelector<HTMLImageElement | HTMLVideoElement | HTMLAudioElement>('img, video, audio');
+        const src = mediaEl?.getAttribute('src');
+
+        this.removeEmptyParagraphAfter(mediaWrapper);
+        mediaWrapper.remove();
+        this.syncContentFromEditor();
+
+        if (src && src.includes('/uploads/')) {
+          this.uploadsService.deleteEditorMedia(src).subscribe();
+        }
+      }
       return;
     }
 
@@ -724,6 +743,209 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       event.preventDefault();
       this.selectEditorContents();
     }
+  }
+
+  handleEditorPaste(event: ClipboardEvent): void {
+    const clipboardData = event.clipboardData;
+    if (!clipboardData) {
+      return;
+    }
+
+    const items = Array.from(clipboardData.items ?? []);
+    const imageItem = items.find((item) => item.type.startsWith('image/'));
+    if (imageItem) {
+      const file = imageItem.getAsFile();
+      if (file) {
+        event.preventDefault();
+        const validation = validateUploadFile(file, 'image');
+        if (!validation.valid) {
+          this.toast.showError(
+            this.localeService.translate(
+              validation.errorKey ?? 'request_failed',
+              validation.params,
+            ),
+          );
+          return;
+        }
+
+        this.uploadingType = 'image';
+        this.uploadsService.uploadEditorMedia('image', file).subscribe({
+          next: (upload) => {
+            const url = this.uploadsService.toAbsoluteUrl(upload.url);
+            this.insertHtml(this.buildMediaHtml('image', url, upload.filename), true);
+            this.toast.showSuccess(this.localeService.translate('upload_success', { filename: upload.filename }));
+            this.uploadingType = null;
+          },
+          error: (error: unknown) => {
+            this.toast.showError(this.formatError(error));
+            this.uploadingType = null;
+          },
+        });
+        return;
+      }
+    }
+
+    const pastedHtml = clipboardData.getData('text/html');
+    const pastedText = clipboardData.getData('text/plain');
+
+    if (pastedHtml) {
+      event.preventDefault();
+      const cleanedHtml = this.cleanPastedHtml(pastedHtml);
+      this.insertHtml(cleanedHtml, false);
+      const editor = this.editorElement();
+      if (editor) {
+        this.normalizeGeneratedBlockPlaceholders(editor);
+        this.importExternalImagesInEditor(editor);
+      }
+      this.syncContentFromEditor();
+    } else if (pastedText && /^https?:\/\/\S+\.(jpg|jpeg|png|webp|gif|svg)(\?\S*)?$/i.test(pastedText.trim())) {
+      event.preventDefault();
+      const imageUrl = pastedText.trim();
+      const filename = imageUrl.split('/').pop()?.split('?')[0] || 'image';
+      this.insertHtml(this.buildMediaHtml('image', imageUrl, filename), false);
+      const editor = this.editorElement();
+      if (editor) {
+        this.normalizeGeneratedBlockPlaceholders(editor);
+        this.importExternalImagesInEditor(editor);
+      }
+      this.syncContentFromEditor();
+    }
+  }
+
+  private cleanPastedHtml(html: string): string {
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    container
+      .querySelectorAll('script, style, meta, link, iframe, object, embed, noscript, button, input, form, select, textarea, svg')
+      .forEach((el) => el.remove());
+
+    const containerTags = ['figure', 'figcaption', 'article', 'section', 'header', 'footer', 'aside', 'main', 'div', 'table', 'tbody', 'thead', 'tr', 'td'];
+    let foundContainer = true;
+    while (foundContainer) {
+      foundContainer = false;
+      const el = container.querySelector(containerTags.join(', '));
+      if (el && !el.classList.contains('editor-media-wrapper') && !el.classList.contains('editor-code-block')) {
+        foundContainer = true;
+        while (el.firstChild) {
+          el.parentNode?.insertBefore(el.firstChild, el);
+        }
+        el.remove();
+      }
+    }
+
+    container.querySelectorAll('a').forEach((a) => {
+      const href = (a.getAttribute('href') ?? '').trim().toLowerCase();
+      if (!href || href.startsWith('javascript:') || href.startsWith('vbscript:') || href === '#') {
+        while (a.firstChild) {
+          a.parentNode?.insertBefore(a.firstChild, a);
+        }
+        a.remove();
+        return;
+      }
+
+      if (a.querySelector('img, video, audio, .editor-media-wrapper')) {
+        while (a.firstChild) {
+          a.parentNode?.insertBefore(a.firstChild, a);
+        }
+        a.remove();
+      }
+    });
+
+    container.querySelectorAll('img').forEach((img) => {
+      const src = (img.getAttribute('src') ?? '').trim();
+      const width = parseInt(img.getAttribute('width') ?? '0', 10);
+      const height = parseInt(img.getAttribute('height') ?? '0', 10);
+      if (!src || src.startsWith('javascript:') || (width > 0 && width <= 5) || (height > 0 && height <= 5)) {
+        img.remove();
+      }
+    });
+
+    container.querySelectorAll('img').forEach((img) => {
+      if (!img.closest('.editor-media-wrapper')) {
+        const src = img.getAttribute('src') || '';
+        const alt = img.getAttribute('alt') || 'image';
+        if (src) {
+          const wrapper = document.createElement('div');
+          wrapper.innerHTML = this.buildMediaHtml('image', src, alt);
+          img.replaceWith(wrapper);
+        }
+      }
+    });
+
+    container.querySelectorAll('*').forEach((el) => {
+      el.removeAttribute('style');
+
+      if (
+        !el.classList.contains('editor-media-wrapper') &&
+        !el.classList.contains('editor-code-block') &&
+        !el.classList.contains('editor-inline-code-font') &&
+        !el.classList.contains('code-line') &&
+        !el.classList.contains('line-number') &&
+        !el.classList.contains('line-content')
+      ) {
+        el.removeAttribute('class');
+      }
+    });
+
+    const fragment = document.createElement('div');
+    let currentP: HTMLParagraphElement | null = null;
+
+    Array.from(container.childNodes).forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent ?? '';
+        if (text.trim()) {
+          if (!currentP) {
+            currentP = document.createElement('p');
+            fragment.appendChild(currentP);
+          }
+          currentP.appendChild(document.createTextNode(text));
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as HTMLElement;
+        const tagName = el.tagName.toLowerCase();
+
+        if (
+          ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'blockquote', 'pre', 'hr'].includes(tagName) ||
+          el.classList.contains('editor-media-wrapper')
+        ) {
+          currentP = null;
+          const text = (el.textContent ?? '').replace(/\u00a0/g, ' ').trim();
+          if (text || el.querySelector('img, video, audio, iframe') || el.classList.contains('editor-media-wrapper') || tagName === 'hr') {
+            fragment.appendChild(el);
+          }
+        } else {
+          if (!currentP) {
+            currentP = document.createElement('p');
+            fragment.appendChild(currentP);
+          }
+          currentP.appendChild(el);
+        }
+      }
+    });
+
+    return fragment.innerHTML;
+  }
+
+  private importExternalImagesInEditor(editor: HTMLElement): void {
+    const images = Array.from(editor.querySelectorAll<HTMLImageElement>('.editor-media-wrapper img'));
+    images.forEach((img) => {
+      const src = img.getAttribute('src');
+      if (!src || !/^https?:\/\//i.test(src) || src.includes('/uploads/')) {
+        return;
+      }
+
+      this.uploadsService.importExternalImage(src).subscribe({
+        next: (upload) => {
+          const localUrl = this.uploadsService.toAbsoluteUrl(upload.url);
+          img.setAttribute('src', localUrl);
+          this.syncContentFromEditor();
+        },
+        error: () => {
+          // Fallback to original URL if external download fails
+        },
+      });
+    });
   }
 
   saveEditorSelection(): void {
@@ -1078,7 +1300,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
       `</svg>` +
       `</button>` +
-      `</div><p class="editor-after-block-placeholder"><br></p>`
+      `</div><p><br></p>`
     );
   }
 
@@ -1568,26 +1790,83 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private normalizeGeneratedBlockPlaceholders(editor: HTMLElement): void {
-    editor.querySelectorAll<HTMLElement>('.editor-after-block-placeholder').forEach((paragraph) => {
-      if (!this.isVisuallyEmptyEditorNode(paragraph)) {
-        paragraph.classList.remove('editor-after-block-placeholder');
+    this.ensureEditorMediaDeleteButtons(editor);
+
+    const paragraphs = Array.from(editor.querySelectorAll<HTMLElement>('p, div'));
+    for (let i = 0; i < paragraphs.length - 1; i++) {
+      const current = paragraphs[i];
+      const next = paragraphs[i + 1];
+      if (
+        current.parentElement === editor &&
+        next.parentElement === editor &&
+        this.isVisuallyEmptyEditorNode(current) &&
+        this.isVisuallyEmptyEditorNode(next)
+      ) {
+        next.remove();
+        paragraphs.splice(i + 1, 1);
+        i--;
       }
-    });
+    }
 
     editor.querySelectorAll<HTMLElement>('.editor-code-block, .editor-media-wrapper').forEach((block) => {
+      const prevNode = this.previousMeaningfulSibling(block);
+      if (!prevNode) {
+        const pBefore = document.createElement('p');
+        pBefore.innerHTML = '<br>';
+        block.parentNode?.insertBefore(pBefore, block);
+      } else if (prevNode instanceof HTMLElement && this.isVisuallyEmptyEditorNode(prevNode)) {
+        const prevPrev = this.previousMeaningfulSibling(prevNode);
+        if (prevPrev instanceof HTMLElement && !this.isVisuallyEmptyEditorNode(prevPrev)) {
+          prevNode.remove();
+        }
+      }
+
       const nextNode = this.nextMeaningfulSibling(block);
-      if (!(nextNode instanceof HTMLParagraphElement) || !this.isVisuallyEmptyEditorNode(nextNode)) {
-        return;
+      if (!nextNode) {
+        const pAfter = document.createElement('p');
+        pAfter.innerHTML = '<br>';
+        block.parentNode?.insertBefore(pAfter, block.nextSibling);
       }
-
-      const nodeAfterPlaceholder = this.nextMeaningfulSibling(nextNode);
-      if (nodeAfterPlaceholder) {
-        nextNode.remove();
-        return;
-      }
-
-      nextNode.classList.add('editor-after-block-placeholder');
     });
+  }
+
+  private ensureEditorMediaDeleteButtons(editor: HTMLElement): void {
+    editor.querySelectorAll<HTMLElement>('.editor-media-wrapper').forEach((wrapper) => {
+      wrapper.setAttribute('contenteditable', 'false');
+
+      let deleteBtn = wrapper.querySelector<HTMLButtonElement>('.editor-media-delete');
+      if (!deleteBtn) {
+        wrapper.querySelectorAll('[data-remove-media], button').forEach((b) => b.remove());
+
+        deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'editor-media-delete';
+        deleteBtn.setAttribute('data-remove-media', '');
+        deleteBtn.title = 'Delete media';
+        deleteBtn.innerHTML =
+          `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">` +
+          `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
+          `</svg>`;
+        wrapper.appendChild(deleteBtn);
+      } else {
+        deleteBtn.className = 'editor-media-delete';
+        deleteBtn.setAttribute('data-remove-media', '');
+        if (!deleteBtn.querySelector('svg')) {
+          deleteBtn.innerHTML =
+            `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">` +
+            `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
+            `</svg>`;
+        }
+      }
+    });
+  }
+
+  private previousMeaningfulSibling(node: Node): Node | null {
+    let sibling = node.previousSibling;
+    while (sibling?.nodeType === Node.TEXT_NODE && !sibling.textContent?.trim()) {
+      sibling = sibling.previousSibling;
+    }
+    return sibling;
   }
 
   private nextMeaningfulSibling(node: Node): Node | null {
@@ -2309,11 +2588,13 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     editor.innerHTML = this.draft.content;
     this.normalizeGeneratedBlockPlaceholders(editor);
     this.draft.content = editor.innerHTML;
-    const title = document.getElementById('postTitle') as HTMLTextAreaElement | null;
-    if (title) {
-      title.style.height = 'auto';
-      title.style.height = `${title.scrollHeight}px`;
-    }
+
+    setTimeout(() => {
+      const title = document.getElementById('postTitle') as HTMLTextAreaElement | null;
+      if (title) {
+        this.resizeTitleTextarea(title);
+      }
+    }, 0);
   }
 
   private syncLanguageSelectionFromDraft(): void {
@@ -2368,16 +2649,24 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     container
       .querySelectorAll('script, style, iframe, object, embed, form, input, textarea, select, meta, link, base')
       .forEach(element => element.remove());
+    container.querySelectorAll('a').forEach(a => {
+      const href = (a.getAttribute('href') ?? '').trim().toLowerCase();
+      if (!href || href.startsWith('javascript:') || href.startsWith('vbscript:') || href === '#') {
+        while (a.firstChild) {
+          a.parentNode?.insertBefore(a.firstChild, a);
+        }
+        a.remove();
+      } else if (a.querySelector('img, video, audio, div, figure, .editor-media-wrapper')) {
+        while (a.firstChild) {
+          a.parentNode?.insertBefore(a.firstChild, a);
+        }
+        a.remove();
+      }
+    });
     container.querySelectorAll<HTMLElement>('*').forEach(element => {
       Array.from(element.attributes).forEach(attribute => {
         const name = attribute.name.toLowerCase();
-        const value = attribute.value.trim();
-        if (
-          name.startsWith('on') ||
-          name === 'srcdoc' ||
-          name === 'formaction' ||
-          ((name === 'href' || name === 'src') && /^(?:javascript|vbscript):/i.test(value))
-        ) {
+        if (name.startsWith('on') || name === 'srcdoc' || name === 'formaction') {
           element.removeAttribute(attribute.name);
         }
       });
