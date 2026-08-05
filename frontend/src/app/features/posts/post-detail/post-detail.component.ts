@@ -91,6 +91,8 @@ export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
   private readonly languageReload = new Subject<void>();
   private languageChangeReload = false;
   private videoObservers: IntersectionObserver[] = [];
+  private videoTimeoutId?: any;
+  private scrollTimeoutId?: any;
 
   // ── Scroll-depth view tracking ──────────────────────────────────────────────
   // Observer theo dõi sentinel element tại 50% bài viết
@@ -103,6 +105,8 @@ export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
   // ────────────────────────────────────────────────────────────────────────────
 
   ngOnDestroy(): void {
+    clearTimeout(this.videoTimeoutId);
+    clearTimeout(this.scrollTimeoutId);
     // Dọn dẹp các observers và subscriptions khi component bị hủy để tránh memory leak
     this.cleanupVideoObservers();
     this.cleanupScrollTracker();
@@ -144,7 +148,7 @@ export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
     this.cleanupVideoObservers();
 
     // Đợi 1 tick (100ms) để Angular hoàn tất việc render [innerHTML]
-    setTimeout(() => {
+    this.videoTimeoutId = setTimeout(() => {
       const articleEl = this.articleContentRef?.nativeElement;
       if (!articleEl) return;
 
@@ -199,7 +203,7 @@ export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
 
     // Đợi DOM render xong rồi mới inject sentinel và bắt đầu quan sát
     // 300ms: đủ để Angular hoàn tất change detection + render [innerHTML] kể cả bài nặng
-    setTimeout(() => {
+    this.scrollTimeoutId = setTimeout(() => {
       const articleEl = this.articleContentRef?.nativeElement;
       if (!articleEl) return;
 
@@ -250,7 +254,9 @@ export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
             this.scrollDepthObserver = undefined;
 
             // Gọi API POST /posts/:id/view — bắt lỗi silently để không làm crash UX
-            this.postService.trackView(postId).subscribe({
+            this.postService.trackView(postId).pipe(
+              takeUntilDestroyed(this.destroyRef)
+            ).subscribe({
               next: () => { /* View được ghi nhận thành công, không cần xử lý gì thêm */ },
               error: () => { /* Lỗi mạng — bỏ qua, không thông báo người dùng */ },
             });

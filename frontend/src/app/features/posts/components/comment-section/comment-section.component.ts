@@ -1,4 +1,5 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal, HostListener } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal, HostListener, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CommentService } from '../../services/comment.service';
@@ -42,6 +43,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   public authService = inject(AuthService);
   private authModalService = inject(AuthModalService);
   private toastService = inject(ToastService);
+  private destroyRef = inject(DestroyRef);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // GLOBAL STATE / DB FIELD MAPPING
@@ -126,7 +128,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
    */
   loadComments(page: number = 1): void {
     if (page === 1) this.loading.set(true);
-    this.commentService.getCommentsByPost(this.postId.toString(), page).subscribe({
+    this.commentService.getCommentsByPost(this.postId.toString(), page).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (res) => {
         if (page === 1) {
           // Trang 1: Thay thế toàn bộ mảng
@@ -195,7 +199,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
 
     this.isSubmitting.set(true);
 
-    this.commentService.createComment(this.postId.toString(), content).subscribe({
+    this.commentService.createComment(this.postId.toString(), content).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (newComment) => {
         this.isSubmitting.set(false);
         this.newCommentText = '';
@@ -229,7 +235,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     const parentId = target.parent_id ? target.parent_id : target.id;
     const replyToId = target.id;
 
-    this.commentService.createComment(this.postId.toString(), content, replyToId).subscribe({
+    this.commentService.createComment(this.postId.toString(), content, replyToId).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (newComment) => {
         this.isSubmitting.set(false);
         this.cancelReply(target.id);
@@ -287,7 +295,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     comment.isLiking = true;
 
     // Thay đổi comment_likes table phía BE
-    this.likeService.toggleCommentLike(this.postId, Number(comment.id)).subscribe({
+    this.likeService.toggleCommentLike(this.postId, Number(comment.id)).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (res) => {
         comment.liked = res.liked;
         comment.likeCount = res.likeCount;
@@ -341,7 +351,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     if (!target) return;
     const { comment, parent } = target;
     
-    this.commentService.deleteComment(this.postId.toString(), comment.id).subscribe(() => {
+    this.commentService.deleteComment(this.postId.toString(), comment.id).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
       this.cancelDelete();
       this.toastService.showSuccess(this.localeService.translate('comment_deleted'));
       
@@ -401,7 +413,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
       return;
     }
     this.isSubmitting.set(true);
-    this.commentService.updateComment(this.postId.toString(), comment.id, content).subscribe({
+    this.commentService.updateComment(this.postId.toString(), comment.id, content).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (updatedComment) => {
         this.isSubmitting.set(false);
         this.cancelEdit(comment.id);
@@ -513,7 +527,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
 
     // Nếu chưa dịch thì gọi API backend dịch máy
     this.translatingIds.update(set => new Set(set).add(comment.id));
-    this.commentService.translateComment(this.postId.toString(), comment.id, currentLangCode).subscribe({
+    this.commentService.translateComment(this.postId.toString(), comment.id, currentLangCode).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (res) => {
         if (!comment.translations) comment.translations = [];
         const idx = comment.translations.findIndex(t => t.language_id === res.language_id);

@@ -154,10 +154,10 @@ export class HomeComponent {
       },
     });
 
-    effect(() => {
+    effect((onCleanup) => {
       const lang = this.currentLang();
       untracked(() => {
-        this.categoryService.findAll(undefined, lang).pipe(
+        const sub = this.categoryService.findAll(undefined, lang).pipe(
           takeUntilDestroyed(this.destroyRef),
         ).subscribe({
           next: (categories) => {
@@ -169,6 +169,9 @@ export class HomeComponent {
           },
           error: () => this.categories.set([]),
         });
+
+        onCleanup(() => sub.unsubscribe());
+
         this.page.set(1);
         this.feedTrigger$.next({ page: 1, category: this.selectedCategorySlug(), lang });
       });
