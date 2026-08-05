@@ -1,6 +1,12 @@
 /* Force black border on buttons when profile color is white/light */
   html[data-accent-tone="light"] .btn-accent,
-  html[data-accent-tone="light"] .fb-btn-primary {
+  html[data-accent-tone="light"] .fb-btn-primary,
+  html[data-accent-tone="light"] [data-preview-close],
+  [data-accent-tone="light"] .btn-accent,
+  [data-accent-tone="light"] .fb-btn-primary,
+  [data-accent-tone="light"] [data-preview-close] {
+    color: #000000 !important;
+    background-color: #ffffff !important;
     border: 1px solid #000000 !important;
     box-shadow: inset 0 0 0 1px #000000 !important;
   }
@@ -14,7 +20,8 @@
   touch-action: manipulation;
 }
 
-[data-publish-action='publish'] {
+[data-publish-action='publish'],
+[data-preview-close] {
   border: 1px solid #000000 !important;
-  box-shadow: inset 0 0 0 1px #000000;
+  box-shadow: inset 0 0 0 1px #000000 !important;
 }
