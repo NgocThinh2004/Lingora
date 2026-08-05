@@ -517,5 +517,17 @@
   "fallback_warning_tooltip": "Esta publicación no tiene una traducción en el idioma actual. Mostrando en el idioma original.",
   "show_less": "Mostrar menos",
   "view_translation": "Ver traducción",
-  "view_original": "Ver original"
+  "view_original": "Ver original",
+  "available_languages": "Idiomas disponibles",
+  "post_translation_unavailable": "Este artículo no está disponible en el idioma seleccionado. Volviendo a Inicio.",
+  "open_article": "Abrir artículo",
+  "edit_unavailable": "Edición no disponible",
+  "restore": "Restaurar",
+  "delete_permanently": "Eliminar permanentemente",
+  "loading_post": "Cargando artículo",
+  "activate_user": "Activar a {name}",
+  "deactivate_user": "Desactivar a {name}",
+  "delete_media": "Eliminar contenido multimedia",
+  "delete_code_block": "Eliminar bloque de código",
+  "missing_translation": "Falta traducción"
 }

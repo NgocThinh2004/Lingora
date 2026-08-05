@@ -357,7 +357,9 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
     return {
       primary,
       remainingCount: remaining.length,
-      tooltip: remaining.map(item => `${item.language.name}: ${item.translation?.name || 'Missing translation'}`).join(' · '),
+      tooltip: remaining.map(item =>
+        `${item.language.name}: ${item.translation?.name || this.localeService.translate('missing_translation')}`,
+      ).join(' · '),
       complete: remaining.every(item => Boolean(item.translation)),
     };
   }

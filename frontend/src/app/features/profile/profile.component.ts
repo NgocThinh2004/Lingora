@@ -48,6 +48,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   private observer?: IntersectionObserver;
   private routeSubscription?: Subscription;
+  private feedSubscription?: Subscription;
   private previousAccent = this.branding.accent();
   viewedUserId: string | null = null;
   private cropSourceImage: HTMLImageElement | null = null;
@@ -158,6 +159,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.routeSubscription?.unsubscribe();
+    this.feedSubscription?.unsubscribe();
     this.observer?.disconnect();
     this.clearBrandingVariables();
     if (!this.isOwnProfile()) {
@@ -588,6 +590,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
+  @HostListener('window:lingora:languagechange')
+  onLanguageChange(): void {
+    if (!this.viewedUserId) return;
+    this.page = 1;
+    this.posts.set([]);
+    this.publicPostsCount.set(0);
+    this.loadPosts();
+  }
+
   private openAvatarCropper(file: File): void {
     this.releaseCropImage();
     const objectUrl = URL.createObjectURL(file);
@@ -688,8 +699,14 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   private loadPosts(): void {
     if (!this.viewedUserId) return;
+    this.feedSubscription?.unsubscribe();
     this.feedLoading.set(true);
-    this.feedPostsService.list({ authorId: Number(this.viewedUserId), limit: 10, page: this.page }).subscribe({
+    this.feedSubscription = this.feedPostsService.list({
+      authorId: Number(this.viewedUserId),
+      lang: this.localeService.current(),
+      limit: 10,
+      page: this.page,
+    }).subscribe({
       next: response => {
         if (this.page === 1) {
           this.posts.set(response.items);

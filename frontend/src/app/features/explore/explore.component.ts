@@ -146,7 +146,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
       const catSlug = params.get('category');
       if (catSlug) {
         if (!this.selectedCategory || this.selectedCategory.slug !== catSlug) {
-          this.categoryService.findBySlug(catSlug).subscribe({
+          this.categoryService.findBySlug(catSlug, this.localeService.current()).subscribe({
             next: found => {
               if (found) {
                 this.selectedCategory = found;

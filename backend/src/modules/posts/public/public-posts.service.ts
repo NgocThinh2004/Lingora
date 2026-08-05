@@ -81,9 +81,24 @@ export class PublicPostsService {
     const offset = (page - 1) * limit;
 
     // Step 2: Tải danh sách ngôn ngữ
-    // Query lấy tất cả ngôn ngữ đang active. Tạo Map để tra cứu mã ngôn ngữ bằng ID nhanh chóng (O(1)) ở bước format kết quả.
-    // SQL: SELECT id, code FROM languages WHERE is_active = true
-    const languages = await this.languageModel.findAll({ where: { is_active: true } });
+    // Cần giữ mã của cả ngôn ngữ đã tắt để không gán nhầm bản dịch cũ sang "en".
+    // Chỉ các language ID đang active mới được phép xuất hiện trong feed công khai.
+    const languages = await this.languageModel.findAll();
+    const activeLanguageIds = languages
+      .filter(language => language.is_active)
+      .map(language => Number(language.id));
+    const requestedLanguageCode = query.lang?.trim().toLowerCase();
+    const requestedLanguage = requestedLanguageCode
+      ? languages.find(language => language.is_active && language.code.toLowerCase() === requestedLanguageCode)
+      : undefined;
+    const fallbackLanguage = requestedLanguageCode
+      ? languages.find(language => language.is_active && language.is_default)
+        ?? languages.find(language => language.is_active)
+      : undefined;
+    const publicLanguage = requestedLanguage ?? fallbackLanguage;
+    const readableLanguageIds = publicLanguage
+      ? [Number(publicLanguage.id)]
+      : activeLanguageIds;
     const languageMap = new Map<any, string>();
     languages.forEach((l) => {
       languageMap.set(l.id, l.code);
@@ -150,6 +165,19 @@ export class PublicPostsService {
       matchingPostIds = matchingPostIds.filter(id => allowed.has(id));
     };
 
+    // Khi client gửi lang, chỉ giữ bài có bản dịch hoàn chỉnh đúng ngôn ngữ giao diện.
+    // Nếu lang vừa bị tắt, dùng ngôn ngữ mặc định đang hoạt động thay vì một bản dịch bất kỳ.
+    if (readableLanguageIds.length) {
+      const readableTranslations = await this.postTranslationModel.findAll({
+        where: {
+          language_id: { [Op.in]: readableLanguageIds },
+          translation_status: 'completed',
+        },
+        attributes: ['post_id'],
+      });
+      intersectPostIds(readableTranslations.map(translation => Number(translation.post_id)));
+    }
+
     if (query.q && query.q.trim()) {
       // Tại sao dùng cột unaccented_title? 
       // Người dùng (ví dụ tiếng Việt) thường lười gõ dấu. Nếu họ gõ "bai viet", ta cần tìm ra "bài viết".
@@ -163,11 +191,8 @@ export class PublicPostsService {
       };
 
       // Lọc thêm theo ngôn ngữ nếu có query lang
-      if (query.lang) {
-        const langModel = await this.languageModel.findOne({ where: { code: query.lang } });
-        if (langModel) {
-          translationWhere.language_id = langModel.id; // SQL: AND language_id = ...
-        }
+      if (publicLanguage) {
+        translationWhere.language_id = publicLanguage.id; // SQL: AND language_id = ...
       }
 
       // Lấy danh sách post_id thỏa mãn từ bảng bản dịch
@@ -232,10 +257,16 @@ export class PublicPostsService {
     const categoryIds = [...new Set(posts.map((p) => p.category_id).filter(Boolean))] as number[];
 
     // Dùng Promise.all để bắn song song 5 câu lệnh truy vấn độc lập
-    const [translations, authors, categories, categoryTranslations, userLikeRows] = await Promise.all([
+    const [translations, authors, categories, categoryTranslations, userLikeRows, availableTranslationRows] = await Promise.all([
       // 1. post_translations.translation_status → filter WHERE = 'completed'
       this.postTranslationModel.findAll({
-        where: { post_id: postIds, translation_status: 'completed' },
+        where: {
+          post_id: postIds,
+          translation_status: 'completed',
+          ...(readableLanguageIds.length
+            ? { language_id: { [Op.in]: readableLanguageIds } }
+            : {}),
+        },
       }),
       // 2. JOIN thủ công sang bảng users (lấy tác giả)
       this.userModel.findAll({ where: { id: authorIds } }),
@@ -251,6 +282,14 @@ export class PublicPostsService {
           attributes: ['post_id'],
         })
         : Promise.resolve([]),
+      this.postTranslationModel.findAll({
+        where: {
+          post_id: postIds,
+          translation_status: 'completed',
+          language_id: { [Op.in]: activeLanguageIds.length ? activeLanguageIds : [0] },
+        },
+        attributes: ['post_id', 'language_id'],
+      }),
     ]);
 
     // Tạo tập hợp (Set) chứa các post_id mà user đã like, để lookup O(1)
@@ -298,7 +337,13 @@ export class PublicPostsService {
       // Tìm kiếm hình ảnh hoặc video đầu tiên trong bài viết để làm ảnh bìa (cover)
       let coverImageUrl: string | null = null;
       let coverVideoUrl: string | null = null;
-      for (const t of postTranslations) {
+      const preferredTranslation = publicLanguage
+        ? postTranslations.find(translation => translation.languageCode === publicLanguage.code)
+        : undefined;
+      const mediaTranslations = preferredTranslation
+        ? [preferredTranslation, ...postTranslations.filter(translation => translation !== preferredTranslation)]
+        : postTranslations;
+      for (const t of mediaTranslations) {
         if (!t.contentHtml) continue;
 
         // Dùng Regex lấy URL trong thẻ img, video, iframe
@@ -328,6 +373,10 @@ export class PublicPostsService {
         authorId: Number(post.author_id),
         categoryId: post.category_id,
         originalLanguage: languageMap.get(post.original_language_id) || 'en',
+        availableLanguages: [...new Set(availableTranslationRows
+          .filter(translation => Number(translation.post_id) === Number(post.id))
+          .map(translation => languageMap.get(translation.language_id))
+          .filter(Boolean))],
         coverImageUrl,
         coverVideoUrl,
         status: 'published',
@@ -440,6 +489,7 @@ export class PublicPostsService {
     const result = await this.listFeed({
       page: 1,
       limit: 1,
+      ...(lang ? { lang } : {}),
       ...(isAuthor ? { authorId: Number(post.author_id) } : {}),
     }, id, userId);
     const found = result.items.find((p) => p.id === Number(id));

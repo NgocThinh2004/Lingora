@@ -368,10 +368,30 @@ export class AuthorPostsService {
       this.getPostOptions(),
       this.postModel.findAll({
         where: { author_id: authorId },
-        attributes: ['category_id', 'updated_at'],
+        attributes: ['category_id', 'original_language_id', 'updated_at'],
         order: [['updated_at', 'DESC']],
       }),
     ]);
+    const visibleLanguageIds = new Set(options.languages.map(language => Number(language.id)));
+    const hiddenLanguageIds = [...new Set(posts
+      .map(post => Number(post.original_language_id))
+      .filter(id => Number.isFinite(id) && !visibleLanguageIds.has(id)))];
+    const hiddenLanguages = hiddenLanguageIds.length
+      ? await this.languageModel.findAll({
+          where: { id: { [Op.in]: hiddenLanguageIds }, is_active: false },
+          order: [['id', 'ASC']],
+        })
+      : [];
+    const languages = [
+      ...options.languages,
+      ...hiddenLanguages.map(language => ({
+        id: language.id,
+        code: language.code,
+        label: language.name,
+        nativeLabel: language.native_name,
+        flagCode: language.flag_code,
+      })),
+    ];
     const visibleCategoryIds = new Set(options.categories.map(category => category.id));
     const hiddenCategoryIds = [...new Set(posts
       .map(post => post.category_id)
@@ -401,7 +421,7 @@ export class AuthorPostsService {
       return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
     }))];
 
-    return { ...options, categories, updatedMonths };
+    return { ...options, languages, categories, updatedMonths };
   }
 
   async updateAuthorPost(

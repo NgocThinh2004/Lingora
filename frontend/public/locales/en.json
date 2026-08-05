@@ -515,5 +515,17 @@
   "fallback_warning_tooltip": "This post does not have a translation in the current language. Displaying in original language.",
   "show_less": "Show less",
   "view_translation": "View translation",
-  "view_original": "View original"
+  "view_original": "View original",
+  "available_languages": "Available languages",
+  "post_translation_unavailable": "This article is not available in the selected language. Returning to Home.",
+  "open_article": "Open article",
+  "edit_unavailable": "Editing unavailable",
+  "restore": "Restore",
+  "delete_permanently": "Delete permanently",
+  "loading_post": "Loading article",
+  "activate_user": "Activate {name}",
+  "deactivate_user": "Deactivate {name}",
+  "delete_media": "Delete media",
+  "delete_code_block": "Delete code block",
+  "missing_translation": "Missing translation"
 }

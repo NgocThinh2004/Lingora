@@ -1062,6 +1062,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private buildMediaHtml(mediaType: EditorMediaType, url: string, filename: string): string {
     const safeName = this.escapeAttribute(filename);
     const safeUrl = this.escapeAttribute(url);
+    const deleteMediaLabel = this.escapeAttribute(this.localeService.translate('delete_media'));
     const mediaHtml =
       mediaType === 'image'
         ? `<img src="${safeUrl}" alt="${safeName}" loading="lazy">`
@@ -1072,7 +1073,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     return (
       `<div class="editor-media-wrapper" contenteditable="false">` +
       `${mediaHtml}` +
-      `<button type="button" class="editor-media-delete" data-remove-media title="Delete media">` +
+      `<button type="button" class="editor-media-delete" data-remove-media aria-label="${deleteMediaLabel}" title="${deleteMediaLabel}">` +
       `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">` +
       `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
       `</svg>` +
@@ -1514,6 +1515,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private createCodeBlockHtml(): string {
+    const deleteCodeBlockLabel = this.escapeAttribute(this.localeService.translate('delete_code_block'));
     const languages = [
       'Auto-detect',
       'Plain Text',
@@ -1544,7 +1546,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       '</button>' +
       `<div class="editor-code-language-menu">${languageItems}</div>` +
       '</div>' +
-      '<button class="editor-code-delete" type="button" data-remove-code-block aria-label="Delete code block" title="Delete code block"><svg class="editor-code-delete-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg></button>' +
+      `<button class="editor-code-delete" type="button" data-remove-code-block aria-label="${deleteCodeBlockLabel}" title="${deleteCodeBlockLabel}"><svg class="editor-code-delete-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg></button>` +
       '</div>' +
       '<pre class="editor-code-body" contenteditable="true" spellcheck="false"><code></code></pre>' +
       '</div><p class="editor-after-block-placeholder"><br></p>'

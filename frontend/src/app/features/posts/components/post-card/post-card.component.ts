@@ -93,18 +93,6 @@ export class PostCardComponent implements OnDestroy, AfterViewInit {
     return getPostTranslation(p, this.currentLang());
   });
 
-  // Kiểm tra nếu bài viết không có bản dịch cho ngôn ngữ đang chọn, phải dùng ngôn ngữ mặc định (fallback)
-  readonly isFallback = computed(() => {
-    const languageCode = this.translation()?.languageCode;
-    return Boolean(languageCode && languageCode !== this.currentLang());
-  });
-
-  // Xác định mã ngôn ngữ fallback nếu có
-  readonly fallbackLanguageCode = computed(() => {
-    if (!this.isFallback()) return null;
-    return this.translation()?.languageCode || this._post().originalLanguage || null;
-  });
-  
   // Dịch tên danh mục bài viết
   readonly categoryLabel = computed(() => {
     return translateCategory(this._post().category, this.currentLang());

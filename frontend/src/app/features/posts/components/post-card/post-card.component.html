@@ -27,13 +27,17 @@
   <a [routerLink]="['/post', post.id]" class="post-body-link">
     <h2 class="post-title">
       {{ translation()?.title }}
-      @if (isFallback()) {
-        <span class="fallback-badge ms-2" [title]="'fallback_warning_tooltip' | t">
-          {{ 'original_language' | t }}: {{ fallbackLanguageCode() | uppercase }}
-        </span>
-      }
     </h2>
     <div class="post-excerpt text-muted mb-3">{{ excerpt() }}</div>
+
+    @if (post.availableLanguages?.length) {
+      <div class="available-languages" [attr.aria-label]="'available_languages' | t">
+        <span class="available-languages-label">{{ 'available_languages' | t }}:</span>
+        @for (language of post.availableLanguages; track language) {
+          <span class="language-badge">{{ language | uppercase }}</span>
+        }
+      </div>
+    }
 
     @if (post.coverVideoUrl) {
       <div class="post-media">

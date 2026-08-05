@@ -31,7 +31,8 @@
 @if (selectedCategory && tab === 'posts') {
   <div id="exploreCategoryHeader" class="mb-3 text-muted small mt-4 px-2">
     <span>{{ 'viewing_category' | t }} </span><strong class="text-main">"{{ translateCategoryName(selectedCategory) }}"</strong>
-    <a (click)="clearCategory()" class="ms-1 text-decoration-none text-danger" style="cursor: pointer;" title="Bỏ lọc">
+    <a (click)="clearCategory()" class="ms-1 text-decoration-none text-danger" style="cursor: pointer;"
+      [title]="'clear_filters' | t" [attr.aria-label]="'clear_filters' | t">
       <i class="bi bi-x fs-5"></i>
     </a>
   </div>

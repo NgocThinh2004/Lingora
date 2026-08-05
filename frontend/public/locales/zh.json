@@ -515,5 +515,17 @@
   "fallback_warning_tooltip": "该文章没有当前语言的翻译。以原语言显示。",
   "show_less": "收起",
   "view_translation": "查看翻译",
-  "view_original": "查看原文"
+  "view_original": "查看原文",
+  "available_languages": "支持的语言",
+  "post_translation_unavailable": "此文章不支持所选语言。正在返回首页。",
+  "open_article": "打开文章",
+  "edit_unavailable": "无法编辑",
+  "restore": "恢复",
+  "delete_permanently": "永久删除",
+  "loading_post": "正在加载文章",
+  "activate_user": "启用{name}",
+  "deactivate_user": "停用{name}",
+  "delete_media": "删除媒体",
+  "delete_code_block": "删除代码块",
+  "missing_translation": "缺少翻译"
 }

@@ -102,13 +102,6 @@ export class HomeComponent {
   });
 
   constructor() {
-    this.categoryService.findAll().pipe(
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe({
-      next: (categories) => this.categories.set(categories || []),
-      error: () => this.categories.set([]),
-    });
-
     // ══════════════════════════════════════════════════════
     // HÀNH ĐỘNG: TẢI FEED BÀI VIẾT TẠI TRANG CHỦ (RxJS PIPELINE)
     // ══════════════════════════════════════════════════════
@@ -164,6 +157,18 @@ export class HomeComponent {
     effect(() => {
       const lang = this.currentLang();
       untracked(() => {
+        this.categoryService.findAll(undefined, lang).pipe(
+          takeUntilDestroyed(this.destroyRef),
+        ).subscribe({
+          next: (categories) => {
+            this.categories.set(categories || []);
+            const selectedSlug = this.selectedCategorySlug();
+            if (selectedSlug && !categories.some(category => category.slug === selectedSlug)) {
+              this.selectCategory('');
+            }
+          },
+          error: () => this.categories.set([]),
+        });
         this.page.set(1);
         this.feedTrigger$.next({ page: 1, category: this.selectedCategorySlug(), lang });
       });

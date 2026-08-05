@@ -515,5 +515,17 @@
   "fallback_warning_tooltip": "Bài viết này chưa có bản dịch trong ngôn ngữ hiện tại. Đang hiển thị bằng ngôn ngữ gốc.",
   "show_less": "Thu gọn",
   "view_translation": "Xem bản dịch",
-  "view_original": "Xem bản gốc"
+  "view_original": "Xem bản gốc",
+  "available_languages": "Ngôn ngữ hỗ trợ",
+  "post_translation_unavailable": "Bài viết không hỗ trợ ngôn ngữ vừa chọn. Đang quay về trang chủ.",
+  "open_article": "Mở bài viết",
+  "edit_unavailable": "Không thể chỉnh sửa",
+  "restore": "Khôi phục",
+  "delete_permanently": "Xóa vĩnh viễn",
+  "loading_post": "Đang tải bài viết",
+  "activate_user": "Kích hoạt {name}",
+  "deactivate_user": "Vô hiệu hóa {name}",
+  "delete_media": "Xóa nội dung đa phương tiện",
+  "delete_code_block": "Xóa khối mã",
+  "missing_translation": "Thiếu bản dịch"
 }
