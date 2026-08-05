@@ -49,11 +49,11 @@
             </span>
           </div>
           <div class="mb-1 text-secondary comment-content-text">
-            @if (editingCommentId() === comment.id) {
+            @if (editingStates()[comment.id] !== undefined) {
               <div class="edit-container">
-                <textarea class="form-control mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000" [(ngModel)]="editingCommentText"></textarea>
+                <textarea class="form-control mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000" [ngModel]="editingStates()[comment.id]" (ngModelChange)="updateEditingText(comment.id, $event)"></textarea>
                 <div class="d-flex justify-content-end gap-2 mb-2">
-                  <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">{{ 'cancel_action' | t }}</button>
+                  <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit(comment.id)">{{ 'cancel_action' | t }}</button>
                   <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(comment)">{{ 'save' | t }}</button>
                 </div>
               </div>
@@ -82,7 +82,7 @@
             </button>
             
             @if (canEdit(comment)) {
-              <button class="btn-reply ms-2" (click)="startEdit(comment, $event)">
+              <button class="btn-reply ms-2" (click)="setEditTarget(comment, $event)">
                 {{ 'edit' | t }}
               </button>
             }
@@ -98,14 +98,14 @@
               </button>
             }
           </div>
-          @if (replyingToCommentId() === comment.id) {
+          @if (replyingStates()[comment.id] !== undefined) {
             <div class="mt-3 pt-3 border-top w-100 reply-container">
               <textarea class="form-control form-control-sm mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000"
-                        [(ngModel)]="replyingToText"></textarea>
+                        [ngModel]="replyingStates()[comment.id]" (ngModelChange)="updateReplyingText(comment.id, $event)"></textarea>
               <div class="d-flex justify-content-end gap-2">
-                <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply()">{{ 'cancel_action' | t }}</button>
+                <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply(comment.id)">{{ 'cancel_action' | t }}</button>
                 <button class="btn btn-sm btn-primary rounded-pill px-3 fw-medium"
-                        [disabled]="!replyingToText.trim() || isSubmitting()"
+                        [disabled]="!replyingStates()[comment.id]?.trim() || isSubmitting()"
                         (click)="submitReply(comment)">{{ 'reply' | t }}</button>
               </div>
             </div>
@@ -126,14 +126,19 @@
                       }
                       <app-author-tooltip [user]="reply.author"></app-author-tooltip>
                     </div>
-                    <span class="text-muted small ms-auto">{{ reply.created_at | localizedDate:'dateTime' }}</span>
+                    <span class="text-muted small ms-auto">
+                      @if (isCommentEdited(reply)) {
+                        <span class="fst-italic me-1">{{ 'edited' | t }}</span>
+                      }
+                      {{ reply.created_at | localizedDate:'dateTime' }}
+                    </span>
                   </div>
                   <div class="mb-1 text-secondary comment-content-text" style="font-size: 0.95rem;">
-                    @if (editingCommentId() === reply.id) {
+                    @if (editingStates()[reply.id] !== undefined) {
                       <div class="edit-container">
-                        <textarea class="form-control mb-2 mt-1" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000" [(ngModel)]="editingCommentText"></textarea>
+                        <textarea class="form-control mb-2 mt-1" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000" [ngModel]="editingStates()[reply.id]" (ngModelChange)="updateEditingText(reply.id, $event)"></textarea>
                         <div class="d-flex justify-content-end gap-2 mb-2">
-                          <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">{{ 'cancel_action' | t }}</button>
+                          <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit(reply.id)">{{ 'cancel_action' | t }}</button>
                           <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(reply, comment)">{{ 'save' | t }}</button>
                         </div>
                       </div>
@@ -165,7 +170,7 @@
                     </button>
                     
                     @if (canEdit(reply)) {
-                      <button class="btn-reply ms-2" (click)="startEdit(reply, $event)">
+                      <button class="btn-reply ms-2" (click)="setEditTarget(reply, $event)">
                         {{ 'edit' | t }}
                       </button>
                     }
@@ -181,14 +186,14 @@
                       </button>
                     }
                   </div>
-                  @if (replyingToCommentId() === reply.id) {
+                  @if (replyingStates()[reply.id] !== undefined) {
                     <div class="mt-2 pt-2 border-top reply-container">
                       <textarea class="form-control form-control-sm mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000"
-                                [(ngModel)]="replyingToText"></textarea>
+                                [ngModel]="replyingStates()[reply.id]" (ngModelChange)="updateReplyingText(reply.id, $event)"></textarea>
                       <div class="d-flex justify-content-end gap-2">
-                        <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply()">{{ 'cancel_action' | t }}</button>
+                        <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply(reply.id)">{{ 'cancel_action' | t }}</button>
                         <button class="btn btn-sm btn-primary rounded-pill px-3 fw-medium"
-                                [disabled]="!replyingToText.trim() || isSubmitting()"
+                                [disabled]="!replyingStates()[reply.id]?.trim() || isSubmitting()"
                                 (click)="submitReply(reply)">{{ 'reply' | t }}</button>
                       </div>
                     </div>

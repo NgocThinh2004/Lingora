@@ -590,8 +590,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   onLanguageChange(): void {
     if (!this.viewedUserId) return;
     this.page = 1;
-    this.posts.set([]);
-    this.publicPostsCount.set(0);
     this.loadPosts();
   }
 

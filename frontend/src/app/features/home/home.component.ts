@@ -126,7 +126,7 @@ export class HomeComponent {
     // ══════════════════════════════════════════════════════
     this.feedTrigger$.pipe(
       switchMap(({ page, category, lang }) => {
-        this.loading.set(page === 1);
+        this.loading.set(page === 1 && this.posts().length === 0);
         this.loadingMore.set(page > 1);
         return this.postService.list({ lang, category: category || undefined, page, limit: 10 });
       }),

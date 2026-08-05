@@ -41,7 +41,7 @@
 
     @if (post.coverVideoUrl) {
       <div class="post-media">
-        <video class="main-media" #videoEl [src]="post.coverVideoUrl" muted loop playsinline controls (click)="$event.stopPropagation()"></video>
+        <video class="main-media" #videoEl [src]="post.coverVideoUrl" muted loop playsinline (mouseenter)="videoEl.controls = true" (mouseleave)="videoEl.controls = false" (click)="$event.stopPropagation()"></video>
       </div>
     } @else if (post.coverImageUrl) {
       <div class="post-media">

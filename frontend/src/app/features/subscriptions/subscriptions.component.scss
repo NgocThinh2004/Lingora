@@ -151,11 +151,6 @@
   background-color: var(--bg-body);
 }
 
-@media (max-width: 991px) {
-  .subscriptions-tabs-nav {
-    top: 60px; /* Offset for mobile header */
-  }
-}
 .subscriptions-tab-btn {
   background: transparent;
   border: none;

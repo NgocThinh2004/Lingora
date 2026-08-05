@@ -165,18 +165,7 @@ export class PublicPostsService {
       matchingPostIds = matchingPostIds.filter(id => allowed.has(id));
     };
 
-    // Khi client gửi lang, chỉ giữ bài có bản dịch hoàn chỉnh đúng ngôn ngữ giao diện.
-    // Nếu lang vừa bị tắt, dùng ngôn ngữ mặc định đang hoạt động thay vì một bản dịch bất kỳ.
-    if (readableLanguageIds.length) {
-      const readableTranslations = await this.postTranslationModel.findAll({
-        where: {
-          language_id: { [Op.in]: readableLanguageIds },
-          translation_status: 'completed',
-        },
-        attributes: ['post_id'],
-      });
-      intersectPostIds(readableTranslations.map(translation => Number(translation.post_id)));
-    }
+    // (Bỏ filter cứng theo ngôn ngữ để UI tự fallback về ngôn ngữ gốc)
 
     if (query.q && query.q.trim()) {
       // Tại sao dùng cột unaccented_title? 
@@ -263,8 +252,8 @@ export class PublicPostsService {
         where: {
           post_id: postIds,
           translation_status: 'completed',
-          ...(readableLanguageIds.length
-            ? { language_id: { [Op.in]: readableLanguageIds } }
+          ...(activeLanguageIds.length
+            ? { language_id: { [Op.in]: activeLanguageIds } }
             : {}),
         },
       }),

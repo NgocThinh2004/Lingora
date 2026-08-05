@@ -22,6 +22,8 @@ import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
 import { PostCardComponent } from '../components/post-card/post-card.component';
 import { ToastService } from '../../../core/notifications/toast.service';
+import { ConfirmModalService } from '../../../shared/services/confirm-modal.service';
+import { CanComponentDeactivate } from '../../../core/guards/unsaved-changes.guard';
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -37,7 +39,7 @@ import { ToastService } from '../../../core/notifications/toast.service';
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
 })
-export class PostDetailComponent implements OnDestroy {
+export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
   private route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly postService = inject(FeedPostsService);
@@ -51,9 +53,11 @@ export class PostDetailComponent implements OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   private readonly toast = inject(ToastService);
+  private readonly confirmModalService = inject(ConfirmModalService);
 
   @ViewChild('articleContent') articleContentRef?: ElementRef<HTMLElement>;
   @ViewChild('centerFeed') centerFeedRef?: ElementRef<HTMLElement>;
+  @ViewChild(CommentSectionComponent) commentSection?: CommentSectionComponent;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // GLOBAL STATE / DB FIELD MAPPING
@@ -68,8 +72,15 @@ export class PostDetailComponent implements OnDestroy {
   post = signal<Post | null>(null);
   
   // relatedPosts (Signal): Danh sách bài viết liên quan.
-  // - Lấy từ DB dựa trên cùng category_id với bài viết hiện tại.
   relatedPosts = signal<Post[]>([]);
+  relatedPostsLoading = signal<boolean>(false);
+
+  canDeactivate(): boolean | Promise<boolean> {
+    if (this.commentSection?.hasUnsavedChanges()) {
+      return this.confirmModalService.open();
+    }
+    return true;
+  }
   
   // loading / error / authorPreview: Trạng thái UI cơ bản.
   loading = signal<boolean>(true);
@@ -113,9 +124,6 @@ export class PostDetailComponent implements OnDestroy {
     }
 
     this.languageChangeReload = true;
-    this.loading.set(true);
-    this.post.set(null);
-    this.relatedPosts.set([]);
     this.cleanupVideoObservers();
     this.cleanupScrollTracker();
     this.languageReload.next();
