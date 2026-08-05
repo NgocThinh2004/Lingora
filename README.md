@@ -16,6 +16,7 @@ Lingora là nền tảng blog đa ngôn ngữ dành cho độc giả, tác giả
 | Frontend | Angular 18, TypeScript, SCSS, Bootstrap 5 |
 | Backend | NestJS 11, TypeScript, REST API |
 | Database | MySQL 8+, Sequelize, `sequelize-typescript` |
+| Cache | Redis (dùng cho anti-spam, ghi nhận lượt view) |
 | Xác thực | JWT access token, refresh token, phân quyền theo vai trò |
 | Kiểm thử | Jasmine/Karma, Jest/Supertest |
 
@@ -40,6 +41,7 @@ Tài liệu chi tiết:
 
 - Node.js 20 trở lên và npm.
 - MySQL Server 8 trở lên.
+- Redis 7 trở lên.
 - Chrome hoặc Chromium nếu chạy frontend unit test.
 
 ## Cài đặt
@@ -66,7 +68,6 @@ CREATE USER 'lingora_app'@'localhost' IDENTIFIED BY 'your_secure_password';
 GRANT ALL PRIVILEGES ON lingora_dev.* TO 'lingora_app'@'localhost';
 GRANT ALL PRIVILEGES ON lingora_test.* TO 'lingora_app'@'localhost';
 FLUSH PRIVILEGES;
-```
 
 Sao chép file cấu hình mẫu:
 

@@ -1,3 +1,11 @@
+/**
+ * Constants định nghĩa các trạng thái của bài viết (Post Status) và các luồng chuyển trạng thái.
+ * 
+ * Bao gồm:
+ * - Các trạng thái hợp lệ của bài viết (draft, pending_review, approved, published, v.v.).
+ * - Các trạng thái mà tác giả được quyền chỉnh sửa (AUTHOR_EDITABLE_POST_STATUSES).
+ * - Luồng chuyển đổi trạng thái (POST_STATUS_TRANSITIONS) giúp kiểm soát workflow duyệt bài.
+ */
 export const POST_STATUSES = [
   'draft',
   'pending_review',

@@ -61,7 +61,7 @@ export class MyPostsComponent implements OnInit {
   selectedPostIds = new Set<string>();
   selectingAll = false;
   bulkActionBusy = false;
-  categoryOptions: Array<{ id: number; label: string }> = [];
+  categoryOptions: Array<{ id: number; label: string; isActive?: boolean }> = [];
   languageOptions: Array<{ id: number; code: string; label: string; nativeLabel: string; flagCode: string | null }> = [];
   confirmationAction: ConfirmationAction | null = null;
   confirmationPostIds: string[] = [];
@@ -319,7 +319,12 @@ export class MyPostsComponent implements OnInit {
   }
 
   categoryLabel(post: AuthorPost): string {
-    return this.categoryOptions.find(category => category.id === post.categoryId)?.label ?? '-';
+    return this.categoryOptions.find(category => category.id === post.categoryId)?.label
+      ?? this.translate('uncategorized');
+  }
+
+  categoryIsHidden(post: AuthorPost): boolean {
+    return this.categoryOptions.find(category => category.id === post.categoryId)?.isActive === false;
   }
 
   formatDate(value: string): string {

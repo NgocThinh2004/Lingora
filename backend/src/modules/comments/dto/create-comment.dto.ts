@@ -3,7 +3,7 @@ import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 export class CreateCommentDto {
   @IsNotEmpty()
   @IsString()
-  @MaxLength(1000)
+  @MaxLength(5000)
   content!: string;
 
   @IsOptional()

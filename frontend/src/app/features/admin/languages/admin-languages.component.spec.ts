@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { ToastService } from '../../../core/notifications/toast.service';
@@ -53,6 +54,7 @@ describe('AdminLanguagesComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AdminLanguagesComponent],
       providers: [
+        provideRouter([]),
         { provide: AdminLanguagesService, useValue: service },
         { provide: ToastService, useValue: toast },
         { provide: LocaleService, useValue: locale },
@@ -118,8 +120,18 @@ describe('AdminLanguagesComponent', () => {
     expect(locale.refresh).toHaveBeenCalled();
   });
 
-  it('does not create a language when its frontend locale file is missing', () => {
+  it('creates a language as inactive when its frontend locale file is missing', () => {
     locale.hasStaticBundle.and.returnValue(of(false));
+    const korean = {
+      ...vietnamese,
+      id: 5,
+      code: 'ko',
+      name: 'Korean',
+      nativeName: '한국어',
+      flagCode: 'kr',
+      isActive: false,
+    };
+    service.createLanguage.and.returnValue(of({ data: korean }));
     component.openAddDialog();
     component.addForm.setValue({
       code: 'KO',
@@ -131,9 +143,27 @@ describe('AdminLanguagesComponent', () => {
     component.createLanguage();
 
     expect(locale.hasStaticBundle).toHaveBeenCalledWith('ko');
-    expect(service.createLanguage).not.toHaveBeenCalled();
+    expect(service.createLanguage).toHaveBeenCalledWith({
+      code: 'ko',
+      name: 'Korean',
+      nativeName: '한국어',
+      flagCode: 'kr',
+      isActive: false,
+    });
     expect(component.saving()).toBeFalse();
-    expect(toast.showError).toHaveBeenCalledWith('ui_locale_bundle_missing');
+    expect(toast.showSuccess).toHaveBeenCalledWith('language_added_inactive_missing_bundle');
+  });
+
+  it('does not allow a language without a locale file to be activated or made default', () => {
+    locale.hasStaticBundle.and.returnValue(of(false));
+    const korean = { ...vietnamese, id: 5, code: 'ko', isActive: false, isDefault: false };
+
+    component.openEditDialog(korean);
+
+    expect(component.selectedBundleAvailable()).toBeFalse();
+    expect(component.editForm.controls.isActive.value).toBeFalse();
+    expect(component.editForm.controls.isActive.disabled).toBeTrue();
+    expect(component.editForm.controls.isDefault.disabled).toBeTrue();
   });
 
   it('keeps the current default language active and locked', () => {

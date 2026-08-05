@@ -4,9 +4,10 @@
   </div>
 
   <div class="mb-4">
-    <textarea id="newCommentInput" class="form-control mb-2" rows="3"
+    <textarea id="newCommentInput" class="form-control mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;"
       [placeholder]="'write_comment' | t"
       [disabled]="isSubmitting()"
+      maxlength="5000"
       (focus)="handleCommentFocus($event)"
       [(ngModel)]="newCommentText"></textarea>
     <div class="d-flex justify-content-end align-items-center">
@@ -49,18 +50,25 @@
           </div>
           <div class="mb-1 text-secondary comment-content-text">
             @if (editingCommentId() === comment.id) {
-              <textarea class="form-control mb-2" rows="2" [(ngModel)]="editingCommentText"></textarea>
-              <div class="d-flex gap-2 mb-2">
-                <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(comment)">{{ 'save' | t }}</button>
-                <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">{{ 'cancel_action' | t }}</button>
+              <div class="edit-container">
+                <textarea class="form-control mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000" [(ngModel)]="editingCommentText"></textarea>
+                <div class="d-flex justify-content-end gap-2 mb-2">
+                  <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">{{ 'cancel_action' | t }}</button>
+                  <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(comment)">{{ 'save' | t }}</button>
+                </div>
               </div>
             } @else {
-              @if (isTranslating(comment)) {
-                <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> {{ 'translating' | t }}</span>
-              } @else if (isShowingTranslation(comment) && getTranslation(comment)) {
-                <span [innerHTML]="getTranslation(comment).content"></span>
-              } @else {
-                {{ comment.content }}
+              <div [class.comment-clamped]="!isExpanded(comment.id) && comment.content.length > 300" style="word-break: break-word;">
+                @if (isTranslating(comment)) {
+                  <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> {{ 'translating' | t }}</span>
+                } @else if (isShowingTranslation(comment) && getTranslation(comment)) {
+                  <span style="white-space: pre-wrap;" [innerHTML]="getTranslation(comment).content"></span>
+                } @else {
+                  <span style="white-space: pre-wrap;">{{ comment.content }}</span>
+                }
+              </div>
+              @if (comment.content.length > 300) {
+                <span class="text-primary mt-1 fw-medium d-block" style="font-size: 0.85rem; cursor: pointer;" (click)="toggleExpand(comment.id)">{{ isExpanded(comment.id) ? ('show_less' | t) : ('read_more' | t) }}</span>
               }
             }
           </div>
@@ -69,30 +77,30 @@
                     [class.liked]="comment.liked" (click)="toggleLike(comment)">
               <i class="bi" [class.bi-heart]="!comment.liked" [class.bi-heart-fill]="comment.liked"></i> <span class="like-count">{{ comment.likeCount | compactNumber }}</span>
             </button>
-            <button class="btn-reply" (click)="setReplyTarget(comment)">
-              <i class="bi bi-chat"></i>
+            <button class="btn-reply" (click)="setReplyTarget(comment, $event)">
+              {{ 'reply' | t }}
             </button>
             
-            @if (shouldShowTranslateButton(comment)) {
-              <button class="btn-reply btn-translate-toggle" (click)="toggleTranslate(comment)" [title]="isShowingTranslation(comment) ? ('original' | t) : ('translate' | t)">
-                <i class="bi" [class.bi-translate]="!isShowingTranslation(comment)" [class.bi-arrow-counterclockwise]="isShowingTranslation(comment)"></i>
-              </button>
-            }
-            
             @if (canEdit(comment)) {
-              <button class="btn-reply text-secondary ms-2" (click)="startEdit(comment)">
-                <i class="bi bi-pencil-square"></i>
+              <button class="btn-reply ms-2" (click)="startEdit(comment, $event)">
+                {{ 'edit' | t }}
               </button>
             }
             @if (canDelete(comment)) {
-              <button class="btn-reply text-danger ms-1" (click)="deleteComment(comment)">
-                <i class="bi bi-trash"></i>
+              <button class="btn-reply ms-1" (click)="deleteComment(comment)">
+                {{ 'delete' | t }}
+              </button>
+            }
+            
+            @if (shouldShowTranslateButton(comment)) {
+              <button class="btn-reply ms-2" (click)="toggleTranslate(comment)">
+                {{ isShowingTranslation(comment) ? ('view_original' | t) : ('view_translation' | t) }}
               </button>
             }
           </div>
           @if (replyingToCommentId() === comment.id) {
-            <div class="mt-3 pt-3 border-top w-100">
-              <textarea class="form-control form-control-sm mb-2" rows="2"
+            <div class="mt-3 pt-3 border-top w-100 reply-container">
+              <textarea class="form-control form-control-sm mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000"
                         [(ngModel)]="replyingToText"></textarea>
               <div class="d-flex justify-content-end gap-2">
                 <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply()">{{ 'cancel_action' | t }}</button>
@@ -121,22 +129,29 @@
                     <span class="text-muted small ms-auto">{{ reply.created_at | localizedDate:'dateTime' }}</span>
                   </div>
                   <div class="mb-1 text-secondary comment-content-text" style="font-size: 0.95rem;">
-                    @if (reply.reply_to_username) {
-                      <span class="text-primary fw-semibold">&#64;{{ reply.reply_to_username }}</span>
-                    }
                     @if (editingCommentId() === reply.id) {
-                      <textarea class="form-control mb-2 mt-1" rows="2" [(ngModel)]="editingCommentText"></textarea>
-                      <div class="d-flex gap-2 mb-2">
-                        <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(reply, comment)">{{ 'save' | t }}</button>
-                        <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">{{ 'cancel_action' | t }}</button>
+                      <div class="edit-container">
+                        <textarea class="form-control mb-2 mt-1" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000" [(ngModel)]="editingCommentText"></textarea>
+                        <div class="d-flex justify-content-end gap-2 mb-2">
+                          <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelEdit()">{{ 'cancel_action' | t }}</button>
+                          <button class="btn btn-sm btn-primary rounded-pill px-3" (click)="saveEdit(reply, comment)">{{ 'save' | t }}</button>
+                        </div>
                       </div>
                     } @else {
-                      @if (isTranslating(reply)) {
-                        <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> {{ 'translating' | t }}</span>
-                      } @else if (isShowingTranslation(reply) && getTranslation(reply)) {
-                        <span [innerHTML]="getTranslation(reply).content"></span>
-                      } @else {
-                        {{ reply.content }}
+                      <div [class.comment-clamped]="!isExpanded(reply.id) && reply.content.length > 300" style="word-break: break-word;">
+                        @if (reply.reply_to_username) {
+                          <span class="text-primary fw-semibold me-1">&#64;{{ reply.reply_to_username }}</span>
+                        }
+                        @if (isTranslating(reply)) {
+                          <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> {{ 'translating' | t }}</span>
+                        } @else if (isShowingTranslation(reply) && getTranslation(reply)) {
+                          <span style="white-space: pre-wrap;" [innerHTML]="getTranslation(reply).content"></span>
+                        } @else {
+                          <span style="white-space: pre-wrap;">{{ reply.content }}</span>
+                        }
+                      </div>
+                      @if (reply.content.length > 300) {
+                        <span class="text-primary mt-1 fw-medium d-block" style="font-size: 0.85rem; cursor: pointer;" (click)="toggleExpand(reply.id)">{{ isExpanded(reply.id) ? ('show_less' | t) : ('read_more' | t) }}</span>
                       }
                     }
                   </div>
@@ -145,30 +160,30 @@
                             [class.liked]="reply.liked" (click)="toggleLike(reply)">
                       <i class="bi" [class.bi-heart]="!reply.liked" [class.bi-heart-fill]="reply.liked"></i> <span class="like-count">{{ reply.likeCount | compactNumber }}</span>
                     </button>
-                    <button class="btn-reply" (click)="setReplyTarget(reply)">
-                      <i class="bi bi-chat"></i>
+                    <button class="btn-reply" (click)="setReplyTarget(reply, $event)">
+                      {{ 'reply' | t }}
                     </button>
                     
-                    @if (shouldShowTranslateButton(reply)) {
-                      <button class="btn-reply btn-translate-toggle" (click)="toggleTranslate(reply)" [title]="isShowingTranslation(reply) ? ('original' | t) : ('translate' | t)">
-                        <i class="bi" [class.bi-translate]="!isShowingTranslation(reply)" [class.bi-arrow-counterclockwise]="isShowingTranslation(reply)"></i>
-                      </button>
-                    }
-                    
                     @if (canEdit(reply)) {
-                      <button class="btn-reply text-secondary ms-2" (click)="startEdit(reply)">
-                        <i class="bi bi-pencil-square"></i>
+                      <button class="btn-reply ms-2" (click)="startEdit(reply, $event)">
+                        {{ 'edit' | t }}
                       </button>
                     }
                     @if (canDelete(reply)) {
-                      <button class="btn-reply text-danger ms-1" (click)="deleteComment(reply, comment)">
-                        <i class="bi bi-trash"></i>
+                      <button class="btn-reply ms-1" (click)="deleteComment(reply, comment)">
+                        {{ 'delete' | t }}
+                      </button>
+                    }
+                    
+                    @if (shouldShowTranslateButton(reply)) {
+                      <button class="btn-reply ms-2" (click)="toggleTranslate(reply)">
+                        {{ isShowingTranslation(reply) ? ('view_original' | t) : ('view_translation' | t) }}
                       </button>
                     }
                   </div>
                   @if (replyingToCommentId() === reply.id) {
-                    <div class="mt-2 pt-2 border-top">
-                      <textarea class="form-control form-control-sm mb-2" rows="2"
+                    <div class="mt-2 pt-2 border-top reply-container">
+                      <textarea class="form-control form-control-sm mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;" maxlength="5000"
                                 [(ngModel)]="replyingToText"></textarea>
                       <div class="d-flex justify-content-end gap-2">
                         <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply()">{{ 'cancel_action' | t }}</button>

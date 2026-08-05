@@ -143,10 +143,11 @@ export class AuthorPostsService {
 
     return this.sequelize.transaction(async (transaction) => {
       const now = new Date();
+      const categoryId = await this.resolveCategoryId(dto.categoryId, transaction);
       const post = await this.postModel.create(
         {
           author_id: authorId,
-          category_id: dto.categoryId ?? null,
+          category_id: categoryId,
           original_language_id: dto.originalLanguageId,
           view_count: 0,
           status: 'draft',
@@ -187,12 +188,15 @@ export class AuthorPostsService {
   ): Promise<AuthorPostResponse> {
     return this.sequelize.transaction(async transaction => {
       const now = new Date();
+      const selectedCategoryId = postId
+        ? undefined
+        : await this.resolveCategoryId(dto.categoryId, transaction);
       const post = postId
         ? await this.findAuthorPostOrThrow(authorId, postId, transaction)
         : await this.postModel.create(
             {
               author_id: authorId,
-              category_id: dto.categoryId ?? null,
+              category_id: selectedCategoryId,
               original_language_id: dto.originalLanguageId,
               view_count: 0,
               status: 'draft',
@@ -219,9 +223,13 @@ export class AuthorPostsService {
       const content = this.sanitizeContent(dto.content ?? currentSource?.content ?? '');
       this.assertAutosaveContentLimits(title, content);
 
+      const categoryId = dto.categoryId === undefined
+        ? post.category_id
+        : await this.resolveCategoryId(dto.categoryId, transaction);
+
       await post.update(
         {
-          category_id: dto.categoryId === undefined ? post.category_id : dto.categoryId,
+          category_id: categoryId,
           original_language_id: originalLanguageId,
           review_note: null,
           updated_at: now,
@@ -350,7 +358,7 @@ export class AuthorPostsService {
       })),
       categories: categories.map(category => {
         const translation = categoryTranslations.find(item => item.category_id === category.id);
-        return { id: category.id, label: translation?.name || category.slug };
+        return { id: category.id, label: translation?.name || category.slug, isActive: true };
       }),
     };
   }
@@ -360,16 +368,40 @@ export class AuthorPostsService {
       this.getPostOptions(),
       this.postModel.findAll({
         where: { author_id: authorId },
-        attributes: ['updated_at'],
+        attributes: ['category_id', 'updated_at'],
         order: [['updated_at', 'DESC']],
       }),
     ]);
+    const visibleCategoryIds = new Set(options.categories.map(category => category.id));
+    const hiddenCategoryIds = [...new Set(posts
+      .map(post => post.category_id)
+      .filter((id): id is number => typeof id === 'number' && !visibleCategoryIds.has(id)))];
+    const [hiddenCategories, hiddenTranslations] = hiddenCategoryIds.length
+      ? await Promise.all([
+          this.categoryModel.findAll({
+            where: { id: { [Op.in]: hiddenCategoryIds }, status: 'inactive' },
+            order: [['id', 'ASC']],
+          }),
+          this.categoryTranslationModel.findAll({
+            where: { category_id: { [Op.in]: hiddenCategoryIds } },
+            order: [['language_id', 'ASC']],
+          }),
+        ])
+      : [[], []];
+    const categories = [
+      ...options.categories,
+      ...hiddenCategories.map(category => ({
+        id: category.id,
+        label: hiddenTranslations.find(item => item.category_id === category.id)?.name || category.slug,
+        isActive: false,
+      })),
+    ];
     const updatedMonths = [...new Set(posts.map(post => {
       const date = new Date(post.updated_at);
       return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
     }))];
 
-    return { ...options, updatedMonths };
+    return { ...options, categories, updatedMonths };
   }
 
   async updateAuthorPost(
@@ -394,10 +426,13 @@ export class AuthorPostsService {
         title: nextSource.title,
         content: sanitizedNextContent,
       });
+      const categoryId = dto.categoryId === undefined
+        ? post.category_id
+        : await this.resolveCategoryId(dto.categoryId, transaction);
 
       await post.update(
         {
-          category_id: dto.categoryId === undefined ? post.category_id : dto.categoryId,
+          category_id: categoryId,
           original_language_id: originalLanguageId,
           review_note: null,
           updated_at: new Date(),
@@ -587,6 +622,29 @@ export class AuthorPostsService {
     }
 
     return post;
+  }
+
+  private async resolveCategoryId(
+    requestedCategoryId: number | null | undefined,
+    transaction: Transaction,
+  ): Promise<number> {
+    const category = requestedCategoryId
+      ? await this.categoryModel.findOne({
+          where: { id: requestedCategoryId, status: 'active' },
+          transaction,
+        })
+      : await this.categoryModel.findOne({
+          where: { is_system: true, status: 'active' },
+          transaction,
+        });
+    if (!category) {
+      throw new BadRequestException(
+        requestedCategoryId
+          ? 'The selected category is unavailable'
+          : 'The system uncategorized category is not configured',
+      );
+    }
+    return category.id;
   }
 
   private async findSourceTranslation(

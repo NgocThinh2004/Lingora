@@ -60,7 +60,7 @@
                 aria-label="More"
                 aria-haspopup="menu"
                 [attr.aria-expanded]="profileMoreOpen()"
-                (click)="toggleProfileMore($event)">...</button>
+                (click)="toggleProfileMore($event)"><i class="bi bi-three-dots" aria-hidden="true"></i></button>
               <div class="profile-more-menu" role="menu" [hidden]="!profileMoreOpen()">
                 <button
                   class="profile-more-item"
@@ -414,41 +414,58 @@
       </header>
 
       <form class="password-form" (ngSubmit)="submitPassword()">
-        <div class="password-field">
+        <div class="password-form-scroll">
+          <div class="password-field">
           <label for="profileCurrentPassword">{{ 'current_password' | t }}</label>
           <div class="password-input-wrap">
-            <input id="profileCurrentPassword" [type]="passwordFieldType" autocomplete="current-password" [(ngModel)]="passwordForm.current" name="currentPassword">
+            <input id="profileCurrentPassword" [type]="passwordFieldType" autocomplete="current-password" [(ngModel)]="passwordForm.current" (ngModelChange)="clearPasswordError('current')" name="currentPassword" [attr.aria-invalid]="!!passwordError('current')" aria-describedby="profileCurrentPasswordError">
             <button class="password-toggle" type="button" [attr.aria-label]="'show_password' | t" (click)="togglePasswordVisibility()">
               <i class="bi" [ngClass]="passwordFieldType === 'password' ? 'bi-eye' : 'bi-eye-slash'" aria-hidden="true"></i>
             </button>
           </div>
-        </div>
+          @if (passwordError('current'); as error) {
+            <span id="profileCurrentPasswordError" class="password-message is-error" aria-live="polite">{{ error }}</span>
+          }
+          </div>
 
-        <div class="password-field">
+          <div class="password-field">
           <label for="profileNewPassword">{{ 'new_password' | t }}</label>
           <div class="password-input-wrap">
-            <input id="profileNewPassword" [type]="passwordFieldType" autocomplete="new-password" [(ngModel)]="passwordForm.new" name="newPassword">
+            <input id="profileNewPassword" [type]="passwordFieldType" autocomplete="new-password" [(ngModel)]="passwordForm.new" (ngModelChange)="clearPasswordError('new')" name="newPassword" maxlength="72" [attr.aria-invalid]="!!passwordError('new')" aria-describedby="profileNewPasswordHint profileNewPasswordError">
             <button class="password-toggle" type="button" [attr.aria-label]="'show_password' | t" (click)="togglePasswordVisibility()">
               <i class="bi" [ngClass]="passwordFieldType === 'password' ? 'bi-eye' : 'bi-eye-slash'" aria-hidden="true"></i>
             </button>
           </div>
-          <span id="profileNewPasswordHint" class="password-hint">{{ 'password_min_8' | t }}</span>
-        </div>
+          @if (passwordError('new'); as error) {
+            <span id="profileNewPasswordError" class="password-message is-error" aria-live="polite">{{ error }}</span>
+          } @else {
+            <span id="profileNewPasswordHint" class="password-hint">{{ 'password_requirements' | t }}</span>
+          }
+          </div>
 
-        <div class="password-field">
+          <div class="password-field">
           <label for="profileConfirmPassword">{{ 'confirm_new_password' | t }}</label>
           <div class="password-input-wrap">
-            <input id="profileConfirmPassword" [type]="passwordFieldType" autocomplete="new-password" [(ngModel)]="passwordForm.confirm" name="confirmPassword">
+            <input id="profileConfirmPassword" [type]="passwordFieldType" autocomplete="new-password" [(ngModel)]="passwordForm.confirm" (ngModelChange)="clearPasswordError('confirm')" name="confirmPassword" [attr.aria-invalid]="!!passwordError('confirm')" aria-describedby="profileConfirmPasswordError">
             <button class="password-toggle" type="button" [attr.aria-label]="'show_password' | t" (click)="togglePasswordVisibility()">
               <i class="bi" [ngClass]="passwordFieldType === 'password' ? 'bi-eye' : 'bi-eye-slash'" aria-hidden="true"></i>
             </button>
           </div>
+          @if (passwordError('confirm'); as error) {
+            <span id="profileConfirmPasswordError" class="password-message is-error" aria-live="polite">{{ error }}</span>
+          }
+          </div>
         </div>
 
-        <div class="password-actions">
-          <button class="password-cancel" type="button" (click)="closePasswordModal()">{{ 'cancel_action' | t }}</button>
-          <button class="password-submit" type="submit" [disabled]="savingPassword() || !passwordForm.current || passwordForm.new.length < 8 || passwordForm.new !== passwordForm.confirm">{{ (savingPassword() ? 'updating_password' : 'update_password') | t }}</button>
-        </div>
+        <footer class="password-form-footer">
+          <div class="password-actions">
+            <button class="password-cancel" type="button" (click)="closePasswordModal()">{{ 'cancel_action' | t }}</button>
+            <button class="password-submit" type="submit" [disabled]="savingPassword()">{{ (savingPassword() ? 'updating_password' : 'update_password') | t }}</button>
+          </div>
+          @if (passwordErrors().form; as error) {
+            <span class="password-message is-error" role="alert">{{ error }}</span>
+          }
+        </footer>
       </form>
     </section>
   </div>

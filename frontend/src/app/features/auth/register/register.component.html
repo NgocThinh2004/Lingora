@@ -44,13 +44,13 @@
         <span class="input-group-text bg-transparent border-end-0 text-muted">
           <i class="bi bi-lock" aria-hidden="true"></i>
         </span>
-        <input id="regPassword" class="form-control border-start-0 border-end-0 py-2" [type]="showPassword ? 'text' : 'password'" formControlName="password" [class.is-invalid]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" [attr.aria-invalid]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" [placeholder]="'password_min_8' | t" autocomplete="new-password" required>
+        <input id="regPassword" class="form-control border-start-0 border-end-0 py-2" [type]="showPassword ? 'text' : 'password'" formControlName="password" [class.is-invalid]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" [attr.aria-invalid]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" [placeholder]="'password_requirements' | t" autocomplete="new-password" maxlength="72" required>
         <button type="button" class="btn border border-start-0 text-muted bg-transparent" [attr.aria-label]="(showPassword ? 'hide_password' : 'show_password') | t" (click)="togglePasswordVisibility('password')">
           <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
         </button>
       </div>
       @if (registerForm.get('password')?.touched && registerForm.get('password')?.invalid) {
-        <div class="text-danger small mt-1" aria-live="polite">{{ 'password_min_8' | t }}</div>
+        <div class="text-danger small mt-1" aria-live="polite">{{ 'password_requirements' | t }}</div>
       }
     </div>
 

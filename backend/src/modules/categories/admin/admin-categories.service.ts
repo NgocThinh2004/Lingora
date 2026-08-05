@@ -11,15 +11,16 @@ import { Language } from '../../languages/models/language.model';
 import { PostTranslation } from '../../posts/models/post-translation.model';
 import { Post } from '../../posts/models/post.model';
 import { User } from '../../users/models/user.model';
+import { CategoriesCacheService } from '../categories-cache.service';
 import {
   AdminCategoriesQueryDto,
-  CategoryTranslationInputDto,
   CreateAdminCategoryDto,
   UpdateAdminCategoryDto,
 } from './dto/admin-categories.dto';
 import { CategoryTranslation } from '../models/category-translation.model';
 import { Category } from '../models/category.model';
 import { removeAccents } from '../../../utils/string.util';
+import { CategoryAutoTranslationService, GeneratedCategoryTranslation } from '../category-auto-translation.service';
 
 interface CategoryView {
   id: number;
@@ -28,6 +29,7 @@ interface CategoryView {
   createdAt: Date;
   updatedAt: Date;
   postCount: number;
+  isSystem: boolean;
   translations: Array<{
     id: string;
     languageId: number;
@@ -51,6 +53,8 @@ export class AdminCategoriesService {
     @InjectModel(Post) private readonly postModel: typeof Post,
     @InjectModel(PostTranslation) private readonly postTranslationModel: typeof PostTranslation,
     @InjectModel(User) private readonly userModel: typeof User,
+    private readonly categoriesCache: CategoriesCacheService,
+    private readonly categoryAutoTranslation: CategoryAutoTranslationService,
   ) {}
 
   async findAll(query: AdminCategoriesQueryDto) {
@@ -170,39 +174,43 @@ export class AdminCategoriesService {
 
   async create(dto: CreateAdminCategoryDto) {
     try {
+      const activeLanguages = await this.languageModel.findAll({
+        where: { is_active: true },
+        order: [['is_default', 'DESC'], ['id', 'ASC']],
+      });
+      this.assertActiveLanguages(activeLanguages);
+      const generatedTranslations = await this.categoryAutoTranslation.translateFromSource(
+        dto.translations[0],
+        activeLanguages,
+      );
       const categoryId = await this.sequelize.transaction(async transaction => {
-        const activeLanguages = await this.languageModel.findAll({
-          where: { is_active: true },
-          order: [['is_default', 'DESC'], ['id', 'ASC']],
-          transaction,
-          lock: transaction.LOCK.UPDATE,
-        });
-        this.assertCreateLanguages(dto.translations, activeLanguages);
-
-        const defaultLanguage = activeLanguages.find(language => language.is_default) ?? activeLanguages[0];
-        const defaultTranslation = dto.translations.find(item => item.languageId === defaultLanguage.id)!;
-        const categorySlug = this.slugify(dto.slug || defaultTranslation.slug || defaultTranslation.name);
+        const sourceTranslation = generatedTranslations.find(
+          item => item.languageId === dto.translations[0].languageId,
+        )!;
+        const categorySlug = this.slugify(dto.slug || sourceTranslation.slug || sourceTranslation.name);
         await this.assertCategorySlugAvailable(categorySlug, undefined, transaction);
 
         const now = new Date();
         const category = await this.categoryModel.create({
           slug: categorySlug,
           status: dto.isActive === false ? 'inactive' : 'active',
+          is_system: false,
           created_at: now,
           updated_at: now,
         }, { transaction });
 
         await this.translationModel.bulkCreate(
-          dto.translations.map(item => ({
+          generatedTranslations.map(item => ({
             category_id: category.id,
             language_id: item.languageId,
-            name: item.name.trim(),
-            slug: this.slugify(item.slug || item.name),
+            name: item.name,
+            slug: item.slug,
           })),
           { transaction, individualHooks: true },
         );
         return category.id;
       });
+      await this.categoriesCache.invalidate();
       return this.findOne(categoryId);
     } catch (error) {
       this.rethrowConstraint(error);
@@ -215,6 +223,46 @@ export class AdminCategoriesService {
     }
 
     try {
+      let generatedTranslations: GeneratedCategoryTranslation[] = [];
+      let sourceIsDefault = false;
+      if (dto.translations?.length) {
+        const source = dto.translations[0];
+        const existingSource = await this.translationModel.findOne({
+          where: { category_id: categoryId, language_id: source.languageId },
+        });
+        const sourceName = source.name.trim();
+        const sourceSlug = this.slugify(source.slug || source.name);
+        const nameChanged = !existingSource || existingSource.name.trim() !== sourceName;
+        const slugChanged = !existingSource || existingSource.slug.trim() !== sourceSlug;
+
+        if (nameChanged) {
+          const activeLanguages = await this.languageModel.findAll({
+            where: { is_active: true },
+            order: [['is_default', 'DESC'], ['id', 'ASC']],
+          });
+          this.assertActiveLanguages(activeLanguages);
+          sourceIsDefault = activeLanguages.some(
+            language => language.id === source.languageId && language.is_default,
+          );
+          generatedTranslations = await this.categoryAutoTranslation.translateFromSource(
+            source,
+            activeLanguages,
+          );
+        } else if (slugChanged) {
+          const sourceLanguage = await this.languageModel.findOne({
+            where: { id: source.languageId, is_active: true },
+          });
+          if (!sourceLanguage) {
+            throw new BadRequestException('The selected source language is not active');
+          }
+          sourceIsDefault = sourceLanguage.is_default;
+          generatedTranslations = [{
+            languageId: source.languageId,
+            name: existingSource.name.trim(),
+            slug: sourceSlug,
+          }];
+        }
+      }
       await this.sequelize.transaction(async transaction => {
         const category = await this.categoryModel.findByPk(categoryId, {
           transaction,
@@ -223,28 +271,21 @@ export class AdminCategoriesService {
         if (!category) {
           throw new NotFoundException('Category not found');
         }
+        if (category.is_system && dto.isActive === false) {
+          throw new BadRequestException('The system uncategorized category cannot be hidden');
+        }
 
-        const translations = dto.translations ?? [];
-        if (translations.length) {
-          const languageIds = translations.map(item => item.languageId);
-          const configuredLanguages = await this.languageModel.findAll({
-            where: { id: { [Op.in]: languageIds } },
-            transaction,
-          });
-          if (configuredLanguages.length !== new Set(languageIds).size) {
-            throw new BadRequestException('One or more category languages do not exist');
-          }
-
+        if (generatedTranslations.length) {
           const existingTranslations = await this.translationModel.findAll({
             where: { category_id: categoryId },
             transaction,
             lock: transaction.LOCK.UPDATE,
           });
-          for (const item of translations) {
+          for (const item of generatedTranslations) {
             const existing = existingTranslations.find(row => row.language_id === item.languageId);
             const values = {
-              name: item.name.trim(),
-              slug: this.slugify(item.slug || item.name),
+              name: item.name,
+              slug: item.slug,
             };
             if (existing) {
               await existing.update(values, { transaction });
@@ -259,14 +300,10 @@ export class AdminCategoriesService {
         }
 
         let categorySlug = dto.slug ? this.slugify(dto.slug) : category.slug;
-        if (!dto.slug && translations.length) {
-          const defaultLanguage = await this.languageModel.findOne({
-            where: { is_default: true },
-            transaction,
-          });
-          const defaultTranslation = defaultLanguage
-            ? translations.find(item => item.languageId === defaultLanguage.id)
-            : undefined;
+        if (!dto.slug && sourceIsDefault && generatedTranslations.length) {
+          const defaultTranslation = generatedTranslations.find(
+            item => item.languageId === dto.translations![0].languageId,
+          );
           if (defaultTranslation) {
             categorySlug = this.slugify(defaultTranslation.slug || defaultTranslation.name);
           }
@@ -280,6 +317,7 @@ export class AdminCategoriesService {
           updated_at: new Date(),
         }, { transaction });
       });
+      await this.categoriesCache.invalidate();
       return this.findOne(categoryId);
     } catch (error) {
       this.rethrowConstraint(error);
@@ -295,8 +333,24 @@ export class AdminCategoriesService {
       if (!category) {
         throw new NotFoundException('Category not found');
       }
+      if (category.is_system) {
+        throw new BadRequestException('The system uncategorized category cannot be deleted');
+      }
+      const systemCategory = await this.categoryModel.findOne({
+        where: { is_system: true },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!systemCategory) {
+        throw new BadRequestException('The system uncategorized category is not configured');
+      }
+      await this.postModel.update(
+        { category_id: systemCategory.id },
+        { where: { category_id: categoryId }, transaction },
+      );
       await category.destroy({ transaction });
     });
+    await this.categoriesCache.invalidate();
   }
 
   private async buildCategoryViews(categoryIds?: number[]): Promise<CategoryView[]> {
@@ -327,6 +381,7 @@ export class AdminCategoriesService {
       createdAt: category.created_at,
       updatedAt: category.updated_at,
       postCount: countMap.get(category.id) ?? 0,
+      isSystem: Boolean(category.is_system),
       translations: translations
         .filter(item => item.category_id === category.id)
         .map(item => {
@@ -346,16 +401,9 @@ export class AdminCategoriesService {
     }));
   }
 
-  private assertCreateLanguages(
-    translations: CategoryTranslationInputDto[],
-    activeLanguages: Language[],
-  ): void {
+  private assertActiveLanguages(activeLanguages: Language[]): void {
     if (!activeLanguages.length) {
       throw new BadRequestException('Configure at least one active language first');
-    }
-    const submitted = new Set(translations.map(item => item.languageId));
-    if (activeLanguages.some(language => !submitted.has(language.id)) || submitted.size !== activeLanguages.length) {
-      throw new BadRequestException('Provide one translation for every active language');
     }
   }
 

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { PaginationMeta } from '../../../core/http/api-response.model';
 import { LocaleService } from '../../../core/locale/locale.service';
@@ -30,6 +31,8 @@ export class AdminPostsComponent implements OnInit, OnDestroy {
   private readonly toastService = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
   private detailRequestVersion = 0;
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly posts = signal<AdminPost[]>([]);
   readonly categories = signal<AdminCategory[]>([]);
@@ -51,8 +54,17 @@ export class AdminPostsComponent implements OnInit, OnDestroy {
   readonly reviewForm = this.fb.nonNullable.group({ note: [''] });
 
   ngOnInit(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const status = params.get('status');
+    const categoryId = params.get('categoryId');
+    this.filters.setValue({
+      search: params.get('search') ?? '',
+      status: status === 'pending' || status === 'approved' || status === 'rejected' ? status : 'all',
+      categoryId: categoryId && /^\d+$/.test(categoryId) && Number(categoryId) > 0 ? categoryId : '',
+    }, { emitEvent: false });
+
     this.loadCategories();
-    this.loadPosts();
+    this.loadPosts(this.readPage(params.get('page')));
     this.filters.valueChanges.pipe(debounceTime(250), takeUntil(this.destroy$))
       .subscribe(() => this.loadPosts(1));
   }
@@ -66,6 +78,7 @@ export class AdminPostsComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.errorMessage.set('');
     const filters = this.filters.getRawValue();
+    this.syncQueryParams(page, filters);
     this.postsService.getPosts({
       search: filters.search.trim(),
       status: filters.status,
@@ -89,6 +102,24 @@ export class AdminPostsComponent implements OnInit, OnDestroy {
   loadCategories(): void {
     this.categoriesService.getCategories({ search: '', status: 'all', postFilter: 'all', sort: 'name', page: 1, limit: 100 })
       .pipe(takeUntil(this.destroy$)).subscribe({ next: response => this.categories.set(response.data) });
+  }
+
+  private syncQueryParams(page: number, filters = this.filters.getRawValue()): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      replaceUrl: true,
+      queryParams: {
+        search: filters.search.trim() || null,
+        status: filters.status !== 'all' ? filters.status : null,
+        categoryId: filters.categoryId || null,
+        page: page > 1 ? page : null,
+      },
+    });
+  }
+
+  private readPage(value: string | null): number {
+    const page = Number(value);
+    return Number.isInteger(page) && page > 0 ? page : 1;
   }
 
   openReview(post: AdminPost): void {
