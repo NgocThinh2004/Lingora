@@ -104,9 +104,9 @@
                         [ngModel]="replyingStates()[comment.id]" (ngModelChange)="updateReplyingText(comment.id, $event)"></textarea>
               <div class="d-flex justify-content-end gap-2">
                 <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply(comment.id)">{{ 'cancel_action' | t }}</button>
-                <button class="btn btn-sm btn-primary rounded-pill px-3 fw-medium"
-                        [disabled]="!replyingStates()[comment.id]?.trim() || isSubmitting()"
-                        (click)="submitReply(comment)">{{ 'reply' | t }}</button>
+                  <button class="btn btn-sm btn-primary rounded-pill px-3 fw-medium"
+                          [disabled]="!(replyingStates()[comment.id] || '').trim() || isSubmitting()"
+                          (click)="submitReply(comment)">{{ 'reply' | t }}</button>
               </div>
             </div>
           }
@@ -192,9 +192,9 @@
                                 [ngModel]="replyingStates()[reply.id]" (ngModelChange)="updateReplyingText(reply.id, $event)"></textarea>
                       <div class="d-flex justify-content-end gap-2">
                         <button class="btn btn-sm btn-light rounded-pill px-3" (click)="cancelReply(reply.id)">{{ 'cancel_action' | t }}</button>
-                        <button class="btn btn-sm btn-primary rounded-pill px-3 fw-medium"
-                                [disabled]="!replyingStates()[reply.id]?.trim() || isSubmitting()"
-                                (click)="submitReply(reply)">{{ 'reply' | t }}</button>
+                          <button class="btn btn-sm btn-primary rounded-pill px-3 fw-medium"
+                                  [disabled]="!(replyingStates()[reply.id] || '').trim() || isSubmitting()"
+                                  (click)="submitReply(reply)">{{ 'reply' | t }}</button>
                       </div>
                     </div>
                   }
