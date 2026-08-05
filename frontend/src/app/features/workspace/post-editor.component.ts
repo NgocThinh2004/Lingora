@@ -986,9 +986,12 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         const parentAlign = media.closest('[align]')?.getAttribute('align') || 'center';
         const align: 'left' | 'center' | 'right' = parentAlign === 'left' ? 'left' : parentAlign === 'right' ? 'right' : 'center';
 
+        const captionText = media.closest('figure')?.querySelector('figcaption')?.textContent?.trim() ||
+          media.parentElement?.querySelector('figcaption')?.textContent?.trim() || '';
+
         if (src) {
           const wrapper = document.createElement('div');
-          wrapper.innerHTML = this.buildMediaHtml(type, src, alt, align);
+          wrapper.innerHTML = this.buildMediaHtml(type, src, alt, align, captionText);
           media.replaceWith(wrapper.firstElementChild || wrapper);
         }
       }

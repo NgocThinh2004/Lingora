@@ -39,6 +39,16 @@ export function preparePostDetailHtml(html: string): string {
     )
     .forEach((element) => element.remove());
 
+  // Chuẩn hóa chú thích media (figcaption)
+  container.querySelectorAll<HTMLElement>('.editor-media-caption, figcaption').forEach((caption) => {
+    caption.removeAttribute('contenteditable');
+    caption.removeAttribute('data-placeholder');
+    const text = caption.textContent?.trim();
+    if (!text) {
+      caption.remove();
+    }
+  });
+
   // Xử lý từng khối mã (code block)
   container.querySelectorAll<HTMLElement>('.editor-code-body').forEach((codeBody) => {
     removeLegacyCodeControls(codeBody);
