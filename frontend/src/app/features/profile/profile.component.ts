@@ -16,6 +16,7 @@ import { SubscriptionsService } from '../subscriptions/services/subscriptions.se
 import { User } from '../users/models/user.model';
 import { UsersService } from '../users/services/users.service';
 import { EditorUploadsService } from '../workspace/services/editor-uploads.service';
+import { validateUploadFile } from '../workspace/utils/upload-validator';
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 import { SubscribeButtonComponent } from '../subscriptions/components/subscribe-button/subscribe-button.component';
 import { PostCardComponent } from '../posts/components/post-card/post-card.component';
@@ -230,8 +231,14 @@ export class ProfileComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!file.type.startsWith('image/')) {
-      this.toast.showError(this.localeService.translate('select_image_file'));
+    const validation = validateUploadFile(file, 'image');
+    if (!validation.valid) {
+      this.toast.showError(
+        this.localeService.translate(
+          validation.errorKey ?? 'request_failed',
+          validation.params,
+        ),
+      );
       return;
     }
 
