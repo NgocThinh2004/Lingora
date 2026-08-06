@@ -8,6 +8,8 @@
 import { Controller, Post, Get, Put, Delete, Body, Param, Query, UseGuards, Req, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { UpdateCommentDto } from './dto/update-comment.dto';
+import { TranslateCommentDto } from './dto/translate-comment.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 
@@ -71,20 +73,21 @@ export class CommentsController {
    * - Endpoint: PUT /posts/:postId/comments/:commentId
    * - Yêu cầu xác thực: Bắt buộc đăng nhập (JwtAuthGuard).
    * - Ủy quyền (Authorization): Logic kiểm tra (chỉ tác giả được phép sửa) sẽ được thực hiện trong service.
+   * - Body: Dữ liệu được đóng gói trong `UpdateCommentDto` (có class-validator kiểm tra @IsNotEmpty, @MaxLength).
    * 
    * @param commentId ID bình luận cần sửa
    * @param req Request object
-   * @param content Nội dung mới của bình luận
+   * @param dto Dữ liệu cập nhật bình luận (chứa trường content)
    */
   @UseGuards(JwtAuthGuard)
   @Put(':commentId')
   update(
     @Param('commentId') commentId: string,
     @Req() req: any,
-    @Body('content') content: string,
+    @Body() dto: UpdateCommentDto,
   ) {
     const userId = req.user.id;
-    return this.commentsService.update(commentId, userId, content);
+    return this.commentsService.update(commentId, userId, dto.content);
   }
 
   /**
@@ -113,16 +116,17 @@ export class CommentsController {
    * 
    * - Endpoint: POST /posts/:postId/comments/:commentId/translate
    * - Bất kì ai cũng có thể gọi (không yêu cầu Auth).
+   * - Body: Dữ liệu được đóng gói trong `TranslateCommentDto` (có class-validator kiểm tra format locale).
    * - Service sẽ kiểm tra trong DB có chưa, nếu chưa có sẽ dùng API ngoài để dịch.
    * 
    * @param commentId ID bình luận cần dịch
-   * @param languageCode Mã ngôn ngữ đích muốn chuyển sang (ví dụ: 'vi', 'en')
+   * @param dto Dữ liệu dịch bình luận (chứa trường languageCode)
    */
   @Post(':commentId/translate')
   translate(
     @Param('commentId') commentId: string,
-    @Body('languageCode') languageCode: string,
+    @Body() dto: TranslateCommentDto,
   ) {
-    return this.commentsService.translate(commentId, languageCode);
+    return this.commentsService.translate(commentId, dto.languageCode);
   }
 }

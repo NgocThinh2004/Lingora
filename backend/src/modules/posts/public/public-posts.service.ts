@@ -81,9 +81,21 @@ export class PublicPostsService {
     const offset = (page - 1) * limit;
 
     // Step 2: Tải danh sách ngôn ngữ
-    // Query lấy tất cả ngôn ngữ đang active. Tạo Map để tra cứu mã ngôn ngữ bằng ID nhanh chóng (O(1)) ở bước format kết quả.
-    // SQL: SELECT id, code FROM languages WHERE is_active = true
-    const languages = await this.languageModel.findAll({ where: { is_active: true } });
+    // Cần giữ mã của cả ngôn ngữ đã tắt để không gán nhầm bản dịch cũ sang "en".
+    // Chỉ các language ID đang active mới được phép xuất hiện trong feed công khai.
+    const languages = await this.languageModel.findAll();
+    const activeLanguageIds = languages
+      .filter(language => language.is_active)
+      .map(language => Number(language.id));
+    const requestedLanguageCode = query.lang?.trim().toLowerCase();
+    const requestedLanguage = requestedLanguageCode
+      ? languages.find(language => language.is_active && language.code.toLowerCase() === requestedLanguageCode)
+      : undefined;
+    const fallbackLanguage = requestedLanguageCode
+      ? languages.find(language => language.is_active && language.is_default)
+        ?? languages.find(language => language.is_active)
+      : undefined;
+    const publicLanguage = requestedLanguage ?? fallbackLanguage;
     const languageMap = new Map<any, string>();
     languages.forEach((l) => {
       languageMap.set(l.id, l.code);
