@@ -15,6 +15,7 @@ import {
   PostStatus,
 } from '../posts.constants';
 import { removeAccents } from '../../../utils/string.util';
+import { UploadsService } from '../../uploads/uploads.service';
 
 type TranslationMatrixItem = {
   languageId: number;
@@ -69,6 +70,7 @@ export class AuthorPostsService {
     @InjectModel(Language) private readonly languageModel: typeof Language,
     @InjectModel(Category) private readonly categoryModel: typeof Category,
     @InjectModel(CategoryTranslation) private readonly categoryTranslationModel: typeof CategoryTranslation,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   getAllowedTransitions(status: PostStatus): readonly PostStatus[] {
@@ -177,6 +179,13 @@ export class AuthorPostsService {
         transaction,
       );
 
+      await this.uploadsService.syncPostMedia(
+        post.id,
+        authorId,
+        [sourceTranslation.content],
+        transaction,
+      );
+
       return this.getAuthorPost(authorId, post.id, transaction);
     });
   }
@@ -261,6 +270,13 @@ export class AuthorPostsService {
       if (sourceChanged) {
         await this.markTargetTranslationsOutdated(post.id, originalLanguageId, transaction);
       }
+
+      await this.uploadsService.syncPostMedia(
+        post.id,
+        authorId,
+        [sourceTranslation.content],
+        transaction,
+      );
 
       return this.getAuthorPost(authorId, post.id, transaction);
     });
@@ -483,6 +499,13 @@ export class AuthorPostsService {
       if (sourceChanged) {
         await this.markTargetTranslationsOutdated(post.id, originalLanguageId, transaction);
       }
+
+      await this.uploadsService.syncPostMedia(
+        post.id,
+        authorId,
+        [sourceTranslation.content],
+        transaction,
+      );
 
       return this.getAuthorPost(authorId, post.id, transaction);
     });
@@ -888,7 +911,7 @@ export class AuthorPostsService {
         video: ['src', 'controls', 'playsinline', 'preload', 'poster', 'title', 'width', 'height'],
         source: ['src', 'type'],
         track: ['default', 'kind', 'label', 'src', 'srclang'],
-        div: ['class', 'data-align'],
+        div: ['class', 'data-align', 'data-media-asset-id', 'data-media-object-key'],
         figcaption: ['class'],
         span: ['class'],
         code: ['class'],

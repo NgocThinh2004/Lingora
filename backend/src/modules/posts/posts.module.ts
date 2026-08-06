@@ -18,10 +18,12 @@ import { AuthorPostsController } from './author/author-posts.controller';
 import { AuthorPostsService } from './author/author-posts.service';
 import { PublicPostsController } from './public/public-posts.controller';
 import { PublicPostsService } from './public/public-posts.service';
+import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
   imports: [
     UsersModule,
+    UploadsModule,
     SequelizeModule.forFeature([
       Post,
       PostTranslation,

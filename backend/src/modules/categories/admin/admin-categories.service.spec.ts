@@ -11,7 +11,6 @@ describe('AdminCategoriesService', () => {
   let postModel: any;
   let postTranslationModel: any;
   let userModel: any;
-  let categoriesCache: any;
   let categoryAutoTranslation: any;
   let service: AdminCategoriesService;
 
@@ -39,7 +38,6 @@ describe('AdminCategoriesService', () => {
     postModel = { findAll: jest.fn(), count: jest.fn(), update: jest.fn() };
     postTranslationModel = { findAll: jest.fn() };
     userModel = { findAll: jest.fn() };
-    categoriesCache = { invalidate: jest.fn().mockResolvedValue(undefined) };
     categoryAutoTranslation = { translateFromSource: jest.fn() };
     service = new AdminCategoriesService(
       sequelize,
@@ -49,7 +47,6 @@ describe('AdminCategoriesService', () => {
       postModel,
       postTranslationModel,
       userModel,
-      categoriesCache,
       categoryAutoTranslation,
     );
   });
@@ -109,7 +106,6 @@ describe('AdminCategoriesService', () => {
       { category_id: 7, language_id: 2, name: 'Công nghệ', slug: 'cong-nghe' },
     ], { transaction, individualHooks: true });
     expect(result.id).toBe(7);
-    expect(categoriesCache.invalidate).toHaveBeenCalledTimes(1);
   });
 
   it('requires at least one active system language on create', async () => {
@@ -134,7 +130,6 @@ describe('AdminCategoriesService', () => {
       { category_id: 1 },
       { where: { category_id: 4 }, transaction },
     );
-    expect(categoriesCache.invalidate).toHaveBeenCalledTimes(1);
   });
 
   it('returns the latest posts in a category using the requested language', async () => {
@@ -194,7 +189,6 @@ describe('AdminCategoriesService', () => {
     categoryModel.findByPk.mockResolvedValue({ id: 1, is_system: true });
 
     await expect(service.update(1, { isActive: false })).rejects.toBeInstanceOf(BadRequestException);
-    expect(categoriesCache.invalidate).not.toHaveBeenCalled();
   });
 
   it('does not call automatic translation when the submitted source is unchanged', async () => {
@@ -231,7 +225,6 @@ describe('AdminCategoriesService', () => {
 
     expect(categoryAutoTranslation.translateFromSource).not.toHaveBeenCalled();
     expect(update).toHaveBeenCalled();
-    expect(categoriesCache.invalidate).toHaveBeenCalledTimes(1);
   });
 
   it('updates only the source slug without translating category names again', async () => {

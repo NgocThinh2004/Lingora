@@ -42,7 +42,7 @@
           @for (post of posts(); track post.id) {
             <tr class="post-row" tabindex="0" (click)="openReview(post)" (keydown)="openFromKeyboard($event, post)">
               <td data-label="Post">
-                <div class="post-title">{{ post.title }}</div>
+                <div class="post-title" [title]="post.title">{{ post.title }}</div>
                 <div class="post-id">#{{ postCode(post.id) }} · {{ post.originalLanguage?.code?.toUpperCase() || '--' }}</div>
               </td>
               <td data-label="Author">

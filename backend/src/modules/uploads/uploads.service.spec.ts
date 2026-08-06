@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { S3Client } from '@aws-sdk/client-s3';
 import { UploadsService } from './uploads.service';
 import {
   MAX_EDITOR_AUDIO_BYTES,
@@ -20,10 +21,35 @@ const buildFile = (
 
 describe('UploadsService', () => {
   let service: UploadsService;
+  let sendSpy: jest.SpyInstance;
+  let mediaAssetModel: {
+    create: jest.Mock;
+    findAll: jest.Mock;
+    findOne: jest.Mock;
+    update: jest.Mock;
+  };
 
   beforeEach(() => {
-    service = new UploadsService();
+    const config = {
+      get: jest.fn((key: string) => ({
+        R2_ENDPOINT: 'https://account.r2.cloudflarestorage.com',
+        R2_ACCESS_KEY_ID: 'access-key',
+        R2_SECRET_ACCESS_KEY: 'secret-key',
+        R2_BUCKET: 'lingora-media',
+        R2_PUBLIC_BASE_URL: 'https://media.example.com',
+      })[key]),
+    };
+    mediaAssetModel = {
+      create: jest.fn().mockResolvedValue({ id: 15 }),
+      findAll: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn(),
+      update: jest.fn(),
+    };
+    sendSpy = jest.spyOn(S3Client.prototype, 'send').mockResolvedValue({} as never);
+    service = new UploadsService(config as never, mediaAssetModel as never);
   });
+
+  afterEach(() => sendSpy.mockRestore());
 
   it('rejects undefined file', () => {
     expect(() => service.assertEditorImage(undefined)).toThrow(
@@ -131,11 +157,49 @@ describe('UploadsService', () => {
     ]);
     const file = buildFile('image/png', pngSignature);
 
-    const result = await service.saveEditorImage(file);
+    const result = await service.saveEditorImage('7', file);
 
-    expect(result.url).toMatch(/^\/uploads\/.+\.png$/);
+    expect(result.url).toMatch(/^https:\/\/media\.example\.com\/media\/7\/.+\.png$/);
+    expect(result.assetId).toBe('15');
+    expect(result.objectKey).toMatch(/^media\/7\/.+\.png$/);
     expect(result.mimeType).toBe('image/png');
     expect(result.mediaType).toBe('image');
     expect(result.size).toBe(pngSignature.length);
+    expect(mediaAssetModel.create).toHaveBeenCalledWith(expect.objectContaining({
+      purpose: 'post',
+      post_id: null,
+      status: 'temporary',
+    }));
+  });
+
+  it('marks files from the dedicated avatar upload as avatar media', async () => {
+    const pngSignature = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00,
+    ]);
+
+    await service.saveAvatarImage('7', buildFile('image/png', pngSignature));
+
+    expect(mediaAssetModel.create).toHaveBeenCalledWith(expect.objectContaining({
+      owner_id: '7',
+      purpose: 'avatar',
+      post_id: null,
+    }));
+  });
+
+  it('deletes expired temporary media from R2 and marks it deleted', async () => {
+    const asset = {
+      id: '21',
+      object_key: 'media/7/unused.png',
+      update: jest.fn().mockResolvedValue(undefined),
+    };
+    mediaAssetModel.findAll.mockResolvedValue([asset]);
+
+    await expect(service.cleanupExpiredTemporaryMedia()).resolves.toBe(1);
+
+    expect(asset.update).toHaveBeenCalledWith(expect.objectContaining({
+      post_id: null,
+      status: 'deleted',
+      deleted_at: expect.any(Date),
+    }));
   });
 });
