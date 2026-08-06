@@ -46,6 +46,47 @@ export function preparePostDetailHtml(html: string): string {
     const text = caption.textContent?.trim();
     if (!text) {
       caption.remove();
+    } else {
+      const wrapper = caption.closest('.editor-media-wrapper') || caption;
+      const blockTags = new Set(['P', 'DIV', 'BLOCKQUOTE', 'PRE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL']);
+      let curr = caption.firstChild;
+      let foundBlock = false;
+      const nodesToExtract: Node[] = [];
+
+      while (curr) {
+        if (curr.nodeType === Node.ELEMENT_NODE && blockTags.has((curr as HTMLElement).tagName.toUpperCase())) {
+          foundBlock = true;
+        }
+        if (foundBlock) {
+          nodesToExtract.push(curr);
+        }
+        curr = curr.nextSibling;
+      }
+
+      if (nodesToExtract.length > 0) {
+        const hasTextBefore = Array.from(caption.childNodes).some(n => {
+          if (nodesToExtract.includes(n)) return false;
+          return n.textContent?.trim() !== '';
+        });
+
+        const toInsertAfterWrapper: Node[] = [];
+        nodesToExtract.forEach((node, index) => {
+          if (index === 0 && !hasTextBefore && node.nodeType === Node.ELEMENT_NODE && blockTags.has((node as HTMLElement).tagName.toUpperCase())) {
+            while (node.firstChild) {
+              caption.insertBefore(node.firstChild, node);
+            }
+            if (node.parentNode === caption) {
+              caption.removeChild(node);
+            }
+          } else {
+            toInsertAfterWrapper.push(node);
+          }
+        });
+
+        for (let i = toInsertAfterWrapper.length - 1; i >= 0; i--) {
+          wrapper.after(toInsertAfterWrapper[i]);
+        }
+      }
     }
   });
 
@@ -74,11 +115,11 @@ export function preparePostDetailHtml(html: string): string {
       const lineContent = document.createElement('span');
 
       lineElement.className = 'code-line';
-      
+
       lineNumber.className = 'line-number';
       lineNumber.setAttribute('aria-hidden', 'true'); // Ẩn khỏi các công cụ đọc màn hình (screen readers)
       lineNumber.textContent = String(index + 1);
-      
+
       lineContent.className = 'line-content';
       lineContent.textContent = line;
 
