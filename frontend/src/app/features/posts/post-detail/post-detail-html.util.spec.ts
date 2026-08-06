@@ -84,4 +84,25 @@ describe('preparePostDetailHtml', () => {
     expect(lineNumbers).toEqual(['1', '2', '3', '4']);
     expect(lineContents).toEqual(['1', '1', '2', '3']);
   });
+
+  it('converts a standalone figcaption into normal article content', () => {
+    const result = preparePostDetailHtml(
+      '<figcaption><p><span>Paragraph after the image</span></p></figcaption>',
+    );
+    const container = document.createElement('div');
+    container.innerHTML = result;
+
+    expect(container.querySelector('figcaption')).toBeNull();
+    expect(container.querySelector('p')?.textContent).toBe('Paragraph after the image');
+  });
+
+  it('keeps a real caption inside an editor media wrapper', () => {
+    const result = preparePostDetailHtml(
+      '<div class="editor-media-wrapper"><div class="editor-media-container"><img src="https://media.example.com/image.jpg"></div><figcaption class="editor-media-caption">Image caption</figcaption></div>',
+    );
+    const container = document.createElement('div');
+    container.innerHTML = result;
+
+    expect(container.querySelector('.editor-media-wrapper figcaption')?.textContent).toBe('Image caption');
+  });
 });

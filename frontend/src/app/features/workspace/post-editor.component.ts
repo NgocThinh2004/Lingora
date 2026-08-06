@@ -983,13 +983,16 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         const parentAlign = media.closest('[align]')?.getAttribute('align') || 'center';
         const align: 'left' | 'center' | 'right' = parentAlign === 'left' ? 'left' : parentAlign === 'right' ? 'right' : 'center';
 
-        const captionText = media.closest('figure')?.querySelector('figcaption')?.textContent?.trim() ||
-          media.parentElement?.querySelector('figcaption')?.textContent?.trim() || '';
+        const nextElement = media.nextElementSibling as HTMLElement | null;
+        const sourceCaption = media.closest('figure')?.querySelector('figcaption') ||
+          (nextElement?.tagName.toLowerCase() === 'figcaption' ? nextElement : null);
+        const captionText = sourceCaption?.textContent?.trim() || '';
 
         if (src) {
           const wrapper = document.createElement('div');
           wrapper.innerHTML = this.buildMediaHtml(type, src, alt, undefined, undefined, align, captionText);
           media.replaceWith(wrapper.firstElementChild || wrapper);
+          sourceCaption?.remove();
         }
       }
     });
@@ -2056,7 +2059,10 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
     editor.querySelectorAll<HTMLElement>('figcaption, .editor-media-caption').forEach((caption) => {
       const wrapper = caption.closest('.editor-media-wrapper');
-      if (!wrapper) return;
+      if (!wrapper) {
+        this.replaceStandaloneCaptionWithContent(caption);
+        return;
+      }
 
       const blockTags = new Set(['P', 'DIV', 'BLOCKQUOTE', 'PRE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL']);
       let curr = caption.firstChild;
@@ -2136,6 +2142,33 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     });
+  }
+
+  private replaceStandaloneCaptionWithContent(caption: HTMLElement): void {
+    const blockTags = new Set(['P', 'DIV', 'BLOCKQUOTE', 'PRE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL']);
+    const fragment = document.createDocumentFragment();
+    let inlineParagraph: HTMLParagraphElement | null = null;
+
+    Array.from(caption.childNodes).forEach((node) => {
+      if (node instanceof HTMLElement && blockTags.has(node.tagName.toUpperCase())) {
+        inlineParagraph = null;
+        fragment.appendChild(node);
+        return;
+      }
+
+      if (node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()) return;
+      if (!inlineParagraph) {
+        inlineParagraph = document.createElement('p');
+        fragment.appendChild(inlineParagraph);
+      }
+      inlineParagraph.appendChild(node);
+    });
+
+    if (fragment.childNodes.length) {
+      caption.replaceWith(fragment);
+    } else {
+      caption.remove();
+    }
   }
 
   private ensureEditorMediaDeleteButtons(editor: HTMLElement): void {
