@@ -10,6 +10,7 @@ import { AssetImageDirective } from '../../shared/directives/asset-image.directi
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { LocaleService } from '../../core/locale/locale.service';
 import { BehaviorSubject, Subscription, debounceTime, distinctUntilChanged, switchMap, map, catchError, tap, of } from 'rxjs';
+import { RouterLink } from '@angular/router';
 
 /**
  * SubscriptionsComponent - Quản lý trang theo dõi (Subscriptions)
@@ -24,7 +25,7 @@ import { BehaviorSubject, Subscription, debounceTime, distinctUntilChanged, swit
 @Component({
   selector: 'app-subscriptions',
   standalone: true,
-  imports: [AuthorTooltipComponent, PostCardComponent, FormsModule, SubscribeButtonComponent, AssetImageDirective, TranslatePipe],
+  imports: [AuthorTooltipComponent, PostCardComponent, FormsModule, SubscribeButtonComponent, AssetImageDirective, TranslatePipe, RouterLink],
   templateUrl: './subscriptions.component.html',
   styleUrl: './subscriptions.component.scss'
 })
@@ -37,6 +38,7 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
   authorFilter = '';
   manageSearchQuery = '';
   
+  carouselAuthors: SubscriptionAuthorView[] = [];
   authors: SubscriptionAuthorView[] = [];
   posts: Post[] = [];
   
@@ -68,6 +70,14 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loading = true;
     const lang = this.localeService.current();
+
+    // Tải danh sách tác giả cho carousel (không bị ảnh hưởng bởi search)
+    this.subscriptions.add(
+      this.subscriptionsService.following('', 1, 50).subscribe(data => {
+        this.carouselAuthors = this.mapAuthors(data.items);
+      })
+    );
+    
     // Cả 2 BehaviorSubject đều có giá trị khởi tạo nên sẽ tự động chạy ngay lần đầu, song song với nhau.
     this.subscriptions.add(
       this.feedSubject.pipe(

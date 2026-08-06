@@ -24,6 +24,12 @@
   display: none;
 }
 
+.authors-carousel-container > .author-tooltip-container {
+  width: 76px;
+  min-width: 76px;
+  flex: 0 0 auto;
+}
+
 .author-carousel-item {
   display: flex;
   width: 76px;
