@@ -18,6 +18,7 @@ import { AuthorPost, CreatePostPayload, PostTranslation } from '../posts/models/
 import { EditorMediaType } from './models/editor-upload.model';
 import { AuthorPostsService } from '../posts/services/author-posts.service';
 import { EditorUploadsService } from './services/editor-uploads.service';
+import { validateUploadFile } from './utils/upload-validator';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TranslationsService } from '../posts/services/translations.service';
 import { LocaleService } from '../../core/locale/locale.service';
@@ -70,6 +71,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private serverAutosaveInFlight = false;
   private serverAutosaveQueued = false;
   private pendingExplicitSaveMode: SaveMode | null = null;
+  private discardAfterAutosave = false;
   private editorRevision = 0;
   private serverSavedRevision = 0;
   private suppressAutosave = false;
@@ -113,6 +115,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   showPublishOptions = false;
   showLinkModal = false;
   showDraftConfirm = false;
+  discardingDraft = false;
   previewMode: 'desktop' | 'mobile' = 'desktop';
   previewLanguageId = 1;
   previewTranslatedTitle: string | null = null;
@@ -172,9 +175,13 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    if (!this.currentPostId && this.draft.content) {
-      queueMicrotask(() => this.hydrateEditorFromDraft());
-    }
+    requestAnimationFrame(() => {
+      this.hydrateEditorFromDraft();
+      const title = document.getElementById('postTitle') as HTMLTextAreaElement | null;
+      if (title) {
+        this.resizeTitleTextarea(title);
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -272,15 +279,21 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   autoResizeTitle(event: Event): void {
     const textarea = event.target as HTMLTextAreaElement;
+    this.resizeTitleTextarea(textarea);
+    this.scheduleAutosave();
+  }
+
+  private resizeTitleTextarea(textarea: HTMLTextAreaElement | null): void {
+    if (!textarea) {
+      return;
+    }
     const limitedTitle = this.trimToWordLimit(textarea.value, this.titleWordLimit);
     if (textarea.value !== limitedTitle) {
       textarea.value = limitedTitle;
       this.draft.title = limitedTitle;
-      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
     }
     textarea.style.height = 'auto';
-    textarea.style.height = `${textarea.scrollHeight}px`;
-    this.scheduleAutosave();
+    textarea.style.height = `${Math.max(48, textarea.scrollHeight)}px`;
   }
 
   saveDraft(): void {
@@ -524,6 +537,15 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    if (['justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'].includes(command)) {
+      const activeWrapper = this.getSelectedOrTouchingMediaWrapper();
+      if (activeWrapper) {
+        const align = command === 'justifyLeft' ? 'left' : command === 'justifyRight' ? 'right' : 'center';
+        this.setMediaAlignment(activeWrapper, align);
+        return;
+      }
+    }
+
     this.restoreSelection();
     document.execCommand(command, false, value);
     this.syncContentFromEditor();
@@ -531,8 +553,55 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.updateToolbarState();
   }
 
+  private setMediaAlignment(wrapper: HTMLElement, align: 'left' | 'center' | 'right'): void {
+    wrapper.setAttribute('data-align', align);
+    wrapper.classList.remove('align-left', 'align-center', 'align-right');
+    wrapper.classList.add(`align-${align}`);
+    wrapper.querySelectorAll('[data-media-align]').forEach((btn) => {
+      const btnAlign = btn.getAttribute('data-media-align');
+      btn.classList.toggle('is-active', btnAlign === align);
+    });
+    this.syncContentFromEditor();
+    this.saveEditorSelection();
+    this.updateToolbarState();
+  }
+
+  private getSelectedOrTouchingMediaWrapper(): HTMLElement | null {
+    const editor = document.getElementById('postBody');
+    if (!editor) {
+      return null;
+    }
+    const selected = editor.querySelector('.editor-media-wrapper.is-selected') as HTMLElement | null;
+    if (selected) {
+      return selected;
+    }
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      return null;
+    }
+    const node = selection.anchorNode;
+    const parent = node?.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : node?.parentElement;
+    return parent?.closest('.editor-media-wrapper') as HTMLElement | null;
+  }
+
   insertBlock(tagName: string): void {
     this.runEditorCommand('formatBlock', tagName);
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const node = selection.anchorNode;
+      const parentEl = node?.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : node?.parentElement;
+      const block = parentEl?.closest('p, h1, h2, h3, h4, h5, h6, blockquote') as HTMLElement | null;
+      if (block) {
+        block.querySelectorAll('*').forEach((el) => {
+          (el as HTMLElement).style.fontSize = '';
+          el.removeAttribute('size');
+          el.removeAttribute('fontsize');
+          el.removeAttribute('face');
+        });
+        block.style.fontSize = '';
+        this.syncContentFromEditor();
+      }
+    }
   }
 
   uploadMedia(mediaType: EditorMediaType, event: Event): void {
@@ -544,11 +613,25 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    const validation = validateUploadFile(file, mediaType);
+    if (!validation.valid) {
+      this.toast.showError(
+        this.localeService.translate(
+          validation.errorKey ?? 'request_failed',
+          validation.params,
+        ),
+      );
+      return;
+    }
+
     this.uploadingType = mediaType;
     this.uploadsService.uploadEditorMedia(mediaType, file).subscribe({
       next: (upload) => {
         const url = this.uploadsService.toAbsoluteUrl(upload.url);
-        this.insertHtml(this.buildMediaHtml(mediaType, url, upload.filename), true);
+        this.runEditorCommand(
+          'insertHTML',
+          this.buildMediaHtml(mediaType, url, upload.filename),
+        );
         this.toast.showSuccess(this.localeService.translate('upload_success', { filename: upload.filename }));
         this.uploadingType = null;
       },
@@ -651,13 +734,40 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    const mediaAlignBtn = target.closest('[data-media-align]') as HTMLElement | null;
+    if (mediaAlignBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      const align = mediaAlignBtn.getAttribute('data-media-align') as 'left' | 'center' | 'right';
+      const wrapper = mediaAlignBtn.closest('.editor-media-wrapper') as HTMLElement | null;
+      if (wrapper && align) {
+        this.setMediaAlignment(wrapper, align);
+      }
+      return;
+    }
+
+    const clickedMediaWrapper = target.closest('.editor-media-wrapper') as HTMLElement | null;
+    document.getElementById('postBody')?.querySelectorAll('.editor-media-wrapper').forEach((w: Element) => w.classList.remove('is-selected'));
+    if (clickedMediaWrapper && !target.closest('.editor-media-caption')) {
+      clickedMediaWrapper.classList.add('is-selected');
+    }
+
     const mediaRemove = target.closest('[data-remove-media]');
     if (mediaRemove) {
       event.preventDefault();
       const mediaWrapper = mediaRemove.closest('.editor-media-wrapper');
-      this.removeEmptyParagraphAfter(mediaWrapper);
-      mediaWrapper?.remove();
-      this.syncContentFromEditor();
+      if (mediaWrapper) {
+        const mediaEl = mediaWrapper.querySelector<HTMLImageElement | HTMLVideoElement | HTMLAudioElement>('img, video, audio');
+        const src = mediaEl?.getAttribute('src');
+
+        this.removeEmptyParagraphAfter(mediaWrapper);
+        mediaWrapper.remove();
+        this.syncContentFromEditor();
+
+        if (src && src.includes('/uploads/')) {
+          this.uploadsService.deleteEditorMedia(src).subscribe();
+        }
+      }
       return;
     }
 
@@ -709,7 +819,269 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
       event.preventDefault();
       this.selectEditorContents();
+      return;
     }
+
+    if (event.key === 'Enter') {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const node = selection.anchorNode;
+        const parentEl = node?.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : node?.parentElement;
+        const mediaWrapper = parentEl?.closest('.editor-media-wrapper') as HTMLElement | null;
+
+        if (mediaWrapper) {
+          event.preventDefault();
+          let nextP = mediaWrapper.nextElementSibling as HTMLElement | null;
+          if (!nextP || nextP.tagName.toLowerCase() !== 'p') {
+            nextP = document.createElement('p');
+            nextP.innerHTML = '<br>';
+            mediaWrapper.after(nextP);
+          }
+          this.setCursorAtStartOf(nextP);
+          this.syncContentFromEditor();
+          this.saveEditorSelection();
+        }
+      }
+    }
+  }
+
+  private setCursorAtStartOf(element: HTMLElement): void {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(true);
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }
+
+  handleEditorPaste(event: ClipboardEvent): void {
+    const clipboardData = event.clipboardData;
+    if (!clipboardData) {
+      return;
+    }
+
+    const items = Array.from(clipboardData.items ?? []);
+    const imageItem = items.find((item) => item.type.startsWith('image/'));
+    if (imageItem) {
+      const file = imageItem.getAsFile();
+      if (file) {
+        event.preventDefault();
+        const validation = validateUploadFile(file, 'image');
+        if (!validation.valid) {
+          this.toast.showError(
+            this.localeService.translate(
+              validation.errorKey ?? 'request_failed',
+              validation.params,
+            ),
+          );
+          return;
+        }
+
+        this.uploadingType = 'image';
+        this.uploadsService.uploadEditorMedia('image', file).subscribe({
+          next: (upload) => {
+            const url = this.uploadsService.toAbsoluteUrl(upload.url);
+            this.insertHtml(this.buildMediaHtml('image', url, upload.filename), true);
+            this.toast.showSuccess(this.localeService.translate('upload_success', { filename: upload.filename }));
+            this.uploadingType = null;
+          },
+          error: (error: unknown) => {
+            this.toast.showError(this.formatError(error));
+            this.uploadingType = null;
+          },
+        });
+        return;
+      }
+    }
+
+    const pastedHtml = clipboardData.getData('text/html');
+    const pastedText = clipboardData.getData('text/plain');
+
+    if (pastedHtml) {
+      event.preventDefault();
+      const cleanedHtml = this.cleanPastedHtml(pastedHtml);
+      this.insertHtml(cleanedHtml, false);
+      const editor = this.editorElement();
+      if (editor) {
+        this.normalizeGeneratedBlockPlaceholders(editor);
+        this.importExternalImagesInEditor(editor);
+      }
+      this.syncContentFromEditor();
+    } else if (pastedText && /^https?:\/\/\S+\.(jpg|jpeg|png|webp|gif|svg)(\?\S*)?$/i.test(pastedText.trim())) {
+      event.preventDefault();
+      const imageUrl = pastedText.trim();
+      const filename = imageUrl.split('/').pop()?.split('?')[0] || 'image';
+      this.insertHtml(this.buildMediaHtml('image', imageUrl, filename), false);
+      const editor = this.editorElement();
+      if (editor) {
+        this.normalizeGeneratedBlockPlaceholders(editor);
+        this.importExternalImagesInEditor(editor);
+      }
+      this.syncContentFromEditor();
+    }
+  }
+
+  private cleanPastedHtml(html: string): string {
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    container
+      .querySelectorAll('script, style, meta, link, iframe, object, embed, noscript, button, input, form, select, textarea, svg')
+      .forEach((el) => el.remove());
+
+    const containerTags = ['figure', 'article', 'section', 'header', 'footer', 'aside', 'main', 'div', 'table', 'tbody', 'thead', 'tr', 'td'];
+    let foundContainer = true;
+    while (foundContainer) {
+      foundContainer = false;
+      const el = container.querySelector(containerTags.join(', '));
+      if (
+        el &&
+        !el.classList.contains('editor-media-wrapper') &&
+        !el.classList.contains('editor-media-container') &&
+        !el.classList.contains('editor-media-caption') &&
+        !el.classList.contains('editor-code-block')
+      ) {
+        foundContainer = true;
+        while (el.firstChild) {
+          el.parentNode?.insertBefore(el.firstChild, el);
+        }
+        el.remove();
+      }
+    }
+
+    container.querySelectorAll('a').forEach((a) => {
+      const href = (a.getAttribute('href') ?? '').trim().toLowerCase();
+      if (!href || href.startsWith('javascript:') || href.startsWith('vbscript:') || href === '#') {
+        while (a.firstChild) {
+          a.parentNode?.insertBefore(a.firstChild, a);
+        }
+        a.remove();
+        return;
+      }
+
+      if (a.querySelector('img, video, audio, .editor-media-wrapper')) {
+        while (a.firstChild) {
+          a.parentNode?.insertBefore(a.firstChild, a);
+        }
+        a.remove();
+      }
+    });
+
+    container.querySelectorAll('img').forEach((img) => {
+      const src = (img.getAttribute('src') ?? '').trim();
+      const width = parseInt(img.getAttribute('width') ?? '0', 10);
+      const height = parseInt(img.getAttribute('height') ?? '0', 10);
+      if (!src || src.startsWith('javascript:') || (width > 0 && width <= 5) || (height > 0 && height <= 5)) {
+        img.remove();
+      }
+    });
+
+    container.querySelectorAll('img, video, audio').forEach((media) => {
+      if (!media.closest('.editor-media-wrapper')) {
+        const src = media.getAttribute('src') || '';
+        const alt = media.getAttribute('alt') || media.getAttribute('title') || 'media';
+        const type: EditorMediaType = media.tagName.toLowerCase() === 'audio' ? 'audio' : media.tagName.toLowerCase() === 'video' ? 'video' : 'image';
+        const parentAlign = media.closest('[align]')?.getAttribute('align') || 'center';
+        const align: 'left' | 'center' | 'right' = parentAlign === 'left' ? 'left' : parentAlign === 'right' ? 'right' : 'center';
+
+        const captionText = media.closest('figure')?.querySelector('figcaption')?.textContent?.trim() ||
+          media.parentElement?.querySelector('figcaption')?.textContent?.trim() || '';
+
+        if (src) {
+          const wrapper = document.createElement('div');
+          wrapper.innerHTML = this.buildMediaHtml(type, src, alt, align, captionText);
+          media.replaceWith(wrapper.firstElementChild || wrapper);
+        }
+      }
+    });
+
+    container.querySelectorAll('font').forEach((font) => {
+      while (font.firstChild) {
+        font.parentNode?.insertBefore(font.firstChild, font);
+      }
+      font.remove();
+    });
+
+    container.querySelectorAll('*').forEach((el) => {
+      el.removeAttribute('style');
+      el.removeAttribute('size');
+      el.removeAttribute('fontsize');
+      el.removeAttribute('face');
+
+      if (
+        !el.classList.contains('editor-media-wrapper') &&
+        !el.classList.contains('editor-media-container') &&
+        !el.classList.contains('editor-media-caption') &&
+        !el.classList.contains('editor-code-block') &&
+        !el.classList.contains('editor-inline-code-font') &&
+        !el.classList.contains('code-line') &&
+        !el.classList.contains('line-number') &&
+        !el.classList.contains('line-content')
+      ) {
+        el.removeAttribute('class');
+      }
+    });
+
+    const fragment = document.createElement('div');
+    let currentP: HTMLParagraphElement | null = null;
+
+    Array.from(container.childNodes).forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent ?? '';
+        if (text.trim()) {
+          if (!currentP) {
+            currentP = document.createElement('p');
+            fragment.appendChild(currentP);
+          }
+          currentP.appendChild(document.createTextNode(text));
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as HTMLElement;
+        const tagName = el.tagName.toLowerCase();
+
+        if (
+          ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'blockquote', 'pre', 'hr'].includes(tagName) ||
+          el.classList.contains('editor-media-wrapper')
+        ) {
+          currentP = null;
+          const text = (el.textContent ?? '').replace(/\u00a0/g, ' ').trim();
+          if (text || el.querySelector('img, video, audio, iframe') || el.classList.contains('editor-media-wrapper') || tagName === 'hr') {
+            fragment.appendChild(el);
+          }
+        } else {
+          if (!currentP) {
+            currentP = document.createElement('p');
+            fragment.appendChild(currentP);
+          }
+          currentP.appendChild(el);
+        }
+      }
+    });
+
+    return fragment.innerHTML;
+  }
+
+  private importExternalImagesInEditor(editor: HTMLElement): void {
+    const images = Array.from(editor.querySelectorAll<HTMLImageElement>('.editor-media-wrapper img'));
+    images.forEach((img) => {
+      const src = img.getAttribute('src');
+      if (!src || !/^https?:\/\//i.test(src) || src.includes('/uploads/')) {
+        return;
+      }
+
+      this.uploadsService.importExternalImage(src).subscribe({
+        next: (upload) => {
+          const localUrl = this.uploadsService.toAbsoluteUrl(upload.url);
+          img.setAttribute('src', localUrl);
+          this.syncContentFromEditor();
+        },
+        error: () => {
+          // Fallback to original URL if external download fails
+        },
+      });
+    });
   }
 
   saveEditorSelection(): void {
@@ -726,16 +1098,28 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   closeDraftConfirm(): void {
+    if (this.discardingDraft) {
+      return;
+    }
     this.showDraftConfirm = false;
     this.updateBodyModalClasses();
   }
 
   discardDraft(): void {
+    if (this.discardingDraft) {
+      return;
+    }
+
     this.suppressAutosave = true;
+    this.discardingDraft = true;
+    this.pendingExplicitSaveMode = null;
     this.clearAutosaveSnapshots();
-    this.showDraftConfirm = false;
-    this.updateBodyModalClasses();
-    void this.router.navigateByUrl(this.myPostsReturnUrl());
+    if (this.serverAutosaveInFlight) {
+      this.discardAfterAutosave = true;
+      return;
+    }
+
+    this.deletePersistedDraftAndLeave();
   }
 
   saveDraftAndLeave(): void {
@@ -916,15 +1300,15 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           }
           if (mode === 'submit') {
             this.suppressAutosave = true;
-            this.navigateToMyPosts(this.localeService.translate('post_submitted_review', { id: post.id }));
+            this.navigateToMyPosts(this.localeService.translate('post_submitted_review'));
             return;
           }
           if (this.navigateAfterSave) {
             this.navigateAfterSave = false;
-            this.navigateToMyPosts(this.localeService.translate('draft_saved', { id: post.id }));
+            this.navigateToMyPosts(this.localeService.translate('draft_saved'));
             return;
           }
-          this.toast.showSuccess(this.localeService.translate('draft_saved', { id: post.id }));
+          this.toast.showSuccess(this.localeService.translate('draft_saved'));
         },
         error: (error: unknown) => {
           this.toast.showError(this.formatError(error));
@@ -1033,9 +1417,17 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.syncTargetInput();
   }
 
-  private buildMediaHtml(mediaType: EditorMediaType, url: string, filename: string): string {
+  private buildMediaHtml(
+    mediaType: EditorMediaType,
+    url: string,
+    filename: string,
+    align: 'left' | 'center' | 'right' = 'center',
+    captionText: string = '',
+  ): string {
     const safeName = this.escapeAttribute(filename);
     const safeUrl = this.escapeAttribute(url);
+    const safeCaption = this.escapeAttribute(captionText);
+    const deleteMediaLabel = this.escapeAttribute(this.localeService.translate('delete_media'));
     const mediaHtml =
       mediaType === 'image'
         ? `<img src="${safeUrl}" alt="${safeName}" loading="lazy">`
@@ -1044,14 +1436,17 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           : `<video controls playsinline src="${safeUrl}" title="${safeName}"></video>`;
 
     return (
-      `<div class="editor-media-wrapper" contenteditable="false">` +
+      `<div class="editor-media-wrapper align-${align}" data-align="${align}" contenteditable="false">` +
+      `<div class="editor-media-container">` +
       `${mediaHtml}` +
-      `<button type="button" class="editor-media-delete" data-remove-media title="Delete media">` +
-      `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">` +
+      `<button type="button" class="editor-media-delete" data-remove-media aria-label="${deleteMediaLabel}" title="${deleteMediaLabel}">` +
+      `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">` +
       `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
       `</svg>` +
       `</button>` +
-      `</div><p class="editor-after-block-placeholder"><br></p>`
+      `</div>` +
+      `<figcaption class="editor-media-caption" contenteditable="true" data-placeholder="Nhập tiêu đề / chú thích ảnh...">${safeCaption}</figcaption>` +
+      `</div>`
     );
   }
 
@@ -1059,6 +1454,18 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     const container = document.createElement('div');
     container.innerHTML = this.stripEditorOnlyMarkup(html);
     this.numberPreviewCodeBlocks(container);
+    container.querySelectorAll<HTMLImageElement | HTMLVideoElement | HTMLAudioElement>('img, video, audio').forEach((media) => {
+      const src = media.getAttribute('src');
+      if (src) {
+        if (src.startsWith('data:')) {
+          return;
+        }
+        const uploadsIdx = src.indexOf('/uploads/');
+        if (uploadsIdx !== -1) {
+          media.setAttribute('src', this.uploadsService.toAbsoluteUrl(src.substring(uploadsIdx)));
+        }
+      }
+    });
     container.querySelectorAll('[contenteditable]').forEach((node) => node.removeAttribute('contenteditable'));
     return container.innerHTML;
   }
@@ -1069,9 +1476,19 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
     container
       .querySelectorAll(
-        '.editor-media-delete, [data-remove-media], .editor-media-wrapper button, .editor-media-wrapper svg',
+        '.editor-media-delete, .editor-media-alignment-bar, [data-remove-media], [data-media-align]',
       )
       .forEach(node => node.remove());
+
+    container.querySelectorAll<HTMLElement>('.editor-media-caption').forEach(caption => {
+      const text = caption.textContent?.trim();
+      if (!text) {
+        caption.remove();
+      } else {
+        caption.removeAttribute('contenteditable');
+        caption.removeAttribute('data-placeholder');
+      }
+    });
 
     container.querySelectorAll<HTMLElement>('.editor-after-block-placeholder').forEach(node => {
       const hasVisibleContent = Boolean(node.textContent?.replace(/\u00a0/g, ' ').trim());
@@ -1468,26 +1885,71 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       button?.classList.toggle('is-muted', !document.queryCommandEnabled(command));
     });
 
+    const activeMediaWrapper = this.getSelectedOrTouchingMediaWrapper();
     let activeAlign = 'justifyLeft';
-    ['justifyCenter', 'justifyRight', 'justifyFull'].forEach((command) => {
-      const button = document.querySelector(`[data-align-command="${command}"]`);
-      const isActive = document.queryCommandState(command);
-      button?.classList.toggle('is-selected', isActive);
-      if (isActive) {
-        activeAlign = command;
-      }
-    });
+    if (activeMediaWrapper) {
+      const align = activeMediaWrapper.getAttribute('data-align') ||
+        (activeMediaWrapper.classList.contains('align-left') ? 'left' : activeMediaWrapper.classList.contains('align-right') ? 'right' : 'center');
+      activeAlign = align === 'left' ? 'justifyLeft' : align === 'right' ? 'justifyRight' : 'justifyCenter';
 
-    const leftButton = document.querySelector('[data-align-command="justifyLeft"]');
-    leftButton?.classList.toggle('is-selected', activeAlign === 'justifyLeft');
-    this.updateAlignTrigger(activeAlign);
-    this.updateBaselineUi(syncBaseline ? this.getBaselineFormat() : this.activeBaselineFormat);
+      ['justifyCenter', 'justifyRight', 'justifyFull'].forEach((command) => {
+        const button = document.querySelector(`[data-align-command="${command}"]`);
+        button?.classList.toggle('is-selected', command === activeAlign);
+      });
+      const leftButton = document.querySelector('[data-align-command="justifyLeft"]');
+      leftButton?.classList.toggle('is-selected', activeAlign === 'justifyLeft');
+      this.updateAlignTrigger(activeAlign);
+    } else {
+      ['justifyCenter', 'justifyRight', 'justifyFull'].forEach((command) => {
+        const button = document.querySelector(`[data-align-command="${command}"]`);
+        const isActive = document.queryCommandState(command);
+        button?.classList.toggle('is-selected', isActive);
+        if (isActive) {
+          activeAlign = command;
+        }
+      });
 
+      const leftButton = document.querySelector('[data-align-command="justifyLeft"]');
+      leftButton?.classList.toggle('is-selected', activeAlign === 'justifyLeft');
+      this.updateAlignTrigger(activeAlign);
+    }
     const codeButton = document.querySelector('[data-inline-code]');
     codeButton?.classList.toggle('is-active', this.isInlineCodeActive());
+
+    const anchorNode = selection.anchorNode;
+    const parentEl = anchorNode?.nodeType === Node.ELEMENT_NODE ? (anchorNode as HTMLElement) : anchorNode?.parentElement;
+    const currentBlock = parentEl?.closest('p, h1, h2, h3, h4, h5, h6, blockquote') as HTMLElement | null;
+    let activeBlockTag = currentBlock ? currentBlock.tagName.toLowerCase() : 'p';
+    if (!['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(activeBlockTag)) {
+      activeBlockTag = 'p';
+    }
+
+    document.querySelectorAll('[data-format-block]').forEach((btn) => {
+      const tag = btn.getAttribute('data-format-block');
+      btn.classList.toggle('is-selected', tag === activeBlockTag);
+    });
+
+    const styleTrigger = document.querySelector('.toolbar-group .style-menu')?.previousElementSibling as HTMLElement | null;
+    if (styleTrigger) {
+      const labelMap: Record<string, string> = {
+        p: 'Style',
+        h1: 'Tiêu đề 1',
+        h2: 'Tiêu đề 2',
+        h3: 'Tiêu đề 3',
+        h4: 'Tiêu đề 4',
+        h5: 'Tiêu đề 5',
+        h6: 'Tiêu đề 6',
+      };
+      const newText = labelMap[activeBlockTag] || 'Style';
+      const textNode = Array.from(styleTrigger.childNodes).find((n) => n.nodeType === Node.TEXT_NODE);
+      if (textNode) {
+        textNode.textContent = `${newText} `;
+      }
+    }
   }
 
   private createCodeBlockHtml(): string {
+    const deleteCodeBlockLabel = this.escapeAttribute(this.localeService.translate('delete_code_block'));
     const languages = [
       'Auto-detect',
       'Plain Text',
@@ -1518,7 +1980,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       '</button>' +
       `<div class="editor-code-language-menu">${languageItems}</div>` +
       '</div>' +
-      '<button class="editor-code-delete" type="button" data-remove-code-block aria-label="Delete code block" title="Delete code block"><svg class="editor-code-delete-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg></button>' +
+      `<button class="editor-code-delete" type="button" data-remove-code-block aria-label="${deleteCodeBlockLabel}" title="${deleteCodeBlockLabel}"><svg class="editor-code-delete-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg></button>` +
       '</div>' +
       '<pre class="editor-code-body" contenteditable="true" spellcheck="false"><code></code></pre>' +
       '</div><p class="editor-after-block-placeholder"><br></p>'
@@ -1540,26 +2002,83 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private normalizeGeneratedBlockPlaceholders(editor: HTMLElement): void {
-    editor.querySelectorAll<HTMLElement>('.editor-after-block-placeholder').forEach((paragraph) => {
-      if (!this.isVisuallyEmptyEditorNode(paragraph)) {
-        paragraph.classList.remove('editor-after-block-placeholder');
+    this.ensureEditorMediaDeleteButtons(editor);
+
+    const paragraphs = Array.from(editor.querySelectorAll<HTMLElement>('p, div'));
+    for (let i = 0; i < paragraphs.length - 1; i++) {
+      const current = paragraphs[i];
+      const next = paragraphs[i + 1];
+      if (
+        current.parentElement === editor &&
+        next.parentElement === editor &&
+        this.isVisuallyEmptyEditorNode(current) &&
+        this.isVisuallyEmptyEditorNode(next)
+      ) {
+        next.remove();
+        paragraphs.splice(i + 1, 1);
+        i--;
       }
-    });
+    }
 
     editor.querySelectorAll<HTMLElement>('.editor-code-block, .editor-media-wrapper').forEach((block) => {
+      const prevNode = this.previousMeaningfulSibling(block);
+      if (!prevNode) {
+        const pBefore = document.createElement('p');
+        pBefore.innerHTML = '<br>';
+        block.parentNode?.insertBefore(pBefore, block);
+      } else if (prevNode instanceof HTMLElement && this.isVisuallyEmptyEditorNode(prevNode)) {
+        const prevPrev = this.previousMeaningfulSibling(prevNode);
+        if (prevPrev instanceof HTMLElement && !this.isVisuallyEmptyEditorNode(prevPrev)) {
+          prevNode.remove();
+        }
+      }
+
       const nextNode = this.nextMeaningfulSibling(block);
-      if (!(nextNode instanceof HTMLParagraphElement) || !this.isVisuallyEmptyEditorNode(nextNode)) {
-        return;
+      if (!nextNode) {
+        const pAfter = document.createElement('p');
+        pAfter.innerHTML = '<br>';
+        block.parentNode?.insertBefore(pAfter, block.nextSibling);
       }
-
-      const nodeAfterPlaceholder = this.nextMeaningfulSibling(nextNode);
-      if (nodeAfterPlaceholder) {
-        nextNode.remove();
-        return;
-      }
-
-      nextNode.classList.add('editor-after-block-placeholder');
     });
+  }
+
+  private ensureEditorMediaDeleteButtons(editor: HTMLElement): void {
+    editor.querySelectorAll<HTMLElement>('.editor-media-wrapper').forEach((wrapper) => {
+      wrapper.setAttribute('contenteditable', 'false');
+
+      let deleteBtn = wrapper.querySelector<HTMLButtonElement>('.editor-media-delete');
+      if (!deleteBtn) {
+        wrapper.querySelectorAll('[data-remove-media], button').forEach((b) => b.remove());
+
+        deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'editor-media-delete';
+        deleteBtn.setAttribute('data-remove-media', '');
+        deleteBtn.title = 'Delete media';
+        deleteBtn.innerHTML =
+          `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">` +
+          `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
+          `</svg>`;
+        wrapper.appendChild(deleteBtn);
+      } else {
+        deleteBtn.className = 'editor-media-delete';
+        deleteBtn.setAttribute('data-remove-media', '');
+        if (!deleteBtn.querySelector('svg')) {
+          deleteBtn.innerHTML =
+            `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">` +
+            `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
+            `</svg>`;
+        }
+      }
+    });
+  }
+
+  private previousMeaningfulSibling(node: Node): Node | null {
+    let sibling = node.previousSibling;
+    while (sibling?.nodeType === Node.TEXT_NODE && !sibling.textContent?.trim()) {
+      sibling = sibling.previousSibling;
+    }
+    return sibling;
   }
 
   private nextMeaningfulSibling(node: Node): Node | null {
@@ -2076,6 +2595,12 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         this.serverSavedRevision = savingRevision;
         this.serverAutosaveInFlight = false;
 
+        if (this.discardAfterAutosave) {
+          this.discardAfterAutosave = false;
+          this.deletePersistedDraftAndLeave();
+          return;
+        }
+
         if (wasNewPost) {
           this.location.replaceState(`/workspace/posts/${post.id}/edit`);
           this.removeAutosaveSnapshot(null);
@@ -2106,6 +2631,13 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       error: () => {
         this.serverAutosaveInFlight = false;
         this.serverAutosaveQueued = false;
+
+        if (this.discardAfterAutosave) {
+          this.discardAfterAutosave = false;
+          this.deletePersistedDraftAndLeave();
+          return;
+        }
+
         const explicitMode = this.pendingExplicitSaveMode;
         this.pendingExplicitSaveMode = null;
         if (explicitMode) {
@@ -2171,6 +2703,35 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       !this.isTitleOverLimit &&
       !this.isBodyOverLimit,
     );
+  }
+
+  private deletePersistedDraftAndLeave(): void {
+    const postId = this.createdPost?.id ?? this.currentPostId;
+    if (!postId) {
+      this.finishDiscardAndLeave();
+      return;
+    }
+
+    this.postsService.discardAuthorDraft(postId).subscribe({
+      next: () => this.finishDiscardAndLeave(),
+      error: error => {
+        this.discardingDraft = false;
+        this.suppressAutosave = false;
+        this.showDraftConfirm = true;
+        this.updateBodyModalClasses();
+        this.toast.showError(this.formatError(error));
+      },
+    });
+  }
+
+  private finishDiscardAndLeave(): void {
+    this.clearAutosaveSnapshots(this.createdPost?.id ?? this.currentPostId ?? undefined);
+    this.createdPost = null;
+    this.currentPostId = null;
+    this.discardingDraft = false;
+    this.showDraftConfirm = false;
+    this.updateBodyModalClasses();
+    this.navigateToMyPosts(this.localeService.translate('draft_deleted'));
   }
 
   private cancelServerAutosaveTimer(): void {
@@ -2239,11 +2800,13 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     editor.innerHTML = this.draft.content;
     this.normalizeGeneratedBlockPlaceholders(editor);
     this.draft.content = editor.innerHTML;
-    const title = document.getElementById('postTitle') as HTMLTextAreaElement | null;
-    if (title) {
-      title.style.height = 'auto';
-      title.style.height = `${title.scrollHeight}px`;
-    }
+
+    setTimeout(() => {
+      const title = document.getElementById('postTitle') as HTMLTextAreaElement | null;
+      if (title) {
+        this.resizeTitleTextarea(title);
+      }
+    }, 0);
   }
 
   private syncLanguageSelectionFromDraft(): void {
@@ -2298,16 +2861,24 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     container
       .querySelectorAll('script, style, iframe, object, embed, form, input, textarea, select, meta, link, base')
       .forEach(element => element.remove());
+    container.querySelectorAll('a').forEach(a => {
+      const href = (a.getAttribute('href') ?? '').trim().toLowerCase();
+      if (!href || href.startsWith('javascript:') || href.startsWith('vbscript:') || href === '#') {
+        while (a.firstChild) {
+          a.parentNode?.insertBefore(a.firstChild, a);
+        }
+        a.remove();
+      } else if (a.querySelector('img, video, audio, div, figure, .editor-media-wrapper')) {
+        while (a.firstChild) {
+          a.parentNode?.insertBefore(a.firstChild, a);
+        }
+        a.remove();
+      }
+    });
     container.querySelectorAll<HTMLElement>('*').forEach(element => {
       Array.from(element.attributes).forEach(attribute => {
         const name = attribute.name.toLowerCase();
-        const value = attribute.value.trim();
-        if (
-          name.startsWith('on') ||
-          name === 'srcdoc' ||
-          name === 'formaction' ||
-          ((name === 'href' || name === 'src') && /^(?:javascript|vbscript):/i.test(value))
-        ) {
+        if (name.startsWith('on') || name === 'srcdoc' || name === 'formaction') {
           element.removeAttribute(attribute.name);
         }
       });

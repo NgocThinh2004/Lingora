@@ -4,13 +4,14 @@ import { ToastComponent } from './shared/components/toast/toast.component';
 import { ThemeService } from './core/theme/theme.service';
 import { SearchModalComponent } from './features/search/search-modal.component';
 import { AuthModalComponent } from './features/auth/components/auth-modal/auth-modal.component';
+import { ConfirmModalComponent } from './shared/components/confirm-modal/confirm-modal.component';
 import { BrandingService } from './core/theme/branding.service';
 import { LocaleService } from './core/locale/locale.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, ToastComponent, SearchModalComponent, AuthModalComponent],
+  imports: [RouterOutlet, ToastComponent, SearchModalComponent, AuthModalComponent, ConfirmModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

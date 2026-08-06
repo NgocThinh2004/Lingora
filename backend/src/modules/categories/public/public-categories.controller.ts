@@ -1,5 +1,4 @@
-import { Controller, Get, UseInterceptors, Query, Param } from '@nestjs/common';
-import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { Controller, Get, Query, Param } from '@nestjs/common';
 import { PublicCategoriesService } from './public-categories.service';
 
 @Controller('categories')
@@ -7,8 +6,6 @@ export class PublicCategoriesController {
   constructor(private readonly categoriesService: PublicCategoriesService) {}
 
   @Get()
-  @UseInterceptors(CacheInterceptor)
-  @CacheTTL(300000) // 5 minutes
   findActive(
     @Query('q') q?: string,
     @Query('lang') lang?: string,
@@ -18,9 +15,7 @@ export class PublicCategoriesController {
   }
 
   @Get(':slug')
-  @UseInterceptors(CacheInterceptor)
-  @CacheTTL(300000)
-  findBySlug(@Param('slug') slug: string) {
-    return this.categoriesService.findBySlug(slug);
+  findBySlug(@Param('slug') slug: string, @Query('lang') lang?: string) {
+    return this.categoriesService.findBySlug(slug, lang);
   }
 }

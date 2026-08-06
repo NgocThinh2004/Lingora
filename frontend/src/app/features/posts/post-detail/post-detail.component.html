@@ -26,19 +26,17 @@
           <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill fw-medium category-label">
             {{ getCategoryTranslation(p.category) }}
           </span>
+          @if (categoryIsHidden(p.category)) {
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill fw-medium category-label ms-2">
+              <i class="bi bi-eye-slash me-1" aria-hidden="true"></i>{{ 'hidden_category' | t }}
+            </span>
+          }
         }
       </div>
 
       <h1 class="post-title fw-bold mb-4 text-main" style="font-size: 1.75rem; letter-spacing: -0.025em; line-height: 1.25; word-break: break-word; overflow-wrap: anywhere;">
         {{ displayedTranslation()?.title }}
       </h1>
-
-      @if (isFallback()) {
-        <div class="alert alert-warning py-2 px-3 mb-4 d-flex align-items-center" style="font-size: 0.9rem; border-radius: var(--radius-md); background-color: rgba(255, 193, 7, 0.1); color: #b78a00; border-color: rgba(255, 193, 7, 0.2);">
-          <i class="bi bi-info-circle me-2"></i>
-          <span>{{ 'fallback_warning_tooltip' | t }}</span>
-        </div>
-      }
 
       <div class="substack-post-header mb-3 pb-3 border-bottom d-flex align-items-center justify-content-between">
         <div class="author-badge-group d-flex align-items-center position-relative author-tooltip-container" style="z-index: 2;">

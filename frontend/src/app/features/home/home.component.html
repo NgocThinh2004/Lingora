@@ -31,7 +31,7 @@
     </div>
   </div>
 
-  @if (loading()) {
+  @if (loading() && posts().length === 0) {
     <div class="state-block">
       <i class="bi bi-arrow-repeat spin"></i>
       <span>{{ 'loading_feed' | t }}</span>

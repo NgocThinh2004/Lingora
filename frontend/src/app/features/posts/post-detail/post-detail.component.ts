@@ -1,9 +1,9 @@
-import { Component, OnDestroy, computed, inject, signal, ViewChild, ElementRef, DestroyRef } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal, ViewChild, ElementRef, DestroyRef, HostListener } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { forkJoin, switchMap, Subscription } from 'rxjs';
+import { forkJoin, merge, Subject, switchMap, Subscription } from 'rxjs';
 import { FeedPostsService } from '../services/feed-posts.service';
 import { AuthorPost, Post, PostOptions, getPostTranslation } from '../models/post.model';
 import { translateCategory } from '../../categories/models/category.model';
@@ -21,6 +21,9 @@ import { AssetImageDirective } from '../../../shared/directives/asset-image.dire
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
 import { PostCardComponent } from '../components/post-card/post-card.component';
+import { ToastService } from '../../../core/notifications/toast.service';
+import { ConfirmModalService } from '../../../shared/services/confirm-modal.service';
+import { CanComponentDeactivate } from '../../../core/guards/unsaved-changes.guard';
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -36,7 +39,7 @@ import { PostCardComponent } from '../components/post-card/post-card.component';
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
 })
-export class PostDetailComponent implements OnDestroy {
+export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
   private route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly postService = inject(FeedPostsService);
@@ -49,9 +52,12 @@ export class PostDetailComponent implements OnDestroy {
   private authModalService = inject(AuthModalService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  private readonly toast = inject(ToastService);
+  private readonly confirmModalService = inject(ConfirmModalService);
 
   @ViewChild('articleContent') articleContentRef?: ElementRef<HTMLElement>;
   @ViewChild('centerFeed') centerFeedRef?: ElementRef<HTMLElement>;
+  @ViewChild(CommentSectionComponent) commentSection?: CommentSectionComponent;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // GLOBAL STATE / DB FIELD MAPPING
@@ -66,8 +72,15 @@ export class PostDetailComponent implements OnDestroy {
   post = signal<Post | null>(null);
   
   // relatedPosts (Signal): Danh sách bài viết liên quan.
-  // - Lấy từ DB dựa trên cùng category_id với bài viết hiện tại.
   relatedPosts = signal<Post[]>([]);
+  relatedPostsLoading = signal<boolean>(false);
+
+  canDeactivate(): boolean | Promise<boolean> {
+    if (this.commentSection?.hasUnsavedChanges()) {
+      return this.confirmModalService.open();
+    }
+    return true;
+  }
   
   // loading / error / authorPreview: Trạng thái UI cơ bản.
   loading = signal<boolean>(true);
@@ -75,7 +88,11 @@ export class PostDetailComponent implements OnDestroy {
   authorPreview = signal(false);
 
   private likeSub?: Subscription;
+  private readonly languageReload = new Subject<void>();
+  private languageChangeReload = false;
   private videoObservers: IntersectionObserver[] = [];
+  private videoTimeoutId?: any;
+  private scrollTimeoutId?: any;
 
   // ── Scroll-depth view tracking ──────────────────────────────────────────────
   // Observer theo dõi sentinel element tại 50% bài viết
@@ -88,10 +105,32 @@ export class PostDetailComponent implements OnDestroy {
   // ────────────────────────────────────────────────────────────────────────────
 
   ngOnDestroy(): void {
+    clearTimeout(this.videoTimeoutId);
+    clearTimeout(this.scrollTimeoutId);
     // Dọn dẹp các observers và subscriptions khi component bị hủy để tránh memory leak
     this.cleanupVideoObservers();
     this.cleanupScrollTracker();
     this.likeSub?.unsubscribe();
+    this.languageReload.complete();
+  }
+
+  @HostListener('window:lingora:languagechange')
+  onLanguageChange(): void {
+    if (this.authorPreview()) return;
+    const currentPost = this.post();
+    if (!currentPost) return;
+
+    const language = this.localeService.current();
+    if (!currentPost.availableLanguages?.includes(language)) {
+      this.toast.showError(this.localeService.translate('post_translation_unavailable'));
+      void this.router.navigate(['/home']);
+      return;
+    }
+
+    this.languageChangeReload = true;
+    this.cleanupVideoObservers();
+    this.cleanupScrollTracker();
+    this.languageReload.next();
   }
 
   private cleanupVideoObservers(): void {
@@ -109,7 +148,7 @@ export class PostDetailComponent implements OnDestroy {
     this.cleanupVideoObservers();
 
     // Đợi 1 tick (100ms) để Angular hoàn tất việc render [innerHTML]
-    setTimeout(() => {
+    this.videoTimeoutId = setTimeout(() => {
       const articleEl = this.articleContentRef?.nativeElement;
       if (!articleEl) return;
 
@@ -164,7 +203,7 @@ export class PostDetailComponent implements OnDestroy {
 
     // Đợi DOM render xong rồi mới inject sentinel và bắt đầu quan sát
     // 300ms: đủ để Angular hoàn tất change detection + render [innerHTML] kể cả bài nặng
-    setTimeout(() => {
+    this.scrollTimeoutId = setTimeout(() => {
       const articleEl = this.articleContentRef?.nativeElement;
       if (!articleEl) return;
 
@@ -174,10 +213,8 @@ export class PostDetailComponent implements OnDestroy {
       // Lấy tất cả các phần tử con trực tiếp của article (paragraphs, headings, images, etc.)
       const children = Array.from(articleEl.children);
 
-      // Guard: nếu innerHTML chưa render xong (children rỗng), dừng lại.
-      // Điều này ngăn view bị đếm ở bài "rỗng" khi browser chưa kịp paint.
-      // setupScrollTracker sẽ được gọi lại ở lần route navigate tiếp theo.
-      if (children.length === 0) return;
+      // Guard: nếu innerHTML chưa render xong, dừng lại.
+      if (children.length === 0 && !articleEl.textContent?.trim()) return;
 
       // Tạo sentinel element — một thẻ div vô hình (0px height, không ảnh hưởng layout)
       // Đặt tại điểm GIỮA (50%) chiều dài bài viết bằng cách tính toán vị trí DOM
@@ -185,8 +222,8 @@ export class PostDetailComponent implements OnDestroy {
       sentinel.setAttribute('data-scroll-sentinel', '');
       sentinel.style.cssText = 'height:0;overflow:hidden;pointer-events:none;visibility:hidden;';
 
-      if (children.length === 1) {
-        // Bài chỉ có 1 phần tử (VD: 1 đoạn văn ngắn) → append vào cuối
+      if (children.length <= 1) {
+        // Bài chỉ có 1 phần tử (VD: 1 đoạn văn ngắn) hoặc chỉ có text trần → append vào cuối
         // IntersectionObserver sẽ trigger ngay khi render (hợp lý: user thấy toàn bộ bài)
         articleEl.appendChild(sentinel);
       } else {
@@ -215,7 +252,9 @@ export class PostDetailComponent implements OnDestroy {
             this.scrollDepthObserver = undefined;
 
             // Gọi API POST /posts/:id/view — bắt lỗi silently để không làm crash UX
-            this.postService.trackView(postId).subscribe({
+            this.postService.trackView(postId).pipe(
+              takeUntilDestroyed(this.destroyRef)
+            ).subscribe({
               next: () => { /* View được ghi nhận thành công, không cần xử lý gì thêm */ },
               error: () => { /* Lỗi mạng — bỏ qua, không thông báo người dùng */ },
             });
@@ -276,16 +315,6 @@ export class PostDetailComponent implements OnDestroy {
     };
   });
 
-  // Kiểm tra xem bài viết có đang phải dùng ngôn ngữ fallback (không khớp với ngôn ngữ hiện tại) không
-  readonly isFallback = computed(() => {
-    const currentPost = this.post();
-    if (!currentPost) return false;
-    const trans = this.displayedTranslation();
-    if (!trans) return false;
-    return trans.languageCode !== this.localeService.selectedLocale();
-  });
-
-
   ngOnInit(): void {
     this.authorPreview.set(Boolean(this.route.snapshot.data['authorPreview']));
 
@@ -294,9 +323,9 @@ export class PostDetailComponent implements OnDestroy {
      * Lắng nghe sự thay đổi của route parameters (ví dụ: chuyển từ bài A sang bài B).
      * switchMap: hủy request cũ nếu có request mới tới, ngăn ngừa lỗi race condition.
      */
-    this.route.paramMap.pipe(
-      switchMap(params => {
-        const id = Number(params.get('id') || this.route.snapshot.queryParamMap.get('id'));
+    merge(this.route.paramMap, this.languageReload).pipe(
+      switchMap(() => {
+        const id = Number(this.route.snapshot.paramMap.get('id') || this.route.snapshot.queryParamMap.get('id'));
         this.loading.set(true);
         this.error.set(null);
         const language = this.localeService.selectedLocale();
@@ -332,6 +361,7 @@ export class PostDetailComponent implements OnDestroy {
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
       next: (result) => {
+        this.languageChangeReload = false;
         if (result.mode === 'author') {
           const { post, options } = result as any;
           const previewPost = this.toPreviewPost(post, options);
@@ -362,6 +392,12 @@ export class PostDetailComponent implements OnDestroy {
         }
       },
       error: () => {
+        if (this.languageChangeReload) {
+          this.languageChangeReload = false;
+          this.toast.showError(this.localeService.translate('post_translation_unavailable'));
+          void this.router.navigate(['/home']);
+          return;
+        }
         this.error.set(this.localeService.translate(
           this.authorPreview() ? 'article_unavailable' : 'post_details_load_failed'
         ));
@@ -382,6 +418,12 @@ export class PostDetailComponent implements OnDestroy {
       authorId: Number(post.authorId),
       categoryId: post.categoryId,
       originalLanguage: originalLanguageCode,
+      availableLanguages: post.translations
+        .filter(translation => translation.translationStatus === 'completed')
+        .map(translation =>
+          options.languages.find(language => language.id === translation.languageId)?.code,
+        )
+        .filter((code): code is string => Boolean(code)),
       status: post.status === 'published' ? 'published' : 'draft',
       viewCount: post.viewCount,
       likeCount: 0,
@@ -521,5 +563,9 @@ export class PostDetailComponent implements OnDestroy {
   // Helper lấy bản dịch category
   getCategoryTranslation(category: any): string {
     return translateCategory(category, this.localeService.selectedLocale());
+  }
+
+  categoryIsHidden(category: any): boolean {
+    return category?.isActive === false;
   }
 }

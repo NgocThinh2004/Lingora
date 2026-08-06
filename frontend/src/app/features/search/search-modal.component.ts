@@ -182,7 +182,7 @@ export class SearchModalComponent {
       this.trendingAuthors.set(res.items);
     });
 
-    this.categoryService.findAll(undefined, undefined, 6).subscribe((categories) => {
+    this.categoryService.findAll(undefined, this.currentLang(), 6).subscribe((categories) => {
       // Lọc bỏ các danh mục không có bài viết nào (postCount = 0 hoặc undefined)
       this.trendingCategories.set(categories.filter(c => (c.postCount || 0) > 0));
     });

@@ -1,4 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LocaleService } from '../../../core/locale/locale.service';
@@ -48,6 +49,7 @@ describe('AdminUsersComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AdminUsersComponent],
       providers: [
+        provideRouter([]),
         { provide: AdminUsersService, useValue: adminUsersService },
         { provide: ToastService, useValue: toastService },
         { provide: AuthService, useValue: { currentUser: () => ({ id: 'admin-1' }) } },
@@ -70,6 +72,31 @@ describe('AdminUsersComponent', () => {
     expect(component.users()).toEqual([member]);
     expect(component.pagination().total).toBe(1);
   });
+
+  it('restores filters and pagination from the URL after a reload', fakeAsync(() => {
+    const router = TestBed.inject(Router);
+    void router.navigateByUrl('/?search=member&role=member&status=inactive&page=2');
+    tick();
+
+    fixture.destroy();
+    adminUsersService.getUsers.calls.reset();
+    fixture = TestBed.createComponent(AdminUsersComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.filterForm.getRawValue()).toEqual({
+      search: 'member',
+      role: 'member',
+      status: 'inactive',
+    });
+    expect(adminUsersService.getUsers).toHaveBeenCalledWith({
+      search: 'member',
+      role: 'member',
+      status: 'inactive',
+      page: 2,
+      limit: 8,
+    });
+  }));
 
   it('opens a user and saves access changes', () => {
     const updatedUser: AdminUser = { ...member, role: 'admin', status: 'active' };

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from './core/auth/admin.guard';
 import { authGuard } from './core/auth/auth.guard';
+import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 
 export const routes: Routes = [
   {
@@ -47,6 +48,7 @@ export const routes: Routes = [
       {
         path: 'post/:id',
         title: 'Lingora',
+        canDeactivate: [unsavedChangesGuard],
         loadComponent: () => import('./features/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent),
       },
       {

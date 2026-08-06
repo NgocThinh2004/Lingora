@@ -1,0 +1,265 @@
+Project Lingora {
+  database_type: 'MySQL'
+  Note: 'Current schema reconstructed from all Sequelize migrations through 2026-07-31 and checked against the application models.'
+}
+
+Enum user_status {
+  active
+  inactive
+  banned
+}
+
+Enum post_status {
+  draft
+  pending_review
+  approved
+  rejected
+  published
+  archived
+}
+
+Enum translation_status {
+  not_started
+  queued
+  processing
+  completed
+  failed
+}
+
+Enum comment_status {
+  pending
+  approved
+  rejected
+  hidden
+}
+
+Table roles {
+  id "int unsigned" [pk, increment]
+  name varchar(50) [not null, unique]
+}
+
+Table languages {
+  id "int unsigned" [pk, increment]
+  code varchar(10) [not null, unique]
+  name varchar(100) [not null]
+  native_name varchar(100) [not null]
+  flag_code varchar(5)
+  is_default boolean [not null, default: false]
+  is_active boolean [not null, default: true]
+  activated_at datetime
+}
+
+Table users {
+  id "bigint unsigned" [pk, increment]
+  username varchar(150) [not null, unique]
+  display_name varchar(150)
+  unaccented_display_name varchar(150)
+  email varchar(150) [not null, unique]
+  password varchar(255) [not null, note: 'Stores only the password hash.']
+  avatar varchar(255)
+  bio text
+  accent_color varchar(7)
+  background_color varchar(7)
+  role_id "int unsigned" [not null]
+  status user_status [not null, default: 'active']
+  password_reset_otp_hash varchar(255) [note: 'Stores only the OTP hash.']
+  password_reset_expires_at datetime
+  password_reset_attempts "int unsigned" [not null, default: 0]
+  password_reset_sent_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  deleted_at datetime
+
+  indexes {
+    role_id [name: 'idx_users_role_id']
+    status [name: 'idx_users_status']
+    unaccented_display_name [name: 'idx_users_unaccented_display_name']
+  }
+}
+
+Table categories {
+  id "int unsigned" [pk, increment]
+  slug varchar(150) [not null, unique]
+  status varchar(20) [not null, default: 'active']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table category_translations {
+  id "bigint unsigned" [pk, increment]
+  category_id "int unsigned" [not null]
+  language_id "int unsigned" [not null]
+  name varchar(150) [not null]
+  slug varchar(150) [not null]
+  unaccented_name varchar(150)
+
+  indexes {
+    (category_id, language_id) [unique, name: 'uq_category_translations_category_language']
+    unaccented_name [name: 'idx_category_translations_unaccented_name']
+  }
+}
+
+Table posts {
+  id "bigint unsigned" [pk, increment]
+  author_id "bigint unsigned" [not null]
+  category_id "int unsigned"
+  original_language_id "int unsigned" [not null]
+  view_count "int unsigned" [not null, default: 0]
+  like_count "int unsigned" [not null, default: 0, note: 'Denormalized counter backed by post_likes.']
+  comment_count "int unsigned" [not null, default: 0, note: 'Denormalized counter backed by comments.']
+  status post_status [not null, default: 'draft']
+  review_note text
+  published_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  deleted_at datetime
+
+  indexes {
+    author_id [name: 'idx_posts_author_id']
+    category_id [name: 'idx_posts_category_id']
+    status [name: 'idx_posts_status']
+    published_at [name: 'idx_posts_published_at']
+  }
+}
+
+Table post_translations {
+  id "bigint unsigned" [pk, increment]
+  post_id "bigint unsigned" [not null]
+  language_id "int unsigned" [not null]
+  title varchar(255)
+  unaccented_title varchar(255)
+  slug varchar(200)
+  content longtext [note: 'HTML article body; embedded images are stored inside this content.']
+  translation_status translation_status [not null, default: 'not_started']
+  translation_provider varchar(50)
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (post_id, language_id) [unique, name: 'uq_post_translations_post_language']
+    (slug, language_id) [unique, name: 'uq_post_translations_slug_language']
+    (translation_status, updated_at) [name: 'idx_translation_worker_queue']
+    unaccented_title [name: 'idx_post_translations_unaccented_title']
+  }
+}
+
+Table comments {
+  id "bigint unsigned" [pk, increment]
+  post_id "bigint unsigned" [not null]
+  user_id "bigint unsigned" [not null]
+  original_language_id "int unsigned"
+  parent_id "bigint unsigned"
+  reply_to_comment_id "bigint unsigned"
+  reply_to_user_id "bigint unsigned"
+  reply_to_username varchar(150)
+  content text [not null]
+  status comment_status [not null, default: 'approved']
+  like_count "int unsigned" [not null, default: 0, note: 'Denormalized counter backed by comment_likes.']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (post_id, parent_id) [name: 'idx_comments_post_parent']
+    reply_to_comment_id [name: 'idx_comments_reply_to_comment']
+  }
+}
+
+Table comment_translations {
+  id "bigint unsigned" [pk, increment]
+  comment_id "bigint unsigned" [not null]
+  language_id "int unsigned" [not null]
+  content text [not null]
+  translation_status translation_status [not null, default: 'not_started']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (comment_id, language_id) [unique, name: 'comment_translations_comment_id_language_id_unique']
+  }
+}
+
+Table post_likes {
+  id "bigint unsigned" [pk, increment]
+  post_id "bigint unsigned" [not null]
+  user_id "bigint unsigned" [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (post_id, user_id) [unique, name: 'post_likes_post_id_user_id_unique']
+  }
+}
+
+Table comment_likes {
+  id "bigint unsigned" [pk, increment]
+  comment_id "bigint unsigned" [not null]
+  user_id "bigint unsigned" [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (comment_id, user_id) [unique, name: 'comment_likes_comment_id_user_id_unique']
+  }
+}
+
+Table subscriptions {
+  id "bigint unsigned" [pk, increment]
+  subscriber_id "bigint unsigned" [not null]
+  author_id "bigint unsigned" [not null]
+  last_viewed_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (subscriber_id, author_id) [unique, name: 'subscriptions_subscriber_id_author_id_unique']
+    author_id [name: 'idx_subscriptions_author_id']
+  }
+}
+
+Table refresh_tokens {
+  id "bigint unsigned" [pk, increment]
+  user_id "bigint unsigned" [not null]
+  token_hash varchar(255) [not null, unique]
+  device_info varchar(255)
+  ip_address varchar(45)
+  expires_at datetime [not null]
+  last_used_at datetime
+  revoked_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    user_id [name: 'idx_refresh_tokens_user_id']
+    expires_at [name: 'idx_refresh_tokens_expires_at']
+    (user_id, revoked_at) [name: 'idx_refresh_tokens_user_revoked']
+  }
+}
+
+Ref: users.role_id > roles.id [update: cascade, delete: restrict]
+
+Ref: category_translations.category_id > categories.id [update: cascade, delete: cascade]
+Ref: category_translations.language_id > languages.id [update: cascade, delete: cascade]
+
+Ref: posts.author_id > users.id [update: cascade, delete: cascade]
+Ref: posts.category_id > categories.id [update: cascade, delete: set null]
+Ref: posts.original_language_id > languages.id [update: cascade, delete: restrict]
+
+Ref: post_translations.post_id > posts.id [update: cascade, delete: cascade]
+Ref: post_translations.language_id > languages.id [update: cascade, delete: cascade]
+
+Ref: comments.post_id > posts.id [update: cascade, delete: cascade]
+Ref: comments.user_id > users.id [update: cascade, delete: cascade]
+Ref: comments.original_language_id > languages.id [delete: cascade]
+Ref: comments.parent_id > comments.id [update: cascade, delete: cascade]
+Ref: comments.reply_to_comment_id > comments.id [update: cascade, delete: set null]
+Ref: comments.reply_to_user_id > users.id [update: cascade, delete: set null]
+
+Ref: comment_translations.comment_id > comments.id [delete: cascade]
+Ref: comment_translations.language_id > languages.id [delete: cascade]
+
+Ref: post_likes.post_id > posts.id [update: cascade, delete: cascade]
+Ref: post_likes.user_id > users.id [update: cascade, delete: cascade]
+
+Ref: comment_likes.comment_id > comments.id [update: cascade, delete: cascade]
+Ref: comment_likes.user_id > users.id [update: cascade, delete: cascade]
+
+Ref: subscriptions.subscriber_id > users.id [update: cascade, delete: cascade]
+Ref: subscriptions.author_id > users.id [update: cascade, delete: cascade]
+
+Ref: refresh_tokens.user_id > users.id [update: cascade, delete: cascade]

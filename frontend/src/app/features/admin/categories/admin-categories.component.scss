@@ -15,12 +15,16 @@
 .category-directory { width: 100%; table-layout: fixed; border-collapse: collapse; }
 .category-directory th { padding: .85rem 1rem; border-bottom: 1px solid var(--border-color); color: var(--text-muted); background: var(--border-light); font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-align: left; text-transform: uppercase; white-space: nowrap; }
 .category-directory td { padding: 1rem; border-bottom: 1px solid var(--border-color); color: var(--text-main); vertical-align: middle; }
-.category-directory th:nth-child(1) { width: 29%; }
-.category-directory th:nth-child(2) { width: 16%; }
+.category-directory th:nth-child(1) { width: 27%; }
+.category-directory th:nth-child(2) { width: 15%; }
 .category-directory th:nth-child(3) { width: 14%; }
-.category-directory th:nth-child(4) { width: 14%; }
-.category-directory th:nth-child(5) { width: 14%; }
-.category-directory th:nth-child(6) { width: 13%; text-align: center; }
+.category-directory th:nth-child(4) { width: 17%; }
+.category-directory th:nth-child(5) { width: 15%; }
+.category-directory th:nth-child(6) { width: 12%; text-align: center; }
+.category-directory th:nth-child(4),
+.category-directory td:nth-child(4) { padding-right: 1.5rem; }
+.category-directory th:nth-child(5),
+.category-directory td:nth-child(5) { padding-left: 1.5rem; }
 .category-directory td:last-child { text-align: center; }
 .category-row:hover { cursor: pointer; background: var(--border-light); }
 .category-row:focus-visible { outline: 2px solid var(--primary-color); outline-offset: -2px; }
@@ -41,6 +45,7 @@
 .category-actions { display: flex; align-items: center; justify-content: center; gap: .35rem; }
 .category-action { display: grid; width: 35px; height: 35px; padding: 0; place-items: center; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); background: var(--bg-body); }
 .category-action--danger { color: var(--accent-ui-color, var(--primary-color)); }
+.category-action-placeholder { visibility: hidden; pointer-events: none; }
 
 .panel-backdrop,
 .confirm-backdrop { position: fixed; inset: 0; z-index: 1070; border: 0; background: rgb(0 0 0 / 58%); }

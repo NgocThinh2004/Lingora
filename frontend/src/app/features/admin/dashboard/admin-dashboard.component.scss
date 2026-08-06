@@ -265,15 +265,44 @@
 }
 
 .article-list {
+  --article-list-gap: 0.85rem;
+  --article-row-height: 4.5rem;
+
   display: grid;
+  max-height: calc((var(--article-row-height) * 5) + (var(--article-list-gap) * 4));
   margin: 1rem 0 0;
-  padding: 0;
-  gap: 0.85rem;
+  padding: 0 0.35rem 0 0;
+  overflow-y: auto;
+  gap: var(--article-list-gap);
   list-style: none;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--primary-color) var(--border-color);
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.article-list li {
+  height: var(--article-row-height);
+}
+
+.article-list::-webkit-scrollbar {
+  width: 0.35rem;
+}
+
+.article-list::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: var(--border-color);
+}
+
+.article-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--primary-color);
 }
 
 .article-list li > a {
   display: grid;
+  height: 100%;
+  box-sizing: border-box;
   grid-template-columns: 1.5rem minmax(0, 1fr) auto;
   padding: 0.25rem;
   align-items: center;

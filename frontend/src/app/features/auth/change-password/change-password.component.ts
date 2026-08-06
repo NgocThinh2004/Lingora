@@ -12,6 +12,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { getApiErrorMessage } from '../../../core/http/api-error.util';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { LocaleService } from '../../../core/locale/locale.service';
+import { strongPasswordValidator } from '../../../shared/validators/password.validator';
 
 @Component({
   selector: 'app-change-password',
@@ -29,7 +30,7 @@ export class ChangePasswordComponent {
   readonly form = this.formBuilder.nonNullable.group(
     {
       currentPassword: ['', Validators.required],
-      newPassword: ['', [Validators.required, Validators.minLength(8)]],
+      newPassword: ['', [Validators.required, strongPasswordValidator]],
       confirmPassword: ['', Validators.required],
     },
     { validators: this.passwordsMatch },

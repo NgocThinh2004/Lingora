@@ -12,6 +12,16 @@
 }
 
 
+:host ::ng-deep .article-content p {
+  margin-bottom: 1.1rem;
+  font-size: 1.25rem !important;
+  line-height: 1.7 !important;
+
+  * {
+    font-size: inherit !important;
+  }
+}
+
 /* Override Bootstrap's thin .lead class to match normal text completely */
 :host ::ng-deep .article-content p.lead {
   font-size: inherit;
@@ -40,10 +50,12 @@
   background: #000;
 }
 
-:host ::ng-deep .article-content figcaption {
+:host ::ng-deep .article-content figcaption,
+:host ::ng-deep .article-content .editor-media-caption {
   margin-top: 0.65rem;
   color: var(--text-muted, #6c757d);
   font-size: 0.875rem;
+  font-style: italic;
   line-height: 1.5;
   text-align: center;
 }

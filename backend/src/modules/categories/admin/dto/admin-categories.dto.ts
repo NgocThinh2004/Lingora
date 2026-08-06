@@ -1,6 +1,7 @@
 import { Transform, Type } from 'class-transformer';
 import {
   ArrayMinSize,
+  ArrayMaxSize,
   ArrayUnique,
   IsArray,
   IsBoolean,
@@ -91,6 +92,7 @@ export class CreateAdminCategoryDto {
 
   @IsArray()
   @ArrayMinSize(1)
+  @ArrayMaxSize(1)
   @ArrayUnique(item => item.languageId)
   @ValidateNested({ each: true })
   @Type(() => CategoryTranslationInputDto)
@@ -112,6 +114,7 @@ export class UpdateAdminCategoryDto {
   @IsOptional()
   @IsArray()
   @ArrayMinSize(1)
+  @ArrayMaxSize(1)
   @ArrayUnique(item => item.languageId)
   @ValidateNested({ each: true })
   @Type(() => CategoryTranslationInputDto)
