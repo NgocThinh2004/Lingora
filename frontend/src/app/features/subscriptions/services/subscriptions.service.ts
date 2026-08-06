@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map, tap, BehaviorSubject } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ApiItemResponse } from '../../../core/http/api-response.model';
+import { ApiResponse, ApiItemResponse } from '../../../core/http/api-response.model';
 import { AuthService } from '../../../core/auth/auth.service';
 import { SubscriptionAuthor, SubscriptionAuthorsPage, SubscriptionAuthorView } from '../models/subscription.model';
 import { Post } from '../../posts/models/post.model';
@@ -182,8 +182,8 @@ export class SubscriptionsService {
     if (lang) params = params.set('lang', lang);
     if (page) params = params.set('page', page);
     if (limit) params = params.set('limit', limit);
-    return this.http.get<ApiItemResponse<{ items: Post[], meta: any }>>(`${this.baseUrl}/feed`, { params })
-      .pipe(map(response => response.data)); // Unwrap { success, data } → lấy data
+    return this.http.get<ApiResponse<Post[]>>(`${this.baseUrl}/feed`, { params })
+      .pipe(map(response => ({ items: Array.isArray(response.data) ? response.data : [], meta: response.meta })));
   }
 
   /**
@@ -208,8 +208,8 @@ export class SubscriptionsService {
     if (page) params = params.set('page', page);
     if (limit) params = params.set('limit', limit);
     return this.http
-      .get<ApiItemResponse<SubscriptionAuthorsPage>>(`${this.baseUrl}/following`, { params })
-      .pipe(map(response => response.data));
+      .get<ApiResponse<SubscriptionAuthor[]>>(`${this.baseUrl}/following`, { params })
+      .pipe(map(response => ({ items: Array.isArray(response.data) ? response.data : [], meta: response.meta as any })));
   }
 
   /**
