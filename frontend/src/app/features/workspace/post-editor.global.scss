@@ -1421,6 +1421,7 @@ button {
 }
 
 .editor-media-caption[data-placeholder]:empty::before,
+.editor-media-caption[data-placeholder]:has(> br:only-child)::before,
 .editor-media-caption:empty::before {
   content: attr(data-placeholder);
   color: #999999 !important;

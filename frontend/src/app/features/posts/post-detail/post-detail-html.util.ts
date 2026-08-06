@@ -47,7 +47,11 @@ export function preparePostDetailHtml(html: string): string {
     if (!text) {
       caption.remove();
     } else {
-      const wrapper = caption.closest('.editor-media-wrapper') || caption;
+      const wrapper = caption.closest<HTMLElement>('.editor-media-wrapper, figure');
+      if (!wrapper?.querySelector('img, video, audio')) {
+        replaceStandaloneCaptionWithContent(caption);
+        return;
+      }
       const blockTags = new Set(['P', 'DIV', 'BLOCKQUOTE', 'PRE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL']);
       let curr = caption.firstChild;
       let foundBlock = false;
@@ -171,6 +175,33 @@ export function preparePostDetailHtml(html: string): string {
 
   // Trả về chuỗi HTML đã được làm sạch và chuẩn hóa
   return container.innerHTML;
+}
+
+function replaceStandaloneCaptionWithContent(caption: HTMLElement): void {
+  const blockTags = new Set(['P', 'DIV', 'BLOCKQUOTE', 'PRE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL']);
+  const fragment = document.createDocumentFragment();
+  let inlineParagraph: HTMLParagraphElement | null = null;
+
+  Array.from(caption.childNodes).forEach((node) => {
+    if (node instanceof HTMLElement && blockTags.has(node.tagName.toUpperCase())) {
+      inlineParagraph = null;
+      fragment.appendChild(node);
+      return;
+    }
+
+    if (node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()) return;
+    if (!inlineParagraph) {
+      inlineParagraph = document.createElement('p');
+      fragment.appendChild(inlineParagraph);
+    }
+    inlineParagraph.appendChild(node);
+  });
+
+  if (fragment.childNodes.length) {
+    caption.replaceWith(fragment);
+  } else {
+    caption.remove();
+  }
 }
 
 const LEGACY_CODE_CONTROL_TEXTS = new Set([
