@@ -9,7 +9,7 @@ import { SubscriptionAuthorView, SubscriptionAuthor } from './models/subscriptio
 import { AssetImageDirective } from '../../shared/directives/asset-image.directive';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { LocaleService } from '../../core/locale/locale.service';
-import { BehaviorSubject, Subscription, debounceTime, distinctUntilChanged, forkJoin } from 'rxjs';
+import { BehaviorSubject, Subscription, debounceTime, distinctUntilChanged, switchMap, map, catchError, tap, of } from 'rxjs';
 
 /**
  * SubscriptionsComponent - Quản lý trang theo dõi (Subscriptions)
@@ -68,44 +68,50 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loading = true;
     const lang = this.localeService.current();
-    
-    // forkJoin: Load song song 2 API lấy Feed bài viết và Danh sách Tác giả đang theo dõi lúc khởi tạo.
-    // Cải thiện tốc độ vì 2 request độc lập được gửi cùng 1 lúc.
-    this.subscriptions.add(
-      forkJoin({
-        feed: this.subscriptionsService.getFeed('', lang, 1, 20),
-        authors: this.subscriptionsService.following('', 1, 50)
-      }).subscribe({
-        next: ({ feed, authors }) => {
-          this.posts = feed.items;
-          this.authors = this.mapAuthors(authors.items);
-          this.loading = false;
-        },
-        error: () => {
-          this.error = 'Unable to load subscriptions from the database.';
-          this.loading = false;
-        }
-      })
-    );
-
-    // Lắng nghe subject feed. 
-    // debounceTime(300): chống spam API, chỉ gọi khi dừng thay đổi sau 300ms (hữu ích khi gõ tìm kiếm).
-    // distinctUntilChanged: chặn gọi lại nếu giá trị filter giống hệt lần trước.
+    // Cả 2 BehaviorSubject đều có giá trị khởi tạo nên sẽ tự động chạy ngay lần đầu, song song với nhau.
     this.subscriptions.add(
       this.feedSubject.pipe(
         debounceTime(300),
-        distinctUntilChanged((a, b) => a.author === b.author && a.lang === b.lang && a.page === b.page)
-      ).subscribe(filter => {
-        if (!this.loading) this.loadFeed(filter);
+        distinctUntilChanged((a, b) => a.author === b.author && a.lang === b.lang && a.page === b.page),
+        tap(() => this.loadingFeed = true),
+        switchMap(filter => this.subscriptionsService.getFeed(filter.author, filter.lang, filter.page, 20).pipe(
+          map(data => ({ filter, data })),
+          catchError(() => {
+            this.loadingFeed = false;
+            this.loading = false;
+            return of(null);
+          })
+        ))
+      ).subscribe(result => {
+        if (!result) return;
+        const { filter, data } = result;
+        this.posts = filter.page === 1 ? data.items : [...this.posts, ...data.items];
+        this.loadingFeed = false;
+        // Nếu loadAuthors cũng xong thì loading chung sẽ tắt
+        if (!this.loadingAuthors) this.loading = false;
       })
     );
 
     this.subscriptions.add(
       this.authorsSubject.pipe(
         debounceTime(300),
-        distinctUntilChanged((a, b) => a.q === b.q && a.page === b.page)
-      ).subscribe(filter => {
-        if (!this.loading) this.loadAuthors(filter);
+        distinctUntilChanged((a, b) => a.q === b.q && a.page === b.page),
+        tap(() => this.loadingAuthors = true),
+        switchMap(filter => this.subscriptionsService.following(filter.q, filter.page, 50).pipe(
+          map(data => ({ filter, data })),
+          catchError(() => {
+            this.loadingAuthors = false;
+            this.loading = false;
+            return of(null);
+          })
+        ))
+      ).subscribe(result => {
+        if (!result) return;
+        const { filter, data } = result;
+        this.authors = filter.page === 1 ? this.mapAuthors(data.items) : [...this.authors, ...this.mapAuthors(data.items)];
+        this.loadingAuthors = false;
+        // Nếu loadFeed cũng xong thì loading chung sẽ tắt
+        if (!this.loadingFeed) this.loading = false;
       })
     );
   }
@@ -144,34 +150,6 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
     if (this.tab !== 'all') {
       this.tab = 'all';
     }
-  }
-
-  // Load Feed bài viết, cho phép nối thêm dữ liệu (append) nếu ở page > 1
-  private loadFeed(filter: { author: string; lang: string; page: number }): void {
-    this.loadingFeed = true;
-    this.subscriptionsService.getFeed(filter.author, filter.lang, filter.page, 20).subscribe({
-      next: data => {
-        this.posts = filter.page === 1 ? data.items : [...this.posts, ...data.items];
-        this.loadingFeed = false;
-      },
-      error: () => {
-        this.loadingFeed = false;
-      }
-    });
-  }
-
-  // Load danh sách tác giả
-  private loadAuthors(filter: { q: string; page: number }): void {
-    this.loadingAuthors = true;
-    this.subscriptionsService.following(filter.q, filter.page, 50).subscribe({
-      next: data => {
-        this.authors = filter.page === 1 ? this.mapAuthors(data.items) : [...this.authors, ...this.mapAuthors(data.items)];
-        this.loadingAuthors = false;
-      },
-      error: () => {
-        this.loadingAuthors = false;
-      }
-    });
   }
 
   // Định dạng lại format data trả về từ API sang format View sử dụng ở template

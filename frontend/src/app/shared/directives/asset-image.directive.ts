@@ -29,11 +29,11 @@ export class AssetImageDirective implements OnChanges, AfterViewInit {
   @HostBinding('style.border-radius') readonly borderRadius = '50%';
 
   ngOnChanges(): void {
-    // Reset trạng thái fallback mỗi khi input nguồn thay đổi
-    this.fallbackApplied = false;
-    // Cập nhật src cho thẻ img bằng URL đã được chuẩn hóa. 
-    // Nếu không có đầu vào, lấy luôn ảnh fallback mặc định.
-    this.image.src = this.resolveUrl(this.appAssetImage || this.assetFallback);
+    const newUrl = this.resolveUrl(this.appAssetImage || this.assetFallback);
+    if (!this.image.src.endsWith(newUrl) && this.image.getAttribute('src') !== newUrl) {
+      this.fallbackApplied = false;
+      this.image.src = newUrl;
+    }
   }
 
   ngAfterViewInit(): void {

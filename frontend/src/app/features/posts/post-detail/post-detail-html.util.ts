@@ -1,7 +1,10 @@
+import { environment } from '../../../../environments/environment';
+
 /**
  * Hàm chuẩn bị chuỗi HTML của bài viết trước khi hiển thị cho người xem
  * Mục đích: 
  * - Loại bỏ các thành phần điều khiển (toolbar) thừa do editor sinh ra.
+ * - Chuẩn hóa URL đường dẫn ảnh/media /uploads/ thành đường dẫn tuyệt đối backend.
  * - Parse (phân tích) và chuẩn hóa lại cấu trúc các khối code (code block) 
  *   để chúng hiển thị đúng định dạng có số thứ tự dòng.
  */
@@ -14,12 +17,37 @@ export function preparePostDetailHtml(html: string): string {
   const container = document.createElement('div');
   container.innerHTML = html;
 
+  const staticBaseUrl = environment.apiUrl.replace(/\/api\/v1\/?$/, '');
+
+  container.querySelectorAll<HTMLImageElement | HTMLVideoElement | HTMLAudioElement>('img, video, audio').forEach((media) => {
+    const src = media.getAttribute('src');
+    if (src) {
+      if (src.startsWith('data:')) {
+        return;
+      }
+      const uploadsIdx = src.indexOf('/uploads/');
+      if (uploadsIdx !== -1) {
+        media.setAttribute('src', `${staticBaseUrl}${src.substring(uploadsIdx)}`);
+      }
+    }
+  });
+
   // Xóa bỏ các thanh công cụ, nút bấm xóa hoặc chọn ngôn ngữ bên trong editor
   container
     .querySelectorAll(
-      '.editor-code-toolbar, .editor-code-delete, .editor-code-language-menu, .editor-media-delete',
+      '.editor-code-toolbar, .editor-code-delete, .editor-code-language-menu, .editor-media-delete, .editor-media-alignment-bar',
     )
     .forEach((element) => element.remove());
+
+  // Chuẩn hóa chú thích media (figcaption)
+  container.querySelectorAll<HTMLElement>('.editor-media-caption, figcaption').forEach((caption) => {
+    caption.removeAttribute('contenteditable');
+    caption.removeAttribute('data-placeholder');
+    const text = caption.textContent?.trim();
+    if (!text) {
+      caption.remove();
+    }
+  });
 
   // Xử lý từng khối mã (code block)
   container.querySelectorAll<HTMLElement>('.editor-code-body').forEach((codeBody) => {

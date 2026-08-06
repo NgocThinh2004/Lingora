@@ -537,6 +537,15 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    if (['justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'].includes(command)) {
+      const activeWrapper = this.getSelectedOrTouchingMediaWrapper();
+      if (activeWrapper) {
+        const align = command === 'justifyLeft' ? 'left' : command === 'justifyRight' ? 'right' : 'center';
+        this.setMediaAlignment(activeWrapper, align);
+        return;
+      }
+    }
+
     this.restoreSelection();
     document.execCommand(command, false, value);
     this.syncContentFromEditor();
@@ -544,8 +553,55 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.updateToolbarState();
   }
 
+  private setMediaAlignment(wrapper: HTMLElement, align: 'left' | 'center' | 'right'): void {
+    wrapper.setAttribute('data-align', align);
+    wrapper.classList.remove('align-left', 'align-center', 'align-right');
+    wrapper.classList.add(`align-${align}`);
+    wrapper.querySelectorAll('[data-media-align]').forEach((btn) => {
+      const btnAlign = btn.getAttribute('data-media-align');
+      btn.classList.toggle('is-active', btnAlign === align);
+    });
+    this.syncContentFromEditor();
+    this.saveEditorSelection();
+    this.updateToolbarState();
+  }
+
+  private getSelectedOrTouchingMediaWrapper(): HTMLElement | null {
+    const editor = document.getElementById('postBody');
+    if (!editor) {
+      return null;
+    }
+    const selected = editor.querySelector('.editor-media-wrapper.is-selected') as HTMLElement | null;
+    if (selected) {
+      return selected;
+    }
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      return null;
+    }
+    const node = selection.anchorNode;
+    const parent = node?.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : node?.parentElement;
+    return parent?.closest('.editor-media-wrapper') as HTMLElement | null;
+  }
+
   insertBlock(tagName: string): void {
     this.runEditorCommand('formatBlock', tagName);
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const node = selection.anchorNode;
+      const parentEl = node?.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : node?.parentElement;
+      const block = parentEl?.closest('p, h1, h2, h3, h4, h5, h6, blockquote') as HTMLElement | null;
+      if (block) {
+        block.querySelectorAll('*').forEach((el) => {
+          (el as HTMLElement).style.fontSize = '';
+          el.removeAttribute('size');
+          el.removeAttribute('fontsize');
+          el.removeAttribute('face');
+        });
+        block.style.fontSize = '';
+        this.syncContentFromEditor();
+      }
+    }
   }
 
   uploadMedia(mediaType: EditorMediaType, event: Event): void {
@@ -675,6 +731,24 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    const mediaAlignBtn = target.closest('[data-media-align]') as HTMLElement | null;
+    if (mediaAlignBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      const align = mediaAlignBtn.getAttribute('data-media-align') as 'left' | 'center' | 'right';
+      const wrapper = mediaAlignBtn.closest('.editor-media-wrapper') as HTMLElement | null;
+      if (wrapper && align) {
+        this.setMediaAlignment(wrapper, align);
+      }
+      return;
+    }
+
+    const clickedMediaWrapper = target.closest('.editor-media-wrapper') as HTMLElement | null;
+    document.getElementById('postBody')?.querySelectorAll('.editor-media-wrapper').forEach((w: Element) => w.classList.remove('is-selected'));
+    if (clickedMediaWrapper && !target.closest('.editor-media-caption')) {
+      clickedMediaWrapper.classList.add('is-selected');
+    }
+
     const mediaRemove = target.closest('[data-remove-media]');
     if (mediaRemove) {
       event.preventDefault();
@@ -742,6 +816,40 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
       event.preventDefault();
       this.selectEditorContents();
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const node = selection.anchorNode;
+        const parentEl = node?.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : node?.parentElement;
+        const mediaWrapper = parentEl?.closest('.editor-media-wrapper') as HTMLElement | null;
+
+        if (mediaWrapper) {
+          event.preventDefault();
+          let nextP = mediaWrapper.nextElementSibling as HTMLElement | null;
+          if (!nextP || nextP.tagName.toLowerCase() !== 'p') {
+            nextP = document.createElement('p');
+            nextP.innerHTML = '<br>';
+            mediaWrapper.after(nextP);
+          }
+          this.setCursorAtStartOf(nextP);
+          this.syncContentFromEditor();
+          this.saveEditorSelection();
+        }
+      }
+    }
+  }
+
+  private setCursorAtStartOf(element: HTMLElement): void {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(true);
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
     }
   }
 
@@ -820,12 +928,18 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       .querySelectorAll('script, style, meta, link, iframe, object, embed, noscript, button, input, form, select, textarea, svg')
       .forEach((el) => el.remove());
 
-    const containerTags = ['figure', 'figcaption', 'article', 'section', 'header', 'footer', 'aside', 'main', 'div', 'table', 'tbody', 'thead', 'tr', 'td'];
+    const containerTags = ['figure', 'article', 'section', 'header', 'footer', 'aside', 'main', 'div', 'table', 'tbody', 'thead', 'tr', 'td'];
     let foundContainer = true;
     while (foundContainer) {
       foundContainer = false;
       const el = container.querySelector(containerTags.join(', '));
-      if (el && !el.classList.contains('editor-media-wrapper') && !el.classList.contains('editor-code-block')) {
+      if (
+        el &&
+        !el.classList.contains('editor-media-wrapper') &&
+        !el.classList.contains('editor-media-container') &&
+        !el.classList.contains('editor-media-caption') &&
+        !el.classList.contains('editor-code-block')
+      ) {
         foundContainer = true;
         while (el.firstChild) {
           el.parentNode?.insertBefore(el.firstChild, el);
@@ -861,23 +975,42 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    container.querySelectorAll('img').forEach((img) => {
-      if (!img.closest('.editor-media-wrapper')) {
-        const src = img.getAttribute('src') || '';
-        const alt = img.getAttribute('alt') || 'image';
+    container.querySelectorAll('img, video, audio').forEach((media) => {
+      if (!media.closest('.editor-media-wrapper')) {
+        const src = media.getAttribute('src') || '';
+        const alt = media.getAttribute('alt') || media.getAttribute('title') || 'media';
+        const type: EditorMediaType = media.tagName.toLowerCase() === 'audio' ? 'audio' : media.tagName.toLowerCase() === 'video' ? 'video' : 'image';
+        const parentAlign = media.closest('[align]')?.getAttribute('align') || 'center';
+        const align: 'left' | 'center' | 'right' = parentAlign === 'left' ? 'left' : parentAlign === 'right' ? 'right' : 'center';
+
+        const captionText = media.closest('figure')?.querySelector('figcaption')?.textContent?.trim() ||
+          media.parentElement?.querySelector('figcaption')?.textContent?.trim() || '';
+
         if (src) {
           const wrapper = document.createElement('div');
-          wrapper.innerHTML = this.buildMediaHtml('image', src, alt);
-          img.replaceWith(wrapper);
+          wrapper.innerHTML = this.buildMediaHtml(type, src, alt, undefined, undefined, align, captionText);
+          media.replaceWith(wrapper.firstElementChild || wrapper);
         }
       }
     });
 
+    container.querySelectorAll('font').forEach((font) => {
+      while (font.firstChild) {
+        font.parentNode?.insertBefore(font.firstChild, font);
+      }
+      font.remove();
+    });
+
     container.querySelectorAll('*').forEach((el) => {
       el.removeAttribute('style');
+      el.removeAttribute('size');
+      el.removeAttribute('fontsize');
+      el.removeAttribute('face');
 
       if (
         !el.classList.contains('editor-media-wrapper') &&
+        !el.classList.contains('editor-media-container') &&
+        !el.classList.contains('editor-media-caption') &&
         !el.classList.contains('editor-code-block') &&
         !el.classList.contains('editor-inline-code-font') &&
         !el.classList.contains('code-line') &&
@@ -1298,9 +1431,12 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     filename: string,
     assetId?: string,
     objectKey?: string,
+    align: 'left' | 'center' | 'right' = 'center',
+    captionText: string = '',
   ): string {
     const safeName = this.escapeAttribute(filename);
     const safeUrl = this.escapeAttribute(url);
+    const safeCaption = this.escapeAttribute(captionText);
     const deleteMediaLabel = this.escapeAttribute(this.localeService.translate('delete_media'));
     const mediaHtml =
       mediaType === 'image'
@@ -1313,14 +1449,17 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       ? ` data-media-asset-id="${this.escapeAttribute(assetId)}" data-media-object-key="${this.escapeAttribute(objectKey)}"`
       : '';
     return (
-      `<div class="editor-media-wrapper" contenteditable="false"${assetAttributes}>` +
+      `<div class="editor-media-wrapper align-${align}" data-align="${align}" contenteditable="false"${assetAttributes}>` +
+      `<div class="editor-media-container">` +
       `${mediaHtml}` +
       `<button type="button" class="editor-media-delete" data-remove-media aria-label="${deleteMediaLabel}" title="${deleteMediaLabel}">` +
-      `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">` +
+      `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">` +
       `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
       `</svg>` +
       `</button>` +
-      `</div><p><br></p>`
+      `</div>` +
+      `<figcaption class="editor-media-caption" contenteditable="true" data-placeholder="Nhập tiêu đề / chú thích ảnh...">${safeCaption}</figcaption>` +
+      `</div>`
     );
   }
 
@@ -1328,6 +1467,18 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     const container = document.createElement('div');
     container.innerHTML = this.stripEditorOnlyMarkup(html);
     this.numberPreviewCodeBlocks(container);
+    container.querySelectorAll<HTMLImageElement | HTMLVideoElement | HTMLAudioElement>('img, video, audio').forEach((media) => {
+      const src = media.getAttribute('src');
+      if (src) {
+        if (src.startsWith('data:')) {
+          return;
+        }
+        const uploadsIdx = src.indexOf('/uploads/');
+        if (uploadsIdx !== -1) {
+          media.setAttribute('src', this.uploadsService.toAbsoluteUrl(src.substring(uploadsIdx)));
+        }
+      }
+    });
     container.querySelectorAll('[contenteditable]').forEach((node) => node.removeAttribute('contenteditable'));
     return container.innerHTML;
   }
@@ -1338,9 +1489,19 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
     container
       .querySelectorAll(
-        '.editor-media-delete, [data-remove-media], .editor-media-wrapper button, .editor-media-wrapper svg',
+        '.editor-media-delete, .editor-media-alignment-bar, [data-remove-media], [data-media-align]',
       )
       .forEach(node => node.remove());
+
+    container.querySelectorAll<HTMLElement>('.editor-media-caption').forEach(caption => {
+      const text = caption.textContent?.trim();
+      if (!text) {
+        caption.remove();
+      } else {
+        caption.removeAttribute('contenteditable');
+        caption.removeAttribute('data-placeholder');
+      }
+    });
 
     container.querySelectorAll<HTMLElement>('.editor-after-block-placeholder').forEach(node => {
       const hasVisibleContent = Boolean(node.textContent?.replace(/\u00a0/g, ' ').trim());
@@ -1737,23 +1898,67 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       button?.classList.toggle('is-muted', !document.queryCommandEnabled(command));
     });
 
+    const activeMediaWrapper = this.getSelectedOrTouchingMediaWrapper();
     let activeAlign = 'justifyLeft';
-    ['justifyCenter', 'justifyRight', 'justifyFull'].forEach((command) => {
-      const button = document.querySelector(`[data-align-command="${command}"]`);
-      const isActive = document.queryCommandState(command);
-      button?.classList.toggle('is-selected', isActive);
-      if (isActive) {
-        activeAlign = command;
-      }
-    });
+    if (activeMediaWrapper) {
+      const align = activeMediaWrapper.getAttribute('data-align') ||
+        (activeMediaWrapper.classList.contains('align-left') ? 'left' : activeMediaWrapper.classList.contains('align-right') ? 'right' : 'center');
+      activeAlign = align === 'left' ? 'justifyLeft' : align === 'right' ? 'justifyRight' : 'justifyCenter';
 
-    const leftButton = document.querySelector('[data-align-command="justifyLeft"]');
-    leftButton?.classList.toggle('is-selected', activeAlign === 'justifyLeft');
-    this.updateAlignTrigger(activeAlign);
-    this.updateBaselineUi(syncBaseline ? this.getBaselineFormat() : this.activeBaselineFormat);
+      ['justifyCenter', 'justifyRight', 'justifyFull'].forEach((command) => {
+        const button = document.querySelector(`[data-align-command="${command}"]`);
+        button?.classList.toggle('is-selected', command === activeAlign);
+      });
+      const leftButton = document.querySelector('[data-align-command="justifyLeft"]');
+      leftButton?.classList.toggle('is-selected', activeAlign === 'justifyLeft');
+      this.updateAlignTrigger(activeAlign);
+    } else {
+      ['justifyCenter', 'justifyRight', 'justifyFull'].forEach((command) => {
+        const button = document.querySelector(`[data-align-command="${command}"]`);
+        const isActive = document.queryCommandState(command);
+        button?.classList.toggle('is-selected', isActive);
+        if (isActive) {
+          activeAlign = command;
+        }
+      });
 
+      const leftButton = document.querySelector('[data-align-command="justifyLeft"]');
+      leftButton?.classList.toggle('is-selected', activeAlign === 'justifyLeft');
+      this.updateAlignTrigger(activeAlign);
+    }
     const codeButton = document.querySelector('[data-inline-code]');
     codeButton?.classList.toggle('is-active', this.isInlineCodeActive());
+
+    const anchorNode = selection.anchorNode;
+    const parentEl = anchorNode?.nodeType === Node.ELEMENT_NODE ? (anchorNode as HTMLElement) : anchorNode?.parentElement;
+    const currentBlock = parentEl?.closest('p, h1, h2, h3, h4, h5, h6, blockquote') as HTMLElement | null;
+    let activeBlockTag = currentBlock ? currentBlock.tagName.toLowerCase() : 'p';
+    if (!['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(activeBlockTag)) {
+      activeBlockTag = 'p';
+    }
+
+    document.querySelectorAll('[data-format-block]').forEach((btn) => {
+      const tag = btn.getAttribute('data-format-block');
+      btn.classList.toggle('is-selected', tag === activeBlockTag);
+    });
+
+    const styleTrigger = document.querySelector('.toolbar-group .style-menu')?.previousElementSibling as HTMLElement | null;
+    if (styleTrigger) {
+      const labelMap: Record<string, string> = {
+        p: 'Style',
+        h1: 'Tiêu đề 1',
+        h2: 'Tiêu đề 2',
+        h3: 'Tiêu đề 3',
+        h4: 'Tiêu đề 4',
+        h5: 'Tiêu đề 5',
+        h6: 'Tiêu đề 6',
+      };
+      const newText = labelMap[activeBlockTag] || 'Style';
+      const textNode = Array.from(styleTrigger.childNodes).find((n) => n.nodeType === Node.TEXT_NODE);
+      if (textNode) {
+        textNode.textContent = `${newText} `;
+      }
+    }
   }
 
   private createCodeBlockHtml(): string {

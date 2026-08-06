@@ -22,6 +22,8 @@ import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
 import { PostCardComponent } from '../components/post-card/post-card.component';
 import { ToastService } from '../../../core/notifications/toast.service';
+import { ConfirmModalService } from '../../../shared/services/confirm-modal.service';
+import { CanComponentDeactivate } from '../../../core/guards/unsaved-changes.guard';
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -37,7 +39,7 @@ import { ToastService } from '../../../core/notifications/toast.service';
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.scss']
 })
-export class PostDetailComponent implements OnDestroy {
+export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
   private route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly postService = inject(FeedPostsService);
@@ -51,9 +53,11 @@ export class PostDetailComponent implements OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   private readonly toast = inject(ToastService);
+  private readonly confirmModalService = inject(ConfirmModalService);
 
   @ViewChild('articleContent') articleContentRef?: ElementRef<HTMLElement>;
   @ViewChild('centerFeed') centerFeedRef?: ElementRef<HTMLElement>;
+  @ViewChild(CommentSectionComponent) commentSection?: CommentSectionComponent;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // GLOBAL STATE / DB FIELD MAPPING
@@ -68,8 +72,15 @@ export class PostDetailComponent implements OnDestroy {
   post = signal<Post | null>(null);
   
   // relatedPosts (Signal): Danh sách bài viết liên quan.
-  // - Lấy từ DB dựa trên cùng category_id với bài viết hiện tại.
   relatedPosts = signal<Post[]>([]);
+  relatedPostsLoading = signal<boolean>(false);
+
+  canDeactivate(): boolean | Promise<boolean> {
+    if (this.commentSection?.hasUnsavedChanges()) {
+      return this.confirmModalService.open();
+    }
+    return true;
+  }
   
   // loading / error / authorPreview: Trạng thái UI cơ bản.
   loading = signal<boolean>(true);
@@ -80,6 +91,8 @@ export class PostDetailComponent implements OnDestroy {
   private readonly languageReload = new Subject<void>();
   private languageChangeReload = false;
   private videoObservers: IntersectionObserver[] = [];
+  private videoTimeoutId?: any;
+  private scrollTimeoutId?: any;
 
   // ── Scroll-depth view tracking ──────────────────────────────────────────────
   // Observer theo dõi sentinel element tại 50% bài viết
@@ -92,6 +105,8 @@ export class PostDetailComponent implements OnDestroy {
   // ────────────────────────────────────────────────────────────────────────────
 
   ngOnDestroy(): void {
+    clearTimeout(this.videoTimeoutId);
+    clearTimeout(this.scrollTimeoutId);
     // Dọn dẹp các observers và subscriptions khi component bị hủy để tránh memory leak
     this.cleanupVideoObservers();
     this.cleanupScrollTracker();
@@ -113,9 +128,6 @@ export class PostDetailComponent implements OnDestroy {
     }
 
     this.languageChangeReload = true;
-    this.loading.set(true);
-    this.post.set(null);
-    this.relatedPosts.set([]);
     this.cleanupVideoObservers();
     this.cleanupScrollTracker();
     this.languageReload.next();
@@ -136,7 +148,7 @@ export class PostDetailComponent implements OnDestroy {
     this.cleanupVideoObservers();
 
     // Đợi 1 tick (100ms) để Angular hoàn tất việc render [innerHTML]
-    setTimeout(() => {
+    this.videoTimeoutId = setTimeout(() => {
       const articleEl = this.articleContentRef?.nativeElement;
       if (!articleEl) return;
 
@@ -191,7 +203,7 @@ export class PostDetailComponent implements OnDestroy {
 
     // Đợi DOM render xong rồi mới inject sentinel và bắt đầu quan sát
     // 300ms: đủ để Angular hoàn tất change detection + render [innerHTML] kể cả bài nặng
-    setTimeout(() => {
+    this.scrollTimeoutId = setTimeout(() => {
       const articleEl = this.articleContentRef?.nativeElement;
       if (!articleEl) return;
 
@@ -201,10 +213,8 @@ export class PostDetailComponent implements OnDestroy {
       // Lấy tất cả các phần tử con trực tiếp của article (paragraphs, headings, images, etc.)
       const children = Array.from(articleEl.children);
 
-      // Guard: nếu innerHTML chưa render xong (children rỗng), dừng lại.
-      // Điều này ngăn view bị đếm ở bài "rỗng" khi browser chưa kịp paint.
-      // setupScrollTracker sẽ được gọi lại ở lần route navigate tiếp theo.
-      if (children.length === 0) return;
+      // Guard: nếu innerHTML chưa render xong, dừng lại.
+      if (children.length === 0 && !articleEl.textContent?.trim()) return;
 
       // Tạo sentinel element — một thẻ div vô hình (0px height, không ảnh hưởng layout)
       // Đặt tại điểm GIỮA (50%) chiều dài bài viết bằng cách tính toán vị trí DOM
@@ -212,8 +222,8 @@ export class PostDetailComponent implements OnDestroy {
       sentinel.setAttribute('data-scroll-sentinel', '');
       sentinel.style.cssText = 'height:0;overflow:hidden;pointer-events:none;visibility:hidden;';
 
-      if (children.length === 1) {
-        // Bài chỉ có 1 phần tử (VD: 1 đoạn văn ngắn) → append vào cuối
+      if (children.length <= 1) {
+        // Bài chỉ có 1 phần tử (VD: 1 đoạn văn ngắn) hoặc chỉ có text trần → append vào cuối
         // IntersectionObserver sẽ trigger ngay khi render (hợp lý: user thấy toàn bộ bài)
         articleEl.appendChild(sentinel);
       } else {
@@ -242,7 +252,9 @@ export class PostDetailComponent implements OnDestroy {
             this.scrollDepthObserver = undefined;
 
             // Gọi API POST /posts/:id/view — bắt lỗi silently để không làm crash UX
-            this.postService.trackView(postId).subscribe({
+            this.postService.trackView(postId).pipe(
+              takeUntilDestroyed(this.destroyRef)
+            ).subscribe({
               next: () => { /* View được ghi nhận thành công, không cần xử lý gì thêm */ },
               error: () => { /* Lỗi mạng — bỏ qua, không thông báo người dùng */ },
             });

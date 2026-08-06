@@ -126,7 +126,7 @@ export class HomeComponent {
     // ══════════════════════════════════════════════════════
     this.feedTrigger$.pipe(
       switchMap(({ page, category, lang }) => {
-        this.loading.set(page === 1);
+        this.loading.set(page === 1 && this.posts().length === 0);
         this.loadingMore.set(page > 1);
         return this.postService.list({ lang, category: category || undefined, page, limit: 10 });
       }),
@@ -154,10 +154,10 @@ export class HomeComponent {
       },
     });
 
-    effect(() => {
+    effect((onCleanup) => {
       const lang = this.currentLang();
       untracked(() => {
-        this.categoryService.findAll(undefined, lang).pipe(
+        const sub = this.categoryService.findAll(undefined, lang).pipe(
           takeUntilDestroyed(this.destroyRef),
         ).subscribe({
           next: (categories) => {
@@ -169,6 +169,9 @@ export class HomeComponent {
           },
           error: () => this.categories.set([]),
         });
+
+        onCleanup(() => sub.unsubscribe());
+
         this.page.set(1);
         this.feedTrigger$.next({ page: 1, category: this.selectedCategorySlug(), lang });
       });
