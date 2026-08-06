@@ -277,10 +277,12 @@ export class CommentsService {
 
     return {
       items,
-      total: totalCommentsCount,
-      page,
-      limit,
-      totalPages: Math.ceil(rootComments.count / limit), // rootComments.count là tổng số parent_id: null
+      meta: {
+        total: totalCommentsCount,
+        page,
+        limit,
+        totalPages: Math.ceil(rootComments.count / limit), // rootComments.count là tổng số parent_id: null
+      }
     };
   }
 
