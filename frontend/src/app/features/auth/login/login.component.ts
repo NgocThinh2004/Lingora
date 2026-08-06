@@ -81,7 +81,7 @@ export class LoginComponent implements OnInit {
     ).subscribe({
       next: response => {
         this.toastService.showSuccess(this.localeService.translate('logged_in_success'));
-        void this.router.navigateByUrl(resolvePostLoginUrl(response.data.user, this.returnUrl));
+        void this.router.navigateByUrl(resolvePostLoginUrl(response.user, this.returnUrl));
       },
       error: error => {
         this.errorMessage = getApiErrorMessage(error, this.localeService.translate('login_failed'), true);

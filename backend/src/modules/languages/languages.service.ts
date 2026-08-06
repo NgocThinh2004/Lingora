@@ -53,12 +53,10 @@ export class LanguagesService {
         coverageByLanguage.get(language.id),
       )),
       meta: {
-        pagination: {
-          total: count,
-          page: query.page,
-          limit: query.limit,
-          totalPages: Math.ceil(count / query.limit),
-        },
+        total: count,
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.ceil(count / query.limit),
       },
     };
   }

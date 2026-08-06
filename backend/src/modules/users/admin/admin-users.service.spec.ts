@@ -69,12 +69,12 @@ describe('AdminUsersService', () => {
         [Op.or]: expect.any(Array),
       }),
     }));
-    expect(result.meta.pagination).toEqual({
+    expect(result.meta).toEqual(expect.objectContaining({
       total: 1,
       page: 1,
       limit: 10,
       totalPages: 1,
-    });
+    }));
     expect(result.meta.directoryTotal).toBe(12);
     expect(result.data[0]).toEqual(expect.objectContaining({
       id: user.id,

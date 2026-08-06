@@ -69,7 +69,7 @@ describe('AuthService', () => {
 
   it('requests a password reset code for the supplied email', () => {
     service.forgotPassword('member@example.com').subscribe(response => {
-      expect(response.data.message).toBe('Request accepted');
+      expect(response.message).toBe('Request accepted');
     });
 
     const request = httpTesting.expectOne(`${environment.apiUrl}/auth/forgot-password`);

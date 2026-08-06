@@ -85,15 +85,15 @@ export class AdminCategoriesService {
     });
 
     const start = (query.page - 1) * query.limit;
+    const sliced = filtered.slice(start, start + query.limit);
     return {
-      data: filtered.slice(start, start + query.limit),
+      data: sliced,
       meta: {
-        pagination: {
-          total: filtered.length,
-          page: query.page,
-          limit: query.limit,
-          totalPages: Math.ceil(filtered.length / query.limit),
-        },
+        total: filtered.length,
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.ceil(filtered.length / query.limit),
+        shown: sliced.length,
       },
     };
   }

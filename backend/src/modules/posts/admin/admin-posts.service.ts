@@ -40,12 +40,10 @@ export class AdminPostsService {
     return {
       data: filtered.slice(start, start + query.limit).map(({ content, reviewNote, ...post }) => post),
       meta: {
-        pagination: {
-          total: filtered.length,
-          page: query.page,
-          limit: query.limit,
-          totalPages: Math.ceil(filtered.length / query.limit),
-        },
+        total: filtered.length,
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.ceil(filtered.length / query.limit),
       },
     };
   }
