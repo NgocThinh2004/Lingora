@@ -2174,6 +2174,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private ensureEditorMediaDeleteButtons(editor: HTMLElement): void {
     editor.querySelectorAll<HTMLElement>('.editor-media-wrapper').forEach((wrapper) => {
       wrapper.setAttribute('contenteditable', 'false');
+      const mediaContainer = wrapper.querySelector<HTMLElement>('.editor-media-container');
 
       let deleteBtn = wrapper.querySelector<HTMLButtonElement>('.editor-media-delete');
       if (!deleteBtn) {
@@ -2188,7 +2189,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">` +
           `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
           `</svg>`;
-        wrapper.appendChild(deleteBtn);
+        (mediaContainer ?? wrapper).appendChild(deleteBtn);
       } else {
         deleteBtn.className = 'editor-media-delete';
         deleteBtn.setAttribute('data-remove-media', '');
@@ -2198,6 +2199,25 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
             `</svg>`;
         }
+        if (mediaContainer && deleteBtn.parentElement !== mediaContainer) {
+          mediaContainer.appendChild(deleteBtn);
+        }
+      }
+
+      let caption = wrapper.querySelector<HTMLElement>('.editor-media-caption, figcaption');
+      if (!caption) {
+        caption = document.createElement('figcaption');
+        if (mediaContainer) {
+          mediaContainer.after(caption);
+        } else {
+          wrapper.appendChild(caption);
+        }
+      }
+      caption.className = 'editor-media-caption';
+      caption.setAttribute('contenteditable', 'true');
+      caption.setAttribute('data-placeholder', 'Nhập tiêu đề / chú thích ảnh...');
+      if (!caption.textContent?.trim() && !caption.querySelector('br')) {
+        caption.innerHTML = '<br>';
       }
     });
   }
