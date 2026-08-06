@@ -335,12 +335,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   private uploadAvatar(file: File): void {
     this.uploadingAvatar.set(true);
-    this.uploadsService.uploadEditorMedia('image', file).pipe(
+    this.uploadsService.uploadAvatar(file).pipe(
       switchMap(upload => this.authService.updateProfile({
         displayName: this.profileForm.displayName.trim(),
         username: this.normalizeUsername(this.profileForm.username),
         bio: this.profileForm.bio.trim(),
-        avatarUrl: upload.url,
+        avatarMediaId: upload.assetId,
         accentColor: this.accentColor(),
         backgroundColor: this.backgroundColor(),
       })),

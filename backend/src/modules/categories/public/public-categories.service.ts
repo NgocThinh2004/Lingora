@@ -5,7 +5,6 @@ import { Category } from '../models/category.model';
 import { CategoryTranslation } from '../models/category-translation.model';
 import { Language } from '../../languages/models/language.model';
 import { removeAccents } from '../../../utils/string.util';
-import { CategoriesCacheService } from '../categories-cache.service';
 
 @Injectable()
 export class PublicCategoriesService {
@@ -14,18 +13,12 @@ export class PublicCategoriesService {
     @InjectModel(CategoryTranslation)
     private readonly translationModel: typeof CategoryTranslation,
     @InjectModel(Language) private readonly languageModel: typeof Language,
-    private readonly categoriesCache: CategoriesCacheService,
   ) {}
 
   async findActive(q?: string, lang?: string, limit?: number) {
     const normalizedQuery = q?.trim() ?? '';
     const normalizedLanguage = lang?.trim().toLowerCase() ?? '';
-    const normalizedLimit = limit ?? 0;
-    const key = `list:${JSON.stringify([normalizedQuery, normalizedLanguage, normalizedLimit])}`;
-    return this.categoriesCache.getOrLoad(
-      key,
-      () => this.loadActive(normalizedQuery, normalizedLanguage, limit),
-    );
+    return this.loadActive(normalizedQuery, normalizedLanguage, limit);
   }
 
   private async loadActive(q?: string, lang?: string, limit?: number) {
@@ -119,10 +112,7 @@ export class PublicCategoriesService {
 
   async findBySlug(slug: string, lang?: string) {
     const normalizedLanguage = lang?.trim().toLowerCase() ?? '';
-    return this.categoriesCache.getOrLoad(
-      `slug:${encodeURIComponent(slug)}:${normalizedLanguage}`,
-      () => this.loadBySlug(slug, normalizedLanguage),
-    );
+    return this.loadBySlug(slug, normalizedLanguage);
   }
 
   private async loadBySlug(slug: string, lang?: string) {

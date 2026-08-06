@@ -1,5 +1,4 @@
 import { AfterViewInit, Directive, ElementRef, HostBinding, HostListener, Input, OnChanges, inject } from '@angular/core';
-import { environment } from '../../../environments/environment';
 
 /**
  * AssetImageDirective - Directive xử lý và hiển thị ảnh một cách an toàn
@@ -17,8 +16,6 @@ import { environment } from '../../../environments/environment';
 export class AssetImageDirective implements OnChanges, AfterViewInit {
   private readonly image = inject<ElementRef<HTMLImageElement>>(ElementRef).nativeElement;
   
-  // Tách baseUrl bỏ qua phần /api/v1 ở cuối để lấy đường dẫn gốc của server tĩnh (static server) chứa file tải lên
-  private readonly staticBaseUrl = environment.apiUrl.replace(/\/api\/v1\/?$/, '');
   private fallbackApplied = false;
 
   // Đầu vào: đường dẫn file ảnh. Nếu rỗng, tự dùng fallback.
@@ -72,11 +69,6 @@ export class AssetImageDirective implements OnChanges, AfterViewInit {
    * - Nếu là URL tuyệt đối đầy đủ có protocol (`http://`, `https://`): Giữ nguyên.
    * - Nếu là `data:` hoặc `blob:` uri (base64 mã hóa ảnh thẳng trong text): Giữ nguyên.
    * - Nếu là đường dẫn `assets/` ở thư mục tĩnh frontend nội bộ: Giữ nguyên.
-   * 
-   * Khi nào dùng API base URL?
-   * - Nếu đường dẫn bắt đầu bằng `uploads/` hoặc `/uploads/`, điều đó có nghĩa là 
-   *   ảnh này do người dùng tải lên và được backend lưu trữ. Ta phải nối thêm `staticBaseUrl` 
-   *   của backend vào trước để trình duyệt biết tải ảnh từ đâu trên mạng.
    */
   private resolveUrl(url: string): string {
     const normalized = url.trim();
@@ -87,15 +79,6 @@ export class AssetImageDirective implements OnChanges, AfterViewInit {
       || normalized.startsWith('/assets/')
     ) {
       return normalized;
-    }
-
-    // Ảnh nằm trên server backend
-    if (normalized.startsWith('/uploads/')) {
-      return `${this.staticBaseUrl}${normalized}`;
-    }
-
-    if (normalized.startsWith('uploads/')) {
-      return `${this.staticBaseUrl}/${normalized}`;
     }
 
     return normalized;

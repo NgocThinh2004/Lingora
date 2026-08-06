@@ -17,6 +17,7 @@ import {
 } from './uploads.constants';
 import { UploadsService } from './uploads.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('uploads')
@@ -24,16 +25,22 @@ export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
 
   @Delete('editor-media')
-  async deleteEditorMedia(@Body() body: { url: string }) {
+  async deleteEditorMedia(
+    @CurrentUser('id') userId: string,
+    @Body() body: { url: string },
+  ) {
     return {
-      data: await this.uploadsService.deleteEditorMedia(body.url),
+      data: await this.uploadsService.deleteEditorMedia(userId, body.url),
     };
   }
 
   @Post('import-external')
-  async importExternalImage(@Body() body: { url: string }) {
+  async importExternalImage(
+    @CurrentUser('id') userId: string,
+    @Body() body: { url: string },
+  ) {
     return {
-      data: await this.uploadsService.importExternalImage(body.url),
+      data: await this.uploadsService.importExternalImage(userId, body.url),
     };
   }
 
@@ -47,10 +54,29 @@ export class UploadsController {
     }),
   )
   async uploadEditorImage(
+    @CurrentUser('id') userId: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     return {
-      data: await this.uploadsService.saveEditorImage(this.getFirstFile(files)),
+      data: await this.uploadsService.saveEditorImage(userId, this.getFirstFile(files)),
+    };
+  }
+
+  @Post('avatar')
+  @UseInterceptors(
+    AnyFilesInterceptor({
+      storage: memoryStorage(),
+      limits: {
+        fileSize: MAX_EDITOR_IMAGE_BYTES,
+      },
+    }),
+  )
+  async uploadAvatar(
+    @CurrentUser('id') userId: string,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return {
+      data: await this.uploadsService.saveAvatarImage(userId, this.getFirstFile(files)),
     };
   }
 
@@ -64,10 +90,11 @@ export class UploadsController {
     }),
   )
   async uploadEditorAudio(
+    @CurrentUser('id') userId: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     return {
-      data: await this.uploadsService.saveEditorMedia(this.getFirstFile(files), ['audio']),
+      data: await this.uploadsService.saveEditorMedia(userId, this.getFirstFile(files), ['audio']),
     };
   }
 
@@ -81,10 +108,11 @@ export class UploadsController {
     }),
   )
   async uploadEditorVideo(
+    @CurrentUser('id') userId: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     return {
-      data: await this.uploadsService.saveEditorMedia(this.getFirstFile(files), ['video']),
+      data: await this.uploadsService.saveEditorMedia(userId, this.getFirstFile(files), ['video']),
     };
   }
 
@@ -98,10 +126,11 @@ export class UploadsController {
     }),
   )
   async uploadEditorMedia(
+    @CurrentUser('id') userId: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     return {
-      data: await this.uploadsService.saveEditorMedia(this.getFirstFile(files)),
+      data: await this.uploadsService.saveEditorMedia(userId, this.getFirstFile(files)),
     };
   }
 

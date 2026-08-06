@@ -78,7 +78,7 @@ export class AuthService {
     displayName: string;
     username: string;
     bio: string;
-    avatarUrl?: string;
+    avatarMediaId?: string;
     accentColor?: string;
     backgroundColor?: string;
   }): Observable<CurrentUser> {

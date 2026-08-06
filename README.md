@@ -16,7 +16,8 @@ Lingora là nền tảng blog đa ngôn ngữ dành cho độc giả, tác giả
 | Frontend | Angular 18, TypeScript, SCSS, Bootstrap 5 |
 | Backend | NestJS 11, TypeScript, REST API |
 | Database | MySQL 8+, Sequelize, `sequelize-typescript` |
-| Cache | Redis (dùng cho anti-spam, ghi nhận lượt view) |
+| Cache | Redis (chống ghi nhận trùng lượt view) |
+| Media storage | Cloudflare R2 (ảnh, audio và video tải lên) |
 | Xác thực | JWT access token, refresh token, phân quyền theo vai trò |
 | Kiểm thử | Jasmine/Karma, Jest/Supertest |
 
@@ -68,6 +69,7 @@ CREATE USER 'lingora_app'@'localhost' IDENTIFIED BY 'your_secure_password';
 GRANT ALL PRIVILEGES ON lingora_dev.* TO 'lingora_app'@'localhost';
 GRANT ALL PRIVILEGES ON lingora_test.* TO 'lingora_app'@'localhost';
 FLUSH PRIVILEGES;
+```
 
 Sao chép file cấu hình mẫu:
 
@@ -90,6 +92,10 @@ npm run db:seed
 ```
 
 Không commit `.env`, mật khẩu, JWT secret hoặc API key lên Git.
+
+Media vừa tải lên được lưu ở trạng thái `temporary`. Khi avatar được cập nhật hoặc bài viết
+được lưu, media chuyển sang `attached`; media tạm không được sử dụng sẽ tự bị xóa khỏi R2
+sau thời hạn `TEMP_MEDIA_TTL_HOURS` (mặc định 24 giờ).
 
 ## Chạy dự án
 
@@ -135,5 +141,5 @@ npm run build
 
 - Mọi thay đổi schema phải đi qua migration; không bật `sequelize.sync()` trong production.
 - Backend chịu trách nhiệm kiểm tra dữ liệu đầu vào, quyền truy cập và làm sạch nội dung.
-- Không commit `node_modules`, `dist`, `.env`, file upload runtime hoặc thông tin bí mật.
+- Không commit `node_modules`, `dist`, `.env`, khóa truy cập R2 hoặc thông tin bí mật.
 - Chạy các bài kiểm tra và build liên quan trước khi tạo Pull Request.
