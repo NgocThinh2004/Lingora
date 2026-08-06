@@ -102,6 +102,7 @@ export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
   private viewTracked = false;
   // ID bài đang xem, reset flag khi chuyển sang bài khác
   private trackedPostId?: number;
+  private currentPostId?: number;
   // ────────────────────────────────────────────────────────────────────────────
 
   ngOnDestroy(): void {
@@ -378,9 +379,14 @@ export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
         const title = this.displayedTranslation()?.title;
         if (title) this.titleService.setTitle(`${title} - Lingora`);
 
-        // Scroll cuộn trang lên đầu
-        const scrollContainer = this.document.querySelector('.center-feed');
-        if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        // Chỉ scroll lên đầu nếu đây là bài viết mới (chuyển trang),
+        // giữ nguyên vị trí scroll nếu chỉ là reload do đổi ngôn ngữ.
+        const id = Number(this.route.snapshot.paramMap.get('id') || this.route.snapshot.queryParamMap.get('id'));
+        if (this.currentPostId !== id) {
+          this.currentPostId = id;
+          const scrollContainer = this.document.querySelector('.center-feed');
+          if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
         this.setupVideoObservers();
 

@@ -27,7 +27,7 @@ export class PublicPostsController {
    */
   @Get('options')
   async options() {
-    return { data: await this.authorPostsService.getPostOptions() };
+    return this.authorPostsService.getPostOptions();
   }
 
   /**

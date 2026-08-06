@@ -27,12 +27,12 @@ export class PublicUsersController {
 
   @Get(':id/followers')
   async getFollowers(@Param('id', ParseIntPipe) id: number) {
-    return { data: await this.usersService.getFollowers(id) };
+    return this.usersService.getFollowers(id);
   }
 
   @Get(':id/following')
   async getFollowing(@Param('id', ParseIntPipe) id: number) {
-    return { data: await this.usersService.getFollowing(id) };
+    return this.usersService.getFollowing(id);
   }
 
   @Get(':id')
@@ -41,6 +41,6 @@ export class PublicUsersController {
     @Param('id', ParseIntPipe) id: number,
     @Req() req: any,
   ) {
-    return { data: await this.usersService.getProfile(id, req.user?.id) };
+    return this.usersService.getProfile(id, req.user?.id);
   }
 }
