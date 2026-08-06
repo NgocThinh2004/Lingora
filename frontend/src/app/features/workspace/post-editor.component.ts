@@ -983,13 +983,16 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         const parentAlign = media.closest('[align]')?.getAttribute('align') || 'center';
         const align: 'left' | 'center' | 'right' = parentAlign === 'left' ? 'left' : parentAlign === 'right' ? 'right' : 'center';
 
-        const captionText = media.closest('figure')?.querySelector('figcaption')?.textContent?.trim() ||
-          media.parentElement?.querySelector('figcaption')?.textContent?.trim() || '';
+        const nextElement = media.nextElementSibling as HTMLElement | null;
+        const sourceCaption = media.closest('figure')?.querySelector('figcaption') ||
+          (nextElement?.tagName.toLowerCase() === 'figcaption' ? nextElement : null);
+        const captionText = sourceCaption?.textContent?.trim() || '';
 
         if (src) {
           const wrapper = document.createElement('div');
           wrapper.innerHTML = this.buildMediaHtml(type, src, alt, undefined, undefined, align, captionText);
           media.replaceWith(wrapper.firstElementChild || wrapper);
+          sourceCaption?.remove();
         }
       }
     });
@@ -2053,11 +2056,125 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         block.parentNode?.insertBefore(pAfter, block.nextSibling);
       }
     });
+
+    editor.querySelectorAll<HTMLElement>('figcaption, .editor-media-caption').forEach((caption) => {
+      const wrapper = caption.closest('.editor-media-wrapper');
+      if (!wrapper) {
+        this.replaceStandaloneCaptionWithContent(caption);
+        return;
+      }
+
+      const blockTags = new Set(['P', 'DIV', 'BLOCKQUOTE', 'PRE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL']);
+      let curr = caption.firstChild;
+      let foundBlock = false;
+      const nodesToExtract: Node[] = [];
+
+      while (curr) {
+        if (curr.nodeType === Node.ELEMENT_NODE && blockTags.has((curr as HTMLElement).tagName.toUpperCase())) {
+          foundBlock = true;
+        }
+        if (foundBlock) {
+          nodesToExtract.push(curr);
+        }
+        curr = curr.nextSibling;
+      }
+
+      if (nodesToExtract.length > 0) {
+        const hasTextBefore = Array.from(caption.childNodes).some(n => {
+          if (nodesToExtract.includes(n)) return false;
+          return n.textContent?.trim() !== '';
+        });
+
+        const toInsertAfterWrapper: Node[] = [];
+        nodesToExtract.forEach((node, index) => {
+          if (index === 0 && !hasTextBefore && node.nodeType === Node.ELEMENT_NODE && blockTags.has((node as HTMLElement).tagName.toUpperCase())) {
+            while (node.firstChild) {
+              caption.insertBefore(node.firstChild, node);
+            }
+            if (node.parentNode === caption) {
+              caption.removeChild(node);
+            }
+          } else {
+            toInsertAfterWrapper.push(node);
+          }
+        });
+
+        for (let i = toInsertAfterWrapper.length - 1; i >= 0; i--) {
+          wrapper.after(toInsertAfterWrapper[i]);
+        }
+
+        const firstBr = caption.querySelector('br');
+        if (firstBr) {
+          const newP = document.createElement('p');
+          let sibling = firstBr.nextSibling;
+          while (sibling) {
+            const next = sibling.nextSibling;
+            newP.appendChild(sibling);
+            sibling = next;
+          }
+          firstBr.remove();
+          if (newP.childNodes.length > 0) {
+            wrapper.after(newP);
+          }
+        }
+
+        if (!caption.textContent?.trim()) {
+          caption.innerHTML = '<br>'; // keep it editable with a br if empty
+        }
+      } else {
+        const firstBr = caption.querySelector('br');
+        if (firstBr) {
+          const newP = document.createElement('p');
+          let sibling = firstBr.nextSibling;
+          while (sibling) {
+            const next = sibling.nextSibling;
+            newP.appendChild(sibling);
+            sibling = next;
+          }
+          firstBr.remove();
+          if (newP.childNodes.length > 0) {
+            wrapper.after(newP);
+          }
+        }
+
+        if (!caption.textContent?.trim()) {
+          caption.innerHTML = '<br>';
+        }
+      }
+    });
+  }
+
+  private replaceStandaloneCaptionWithContent(caption: HTMLElement): void {
+    const blockTags = new Set(['P', 'DIV', 'BLOCKQUOTE', 'PRE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL']);
+    const fragment = document.createDocumentFragment();
+    let inlineParagraph: HTMLParagraphElement | null = null;
+
+    Array.from(caption.childNodes).forEach((node) => {
+      if (node instanceof HTMLElement && blockTags.has(node.tagName.toUpperCase())) {
+        inlineParagraph = null;
+        fragment.appendChild(node);
+        return;
+      }
+
+      if (node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()) return;
+      if (!inlineParagraph) {
+        inlineParagraph = document.createElement('p');
+        fragment.appendChild(inlineParagraph);
+      }
+      inlineParagraph.appendChild(node);
+    });
+
+    if (fragment.childNodes.length) {
+      caption.replaceWith(fragment);
+    } else {
+      caption.remove();
+    }
   }
 
   private ensureEditorMediaDeleteButtons(editor: HTMLElement): void {
     editor.querySelectorAll<HTMLElement>('.editor-media-wrapper').forEach((wrapper) => {
       wrapper.setAttribute('contenteditable', 'false');
+      const mediaContainer = wrapper.querySelector<HTMLElement>('.editor-media-container');
 
       let deleteBtn = wrapper.querySelector<HTMLButtonElement>('.editor-media-delete');
       if (!deleteBtn) {
@@ -2072,7 +2189,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">` +
           `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
           `</svg>`;
-        wrapper.appendChild(deleteBtn);
+        (mediaContainer ?? wrapper).appendChild(deleteBtn);
       } else {
         deleteBtn.className = 'editor-media-delete';
         deleteBtn.setAttribute('data-remove-media', '');
@@ -2082,6 +2199,25 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` +
             `</svg>`;
         }
+        if (mediaContainer && deleteBtn.parentElement !== mediaContainer) {
+          mediaContainer.appendChild(deleteBtn);
+        }
+      }
+
+      let caption = wrapper.querySelector<HTMLElement>('.editor-media-caption, figcaption');
+      if (!caption) {
+        caption = document.createElement('figcaption');
+        if (mediaContainer) {
+          mediaContainer.after(caption);
+        } else {
+          wrapper.appendChild(caption);
+        }
+      }
+      caption.className = 'editor-media-caption';
+      caption.setAttribute('contenteditable', 'true');
+      caption.setAttribute('data-placeholder', 'Nhập tiêu đề / chú thích ảnh...');
+      if (!caption.textContent?.trim() && !caption.querySelector('br')) {
+        caption.innerHTML = '<br>';
       }
     });
   }

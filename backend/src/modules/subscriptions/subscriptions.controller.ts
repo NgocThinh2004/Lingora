@@ -12,7 +12,6 @@ import { Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SubscriptionsService } from './subscriptions.service';
-import { FollowingQueryDto, FeedQueryDto } from './dto/subscriptions-query.dto';
 
 // Yêu cầu user phải đăng nhập (có token hợp lệ) mới được sử dụng các API này
 @UseGuards(JwtAuthGuard)
@@ -26,52 +25,38 @@ export class SubscriptionsController {
    */
   @Get('followers')
   async followers(@CurrentUser('id') userId: string) {
-    return this.subscriptionsService.listFollowers(userId);
+    return { data: await this.subscriptionsService.listFollowers(userId) };
   }
 
   /**
    * API: Lấy danh sách những người user hiện tại đang theo dõi (Following)
    * Hỗ trợ tìm kiếm theo từ khóa (q) và phân trang (page, limit)
    * Method: GET /subscriptions/following
-   *
-   * @param userId ID người dùng hiện tại (từ JWT Token)
-   * @param query DTO chứa các trường q, page, limit (có class-validator kiểm tra)
    */
   @Get('following')
   async following(
     @CurrentUser('id') userId: string,
-    @Query() query: FollowingQueryDto,
+    @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string
   ) {
-    // Service nhận page/limit dạng string → truyền dưới dạng String() để giữ tương thích
-    return this.subscriptionsService.listFollowing(
-      userId,
-      query.q,
-      query.page != null ? String(query.page) : undefined,
-      query.limit != null ? String(query.limit) : undefined,
-    );
+    return { data: await this.subscriptionsService.listFollowing(userId, q, page, limit) };
   }
 
   /**
    * API: Lấy danh sách bài viết của những tác giả user đang theo dõi (Feed)
    * Có thể lọc theo tác giả, ngôn ngữ và phân trang.
    * Method: GET /subscriptions/feed
-   *
-   * @param userId ID người dùng hiện tại (từ JWT Token)
-   * @param query DTO chứa các trường author, lang, page, limit (có class-validator kiểm tra)
    */
   @Get('feed')
   async feed(
     @CurrentUser('id') userId: string,
-    @Query() query: FeedQueryDto,
+    @Query('author') author?: string,
+    @Query('lang') lang?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string
   ) {
-    // Service nhận page/limit dạng string → truyền dưới dạng String() để giữ tương thích
-    return this.subscriptionsService.getFeed(
-      userId,
-      query.author,
-      query.lang,
-      query.page != null ? String(query.page) : undefined,
-      query.limit != null ? String(query.limit) : undefined,
-    );
+    return { data: await this.subscriptionsService.getFeed(userId, author, lang, page, limit) };
   }
 
   /**
@@ -80,7 +65,7 @@ export class SubscriptionsController {
    */
   @Post(':authorId')
   async subscribe(@CurrentUser('id') userId: string, @Param('authorId') authorId: string) {
-    return this.subscriptionsService.subscribe(userId, authorId);
+    return { data: await this.subscriptionsService.subscribe(userId, authorId) };
   }
 
   /**
@@ -89,6 +74,6 @@ export class SubscriptionsController {
    */
   @Delete(':authorId')
   async unsubscribe(@CurrentUser('id') userId: string, @Param('authorId') authorId: string) {
-    return this.subscriptionsService.unsubscribe(userId, authorId);
+    return { data: await this.subscriptionsService.unsubscribe(userId, authorId) };
   }
 }

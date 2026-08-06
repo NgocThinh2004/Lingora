@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, AfterViewInit, ElementRef, ViewChild, effect, inject, untracked, DestroyRef } from '@angular/core';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, Subject, debounceTime, distinctUntilChanged, Subscription, forkJoin, map, switchMap, tap, of, catchError } from 'rxjs';
 import { FeedPostsService } from '../posts/services/feed-posts.service';
@@ -65,6 +65,7 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly userService = inject(UsersService);
   private readonly categoryService = inject(CategoriesService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly localeService = inject(LocaleService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -143,27 +144,31 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
           this.query = urlQuery;
         }
 
+        const urlTab = this.parseTab(params.get('tab'));
+        const hasExplicitTab = params.has('tab');
+
         const catSlug = params.get('category');
         if (catSlug) {
           if (!this.selectedCategory || this.selectedCategory.slug !== catSlug) {
             return this.categoryService.findBySlug(catSlug, this.localeService.current()).pipe(
-              map(found => ({ found, catSlug })),
-              catchError(() => of({ found: null, catSlug }))
+              map(found => ({ found, catSlug, urlTab, hasExplicitTab })),
+              catchError(() => of({ found: null, catSlug, urlTab, hasExplicitTab }))
             );
           } else {
-            return of({ found: this.selectedCategory, catSlug });
+            return of({ found: this.selectedCategory, catSlug, urlTab, hasExplicitTab });
           }
         } else {
-          return of({ found: null, catSlug: null });
+          return of({ found: null, catSlug: null, urlTab, hasExplicitTab });
         }
       })
-    ).subscribe(({ found, catSlug }) => {
+    ).subscribe(({ found, catSlug, urlTab, hasExplicitTab }) => {
       if (catSlug && found) {
         this.selectedCategory = found as Category;
-        this.tab = 'posts';
+        this.tab = hasExplicitTab ? urlTab : 'posts';
         this.emitFilters(this.selectedCategory.slug);
       } else {
         this.selectedCategory = undefined;
+        this.tab = urlTab;
         this.emitFilters();
       }
     });
@@ -328,17 +333,20 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
   updateQuery(event: Event): void {
     this.query = (event.target as HTMLInputElement).value;
     this.emitFilters(this.selectedCategory?.slug);
+    this.updateRoute({ query: this.query.trim() || null }, true);
   }
 
   clearQuery(): void {
     this.query = '';
     this.emitFilters(this.selectedCategory?.slug);
+    this.updateRoute({ query: null }, true);
   }
 
   setTab(tab: 'top' | 'posts' | 'publications' | 'people'): void {
     if (this.tab !== tab) {
       this.tab = tab;
       this.emitFilters(this.selectedCategory?.slug);
+      this.updateRoute({ tab });
     }
   }
 
@@ -346,12 +354,14 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
     this.selectedCategory = cat;
     this.tab = 'posts';
     this.emitFilters(this.selectedCategory.slug);
+    this.updateRoute({ category: cat.slug, tab: 'posts' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   clearCategory(): void {
     this.selectedCategory = undefined;
     this.emitFilters();
+    this.updateRoute({ category: null });
   }
   
   translateCategoryName(cat: Category): string {
@@ -364,6 +374,22 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
       tab: this.tab,
       category,
       lang: this.localeService.current(),
+    });
+  }
+
+  private parseTab(value: string | null): 'top' | 'posts' | 'publications' | 'people' {
+    return value === 'posts' || value === 'publications' || value === 'people' ? value : 'top';
+  }
+
+  private updateRoute(
+    queryParams: Record<string, string | null>,
+    replaceUrl = false,
+  ): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge',
+      replaceUrl,
     });
   }
 

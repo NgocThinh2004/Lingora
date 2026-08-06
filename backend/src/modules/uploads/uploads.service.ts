@@ -292,15 +292,79 @@ export class UploadsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async detachPostMediaForDeletion(
+    postId: string,
+    ownerId: string,
+    transaction: Transaction,
+  ): Promise<string[]> {
+    const assets = await this.mediaAssetModel.findAll({
+      where: {
+        post_id: postId,
+        owner_id: ownerId,
+        purpose: 'post',
+        deleted_at: null,
+      },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+    if (!assets.length) return [];
+
+    const assetIds = assets.map(asset => asset.id);
+    await this.mediaAssetModel.update(
+      {
+        post_id: null,
+        status: 'temporary',
+        updated_at: new Date(),
+      },
+      {
+        where: { id: { [Op.in]: assetIds } },
+        transaction,
+      },
+    );
+    return assetIds.map(String);
+  }
+
+  async deleteDetachedPostMedia(ownerId: string, assetIds: string[]): Promise<void> {
+    if (!assetIds.length) return;
+
+    try {
+      const assets = await this.mediaAssetModel.findAll({
+        where: {
+          id: { [Op.in]: assetIds },
+          owner_id: ownerId,
+          purpose: 'post',
+          post_id: null,
+          status: 'temporary',
+          deleted_at: null,
+        },
+      });
+
+      for (const asset of assets) {
+        try {
+          await this.deleteAssetFromStorage(asset);
+        } catch (error) {
+          this.logger.warn(
+            `Unable to delete detached post media ${asset.id}: ${this.errorMessage(error)}`,
+          );
+        }
+      }
+    } catch (error) {
+      this.logger.warn(`Unable to load detached post media: ${this.errorMessage(error)}`);
+    }
+  }
+
   async cleanupExpiredTemporaryMedia(): Promise<number> {
     const ttlHours = this.getPositiveConfigNumber('TEMP_MEDIA_TTL_HOURS', 24);
     const cutoff = new Date(Date.now() - ttlHours * 60 * 60 * 1000);
     const assets = await this.mediaAssetModel.findAll({
       where: {
-        status: 'temporary',
         post_id: null,
         deleted_at: null,
         updated_at: { [Op.lt]: cutoff },
+        [Op.or]: [
+          { status: 'temporary' },
+          { purpose: 'post', status: 'attached' },
+        ],
       },
     });
 
