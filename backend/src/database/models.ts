@@ -11,6 +11,7 @@ import { Post } from '../modules/posts/models/post.model';
 import { Subscription } from '../modules/subscriptions/models/subscription.model';
 import { Role } from '../modules/users/models/role.model';
 import { User } from '../modules/users/models/user.model';
+import { MediaAsset } from '../modules/uploads/models/media-asset.model';
 
 export {
   Category,
@@ -26,6 +27,7 @@ export {
   Role,
   Subscription,
   User,
+  MediaAsset,
 };
 
 export const databaseModels = [
@@ -42,4 +44,5 @@ export const databaseModels = [
   CommentLike,
   Subscription,
   RefreshToken,
+  MediaAsset,
 ];

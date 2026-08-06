@@ -6,7 +6,7 @@ describe('PublicUsersService', () => {
     id: '7',
     username: 'author7',
     display_name: 'Author Seven',
-    avatar: '/uploads/avatar.png',
+    avatar: 'https://media.example.com/media/7/avatar.png',
     bio: 'Public bio',
     role_id: 2,
     accent_color: '#22CC88',

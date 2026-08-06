@@ -28,6 +28,23 @@ Enum comment_status {
   hidden
 }
 
+Enum media_type {
+  image
+  audio
+  video
+}
+
+Enum media_asset_status {
+  temporary
+  attached
+  deleted
+}
+
+Enum media_asset_purpose {
+  avatar
+  post
+}
+
 Table roles {
   id integer [primary key, increment]
   name varchar(50) [not null, unique]
@@ -51,6 +68,7 @@ Table users {
   email varchar(150) [not null, unique]
   password varchar(255) [not null, note: 'Chỉ lưu mật khẩu đã hash']
   avatar varchar(255)
+  avatar_media_id bigint [unique]
   bio text
   role_id integer [not null]
   status user_status [not null, default: 'active']
@@ -61,6 +79,31 @@ Table users {
   created_at timestamp [not null]
   updated_at timestamp [not null]
   deleted_at timestamp
+}
+
+Table media_assets {
+  id bigint [primary key, increment]
+  owner_id bigint
+  purpose media_asset_purpose [not null]
+  post_id bigint
+  object_key varchar(500) [not null, unique]
+  media_type media_type [not null]
+  mime_type varchar(100) [not null]
+  original_name varchar(255)
+  size_bytes bigint [not null]
+  width integer
+  height integer
+  duration_seconds decimal(10,2)
+  status media_asset_status [not null, default: 'temporary']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  deleted_at timestamp
+
+  indexes {
+    (owner_id, status)
+    (owner_id, purpose, status)
+    post_id
+  }
 }
 
 Table categories {
@@ -195,6 +238,9 @@ Table refresh_tokens {
 }
 
 Ref: users.role_id > roles.id
+Ref: users.avatar_media_id > media_assets.id [delete: set null]
+Ref: media_assets.owner_id > users.id [delete: set null]
+Ref: media_assets.post_id > posts.id [delete: set null]
 Ref: category_translations.category_id > categories.id [delete: cascade]
 Ref: category_translations.language_id > languages.id [delete: cascade]
 Ref: posts.author_id > users.id [delete: cascade]

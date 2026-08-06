@@ -628,10 +628,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.uploadsService.uploadEditorMedia(mediaType, file).subscribe({
       next: (upload) => {
         const url = this.uploadsService.toAbsoluteUrl(upload.url);
-        this.runEditorCommand(
-          'insertHTML',
-          this.buildMediaHtml(mediaType, url, upload.filename),
-        );
+        this.insertHtml(this.buildMediaHtml(mediaType, url, upload.filename, upload.assetId, upload.objectKey), true);
         this.toast.showSuccess(this.localeService.translate('upload_success', { filename: upload.filename }));
         this.uploadingType = null;
       },
@@ -764,7 +761,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         mediaWrapper.remove();
         this.syncContentFromEditor();
 
-        if (src && src.includes('/uploads/')) {
+        if (src && (this.isManagedMediaUrl(src) || mediaWrapper.hasAttribute('data-media-asset-id'))) {
           this.uploadsService.deleteEditorMedia(src).subscribe();
         }
       }
@@ -883,7 +880,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         this.uploadsService.uploadEditorMedia('image', file).subscribe({
           next: (upload) => {
             const url = this.uploadsService.toAbsoluteUrl(upload.url);
-            this.insertHtml(this.buildMediaHtml('image', url, upload.filename), true);
+            this.insertHtml(this.buildMediaHtml('image', url, upload.filename, upload.assetId, upload.objectKey), true);
             this.toast.showSuccess(this.localeService.translate('upload_success', { filename: upload.filename }));
             this.uploadingType = null;
           },
@@ -991,7 +988,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
         if (src) {
           const wrapper = document.createElement('div');
-          wrapper.innerHTML = this.buildMediaHtml(type, src, alt, align, captionText);
+          wrapper.innerHTML = this.buildMediaHtml(type, src, alt, undefined, undefined, align, captionText);
           media.replaceWith(wrapper.firstElementChild || wrapper);
         }
       }
@@ -1067,7 +1064,8 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     const images = Array.from(editor.querySelectorAll<HTMLImageElement>('.editor-media-wrapper img'));
     images.forEach((img) => {
       const src = img.getAttribute('src');
-      if (!src || !/^https?:\/\//i.test(src) || src.includes('/uploads/')) {
+      const wrapper = img.closest<HTMLElement>('.editor-media-wrapper');
+      if (!src || !/^https?:\/\//i.test(src) || this.isManagedMediaUrl(src) || wrapper?.hasAttribute('data-media-asset-id')) {
         return;
       }
 
@@ -1075,6 +1073,8 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         next: (upload) => {
           const localUrl = this.uploadsService.toAbsoluteUrl(upload.url);
           img.setAttribute('src', localUrl);
+          wrapper?.setAttribute('data-media-asset-id', upload.assetId);
+          wrapper?.setAttribute('data-media-object-key', upload.objectKey);
           this.syncContentFromEditor();
         },
         error: () => {
@@ -1082,6 +1082,14 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         },
       });
     });
+  }
+
+  private isManagedMediaUrl(url: string): boolean {
+    try {
+      return /^\/media\/[A-Za-z0-9_-]+\/[A-Za-z0-9._-]+$/.test(new URL(url).pathname);
+    } catch {
+      return false;
+    }
   }
 
   saveEditorSelection(): void {
@@ -1421,6 +1429,8 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     mediaType: EditorMediaType,
     url: string,
     filename: string,
+    assetId?: string,
+    objectKey?: string,
     align: 'left' | 'center' | 'right' = 'center',
     captionText: string = '',
   ): string {
@@ -1435,8 +1445,11 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           ? `<audio controls src="${safeUrl}" title="${safeName}"></audio>`
           : `<video controls playsinline src="${safeUrl}" title="${safeName}"></video>`;
 
+    const assetAttributes = assetId && objectKey
+      ? ` data-media-asset-id="${this.escapeAttribute(assetId)}" data-media-object-key="${this.escapeAttribute(objectKey)}"`
+      : '';
     return (
-      `<div class="editor-media-wrapper align-${align}" data-align="${align}" contenteditable="false">` +
+      `<div class="editor-media-wrapper align-${align}" data-align="${align}" contenteditable="false"${assetAttributes}>` +
       `<div class="editor-media-container">` +
       `${mediaHtml}` +
       `<button type="button" class="editor-media-delete" data-remove-media aria-label="${deleteMediaLabel}" title="${deleteMediaLabel}">` +

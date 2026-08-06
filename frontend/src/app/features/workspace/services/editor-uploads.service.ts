@@ -10,7 +10,6 @@ import { EditorMediaType, UploadResponse } from '../models/editor-upload.model';
 export class EditorUploadsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
-  private readonly staticBaseUrl = environment.apiUrl.replace('/api/v1', '');
 
   uploadEditorMedia(mediaType: EditorMediaType, file: File): Observable<UploadResponse> {
     const formData = new FormData();
@@ -18,6 +17,15 @@ export class EditorUploadsService {
 
     return this.http
       .post<ApiItemResponse<UploadResponse>>(`${this.baseUrl}/uploads/editor-${mediaType}`, formData)
+      .pipe(map((response) => response.data));
+  }
+
+  uploadAvatar(file: File): Observable<UploadResponse> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    return this.http
+      .post<ApiItemResponse<UploadResponse>>(`${this.baseUrl}/uploads/avatar`, formData)
       .pipe(map((response) => response.data));
   }
 
@@ -36,10 +44,6 @@ export class EditorUploadsService {
   }
 
   toAbsoluteUrl(url: string): string {
-    if (/^https?:\/\//i.test(url)) {
-      return url;
-    }
-
-    return `${this.staticBaseUrl}${url}`;
+    return url;
   }
 }

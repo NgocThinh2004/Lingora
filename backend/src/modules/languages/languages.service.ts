@@ -18,7 +18,6 @@ import {
   TranslationMetricsService,
 } from '../translations/translation-metrics.service';
 import { CategoryAutoTranslationService } from '../categories/category-auto-translation.service';
-import { CategoriesCacheService } from '../categories/categories-cache.service';
 
 @Injectable()
 export class LanguagesService {
@@ -27,7 +26,6 @@ export class LanguagesService {
     @InjectModel(Language) private readonly languageModel: typeof Language,
     private readonly translationMetricsService: TranslationMetricsService,
     private readonly categoryAutoTranslation: CategoryAutoTranslationService,
-    private readonly categoriesCache: CategoriesCacheService,
   ) {}
 
   async findActive() {
@@ -119,7 +117,6 @@ export class LanguagesService {
         await this.categoryAutoTranslation.createMissingTranslationsForLanguage(language, transaction);
         return language;
       });
-      await this.categoriesCache.invalidate();
       return this.toAdminLanguage(language);
     } catch (error) {
       if (error instanceof UniqueConstraintError) {
@@ -190,7 +187,6 @@ export class LanguagesService {
 
       return language;
     });
-    await this.categoriesCache.invalidate();
     return this.toAdminLanguage(language);
   }
 

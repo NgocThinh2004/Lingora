@@ -33,6 +33,7 @@ describe('AuthService session management', () => {
       username: 'member',
       display_name: 'Member',
       avatar: null,
+      avatar_media_id: null,
       password: '',
       role_id: 2,
       status: 'active',
@@ -84,28 +85,39 @@ describe('AuthService session management', () => {
       sequelize as never,
       refreshTokenModel as never,
       { count: jest.fn().mockResolvedValue(0) } as never,
+      {
+        attachAvatar: jest.fn(),
+        publicUrlForObjectKey: jest.fn(),
+        deleteDetachedAvatar: jest.fn().mockResolvedValue(undefined),
+      } as never,
     );
   });
 
-  it('persists an uploaded avatar path when updating the profile', async () => {
+  it('attaches an R2 media asset when updating the profile avatar', async () => {
     usersService.findByIdForUpdate.mockResolvedValue(user);
     usersService.findByUsername.mockResolvedValue(null);
+    user.avatar_media_id = '12';
+    const uploadsService = (service as any).uploadsService;
+    uploadsService.attachAvatar.mockResolvedValue({ id: '15', object_key: 'media/7/avatar.png' });
+    uploadsService.publicUrlForObjectKey.mockReturnValue('https://media.example.com/media/7/avatar.png');
 
     await expect(service.updateProfile(user.id, {
       displayName: 'Updated Member',
       username: 'updated_member',
       bio: 'Updated bio',
-      avatarUrl: '/uploads/avatar-image.png',
+      avatarMediaId: '15',
     })).resolves.toMatchObject({
-      avatarUrl: '/uploads/avatar-image.png',
+      avatarUrl: 'https://media.example.com/media/7/avatar.png',
     });
 
     expect(user.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        avatar: '/uploads/avatar-image.png',
+        avatar: 'https://media.example.com/media/7/avatar.png',
+        avatar_media_id: '15',
       }),
       { transaction },
     );
+    expect(uploadsService.deleteDetachedAvatar).toHaveBeenCalledWith(user.id, '12');
   });
 
   it('creates and emails a hashed six-digit password reset OTP', async () => {

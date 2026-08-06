@@ -18,6 +18,7 @@ describe('AuthorPostsService state machine', () => {
       undefined as never,
       undefined as never,
       undefined as never,
+      undefined as never,
     );
   });
 
@@ -62,13 +63,13 @@ describe('AuthorPostsService state machine', () => {
 
   it('rejects visually empty editor markup but accepts media-only content', () => {
     expect(() => service.assertEditorContentLimits('Title', '<p><br></p>')).toThrow(BadRequestException);
-    expect(() => service.assertEditorContentLimits('Title', '<video controls src="/uploads/test.mp4"></video>')).not.toThrow();
+    expect(() => service.assertEditorContentLimits('Title', '<video controls src="https://media.example.com/media/7/test.mp4"></video>')).not.toThrow();
   });
 
   it('allows autosave with only a title or only meaningful content', () => {
     expect(() => service.assertAutosaveContentLimits('Incomplete title', '')).not.toThrow();
     expect(() => service.assertAutosaveContentLimits('', '<p>Incomplete content</p>')).not.toThrow();
-    expect(() => service.assertAutosaveContentLimits('', '<img src="/uploads/draft.png">')).not.toThrow();
+    expect(() => service.assertAutosaveContentLimits('', '<img src="https://media.example.com/media/7/draft.png">')).not.toThrow();
   });
 
   it('rejects an entirely empty autosave snapshot', () => {
@@ -91,6 +92,7 @@ describe('AuthorPostsService state machine', () => {
       optionsModel as never,
       optionsModel as never,
       optionsModel as never,
+      undefined as never,
     );
 
     await expect(optionsService.getAuthorPostFilterOptions('author-1')).resolves.toEqual({
@@ -127,6 +129,7 @@ describe('AuthorPostsService state machine', () => {
       languageModel as never,
       categoryModel as never,
       categoryTranslationModel as never,
+      undefined as never,
     );
 
     await expect(optionsService.getAuthorPostFilterOptions('author-1')).resolves.toEqual({
@@ -160,6 +163,7 @@ describe('AuthorPostsService state machine', () => {
       languageModel as never,
       categoryModel as never,
       categoryTranslationModel as never,
+      undefined as never,
     );
 
     await expect(optionsService.getAuthorPostFilterOptions('author-1')).resolves.toEqual({
@@ -192,6 +196,7 @@ describe('AuthorPostsService state machine', () => {
       undefined as never,
       undefined as never,
       undefined as never,
+      undefined as never,
     );
 
     await expect(draftService.discardAuthorDraft('author-1', 'draft-1')).resolves.toEqual({
@@ -214,6 +219,7 @@ describe('AuthorPostsService state machine', () => {
     const draftService = new AuthorPostsService(
       sequelize as never,
       postModel as never,
+      undefined as never,
       undefined as never,
       undefined as never,
       undefined as never,

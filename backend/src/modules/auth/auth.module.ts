@@ -9,11 +9,13 @@ import { RefreshToken } from './models/refresh-token.model';
 import { Subscription } from '../subscriptions/models/subscription.model';
 import { JwtStrategy } from './jwt.strategy';
 import { MailModule } from '../mail/mail.module';
+import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
   imports: [
     UsersModule,
     MailModule,
+    UploadsModule,
     SequelizeModule.forFeature([RefreshToken, Subscription]),
     JwtModule.registerAsync({
       inject: [ConfigService],
