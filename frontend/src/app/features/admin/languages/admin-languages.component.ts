@@ -91,8 +91,8 @@ export class AdminLanguagesComponent implements OnInit {
     this.languagesService.getLanguages(page, this.pagination().limit).subscribe({
       next: response => {
         this.languages.set(response.data);
-        if (response.meta?.pagination) {
-          this.pagination.set(response.meta.pagination);
+        if (response.meta) {
+          this.pagination.set(response.meta);
         }
         this.loading.set(false);
       },

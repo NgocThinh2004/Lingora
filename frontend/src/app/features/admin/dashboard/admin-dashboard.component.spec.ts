@@ -49,7 +49,7 @@ describe('AdminDashboardComponent', () => {
 
   beforeEach(async () => {
     service = jasmine.createSpyObj<AdminDashboardService>('AdminDashboardService', ['getOverview']);
-    service.getOverview.and.returnValue(of({ data: overview }));
+    service.getOverview.and.returnValue(of({ success: true, status: 200, message: 'ok', data: overview }));
     await TestBed.configureTestingModule({
       imports: [AdminDashboardComponent],
       providers: [

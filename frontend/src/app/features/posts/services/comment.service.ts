@@ -57,16 +57,18 @@ export class CommentService {
   getCommentsByPost(postId: string, page: number = 1, limit: number = 20): Observable<PaginatedResult<Comment>> {
     let params = new HttpParams().set('page', page).set('limit', limit);
     return this.http
-      .get<ApiResponse<any>>(`${environment.apiUrl}/posts/${postId}/comments`, { params })
+      .get<ApiResponse<any[]>>(`${environment.apiUrl}/posts/${postId}/comments`, { params })
       .pipe(map((res) => {
-        const data = res.data;
+        // Format mới: data là mảng bình luận, meta phân trang nằm ở cùng cấp với data
+        const items: any[] = Array.isArray(res.data) ? res.data : [];
+        const meta = res.meta;
         return {
-          items: data.items.map((c: any) => this.mapComment(c)),
+          items: items.map((c: any) => this.mapComment(c)),
           meta: {
-            total: data.total,
-            page: data.page,
-            limit: data.limit,
-            totalPages: data.totalPages
+            total: meta?.total ?? 0,
+            page: meta?.page ?? page,
+            limit: meta?.limit ?? limit,
+            totalPages: meta?.totalPages ?? 1,
           }
         };
       }));

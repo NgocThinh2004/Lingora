@@ -89,7 +89,7 @@ export class AdminPostsComponent implements OnInit, OnDestroy {
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: response => {
         this.posts.set(response.data);
-        if (response.meta?.pagination) this.pagination.set(response.meta.pagination);
+        if (response.meta) this.pagination.set(response.meta);
         this.loading.set(false);
       },
       error: error => {

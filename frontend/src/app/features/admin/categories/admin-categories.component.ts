@@ -121,8 +121,8 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: response => {
         this.categories.set(response.data);
-        if (response.meta?.pagination) {
-          this.pagination.set(response.meta.pagination);
+        if (response.meta) {
+          this.pagination.set(response.meta);
         }
         this.loading.set(false);
       },
@@ -277,8 +277,8 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
           }
           this.categoryPosts.set(response.data);
           this.postsMeta.set({
-            total: Number(response.meta?.['total'] ?? response.data.length),
-            shown: Number(response.meta?.['shown'] ?? response.data.length),
+            total: Number((response.meta as any)?.['total'] ?? response.data.length),
+            shown: Number((response.meta as any)?.['shown'] ?? response.data.length),
           });
           this.postsLoading.set(false);
         },

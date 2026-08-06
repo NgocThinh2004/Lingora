@@ -2,36 +2,47 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nes
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-export interface Response<T> {
+export interface StandardResponse<T> {
+  success: boolean;
   data: T;
-  meta?: any;
+  status: number;
+  message: string;
 }
 
 @Injectable()
-export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
-  intercept(_context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
+export class ResponseInterceptor<T> implements NestInterceptor<T, StandardResponse<T>> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<StandardResponse<T>> {
+    const httpContext = context.switchToHttp();
+    const response = httpContext.getResponse();
+
     return next.handle().pipe(
       map((data) => {
-        if (!data || typeof data !== 'object') {
-          return { data };
-        }
+        const statusCode: number = response.statusCode ?? 200;
 
-        // Controllers may already return the application's { data, meta? } envelope.
-        if ('data' in data) {
+        // If controller already returns the full { success, data, status, message } envelope
+        if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
           return data;
         }
 
-        // If object contains `items` and `meta` (like listFeed)
-        if ('items' in data && 'meta' in data) {
+        // Paginated result: controller returns { items: T[], meta: {...} }
+        // → flatten to: data = items[], meta stays at top level
+        if (data && typeof data === 'object' && 'items' in data && 'meta' in data) {
           return {
-            data: {
-              items: data.items,
-              meta: data.meta,
-            },
+            success: true,
+            data: data.items,
+            meta: data.meta,
+            status: statusCode,
+            message: 'ok',
           };
         }
 
-        return { data };
+        // Arrays, objects, null, primitives → wrap directly
+        return {
+          success: true,
+          data: data ?? null,
+          status: statusCode,
+          message: 'ok',
+        };
       }),
     );
   }

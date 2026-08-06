@@ -55,7 +55,7 @@ describe('ResetPasswordComponent', () => {
 
   it('submits the OTP and new password, then returns to login', () => {
     spyOn(router, 'navigate').and.resolveTo(true);
-    authService.resetPassword.and.returnValue(of({ data: { message: 'Password reset successfully' } }));
+    authService.resetPassword.and.returnValue(of({ success: true, status: 200, message: 'ok', data: { message: 'Password reset successfully' } }));
     component.resetPasswordForm.setValue({
       email: 'Member@Example.COM',
       otp: '123456',

@@ -39,11 +39,9 @@ describe('AdminUsersComponent', () => {
     ]);
 
     adminUsersService.getUsers.and.returnValue(of({
+      success: true, status: 200, message: 'ok',
       data: [member],
-      meta: {
-        pagination: { total: 1, page: 1, limit: 8, totalPages: 1 },
-        directoryTotal: 6,
-      },
+      meta: { total: 1, page: 1, limit: 8, totalPages: 1 },
     }));
 
     await TestBed.configureTestingModule({
@@ -100,8 +98,8 @@ describe('AdminUsersComponent', () => {
 
   it('opens a user and saves access changes', () => {
     const updatedUser: AdminUser = { ...member, role: 'admin', status: 'active' };
-    adminUsersService.getUser.and.returnValue(of({ data: member }));
-    adminUsersService.updateUser.and.returnValue(of({ data: updatedUser }));
+    adminUsersService.getUser.and.returnValue(of({ success: true, status: 200, message: 'ok', data: member }));
+    adminUsersService.updateUser.and.returnValue(of({ success: true, status: 200, message: 'ok', data: updatedUser }));
 
     component.openUser(member);
     component.editForm.setValue({
@@ -136,7 +134,7 @@ describe('AdminUsersComponent', () => {
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.checked = false;
-    adminUsersService.updateUser.and.returnValue(of({ data: inactiveUser }));
+    adminUsersService.updateUser.and.returnValue(of({ success: true, status: 200, message: 'ok', data: inactiveUser }));
 
     component.toggleUserStatus(member, input);
 
@@ -147,7 +145,7 @@ describe('AdminUsersComponent', () => {
   });
 
   it('closes the details drawer from the close button', () => {
-    adminUsersService.getUser.and.returnValue(of({ data: member }));
+    adminUsersService.getUser.and.returnValue(of({ success: true, status: 200, message: 'ok', data: member }));
     component.openUser(member);
     fixture.detectChanges();
 
@@ -161,7 +159,7 @@ describe('AdminUsersComponent', () => {
   });
 
   it('allows the details drawer to close while a save request is pending', () => {
-    adminUsersService.getUser.and.returnValue(of({ data: member }));
+    adminUsersService.getUser.and.returnValue(of({ success: true, status: 200, message: 'ok', data: member }));
     component.openUser(member);
     component.saving.set(true);
     fixture.detectChanges();
