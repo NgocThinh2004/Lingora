@@ -24,12 +24,13 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, StandardRespon
           return data;
         }
 
-        // Paginated result: controller returns { items: T[], meta: {...} }
-        // → flatten to: data = items[], meta stays at top level
-        if (data && typeof data === 'object' && 'items' in data && 'meta' in data) {
+        // Paginated result: controller returns { items: T[], meta: {...} } or { data: T[], meta: {...} }
+        // → flatten to: data = items/data, meta stays at top level
+        if (data && typeof data === 'object' && 'meta' in data && ('items' in data || 'data' in data)) {
+          const items = 'items' in data ? data.items : data.data;
           return {
             success: true,
-            data: data.items,
+            data: items,
             meta: data.meta,
             status: statusCode,
             message: 'ok',
