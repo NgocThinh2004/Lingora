@@ -12,6 +12,7 @@ import { Controller, Get, Post, Param, ParseIntPipe, Query, Req, UseGuards } fro
 import { AuthorPostsService } from '../author/author-posts.service';
 import { PublicPostsService } from './public-posts.service';
 import { PublicPostsQueryDto } from './dto/public-posts.dto';
+import { PostLangQueryDto } from './dto/post-lang-query.dto';
 import { OptionalJwtAuthGuard } from '../../auth/optional-jwt-auth.guard';
 
 @Controller('posts')
@@ -26,8 +27,8 @@ export class PublicPostsController {
    * Mục đích: Lấy dữ liệu meta cần thiết để hiển thị bộ lọc (VD: danh sách categories).
    */
   @Get('options')
-  async options() {
-    return { data: await this.authorPostsService.getPostOptions() };
+  options() {
+    return this.authorPostsService.getPostOptions();
   }
 
   /**
@@ -48,15 +49,19 @@ export class PublicPostsController {
   /**
    * API: GET /posts/:id/related
    * Mục đích: Lấy các bài viết tương tự (related posts) của một bài viết cụ thể dựa vào id của bài viết đó.
+   *
+   * @param id ID bài viết (từ URL params, đã được ParseIntPipe ép kiểu)
+   * @param req Request object — chứa req.user?.id nếu user đã đăng nhập
+   * @param query DTO chứa trường lang (có class-validator kiểm tra format locale)
    */
   @Get(':id/related')
   @UseGuards(OptionalJwtAuthGuard)
   getRelated(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: any,
-    @Query('lang') lang?: string,
+    @Query() query: PostLangQueryDto,
   ) {
-    return this.postsService.getRelated(id, req.user?.id, lang);
+    return this.postsService.getRelated(id, req.user?.id, query.lang);
   }
 
   /**
@@ -65,15 +70,19 @@ export class PublicPostsController {
    * Lưu ý: Endpoint này KHÔNG tăng view_count nữa.
    * View chỉ được ghi nhận khi người dùng cuộn đọc >= 50% nội dung
    * thông qua endpoint riêng POST /posts/:id/view.
+   *
+   * @param id ID bài viết (từ URL params, đã được ParseIntPipe ép kiểu)
+   * @param req Request object — chứa req.user?.id nếu user đã đăng nhập
+   * @param query DTO chứa trường lang (có class-validator kiểm tra format locale)
    */
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
   getById(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: any,
-    @Query('lang') lang?: string,
+    @Query() query: PostLangQueryDto,
   ) {
-    return this.postsService.getById(id, req.user?.id, lang);
+    return this.postsService.getById(id, req.user?.id, query.lang);
   }
 
   /**

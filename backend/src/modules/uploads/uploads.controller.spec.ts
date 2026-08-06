@@ -62,14 +62,14 @@ describe('UploadsController', () => {
 
   it('delegates uploadEditorVideo to saveEditorMedia with video constraint', async () => {
     const file = { originalname: 'test.mp4' } as Express.Multer.File;
-    const result = await controller.uploadEditorVideo([file]);
+    await controller.uploadEditorVideo([file]);
 
     expect(service.saveEditorMedia).toHaveBeenCalledWith(file, ['video']);
   });
 
   it('delegates uploadEditorMedia to saveEditorMedia', async () => {
     const file = { originalname: 'test.png' } as Express.Multer.File;
-    const result = await controller.uploadEditorMedia([file]);
+    await controller.uploadEditorMedia([file]);
 
     expect(service.saveEditorMedia).toHaveBeenCalledWith(file);
   });
