@@ -10,7 +10,7 @@
       <span class="author-carousel-avatar-wrapper d-flex align-items-center justify-content-center bg-body-tertiary"><i class="bi bi-people fs-4 text-main"></i></span>
       <span class="author-carousel-name">{{ 'all_authors' | t }}</span>
     </button>
-    @for (author of authors; track author.name) {
+    @for (author of carouselAuthors; track author.name) {
       <div class="author-tooltip-container position-relative">
         <button class="author-carousel-item border-0 bg-transparent w-100" [class.active]="authorFilter === author.name" type="button" (click)="selectAuthor(author.name, author.id)">
           <span class="author-carousel-avatar-wrapper"><img [appAssetImage]="author.avatar" [alt]="author.name" class="author-carousel-avatar"></span>
@@ -34,7 +34,7 @@
 
   <!-- Posts or Manage Grid Container -->
   <div id="postsFeedContainer" class="pb-5">
-    @if (authors.length === 0 && !loading) {
+    @if (carouselAuthors.length === 0 && !loading) {
       <div class="text-center py-5 text-muted mt-5">
         <i class="bi bi-mailbox fs-1 d-block mb-3 text-secondary"></i>
         <h4 class="fw-bold text-main mb-2">{{ 'empty_inbox_title' | t }}</h4>
@@ -56,7 +56,7 @@
       <div class="row g-3">
         @for (author of authors; track author.name) {
           <div class="col-12"><div class="manage-author-card">
-            <a [href]="'/profile/' + author.username" class="d-flex align-items-center text-decoration-none text-reset flex-grow-1">
+            <a [routerLink]="['/profile', author.id]" class="d-flex align-items-center text-decoration-none text-reset flex-grow-1">
               <img [appAssetImage]="author.avatar" [alt]="author.name" class="rounded-circle border" width="54" height="54" style="object-fit: cover;">
               <div class="ms-3"><h6 class="fw-bold mb-1 text-main">{{ author.name }}</h6><p class="text-muted small mb-0">{{ author.role }}</p></div>
             </a>
