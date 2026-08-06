@@ -182,9 +182,13 @@ describe('AuthorPostsService state machine', () => {
 
   it('permanently discards an owned draft', async () => {
     const destroy = jest.fn().mockResolvedValue(undefined);
-    const transaction = {};
+    const transaction = { LOCK: { UPDATE: 'UPDATE' } };
     const postModel = {
       findOne: jest.fn().mockResolvedValue({ id: 'draft-1', status: 'draft', destroy }),
+    };
+    const uploadsService = {
+      detachPostMediaForDeletion: jest.fn().mockResolvedValue(['media-1']),
+      deleteDetachedPostMedia: jest.fn().mockResolvedValue(undefined),
     };
     const sequelize = {
       transaction: jest.fn((callback: (value: unknown) => unknown) => callback(transaction)),
@@ -196,7 +200,7 @@ describe('AuthorPostsService state machine', () => {
       undefined as never,
       undefined as never,
       undefined as never,
-      undefined as never,
+      uploadsService as never,
     );
 
     await expect(draftService.discardAuthorDraft('author-1', 'draft-1')).resolves.toEqual({
@@ -206,7 +210,59 @@ describe('AuthorPostsService state machine', () => {
       where: { id: 'draft-1', author_id: 'author-1', deleted_at: null },
       transaction,
     }));
+    expect(uploadsService.detachPostMediaForDeletion).toHaveBeenCalledWith(
+      'draft-1',
+      'author-1',
+      transaction,
+    );
     expect(destroy).toHaveBeenCalledWith({ transaction });
+    expect(uploadsService.deleteDetachedPostMedia).toHaveBeenCalledWith(
+      'author-1',
+      ['media-1'],
+    );
+  });
+
+  it('detaches and deletes media after permanently deleting a trashed post', async () => {
+    const destroy = jest.fn().mockResolvedValue(undefined);
+    const transaction = { LOCK: { UPDATE: 'UPDATE' } };
+    const postModel = {
+      findOne: jest.fn().mockResolvedValue({
+        id: 'post-1',
+        status: 'published',
+        deleted_at: new Date(),
+        destroy,
+      }),
+    };
+    const uploadsService = {
+      detachPostMediaForDeletion: jest.fn().mockResolvedValue(['media-1', 'media-2']),
+      deleteDetachedPostMedia: jest.fn().mockResolvedValue(undefined),
+    };
+    const sequelize = {
+      transaction: jest.fn((callback: (value: unknown) => unknown) => callback(transaction)),
+    };
+    const deletionService = new AuthorPostsService(
+      sequelize as never,
+      postModel as never,
+      undefined as never,
+      undefined as never,
+      undefined as never,
+      undefined as never,
+      uploadsService as never,
+    );
+
+    await expect(
+      deletionService.deleteAuthorPostPermanently('author-1', 'post-1'),
+    ).resolves.toEqual({ id: 'post-1' });
+    expect(uploadsService.detachPostMediaForDeletion).toHaveBeenCalledWith(
+      'post-1',
+      'author-1',
+      transaction,
+    );
+    expect(destroy).toHaveBeenCalledWith({ transaction });
+    expect(uploadsService.deleteDetachedPostMedia).toHaveBeenCalledWith(
+      'author-1',
+      ['media-1', 'media-2'],
+    );
   });
 
   it('does not discard a post that is already pending review', async () => {
@@ -216,6 +272,10 @@ describe('AuthorPostsService state machine', () => {
     const sequelize = {
       transaction: jest.fn((callback: (value: unknown) => unknown) => callback({})),
     };
+    const uploadsService = {
+      detachPostMediaForDeletion: jest.fn(),
+      deleteDetachedPostMedia: jest.fn(),
+    };
     const draftService = new AuthorPostsService(
       sequelize as never,
       postModel as never,
@@ -223,11 +283,12 @@ describe('AuthorPostsService state machine', () => {
       undefined as never,
       undefined as never,
       undefined as never,
-      undefined as never,
+      uploadsService as never,
     );
 
     await expect(draftService.discardAuthorDraft('author-1', 'pending-1')).rejects.toThrow(
       BadRequestException,
     );
+    expect(uploadsService.detachPostMediaForDeletion).not.toHaveBeenCalled();
   });
 });

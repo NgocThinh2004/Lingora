@@ -586,29 +586,45 @@ export class AuthorPostsService {
     authorId: string,
     postId: string,
   ): Promise<{ id: string }> {
-    return this.sequelize.transaction(async (transaction) => {
+    const deletedPost = await this.sequelize.transaction(async (transaction) => {
       const post = await this.findAuthorPostOrThrow(authorId, postId, transaction, true);
       if (!post.deleted_at) {
         throw new BadRequestException('Post must be in trash before permanent deletion');
       }
 
       const id = post.id;
+      const mediaAssetIds = await this.uploadsService.detachPostMediaForDeletion(
+        post.id,
+        authorId,
+        transaction,
+      );
       await post.destroy({ transaction });
-      return { id };
+      return { id, mediaAssetIds };
     });
+
+    await this.uploadsService.deleteDetachedPostMedia(authorId, deletedPost.mediaAssetIds);
+    return { id: deletedPost.id };
   }
 
   async discardAuthorDraft(authorId: string, postId: string): Promise<{ id: string }> {
-    return this.sequelize.transaction(async transaction => {
+    const deletedPost = await this.sequelize.transaction(async transaction => {
       const post = await this.findAuthorPostOrThrow(authorId, postId, transaction);
       if (post.status !== 'draft' && post.status !== 'rejected') {
         throw new BadRequestException('Only draft or rejected posts can be discarded');
       }
 
       const id = post.id;
+      const mediaAssetIds = await this.uploadsService.detachPostMediaForDeletion(
+        post.id,
+        authorId,
+        transaction,
+      );
       await post.destroy({ transaction });
-      return { id };
+      return { id, mediaAssetIds };
     });
+
+    await this.uploadsService.deleteDetachedPostMedia(authorId, deletedPost.mediaAssetIds);
+    return { id: deletedPost.id };
   }
 
   async getAuthorPreview(

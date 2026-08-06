@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { S3Client } from '@aws-sdk/client-s3';
+import { Op } from 'sequelize';
 import { UploadsService } from './uploads.service';
 import {
   MAX_EDITOR_AUDIO_BYTES,
@@ -201,5 +202,79 @@ describe('UploadsService', () => {
       status: 'deleted',
       deleted_at: expect.any(Date),
     }));
+    expect(mediaAssetModel.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        post_id: null,
+        deleted_at: null,
+        [Op.or]: [
+          { status: 'temporary' },
+          { purpose: 'post', status: 'attached' },
+        ],
+      }),
+    }));
+  });
+
+  it('detaches all media from a post inside the deletion transaction', async () => {
+    const transaction = { LOCK: { UPDATE: 'UPDATE' } };
+    mediaAssetModel.findAll.mockResolvedValue([{ id: '21' }, { id: '22' }]);
+
+    await expect(
+      service.detachPostMediaForDeletion('post-1', 'owner-1', transaction as never),
+    ).resolves.toEqual(['21', '22']);
+
+    expect(mediaAssetModel.findAll).toHaveBeenCalledWith({
+      where: {
+        post_id: 'post-1',
+        owner_id: 'owner-1',
+        purpose: 'post',
+        deleted_at: null,
+      },
+      transaction,
+      lock: 'UPDATE',
+    });
+    expect(mediaAssetModel.update).toHaveBeenCalledWith(
+      expect.objectContaining({ post_id: null, status: 'temporary' }),
+      expect.objectContaining({ transaction }),
+    );
+  });
+
+  it('deletes only detached temporary post media after the transaction commits', async () => {
+    const asset = {
+      id: '21',
+      object_key: 'media/7/detached.png',
+      update: jest.fn().mockResolvedValue(undefined),
+    };
+    mediaAssetModel.findAll.mockResolvedValue([asset]);
+
+    await expect(service.deleteDetachedPostMedia('7', ['21'])).resolves.toBeUndefined();
+
+    expect(mediaAssetModel.findAll).toHaveBeenCalledWith({
+      where: {
+        id: { [Op.in]: ['21'] },
+        owner_id: '7',
+        purpose: 'post',
+        post_id: null,
+        status: 'temporary',
+        deleted_at: null,
+      },
+    });
+    expect(asset.update).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'deleted',
+      deleted_at: expect.any(Date),
+    }));
+  });
+
+  it('leaves detached media temporary when R2 deletion fails so cleanup can retry', async () => {
+    const asset = {
+      id: '21',
+      object_key: 'media/7/detached.png',
+      update: jest.fn(),
+    };
+    mediaAssetModel.findAll.mockResolvedValue([asset]);
+    sendSpy.mockRejectedValueOnce(new Error('R2 unavailable'));
+
+    await expect(service.deleteDetachedPostMedia('7', ['21'])).resolves.toBeUndefined();
+
+    expect(asset.update).not.toHaveBeenCalled();
   });
 });
