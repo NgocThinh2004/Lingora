@@ -25,7 +25,7 @@ export class SubscriptionsController {
    */
   @Get('followers')
   async followers(@CurrentUser('id') userId: string) {
-    return { data: await this.subscriptionsService.listFollowers(userId) };
+    return this.subscriptionsService.listFollowers(userId);
   }
 
   /**
@@ -40,7 +40,7 @@ export class SubscriptionsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string
   ) {
-    return { data: await this.subscriptionsService.listFollowing(userId, q, page, limit) };
+    return this.subscriptionsService.listFollowing(userId, q, page, limit);
   }
 
   /**
@@ -56,7 +56,7 @@ export class SubscriptionsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string
   ) {
-    return { data: await this.subscriptionsService.getFeed(userId, author, lang, page, limit) };
+    return this.subscriptionsService.getFeed(userId, author, lang, page, limit);
   }
 
   /**
@@ -65,7 +65,7 @@ export class SubscriptionsController {
    */
   @Post(':authorId')
   async subscribe(@CurrentUser('id') userId: string, @Param('authorId') authorId: string) {
-    return { data: await this.subscriptionsService.subscribe(userId, authorId) };
+    return this.subscriptionsService.subscribe(userId, authorId);
   }
 
   /**
@@ -74,6 +74,6 @@ export class SubscriptionsController {
    */
   @Delete(':authorId')
   async unsubscribe(@CurrentUser('id') userId: string, @Param('authorId') authorId: string) {
-    return { data: await this.subscriptionsService.unsubscribe(userId, authorId) };
+    return this.subscriptionsService.unsubscribe(userId, authorId);
   }
 }

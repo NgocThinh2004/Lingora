@@ -27,11 +27,11 @@ describe('AdminPostsComponent', () => {
 
   beforeEach(async () => {
     postsService = jasmine.createSpyObj<AdminPostsService>('AdminPostsService', ['getPosts', 'getPost', 'reviewPost']);
-    postsService.getPosts.and.returnValue(of({ data: [post], meta: { pagination: { total: 1, page: 1, limit: 8, totalPages: 1 } } }));
-    postsService.getPost.and.returnValue(of({ data: post }));
-    postsService.reviewPost.and.returnValue(of({ data: { ...post, status: 'approved' } }));
+    postsService.getPosts.and.returnValue(of({ success: true, status: 200, message: 'ok', data: [post], meta: { total: 1, page: 1, limit: 8, totalPages: 1 } }));
+    postsService.getPost.and.returnValue(of({ success: true, status: 200, message: 'ok', data: post }));
+    postsService.reviewPost.and.returnValue(of({ success: true, status: 200, message: 'ok', data: { ...post, status: 'approved' } }));
     const categories = jasmine.createSpyObj<AdminCategoriesService>('AdminCategoriesService', ['getCategories']);
-    categories.getCategories.and.returnValue(of({ data: [] }));
+    categories.getCategories.and.returnValue(of({ success: true, status: 200, message: 'ok', data: [] }));
     const toast = jasmine.createSpyObj<ToastService>('ToastService', ['showSuccess', 'showError']);
     await TestBed.configureTestingModule({
       imports: [AdminPostsComponent],

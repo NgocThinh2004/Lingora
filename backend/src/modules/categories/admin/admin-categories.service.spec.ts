@@ -71,7 +71,7 @@ describe('AdminCategoriesService', () => {
 
     expect(result.data).toHaveLength(1);
     expect(result.data[0]).toMatchObject({ slug: 'backend', postCount: 3, isActive: true });
-    expect(result.meta.pagination.total).toBe(1);
+    expect(result.meta.total).toBe(1);
   });
 
   it('creates the category and every active-language translation in one transaction', async () => {

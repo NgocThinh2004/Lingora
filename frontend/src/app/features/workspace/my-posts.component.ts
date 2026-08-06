@@ -98,19 +98,19 @@ export class MyPostsComponent implements OnInit {
       .listAuthorPosts(this.buildListParams(this.page, this.pageSize))
       .subscribe({
         next: (response) => {
-          if (this.page > response.meta.totalPages) {
-            this.page = response.meta.totalPages;
+          if (this.page > response.meta!.totalPages) {
+            this.page = response.meta!.totalPages;
             this.syncListState();
             this.loadPosts();
             return;
           }
 
           this.posts = response.data;
-          this.meta = response.meta;
+          this.meta = response.meta ?? null;
           this.closeTranslationMenu();
           this.loading = false;
           if (!this.trash && this.status === 'all' && !this.search.trim()) {
-            this.allCount = response.meta.total;
+            this.allCount = response.meta!.total;
           }
         },
         error: (error: unknown) => {
@@ -546,11 +546,11 @@ export class MyPostsComponent implements OnInit {
       trash: this.postsService.listAuthorPosts({ status: 'all', trash: true, limit: 1 }),
     }).subscribe({
       next: response => {
-        this.allCount = response.all.meta.total;
-        this.draftCount = response.drafts.meta.total;
-        this.pendingCount = response.pending.meta.total;
-        this.publishedCount = response.approved.meta.total + response.published.meta.total;
-        this.trashCount = response.trash.meta.total;
+        this.allCount = response.all.meta!.total;
+        this.draftCount = response.drafts.meta!.total;
+        this.pendingCount = response.pending.meta!.total;
+        this.publishedCount = response.approved.meta!.total + response.published.meta!.total;
+        this.trashCount = response.trash.meta!.total;
       },
     });
   }
@@ -565,7 +565,7 @@ export class MyPostsComponent implements OnInit {
     this.postsService.listAuthorPosts(this.buildListParams(1, batchSize)).subscribe({
       next: firstPage => {
         const remainingPages = Array.from(
-          { length: Math.max(0, firstPage.meta.totalPages - 1) },
+          { length: Math.max(0, firstPage.meta!.totalPages - 1) },
           (_, index) => index + 2,
         );
 

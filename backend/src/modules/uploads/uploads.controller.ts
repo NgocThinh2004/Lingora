@@ -29,9 +29,7 @@ export class UploadsController {
     @CurrentUser('id') userId: string,
     @Body() body: { url: string },
   ) {
-    return {
-      data: await this.uploadsService.deleteEditorMedia(userId, body.url),
-    };
+    return this.uploadsService.deleteEditorMedia(userId, body.url);
   }
 
   @Post('import-external')
@@ -39,9 +37,7 @@ export class UploadsController {
     @CurrentUser('id') userId: string,
     @Body() body: { url: string },
   ) {
-    return {
-      data: await this.uploadsService.importExternalImage(userId, body.url),
-    };
+    return this.uploadsService.importExternalImage(userId, body.url);
   }
 
   @Post('editor-image')
@@ -57,9 +53,7 @@ export class UploadsController {
     @CurrentUser('id') userId: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return {
-      data: await this.uploadsService.saveEditorImage(userId, this.getFirstFile(files)),
-    };
+    return this.uploadsService.saveEditorImage(userId, this.getFirstFile(files));
   }
 
   @Post('avatar')
@@ -75,9 +69,7 @@ export class UploadsController {
     @CurrentUser('id') userId: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return {
-      data: await this.uploadsService.saveAvatarImage(userId, this.getFirstFile(files)),
-    };
+    return this.uploadsService.saveAvatarImage(userId, this.getFirstFile(files));
   }
 
   @Post('editor-audio')
@@ -93,9 +85,7 @@ export class UploadsController {
     @CurrentUser('id') userId: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return {
-      data: await this.uploadsService.saveEditorMedia(userId, this.getFirstFile(files), ['audio']),
-    };
+    return this.uploadsService.saveEditorMedia(userId, this.getFirstFile(files), ['audio']);
   }
 
   @Post('editor-video')
@@ -111,9 +101,7 @@ export class UploadsController {
     @CurrentUser('id') userId: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return {
-      data: await this.uploadsService.saveEditorMedia(userId, this.getFirstFile(files), ['video']),
-    };
+    return this.uploadsService.saveEditorMedia(userId, this.getFirstFile(files), ['video']);
   }
 
   @Post('editor-media')
@@ -129,9 +117,7 @@ export class UploadsController {
     @CurrentUser('id') userId: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return {
-      data: await this.uploadsService.saveEditorMedia(userId, this.getFirstFile(files)),
-    };
+    return this.uploadsService.saveEditorMedia(userId, this.getFirstFile(files));
   }
 
   private getFirstFile(files: Express.Multer.File[] | undefined): Express.Multer.File | undefined {

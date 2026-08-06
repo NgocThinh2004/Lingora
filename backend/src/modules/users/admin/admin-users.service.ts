@@ -68,12 +68,10 @@ export class AdminUsersService {
     return {
       data: rows.map(user => this.toAdminUser(user, roles.get(user.role_id))),
       meta: {
-        pagination: {
-          total: count,
-          page: query.page,
-          limit: query.limit,
-          totalPages: Math.ceil(count / query.limit),
-        },
+        total: count,
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.ceil(count / query.limit),
         directoryTotal,
       },
     };
@@ -183,7 +181,7 @@ export class AdminUsersService {
     return {
       data: [],
       meta: {
-        pagination: { total: 0, page, limit, totalPages: 0 },
+        total: 0, page, limit, totalPages: 0,
         directoryTotal: 0,
       },
     };

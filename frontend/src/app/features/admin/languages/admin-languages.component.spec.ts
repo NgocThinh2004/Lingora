@@ -47,8 +47,9 @@ describe('AdminLanguagesComponent', () => {
     locale.translate.and.callFake((key: string) => key);
     locale.hasStaticBundle.and.returnValue(of(true));
     service.getLanguages.and.returnValue(of({
+      success: true, status: 200, message: 'ok',
       data: [english, vietnamese],
-      meta: { pagination: { total: 2, page: 1, limit: 8, totalPages: 1 } },
+      meta: { total: 2, page: 1, limit: 8, totalPages: 1 },
     }));
 
     await TestBed.configureTestingModule({
@@ -97,7 +98,7 @@ describe('AdminLanguagesComponent', () => {
       nativeName: '日本語',
       flagCode: 'jp',
     };
-    service.createLanguage.and.returnValue(of({ data: japanese }));
+    service.createLanguage.and.returnValue(of({ success: true, status: 200, message: 'ok', data: japanese }));
     component.openAddDialog();
     component.addForm.setValue({
       code: 'JA',
@@ -131,7 +132,7 @@ describe('AdminLanguagesComponent', () => {
       flagCode: 'kr',
       isActive: false,
     };
-    service.createLanguage.and.returnValue(of({ data: korean }));
+    service.createLanguage.and.returnValue(of({ success: true, status: 200, message: 'ok', data: korean }));
     component.openAddDialog();
     component.addForm.setValue({
       code: 'KO',
@@ -179,7 +180,7 @@ describe('AdminLanguagesComponent', () => {
 
   it('sets another language as default through the API', () => {
     const updated = { ...vietnamese, isDefault: true };
-    service.updateLanguage.and.returnValue(of({ data: updated }));
+    service.updateLanguage.and.returnValue(of({ success: true, status: 200, message: 'ok', data: updated }));
 
     component.makeDefault(vietnamese);
 
@@ -190,7 +191,7 @@ describe('AdminLanguagesComponent', () => {
 
   it('updates a language name, flag and active status', () => {
     const updated = { ...vietnamese, name: 'Vietnamese language', isActive: false };
-    service.updateLanguage.and.returnValue(of({ data: updated }));
+    service.updateLanguage.and.returnValue(of({ success: true, status: 200, message: 'ok', data: updated }));
     component.openEditDialog(vietnamese);
     component.editForm.setValue({
       name: 'Vietnamese language',

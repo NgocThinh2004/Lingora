@@ -21,7 +21,7 @@ export class SearchService {
   ) {}
 
   async globalSearch(q: string, userId?: number) {
-    if (!q || !q.trim()) return { data: { users: [], categories: [], posts: [] } };
+    if (!q || !q.trim()) return { users: [], categories: [], posts: [] };
     const rawQ = q.trim();
     const qWithoutAt = rawQ.startsWith('@') ? rawQ.substring(1) : rawQ;
     const keyword = `%${removeAccents(rawQ)}%`;
@@ -102,37 +102,35 @@ export class SearchService {
     const followingSet = new Set(followingRows.map(r => String(r.author_id)));
 
     return {
-      data: {
-        users: users.map(u => ({
-          id: Number(u.id),
-          name: u.display_name || u.username,
-          handle: u.username,
-          avatarUrl: u.avatar,
-          isFollowing: followingSet.has(String(u.id))
-        })),
-        categories: categories.map(c => {
-          const trans = allCatTranslations.find(t => Number(t.category_id) === Number(c.id));
-          return {
-            id: Number(c.id),
-            slug: c.slug,
-            name: trans?.name || c.slug,
-          };
-        }),
-        posts: posts.map(p => {
-          const trans = postTranslations.find(t => Number(t.post_id) === Number(p.id));
-          const author = postAuthors.find(a => Number(a.id) === Number(p.author_id));
-          return {
-            id: Number(p.id),
-            title: trans?.title || '',
-            createdAt: p.published_at || p.created_at,
-            author: {
-              id: Number(author?.id || p.author_id),
-              name: author?.display_name || author?.username,
-              avatarUrl: author?.avatar
-            }
-          };
-        })
-      }
+      users: users.map(u => ({
+        id: Number(u.id),
+        name: u.display_name || u.username,
+        handle: u.username,
+        avatarUrl: u.avatar,
+        isFollowing: followingSet.has(String(u.id))
+      })),
+      categories: categories.map(c => {
+        const trans = allCatTranslations.find(t => Number(t.category_id) === Number(c.id));
+        return {
+          id: Number(c.id),
+          slug: c.slug,
+          name: trans?.name || c.slug,
+        };
+      }),
+      posts: posts.map(p => {
+        const trans = postTranslations.find(t => Number(t.post_id) === Number(p.id));
+        const author = postAuthors.find(a => Number(a.id) === Number(p.author_id));
+        return {
+          id: Number(p.id),
+          title: trans?.title || '',
+          createdAt: p.published_at || p.created_at,
+          author: {
+            id: Number(author?.id || p.author_id),
+            name: author?.display_name || author?.username,
+            avatarUrl: author?.avatar
+          }
+        };
+      })
     };
   }
 }

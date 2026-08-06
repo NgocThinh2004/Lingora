@@ -46,12 +46,14 @@ describe('AdminCategoriesComponent', () => {
     const languagesService = jasmine.createSpyObj<AdminLanguagesService>('AdminLanguagesService', ['getLanguages']);
     toast = jasmine.createSpyObj<ToastService>('ToastService', ['showSuccess', 'showError']);
     categoriesService.getCategories.and.returnValue(of({
+      success: true, status: 200, message: 'ok',
       data: [category],
-      meta: { pagination: { total: 1, page: 1, limit: 8, totalPages: 1 } },
+      meta: { total: 1, page: 1, limit: 8, totalPages: 1 },
     }));
     languagesService.getLanguages.and.returnValue(of({
+      success: true, status: 200, message: 'ok',
       data: [english, vietnamese],
-      meta: { pagination: { total: 2, page: 1, limit: 100, totalPages: 1 } },
+      meta: { total: 2, page: 1, limit: 100, totalPages: 1 },
     }));
 
     await TestBed.configureTestingModule({
@@ -92,7 +94,7 @@ describe('AdminCategoriesComponent', () => {
   });
 
   it('submits one source translation for automatic backend translation', () => {
-    categoriesService.createCategory.and.returnValue(of({ data: category }));
+    categoriesService.createCategory.and.returnValue(of({ success: true, status: 200, message: 'ok', data: category }));
     component.openAddPanel();
     component.translationForms.at(0).controls.name.setValue('Technology');
     component.suggestSlug(0);
@@ -107,7 +109,7 @@ describe('AdminCategoriesComponent', () => {
   });
 
   it('does not request automatic translation when the source text is unchanged', () => {
-    categoriesService.updateCategory.and.returnValue(of({ data: category }));
+    categoriesService.updateCategory.and.returnValue(of({ success: true, status: 200, message: 'ok', data: category }));
     component.openEditPanel(category);
 
     component.saveCategory();
@@ -153,8 +155,9 @@ describe('AdminCategoriesComponent', () => {
 
   it('opens the category post list when the post count is clicked', () => {
     categoriesService.getCategoryPosts.and.returnValue(of({
+      success: true, status: 200, message: 'ok',
       data: [{ id: '21', title: 'A post', slug: 'a-post', authorName: 'An', status: 'published', publishedAt: '2026-07-22T08:00:00.000Z' }],
-      meta: { total: 1, shown: 1 },
+      meta: { total: 1, shown: 1, page: 1, limit: 100, totalPages: 1 },
     }));
 
     (fixture.nativeElement.querySelector('.post-count') as HTMLButtonElement).click();

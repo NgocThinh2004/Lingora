@@ -27,8 +27,9 @@ export class UsersService {
       params = params.set('page', page.toString());
     }
     return this.http
-      .get<ApiResponse<{ items: User[], meta: any }>>(`${environment.apiUrl}/users/recommended`, { params })
-      .pipe(map((res) => res.data));
+      .get<ApiResponse<User[]>>(`${environment.apiUrl}/users/recommended`, { params })
+      // Format mới: data là mảng user, meta phân trang nằm ở cùng cấp
+      .pipe(map((res) => ({ items: res.data ?? [], meta: res.meta })));
   }
 
   getFollowers(id: number): Observable<User[]> {

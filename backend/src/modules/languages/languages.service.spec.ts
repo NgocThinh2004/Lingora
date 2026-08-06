@@ -95,7 +95,7 @@ describe('LanguagesService', () => {
       limit: 8,
       offset: 0,
     });
-    expect(result.meta.pagination).toEqual({
+    expect(result.meta).toEqual({
       total: 1,
       page: 1,
       limit: 8,

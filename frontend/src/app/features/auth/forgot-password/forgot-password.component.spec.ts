@@ -35,7 +35,7 @@ describe('ForgotPasswordComponent', () => {
 
   it('stores the normalized email and opens the reset page after requesting a code', () => {
     spyOn(router, 'navigate').and.resolveTo(true);
-    authService.forgotPassword.and.returnValue(of({ data: { message: 'Request accepted' } }));
+    authService.forgotPassword.and.returnValue(of({ success: true, status: 200, message: 'ok', data: { message: 'Request accepted' } }));
     component.forgotPasswordForm.setValue({ email: ' Member@Example.COM ' });
 
     component.onSubmit();

@@ -99,10 +99,10 @@ export class AdminUsersComponent implements OnInit {
     }).subscribe({
       next: response => {
         this.users.set(response.data);
-        if (response.meta?.pagination) {
-          this.pagination.set(response.meta.pagination);
+        if (response.meta) {
+          this.pagination.set(response.meta);
         }
-        this.directoryTotal.set(Number(response.meta?.['directoryTotal'] ?? response.meta?.pagination?.total ?? 0));
+        this.directoryTotal.set(Number((response.meta as any)?.['directoryTotal'] ?? response.meta?.total ?? 0));
         this.loading.set(false);
       },
       error: error => {

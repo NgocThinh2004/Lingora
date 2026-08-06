@@ -56,8 +56,11 @@ export class FeedPostsService {
     });
 
     return this.http
-      .get<ApiResponse<PaginatedResult<Post>>>(this.baseUrl, { params })
-      .pipe(map((res) => res.data));
+      .get<ApiResponse<Post[]>>(this.baseUrl, { params })
+      .pipe(map((res) => ({
+        items: Array.isArray(res.data) ? res.data : [],
+        meta: res.meta as any
+      })));
   }
 
   /**

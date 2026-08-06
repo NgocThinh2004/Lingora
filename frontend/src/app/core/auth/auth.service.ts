@@ -36,35 +36,41 @@ export class AuthService {
     this.loadUserFromStorage();
   }
 
-  login(credentials: LoginRequest): Observable<ApiResponse<AuthSession>> {
+  login(credentials: LoginRequest): Observable<AuthSession> {
     return this.http.post<ApiResponse<AuthSession>>(`${this.apiUrl}/login`, credentials)
       .pipe(
-        tap(response => {
-          if (response.data?.accessToken && response.data.refreshToken) {
-            this.setSession(response.data);
+        map(response => response.data),
+        tap(session => {
+          if (session?.accessToken && session.refreshToken) {
+            this.setSession(session);
           }
         })
       );
   }
 
-  register(userData: RegisterRequest): Observable<ApiResponse<CurrentUser>> {
-    return this.http.post<ApiResponse<CurrentUser>>(`${this.apiUrl}/register`, userData);
+  register(userData: RegisterRequest): Observable<CurrentUser> {
+    return this.http.post<ApiResponse<CurrentUser>>(`${this.apiUrl}/register`, userData).pipe(
+      map(response => response.data),
+    );
   }
 
-  forgotPassword(email: string): Observable<ApiResponse<AuthMessage>> {
+  forgotPassword(email: string): Observable<AuthMessage> {
     const payload: ForgotPasswordRequest = { email };
 
     return this.http.post<ApiResponse<AuthMessage>>(
       `${this.apiUrl}/forgot-password`,
       payload,
-    );
+    ).pipe(map(response => response.data));
   }
 
-  resetPassword(payload: ResetPasswordRequest): Observable<ApiResponse<AuthMessage>> {
+  resetPassword(payload: ResetPasswordRequest): Observable<AuthMessage> {
     return this.http.post<ApiResponse<AuthMessage>>(
       `${this.apiUrl}/reset-password`,
       payload,
-    ).pipe(tap(() => this.clearSession()));
+    ).pipe(
+      map(response => response.data),
+      tap(() => this.clearSession())
+    );
   }
 
   getMe(): Observable<CurrentUser> {
