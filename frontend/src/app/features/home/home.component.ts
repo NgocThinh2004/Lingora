@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal, ElementRef, ViewChild, HostListener, untracked, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
-import { Subject, switchMap } from 'rxjs';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { distinctUntilChanged, map, Subject, switchMap } from 'rxjs';
 import { LocaleService } from '../../core/locale/locale.service';
 import { Category, translateCategory } from '../categories/models/category.model';
 import { CategoriesService } from '../categories/services/categories.service';
@@ -77,6 +77,8 @@ export class HomeComponent {
   private readonly languageService = inject(LocaleService);
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   private readonly feedTrigger$ = new Subject<{ page: number; category: string; lang: string }>();
 
@@ -84,7 +86,9 @@ export class HomeComponent {
   readonly categories = signal<Category[]>([]);
   readonly loading = signal(true);
   readonly loadingMore = signal(false);
-  readonly selectedCategorySlug = signal<string>('');
+  readonly selectedCategorySlug = signal<string>(
+    this.route.snapshot.queryParamMap.get('category')?.trim() ?? '',
+  );
   readonly page = signal(1);
   readonly totalPages = signal(1);
   readonly isDropdownOpen = signal(false);
@@ -102,6 +106,19 @@ export class HomeComponent {
   });
 
   constructor() {
+    this.route.queryParamMap.pipe(
+      map(params => params.get('category')?.trim() ?? ''),
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(slug => {
+      if (slug === this.selectedCategorySlug()) return;
+
+      this.page.set(1);
+      this.selectedCategorySlug.set(slug);
+      this.isDropdownOpen.set(false);
+      this.feedTrigger$.next({ page: 1, category: slug, lang: this.currentLang() });
+    });
+
     // ══════════════════════════════════════════════════════
     // HÀNH ĐỘNG: TẢI FEED BÀI VIẾT TẠI TRANG CHỦ (RxJS PIPELINE)
     // ══════════════════════════════════════════════════════
@@ -183,6 +200,11 @@ export class HomeComponent {
     this.selectedCategorySlug.set(slug);
     this.isDropdownOpen.set(false);
     this.feedTrigger$.next({ page: 1, category: slug, lang: this.currentLang() });
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { category: slug || null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   loadMore() {

@@ -5,7 +5,7 @@
  * Lưu ý: Tiêu đề và nội dung bài viết KHÔNG lưu ở bảng này mà lưu ở bảng `post_translations`
  * để phục vụ hệ thống đa ngôn ngữ (i18n).
  */
-import { Column, DataType, Model, Table, HasMany } from 'sequelize-typescript';
+import { Column, DataType, Model, Table, HasMany, BelongsTo, ForeignKey } from 'sequelize-typescript';
 import { Comment } from '../../comments/models/comment.model';
 // import { User } from '../../users/models/user.model'; // Giả định import để map association (nếu cần thiết ở file gốc)
 
