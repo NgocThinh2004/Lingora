@@ -96,6 +96,9 @@ export class PublicPostsService {
         ?? languages.find(language => language.is_active)
       : undefined;
     const publicLanguage = requestedLanguage ?? fallbackLanguage;
+    const readableLanguageIds = publicLanguage
+      ? [Number(publicLanguage.id)]
+      : activeLanguageIds;
     const languageMap = new Map<any, string>();
     languages.forEach((l) => {
       languageMap.set(l.id, l.code);
