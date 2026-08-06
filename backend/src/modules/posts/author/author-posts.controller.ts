@@ -15,23 +15,23 @@ export class AuthorPostsController {
 
   @Post()
   async create(@CurrentUser('id') userId: string, @Body() dto: CreateAuthorPostDto) {
-    return { data: await this.postsService.createAuthorPost(userId, dto) };
+    return ;
   }
 
   @Post('autosave')
   async autosaveNew(@CurrentUser('id') userId: string, @Body() dto: AutosaveAuthorPostDto) {
-    return { data: await this.postsService.autosaveAuthorPost(userId, dto) };
+    return ;
   }
 
   @Get()
   async list(@CurrentUser('id') userId: string, @Query() query: AuthorPostsQueryDto) {
     const result = await this.postsService.listAuthorPosts(userId, query);
-    return { data: result.items, meta: result.meta };
+    return ;
   }
 
   @Get('options/filters')
   async filterOptions(@CurrentUser('id') userId: string) {
-    return { data: await this.postsService.getAuthorPostFilterOptions(userId) };
+    return ;
   }
 
   @Get(':id')
@@ -51,7 +51,7 @@ export class AuthorPostsController {
     @Param('id') postId: string,
     @Body() dto: UpdateAuthorPostDto,
   ) {
-    return { data: await this.postsService.updateAuthorPost(userId, postId, dto) };
+    return ;
   }
 
   @Patch(':id/autosave')
@@ -60,42 +60,42 @@ export class AuthorPostsController {
     @Param('id') postId: string,
     @Body() dto: AutosaveAuthorPostDto,
   ) {
-    return { data: await this.postsService.autosaveAuthorPost(userId, dto, postId) };
+    return ;
   }
 
   @Post(':id/submit')
   async submit(@CurrentUser('id') userId: string, @Param('id') postId: string) {
-    return { data: await this.postsService.submitAuthorPost(userId, postId) };
+    return ;
   }
 
   @Post(':id/archive')
   async archive(@CurrentUser('id') userId: string, @Param('id') postId: string) {
-    return { data: await this.postsService.archiveAuthorPost(userId, postId) };
+    return ;
   }
 
   @Post(':id/restore')
   async restore(@CurrentUser('id') userId: string, @Param('id') postId: string) {
-    return { data: await this.postsService.restoreAuthorPost(userId, postId) };
+    return ;
   }
 
   @Post(':id/trash')
   async trash(@CurrentUser('id') userId: string, @Param('id') postId: string) {
-    return { data: await this.postsService.trashAuthorPost(userId, postId) };
+    return ;
   }
 
   @Post(':id/restore-trash')
   async restoreTrash(@CurrentUser('id') userId: string, @Param('id') postId: string) {
-    return { data: await this.postsService.restoreAuthorPostFromTrash(userId, postId) };
+    return ;
   }
 
   @Delete(':id/draft')
   async discardDraft(@CurrentUser('id') userId: string, @Param('id') postId: string) {
-    return { data: await this.postsService.discardAuthorDraft(userId, postId) };
+    return ;
   }
 
   @Delete(':id')
   async deletePermanently(@CurrentUser('id') userId: string, @Param('id') postId: string) {
-    return { data: await this.postsService.deleteAuthorPostPermanently(userId, postId) };
+    return ;
   }
 
   @Get(':id/preview')

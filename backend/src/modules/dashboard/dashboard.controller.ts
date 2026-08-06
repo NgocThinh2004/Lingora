@@ -12,6 +12,6 @@ export class DashboardController {
 
   @Get()
   async getOverview(@Query('lang') language?: string) {
-    return { data: await this.dashboardService.getOverview(language) };
+    return this.dashboardService.getOverview(language);
   }
 }

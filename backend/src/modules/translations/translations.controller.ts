@@ -43,7 +43,7 @@ export class TranslationsController {
 
   @Post('preview')
   async preview(@Body() dto: PreviewTranslationDto) {
-    return { data: await this.translationsService.preview(dto) };
+    return ;
   }
 
   @Post('queue')
@@ -79,14 +79,14 @@ export class TranslationsController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   async runWorkerOnce() {
-    return { data: await this.translationsService.processNextQueuedTranslation() };
+    return ;
   }
 
   @Get('metrics')
   @UseGuards(RolesGuard)
   @Roles('admin')
   async getMetrics() {
-    return { data: await this.translationsService.getMetrics() };
+    return ;
   }
 
   private async isAdmin(user: User): Promise<boolean> {
