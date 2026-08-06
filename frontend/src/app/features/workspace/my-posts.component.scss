@@ -497,6 +497,14 @@
   font-size: 0.76rem;
 }
 
+.post-title-cell .hidden-category-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--accent-ui-color, var(--primary-color));
+  font-weight: 600;
+}
+
 .post-row-actions {
   display: flex;
   flex-wrap: wrap;

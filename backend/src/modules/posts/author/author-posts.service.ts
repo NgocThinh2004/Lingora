@@ -15,6 +15,7 @@ import {
   PostStatus,
 } from '../posts.constants';
 import { removeAccents } from '../../../utils/string.util';
+import { UploadsService } from '../../uploads/uploads.service';
 
 type TranslationMatrixItem = {
   languageId: number;
@@ -69,6 +70,7 @@ export class AuthorPostsService {
     @InjectModel(Language) private readonly languageModel: typeof Language,
     @InjectModel(Category) private readonly categoryModel: typeof Category,
     @InjectModel(CategoryTranslation) private readonly categoryTranslationModel: typeof CategoryTranslation,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   getAllowedTransitions(status: PostStatus): readonly PostStatus[] {
@@ -143,10 +145,11 @@ export class AuthorPostsService {
 
     return this.sequelize.transaction(async (transaction) => {
       const now = new Date();
+      const categoryId = await this.resolveCategoryId(dto.categoryId, transaction);
       const post = await this.postModel.create(
         {
           author_id: authorId,
-          category_id: dto.categoryId ?? null,
+          category_id: categoryId,
           original_language_id: dto.originalLanguageId,
           view_count: 0,
           status: 'draft',
@@ -176,6 +179,13 @@ export class AuthorPostsService {
         transaction,
       );
 
+      await this.uploadsService.syncPostMedia(
+        post.id,
+        authorId,
+        [sourceTranslation.content],
+        transaction,
+      );
+
       return this.getAuthorPost(authorId, post.id, transaction);
     });
   }
@@ -187,12 +197,15 @@ export class AuthorPostsService {
   ): Promise<AuthorPostResponse> {
     return this.sequelize.transaction(async transaction => {
       const now = new Date();
+      const selectedCategoryId = postId
+        ? undefined
+        : await this.resolveCategoryId(dto.categoryId, transaction);
       const post = postId
         ? await this.findAuthorPostOrThrow(authorId, postId, transaction)
         : await this.postModel.create(
             {
               author_id: authorId,
-              category_id: dto.categoryId ?? null,
+              category_id: selectedCategoryId,
               original_language_id: dto.originalLanguageId,
               view_count: 0,
               status: 'draft',
@@ -219,9 +232,13 @@ export class AuthorPostsService {
       const content = this.sanitizeContent(dto.content ?? currentSource?.content ?? '');
       this.assertAutosaveContentLimits(title, content);
 
+      const categoryId = dto.categoryId === undefined
+        ? post.category_id
+        : await this.resolveCategoryId(dto.categoryId, transaction);
+
       await post.update(
         {
-          category_id: dto.categoryId === undefined ? post.category_id : dto.categoryId,
+          category_id: categoryId,
           original_language_id: originalLanguageId,
           review_note: null,
           updated_at: now,
@@ -253,6 +270,13 @@ export class AuthorPostsService {
       if (sourceChanged) {
         await this.markTargetTranslationsOutdated(post.id, originalLanguageId, transaction);
       }
+
+      await this.uploadsService.syncPostMedia(
+        post.id,
+        authorId,
+        [sourceTranslation.content],
+        transaction,
+      );
 
       return this.getAuthorPost(authorId, post.id, transaction);
     });
@@ -350,7 +374,7 @@ export class AuthorPostsService {
       })),
       categories: categories.map(category => {
         const translation = categoryTranslations.find(item => item.category_id === category.id);
-        return { id: category.id, label: translation?.name || category.slug };
+        return { id: category.id, label: translation?.name || category.slug, isActive: true };
       }),
     };
   }
@@ -360,16 +384,60 @@ export class AuthorPostsService {
       this.getPostOptions(),
       this.postModel.findAll({
         where: { author_id: authorId },
-        attributes: ['updated_at'],
+        attributes: ['category_id', 'original_language_id', 'updated_at'],
         order: [['updated_at', 'DESC']],
       }),
     ]);
+    const visibleLanguageIds = new Set(options.languages.map(language => Number(language.id)));
+    const hiddenLanguageIds = [...new Set(posts
+      .map(post => Number(post.original_language_id))
+      .filter(id => Number.isFinite(id) && !visibleLanguageIds.has(id)))];
+    const hiddenLanguages = hiddenLanguageIds.length
+      ? await this.languageModel.findAll({
+          where: { id: { [Op.in]: hiddenLanguageIds }, is_active: false },
+          order: [['id', 'ASC']],
+        })
+      : [];
+    const languages = [
+      ...options.languages,
+      ...hiddenLanguages.map(language => ({
+        id: language.id,
+        code: language.code,
+        label: language.name,
+        nativeLabel: language.native_name,
+        flagCode: language.flag_code,
+      })),
+    ];
+    const visibleCategoryIds = new Set(options.categories.map(category => category.id));
+    const hiddenCategoryIds = [...new Set(posts
+      .map(post => post.category_id)
+      .filter((id): id is number => typeof id === 'number' && !visibleCategoryIds.has(id)))];
+    const [hiddenCategories, hiddenTranslations] = hiddenCategoryIds.length
+      ? await Promise.all([
+          this.categoryModel.findAll({
+            where: { id: { [Op.in]: hiddenCategoryIds }, status: 'inactive' },
+            order: [['id', 'ASC']],
+          }),
+          this.categoryTranslationModel.findAll({
+            where: { category_id: { [Op.in]: hiddenCategoryIds } },
+            order: [['language_id', 'ASC']],
+          }),
+        ])
+      : [[], []];
+    const categories = [
+      ...options.categories,
+      ...hiddenCategories.map(category => ({
+        id: category.id,
+        label: hiddenTranslations.find(item => item.category_id === category.id)?.name || category.slug,
+        isActive: false,
+      })),
+    ];
     const updatedMonths = [...new Set(posts.map(post => {
       const date = new Date(post.updated_at);
       return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
     }))];
 
-    return { ...options, updatedMonths };
+    return { ...options, languages, categories, updatedMonths };
   }
 
   async updateAuthorPost(
@@ -394,10 +462,13 @@ export class AuthorPostsService {
         title: nextSource.title,
         content: sanitizedNextContent,
       });
+      const categoryId = dto.categoryId === undefined
+        ? post.category_id
+        : await this.resolveCategoryId(dto.categoryId, transaction);
 
       await post.update(
         {
-          category_id: dto.categoryId === undefined ? post.category_id : dto.categoryId,
+          category_id: categoryId,
           original_language_id: originalLanguageId,
           review_note: null,
           updated_at: new Date(),
@@ -428,6 +499,13 @@ export class AuthorPostsService {
       if (sourceChanged) {
         await this.markTargetTranslationsOutdated(post.id, originalLanguageId, transaction);
       }
+
+      await this.uploadsService.syncPostMedia(
+        post.id,
+        authorId,
+        [sourceTranslation.content],
+        transaction,
+      );
 
       return this.getAuthorPost(authorId, post.id, transaction);
     });
@@ -520,6 +598,19 @@ export class AuthorPostsService {
     });
   }
 
+  async discardAuthorDraft(authorId: string, postId: string): Promise<{ id: string }> {
+    return this.sequelize.transaction(async transaction => {
+      const post = await this.findAuthorPostOrThrow(authorId, postId, transaction);
+      if (post.status !== 'draft' && post.status !== 'rejected') {
+        throw new BadRequestException('Only draft or rejected posts can be discarded');
+      }
+
+      const id = post.id;
+      await post.destroy({ transaction });
+      return { id };
+    });
+  }
+
   async getAuthorPreview(
     authorId: string,
     postId: string,
@@ -574,6 +665,29 @@ export class AuthorPostsService {
     }
 
     return post;
+  }
+
+  private async resolveCategoryId(
+    requestedCategoryId: number | null | undefined,
+    transaction: Transaction,
+  ): Promise<number> {
+    const category = requestedCategoryId
+      ? await this.categoryModel.findOne({
+          where: { id: requestedCategoryId, status: 'active' },
+          transaction,
+        })
+      : await this.categoryModel.findOne({
+          where: { is_system: true, status: 'active' },
+          transaction,
+        });
+    if (!category) {
+      throw new BadRequestException(
+        requestedCategoryId
+          ? 'The selected category is unavailable'
+          : 'The system uncategorized category is not configured',
+      );
+    }
+    return category.id;
   }
 
   private async findSourceTranslation(
@@ -766,6 +880,7 @@ export class AuthorPostsService {
       allowedTags: [
         ...sanitizeHtml.defaults.allowedTags,
         'img',
+        'img',
         'audio',
         'video',
         'source',
@@ -775,9 +890,19 @@ export class AuthorPostsService {
         'h1',
         'h2',
         'h3',
+        'h4',
+        'h5',
+        'h6',
         'div',
         'span',
       ],
+      allowedSchemes: ['http', 'https', 'ftp', 'mailto', 'tel', 'data'],
+      allowedSchemesByTag: {
+        img: ['http', 'https', 'data'],
+        audio: ['http', 'https'],
+        video: ['http', 'https'],
+      },
+      allowedSchemesAppliedToAttributes: ['href', 'src'],
       allowedAttributes: {
         ...sanitizeHtml.defaults.allowedAttributes,
         a: ['href', 'name', 'target', 'rel'],
@@ -786,7 +911,8 @@ export class AuthorPostsService {
         video: ['src', 'controls', 'playsinline', 'preload', 'poster', 'title', 'width', 'height'],
         source: ['src', 'type'],
         track: ['default', 'kind', 'label', 'src', 'srclang'],
-        div: ['class'],
+        div: ['class', 'data-align', 'data-media-asset-id', 'data-media-object-key'],
+        figcaption: ['class'],
         span: ['class'],
         code: ['class'],
         pre: ['class'],
@@ -797,7 +923,12 @@ export class AuthorPostsService {
           'editor-code-toolbar',
           'editor-code-language-menu',
           'editor-media-wrapper',
+          'editor-media-container',
+          'align-left',
+          'align-center',
+          'align-right',
         ],
+        figcaption: ['editor-media-caption'],
         pre: ['editor-code-body'],
         code: ['editor-inline-code-font'],
         span: ['code-line', 'line-number', 'line-content'],

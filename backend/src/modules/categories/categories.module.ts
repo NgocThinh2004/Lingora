@@ -12,14 +12,26 @@ import { PublicCategoriesController } from './public/public-categories.controlle
 import { PublicCategoriesService } from './public/public-categories.service';
 import { CategoryTranslation } from './models/category-translation.model';
 import { Category } from './models/category.model';
+import { CategoryAutoTranslationService } from './category-auto-translation.service';
+import { TranslationsModule } from '../translations/translations.module';
 
 @Module({
   imports: [
     UsersModule,
+    TranslationsModule,
     SequelizeModule.forFeature([Category, CategoryTranslation, Language, Post, PostTranslation, User]),
   ],
   controllers: [AdminCategoriesController, PublicCategoriesController],
-  providers: [AdminCategoriesService, PublicCategoriesService, RolesGuard],
-  exports: [AdminCategoriesService, PublicCategoriesService],
+  providers: [
+    AdminCategoriesService,
+    PublicCategoriesService,
+    CategoryAutoTranslationService,
+    RolesGuard,
+  ],
+  exports: [
+    AdminCategoriesService,
+    PublicCategoriesService,
+    CategoryAutoTranslationService,
+  ],
 })
 export class CategoriesModule {}

@@ -1,4 +1,5 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal, HostListener } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal, HostListener, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CommentService } from '../../services/comment.service';
@@ -42,6 +43,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   public authService = inject(AuthService);
   private authModalService = inject(AuthModalService);
   private toastService = inject(ToastService);
+  private destroyRef = inject(DestroyRef);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // GLOBAL STATE / DB FIELD MAPPING
@@ -63,14 +65,25 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   newCommentText = '';
   isSubmitting = signal<boolean>(false);
 
-  // ID của comment đang được người dùng bấm 'Reply' (map từ comment.id / comments.id)
-  replyingToCommentId = signal<string | null>(null);
-  replyingToText = '';
-
-  editingCommentId = signal<string | null>(null);
-  editingCommentText = '';
+  replyingStates = signal<Record<string, string>>({});
+  editingStates = signal<Record<string, string>>({});
   
   commentToDelete = signal<{ comment: Comment, parent?: Comment } | null>(null);
+
+  hasUnsavedChanges(): boolean {
+    const hasNew = this.newCommentText.trim().length > 0;
+    const hasReplying = Object.values(this.replyingStates()).some(text => text.trim().length > 0);
+    const hasEditing = Object.values(this.editingStates()).some(text => text.trim().length > 0);
+    return hasNew || hasReplying || hasEditing;
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) {
+      event.preventDefault();
+      event.returnValue = ''; // Required for some browsers
+    }
+  }
   
   translatingIds = signal<Set<string>>(new Set());
   showingTranslationIds = signal<Set<string>>(new Set());
@@ -115,7 +128,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
    */
   loadComments(page: number = 1): void {
     if (page === 1) this.loading.set(true);
-    this.commentService.getCommentsByPost(this.postId.toString(), page).subscribe({
+    this.commentService.getCommentsByPost(this.postId.toString(), page).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (res) => {
         if (page === 1) {
           // Trang 1: Thay thế toàn bộ mảng
@@ -141,7 +156,6 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     this.loadComments(this.currentPage() + 1);
   }
 
-  // Gán ID comment mục tiêu khi người dùng nhấn "Trả lời"
   setReplyTarget(comment: Comment, event?: Event): void {
     if (event) {
       event.stopPropagation();
@@ -150,10 +164,19 @@ export class CommentSectionComponent implements OnInit, OnChanges {
       this.authModalService.open();
       return;
     }
-    this.replyingToCommentId.set(comment.id);
-    this.replyingToText = '';
-    this.editingCommentId.set(null);
-    this.editingCommentText = '';
+    this.replyingStates.update(states => ({ ...states, [comment.id]: '' }));
+  }
+
+  updateReplyingText(id: string, text: string): void {
+    this.replyingStates.update(states => ({ ...states, [id]: text }));
+  }
+
+  cancelReply(id: string): void {
+    this.replyingStates.update(states => {
+      const newStates = { ...states };
+      delete newStates[id];
+      return newStates;
+    });
   }
 
   handleCommentFocus(event: FocusEvent): void {
@@ -161,11 +184,6 @@ export class CommentSectionComponent implements OnInit, OnChanges {
       (event.target as HTMLElement).blur();
       this.authModalService.open();
     }
-  }
-
-  cancelReply(): void {
-    this.replyingToCommentId.set(null);
-    this.replyingToText = '';
   }
 
   /**
@@ -181,7 +199,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
 
     this.isSubmitting.set(true);
 
-    this.commentService.createComment(this.postId.toString(), content).subscribe({
+    this.commentService.createComment(this.postId.toString(), content).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (newComment) => {
         this.isSubmitting.set(false);
         this.newCommentText = '';
@@ -202,7 +222,8 @@ export class CommentSectionComponent implements OnInit, OnChanges {
    * Update ngay trên local mảng replies của root tương ứng.
    */
   submitReply(target: Comment): void {
-    const content = this.replyingToText.trim();
+    const text = this.replyingStates()[target.id];
+    const content = text ? text.trim() : '';
     if (!content) return;
     if (!this.authService.isAuthenticated()) {
       this.authModalService.open();
@@ -211,11 +232,15 @@ export class CommentSectionComponent implements OnInit, OnChanges {
 
     this.isSubmitting.set(true);
 
-    this.commentService.createComment(this.postId.toString(), content, target.id).subscribe({
+    const parentId = target.parent_id ? target.parent_id : target.id;
+    const replyToId = target.id;
+
+    this.commentService.createComment(this.postId.toString(), content, replyToId).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (newComment) => {
         this.isSubmitting.set(false);
-        this.replyingToText = '';
-        this.replyingToCommentId.set(null);
+        this.cancelReply(target.id);
         
         // Cập nhật State UI cục bộ (Mutate array):
         this.comments.update(prev => {
@@ -270,7 +295,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     comment.isLiking = true;
 
     // Thay đổi comment_likes table phía BE
-    this.likeService.toggleCommentLike(this.postId, Number(comment.id)).subscribe({
+    this.likeService.toggleCommentLike(this.postId, Number(comment.id)).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (res) => {
         comment.liked = res.liked;
         comment.likeCount = res.likeCount;
@@ -324,7 +351,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
     if (!target) return;
     const { comment, parent } = target;
     
-    this.commentService.deleteComment(this.postId.toString(), comment.id).subscribe(() => {
+    this.commentService.deleteComment(this.postId.toString(), comment.id).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
       this.cancelDelete();
       this.toastService.showSuccess(this.localeService.translate('comment_deleted'));
       
@@ -357,30 +386,39 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   }
 
   // Bắt đầu chỉnh sửa bình luận
-  startEdit(comment: Comment, event?: Event): void {
+  setEditTarget(comment: Comment, event?: Event): void {
     if (event) {
       event.stopPropagation();
     }
-    this.editingCommentId.set(comment.id);
-    this.editingCommentText = comment.content;
-    this.replyingToCommentId.set(null);
-    this.replyingToText = '';
+    this.editingStates.update(states => ({ ...states, [comment.id]: comment.content }));
   }
 
-  cancelEdit(): void {
-    this.editingCommentId.set(null);
-    this.editingCommentText = '';
+  updateEditingText(id: string, text: string): void {
+    this.editingStates.update(states => ({ ...states, [id]: text }));
+  }
+
+  cancelEdit(id: string): void {
+    this.editingStates.update(states => {
+      const newStates = { ...states };
+      delete newStates[id];
+      return newStates;
+    });
   }
 
   saveEdit(comment: Comment, parent?: Comment): void {
-    const text = this.editingCommentText.trim();
-    if (!text || text === comment.content) {
-      this.cancelEdit();
+    const text = this.editingStates()[comment.id];
+    const content = text ? text.trim() : '';
+    if (!content || content === comment.content) {
+      this.cancelEdit(comment.id);
       return;
     }
-    this.commentService.updateComment(this.postId.toString(), comment.id, text).subscribe({
+    this.isSubmitting.set(true);
+    this.commentService.updateComment(this.postId.toString(), comment.id, content).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (updatedComment) => {
-        this.cancelEdit();
+        this.isSubmitting.set(false);
+        this.cancelEdit(comment.id);
         // Cập nhật lại UI sau khi sửa thành công bằng cách thay thế đối tượng comment trong mảng
         this.comments.update(prev => {
           if (parent) {
@@ -392,7 +430,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
                 const rIdx = arr[pIdx].replies.findIndex((r: Comment) => r.id === comment.id);
                 if (rIdx > -1) {
                   arr[pIdx].replies = [...arr[pIdx].replies];
-                  arr[pIdx].replies[rIdx] = { ...arr[pIdx].replies[rIdx], ...updatedComment };
+                  arr[pIdx].replies[rIdx] = { ...arr[pIdx].replies[rIdx], ...updatedComment, translations: [] };
                 }
               }
             }
@@ -404,6 +442,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
             arr[idx] = { 
               ...arr[idx], 
               ...updatedComment, 
+              translations: [],
               replies: arr[idx].replies, 
               likeCount: arr[idx].likeCount !== undefined ? arr[idx].likeCount : updatedComment.likeCount,
               liked: arr[idx].liked !== undefined ? arr[idx].liked : updatedComment.liked
@@ -426,9 +465,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
 
   isCommentEdited(comment: Comment): boolean {
     if (!comment.updated_at || !comment.created_at) return false;
-    const created = new Date(comment.created_at).getTime();
-    const updated = new Date(comment.updated_at).getTime();
-    return updated > created;
+    return comment.updated_at !== comment.created_at;
   }
 
   canDelete(comment: Comment): boolean {
@@ -441,23 +478,6 @@ export class CommentSectionComponent implements OnInit, OnChanges {
       return comment.originalLanguage.code !== currentLangCode;
     }
     return false;
-  }
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: Event): void {
-    const target = event.target as HTMLElement;
-    
-    if (this.replyingToCommentId()) {
-      if (!target.closest('.reply-container')) {
-        this.cancelReply();
-      }
-    }
-    
-    if (this.editingCommentId()) {
-      if (!target.closest('.edit-container')) {
-        this.cancelEdit();
-      }
-    }
   }
 
   /**
@@ -507,7 +527,9 @@ export class CommentSectionComponent implements OnInit, OnChanges {
 
     // Nếu chưa dịch thì gọi API backend dịch máy
     this.translatingIds.update(set => new Set(set).add(comment.id));
-    this.commentService.translateComment(this.postId.toString(), comment.id, currentLangCode).subscribe({
+    this.commentService.translateComment(this.postId.toString(), comment.id, currentLangCode).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (res) => {
         if (!comment.translations) comment.translations = [];
         const idx = comment.translations.findIndex(t => t.language_id === res.language_id);

@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { Op } from 'sequelize';
 import { AuthorPostsService } from './author-posts.service';
 
 jest.mock('sanitize-html', () => ({
@@ -11,6 +12,7 @@ describe('AuthorPostsService state machine', () => {
 
   beforeEach(() => {
     service = new AuthorPostsService(
+      undefined as never,
       undefined as never,
       undefined as never,
       undefined as never,
@@ -61,13 +63,13 @@ describe('AuthorPostsService state machine', () => {
 
   it('rejects visually empty editor markup but accepts media-only content', () => {
     expect(() => service.assertEditorContentLimits('Title', '<p><br></p>')).toThrow(BadRequestException);
-    expect(() => service.assertEditorContentLimits('Title', '<video controls src="/uploads/test.mp4"></video>')).not.toThrow();
+    expect(() => service.assertEditorContentLimits('Title', '<video controls src="https://media.example.com/media/7/test.mp4"></video>')).not.toThrow();
   });
 
   it('allows autosave with only a title or only meaningful content', () => {
     expect(() => service.assertAutosaveContentLimits('Incomplete title', '')).not.toThrow();
     expect(() => service.assertAutosaveContentLimits('', '<p>Incomplete content</p>')).not.toThrow();
-    expect(() => service.assertAutosaveContentLimits('', '<img src="/uploads/draft.png">')).not.toThrow();
+    expect(() => service.assertAutosaveContentLimits('', '<img src="https://media.example.com/media/7/draft.png">')).not.toThrow();
   });
 
   it('rejects an entirely empty autosave snapshot', () => {
@@ -90,6 +92,7 @@ describe('AuthorPostsService state machine', () => {
       optionsModel as never,
       optionsModel as never,
       optionsModel as never,
+      undefined as never,
     );
 
     await expect(optionsService.getAuthorPostFilterOptions('author-1')).resolves.toEqual({
@@ -100,5 +103,131 @@ describe('AuthorPostsService state machine', () => {
     expect(postModel.findAll).toHaveBeenCalledWith(expect.objectContaining({
       where: { author_id: 'author-1' },
     }));
+  });
+
+  it('includes hidden categories used by the author in filter options', async () => {
+    const postModel = {
+      findAll: jest.fn().mockResolvedValue([
+        { category_id: 8, updated_at: new Date('2026-07-29T08:00:00Z') },
+      ]),
+    };
+    const languageModel = { findAll: jest.fn().mockResolvedValue([]) };
+    const categoryModel = {
+      findAll: jest.fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 8, slug: 'technology', status: 'inactive' }]),
+    };
+    const categoryTranslationModel = {
+      findAll: jest.fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ category_id: 8, language_id: 1, name: 'Technology' }]),
+    };
+    const optionsService = new AuthorPostsService(
+      undefined as never,
+      postModel as never,
+      undefined as never,
+      languageModel as never,
+      categoryModel as never,
+      categoryTranslationModel as never,
+      undefined as never,
+    );
+
+    await expect(optionsService.getAuthorPostFilterOptions('author-1')).resolves.toEqual({
+      languages: [],
+      categories: [{ id: 8, label: 'Technology', isActive: false }],
+      updatedMonths: ['2026-07'],
+    });
+  });
+
+  it('includes inactive original languages used by existing author posts', async () => {
+    const postModel = {
+      findAll: jest.fn().mockResolvedValue([
+        {
+          category_id: null,
+          original_language_id: 2,
+          updated_at: new Date('2026-07-29T08:00:00Z'),
+        },
+      ]),
+    };
+    const languageModel = {
+      findAll: jest.fn()
+        .mockResolvedValueOnce([{ id: 1, code: 'en', name: 'English', native_name: 'English', flag_code: 'gb' }])
+        .mockResolvedValueOnce([{ id: 2, code: 'vi', name: 'Vietnamese', native_name: 'Tiếng Việt', flag_code: 'vn' }]),
+    };
+    const categoryModel = { findAll: jest.fn().mockResolvedValue([]) };
+    const categoryTranslationModel = { findAll: jest.fn().mockResolvedValue([]) };
+    const optionsService = new AuthorPostsService(
+      undefined as never,
+      postModel as never,
+      undefined as never,
+      languageModel as never,
+      categoryModel as never,
+      categoryTranslationModel as never,
+      undefined as never,
+    );
+
+    await expect(optionsService.getAuthorPostFilterOptions('author-1')).resolves.toEqual({
+      languages: [
+        { id: 1, code: 'en', label: 'English', nativeLabel: 'English', flagCode: 'gb' },
+        { id: 2, code: 'vi', label: 'Vietnamese', nativeLabel: 'Tiếng Việt', flagCode: 'vn' },
+      ],
+      categories: [],
+      updatedMonths: ['2026-07'],
+    });
+    expect(languageModel.findAll).toHaveBeenLastCalledWith({
+      where: { id: { [Op.in]: [2] }, is_active: false },
+      order: [['id', 'ASC']],
+    });
+  });
+
+  it('permanently discards an owned draft', async () => {
+    const destroy = jest.fn().mockResolvedValue(undefined);
+    const transaction = {};
+    const postModel = {
+      findOne: jest.fn().mockResolvedValue({ id: 'draft-1', status: 'draft', destroy }),
+    };
+    const sequelize = {
+      transaction: jest.fn((callback: (value: unknown) => unknown) => callback(transaction)),
+    };
+    const draftService = new AuthorPostsService(
+      sequelize as never,
+      postModel as never,
+      undefined as never,
+      undefined as never,
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+
+    await expect(draftService.discardAuthorDraft('author-1', 'draft-1')).resolves.toEqual({
+      id: 'draft-1',
+    });
+    expect(postModel.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'draft-1', author_id: 'author-1', deleted_at: null },
+      transaction,
+    }));
+    expect(destroy).toHaveBeenCalledWith({ transaction });
+  });
+
+  it('does not discard a post that is already pending review', async () => {
+    const postModel = {
+      findOne: jest.fn().mockResolvedValue({ id: 'pending-1', status: 'pending_review' }),
+    };
+    const sequelize = {
+      transaction: jest.fn((callback: (value: unknown) => unknown) => callback({})),
+    };
+    const draftService = new AuthorPostsService(
+      sequelize as never,
+      postModel as never,
+      undefined as never,
+      undefined as never,
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+
+    await expect(draftService.discardAuthorDraft('author-1', 'pending-1')).rejects.toThrow(
+      BadRequestException,
+    );
   });
 });

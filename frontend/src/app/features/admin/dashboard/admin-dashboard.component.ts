@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LocaleService } from '../../../core/locale/locale.service';
 import { UiStateComponent } from '../../../shared/components/ui-state/ui-state.component';
+import { AssetImageDirective } from '../../../shared/directives/asset-image.directive';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { AdminDashboardOverview } from './models/admin-dashboard.model';
 import { AdminDashboardService } from './services/admin-dashboard.service';
@@ -9,7 +10,7 @@ import { AdminDashboardService } from './services/admin-dashboard.service';
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [RouterLink, UiStateComponent, TranslatePipe],
+  imports: [RouterLink, UiStateComponent, AssetImageDirective, TranslatePipe],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss'
 })

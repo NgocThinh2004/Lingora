@@ -121,6 +121,12 @@ export class AuthorPostsService {
       .pipe(map(() => undefined));
   }
 
+  discardAuthorDraft(postId: string | number): Observable<void> {
+    return this.http
+      .delete<ApiItemResponse<{ id: string }>>(`${this.baseUrl}/author/posts/${postId}/draft`)
+      .pipe(map(() => undefined));
+  }
+
   /** Hàm tiện ích gom chung logic gửi request cho các hành động thay đổi trạng thái (submit, trash, v.v.) */
   private authorPostAction(postId: string | number, action: string): Observable<AuthorPost> {
     return this.http

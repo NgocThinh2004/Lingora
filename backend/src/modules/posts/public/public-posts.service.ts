@@ -102,6 +102,9 @@ export class PublicPostsService {
       languageMap.set(Number(l.id), l.code);
       languageMap.set(String(l.id), l.code);
     });
+    const canViewHiddenCategories = Boolean(
+      query.authorId && userId && Number(query.authorId) === Number(userId),
+    );
 
     // Step 3: Xử lý bộ lọc danh mục (Category)
     // Nếu client truyền query category (có thể là slug chuỗi hoặc ID số), tìm ID tương ứng để thêm vào điều kiện lọc.
@@ -110,13 +113,17 @@ export class PublicPostsService {
     if (query.category) {
       const cat = await this.categoryModel.findOne({
         where: {
+          ...(!canViewHiddenCategories ? { status: 'active' } : {}),
           [Op.or]: [
             { slug: query.category }, // categories.slug
             ...(isNaN(Number(query.category)) ? [] : [{ id: Number(query.category) }]),
           ],
         },
       });
-      if (cat) categoryId = cat.id;
+      if (!cat) {
+        return { items: [], meta: { page, limit, total: 0, totalPages: 0 } };
+      }
+      categoryId = cat.id;
     }
 
     // Step 4: Khởi tạo điều kiện WHERE cho bảng posts
@@ -129,6 +136,14 @@ export class PublicPostsService {
     // Gắn điều kiện category và tác giả vào Where
     if (categoryId) {
       where.category_id = categoryId; // SQL: AND category_id = ...
+    } else if (!canViewHiddenCategories) {
+      const visibleCategories = await this.categoryModel.findAll({
+        attributes: ['id'],
+        where: { status: 'active' },
+      });
+      where.category_id = {
+        [Op.in]: visibleCategories.length ? visibleCategories.map(category => category.id) : [0],
+      };
     }
     if (query.authorId) {
       where.author_id = query.authorId; // SQL: AND author_id = ...
@@ -147,6 +162,19 @@ export class PublicPostsService {
       matchingPostIds = matchingPostIds.filter(id => allowed.has(id));
     };
 
+    // Khi client gửi lang, chỉ giữ bài có bản dịch hoàn chỉnh đúng ngôn ngữ giao diện.
+    // Nếu lang vừa bị tắt, dùng ngôn ngữ mặc định đang hoạt động thay vì một bản dịch bất kỳ.
+    if (readableLanguageIds.length) {
+      const readableTranslations = await this.postTranslationModel.findAll({
+        where: {
+          language_id: { [Op.in]: readableLanguageIds },
+          translation_status: 'completed',
+        },
+        attributes: ['post_id'],
+      });
+      intersectPostIds(readableTranslations.map(translation => Number(translation.post_id)));
+    }
+
     if (query.q && query.q.trim()) {
       // Tại sao dùng cột unaccented_title? 
       // Người dùng (ví dụ tiếng Việt) thường lười gõ dấu. Nếu họ gõ "bai viet", ta cần tìm ra "bài viết".
@@ -160,11 +188,8 @@ export class PublicPostsService {
       };
 
       // Lọc thêm theo ngôn ngữ nếu có query lang
-      if (query.lang) {
-        const langModel = await this.languageModel.findOne({ where: { code: query.lang } });
-        if (langModel) {
-          translationWhere.language_id = langModel.id; // SQL: AND language_id = ...
-        }
+      if (publicLanguage) {
+        translationWhere.language_id = publicLanguage.id; // SQL: AND language_id = ...
       }
 
       // Lấy danh sách post_id thỏa mãn từ bảng bản dịch
@@ -229,10 +254,16 @@ export class PublicPostsService {
     const categoryIds = [...new Set(posts.map((p) => p.category_id).filter(Boolean))] as number[];
 
     // Dùng Promise.all để bắn song song 5 câu lệnh truy vấn độc lập
-    const [translations, authors, categories, categoryTranslations, userLikeRows] = await Promise.all([
+    const [translations, authors, categories, categoryTranslations, userLikeRows, availableTranslationRows] = await Promise.all([
       // 1. post_translations.translation_status → filter WHERE = 'completed'
       this.postTranslationModel.findAll({
-        where: { post_id: postIds, translation_status: 'completed' },
+        where: {
+          post_id: postIds,
+          translation_status: 'completed',
+          ...(readableLanguageIds.length
+            ? { language_id: { [Op.in]: readableLanguageIds } }
+            : {}),
+        },
       }),
       // 2. JOIN thủ công sang bảng users (lấy tác giả)
       this.userModel.findAll({ where: { id: authorIds } }),
@@ -248,6 +279,14 @@ export class PublicPostsService {
           attributes: ['post_id'],
         })
         : Promise.resolve([]),
+      this.postTranslationModel.findAll({
+        where: {
+          post_id: postIds,
+          translation_status: 'completed',
+          language_id: { [Op.in]: activeLanguageIds.length ? activeLanguageIds : [0] },
+        },
+        attributes: ['post_id', 'language_id'],
+      }),
     ]);
 
     // Tạo tập hợp (Set) chứa các post_id mà user đã like, để lookup O(1)
@@ -295,7 +334,13 @@ export class PublicPostsService {
       // Tìm kiếm hình ảnh hoặc video đầu tiên trong bài viết để làm ảnh bìa (cover)
       let coverImageUrl: string | null = null;
       let coverVideoUrl: string | null = null;
-      for (const t of postTranslations) {
+      const preferredTranslation = publicLanguage
+        ? postTranslations.find(translation => translation.languageCode === publicLanguage.code)
+        : undefined;
+      const mediaTranslations = preferredTranslation
+        ? [preferredTranslation, ...postTranslations.filter(translation => translation !== preferredTranslation)]
+        : postTranslations;
+      for (const t of mediaTranslations) {
         if (!t.contentHtml) continue;
 
         // Dùng Regex lấy URL trong thẻ img, video, iframe
@@ -325,6 +370,10 @@ export class PublicPostsService {
         authorId: Number(post.author_id),
         categoryId: post.category_id,
         originalLanguage: languageMap.get(post.original_language_id) || 'en',
+        availableLanguages: [...new Set(availableTranslationRows
+          .filter(translation => Number(translation.post_id) === Number(post.id))
+          .map(translation => languageMap.get(translation.language_id))
+          .filter(Boolean))],
         coverImageUrl,
         coverVideoUrl,
         status: 'published',
@@ -423,6 +472,10 @@ export class PublicPostsService {
     if (!post) {
       throw new NotFoundException('Post not found');
     }
+    const isAuthor = Boolean(userId && Number(post.author_id) === Number(userId));
+    if (!await this.canAccessCategory(post.category_id, isAuthor)) {
+      throw new NotFoundException('Post not found');
+    }
 
     // Lưu ý: Logic tăng view_count đã được TÁCH HOÀN TOÀN ra khỏi hàm này.
     // View chỉ được ghi nhận khi người dùng cuộn đọc >= 50% bài viết,
@@ -430,7 +483,12 @@ export class PublicPostsService {
     // Mục đích: Tách biệt rõ "lấy dữ liệu" và "ghi nhận hành vi đọc thực sự".
 
     // Tái sử dụng hàm listFeed để lấy full data (kèm relationship) về bài viết này
-    const result = await this.listFeed({ page: 1, limit: 1 }, id, userId);
+    const result = await this.listFeed({
+      page: 1,
+      limit: 1,
+      ...(lang ? { lang } : {}),
+      ...(isAuthor ? { authorId: Number(post.author_id) } : {}),
+    }, id, userId);
     const found = result.items.find((p) => p.id === Number(id));
     if (!found) throw new NotFoundException('Post details not found');
     return found;
@@ -459,10 +517,14 @@ export class PublicPostsService {
   async recordView(id: number, userId?: number, ip?: string): Promise<{ counted: boolean }> {
     const post = await this.postModel.findOne({
       where: { id, deleted_at: null },
-      attributes: ['id'], // Chỉ cần xác nhận bài tồn tại, không cần SELECT toàn bộ cột
+      attributes: ['id', 'author_id', 'category_id'],
     });
 
     if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+    const isAuthor = Boolean(userId && Number(post.author_id) === Number(userId));
+    if (!await this.canAccessCategory(post.category_id, isAuthor)) {
       throw new NotFoundException('Post not found');
     }
 
@@ -503,11 +565,20 @@ export class PublicPostsService {
       where: { id, deleted_at: null, status: { [Op.in]: ['approved', 'published'] } },
     });
     if (!post) throw new NotFoundException('Post not found');
+    const isAuthor = Boolean(userId && Number(post.author_id) === Number(userId));
+    if (!await this.canAccessCategory(post.category_id, isAuthor)) {
+      throw new NotFoundException('Post not found');
+    }
 
     // 1. Tìm các bài viết cùng category với giới hạn limit 4 (để khi loại trừ chính bài đang xem vẫn dư đủ 3)
     const query = post.category_id
-      ? { category: String(post.category_id), limit: 4, lang }
-      : { limit: 4, lang };
+      ? {
+          category: String(post.category_id),
+          limit: 4,
+          lang,
+          ...(isAuthor ? { authorId: Number(post.author_id) } : {}),
+        }
+      : { limit: 4, lang, ...(isAuthor ? { authorId: Number(post.author_id) } : {}) };
 
     const feed = await this.listFeed(query, undefined, userId);
     // 2. Lọc bỏ bài viết đang xem hiện tại và chỉ lấy tối đa 3 bài
@@ -525,5 +596,14 @@ export class PublicPostsService {
 
     // Trộn hai mảng lại và ngắt lấy 3 kết quả
     return [...related, ...fallback].slice(0, 3);
+  }
+
+  private async canAccessCategory(categoryId: number | null, isAuthor: boolean): Promise<boolean> {
+    if (isAuthor) return true;
+    if (!categoryId) return false;
+    return Boolean(await this.categoryModel.findOne({
+      attributes: ['id'],
+      where: { id: categoryId, status: 'active' },
+    }));
   }
 }

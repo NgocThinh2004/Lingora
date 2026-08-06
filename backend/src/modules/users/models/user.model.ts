@@ -30,6 +30,9 @@ export class User extends Model {
   @Column(DataType.STRING(255))
   declare avatar: string | null;
 
+  @Column({ type: DataType.BIGINT.UNSIGNED, unique: true })
+  declare avatar_media_id: string | null;
+
   @Column(DataType.TEXT)
   declare bio: string | null;
 

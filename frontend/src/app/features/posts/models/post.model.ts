@@ -105,7 +105,7 @@ export interface PostListParams {
 
 export interface PostOptions {
   languages: Array<{ id: number; code: string; label: string; nativeLabel: string; flagCode: string | null }>;
-  categories: Array<{ id: number; label: string }>;
+  categories: Array<{ id: number; label: string; isActive?: boolean }>;
   updatedMonths?: string[];
 }
 
@@ -147,6 +147,7 @@ export interface Post {
   authorId: number;
   categoryId: number | null;
   originalLanguage: string;
+  availableLanguages?: string[];
   coverImageUrl?: string | null;
   coverVideoUrl?: string | null;
   status: 'draft' | 'published';

@@ -13,6 +13,7 @@ describe('LanguagesService', () => {
     update: jest.Mock;
   };
   let translationMetricsService: { getLanguageCoverage: jest.Mock };
+  let categoryAutoTranslation: { createMissingTranslationsForLanguage: jest.Mock };
   let service: LanguagesService;
 
   const makeLanguage = (overrides: Record<string, unknown> = {}) => {
@@ -50,10 +51,14 @@ describe('LanguagesService', () => {
     translationMetricsService = {
       getLanguageCoverage: jest.fn().mockResolvedValue(new Map()),
     };
+    categoryAutoTranslation = {
+      createMissingTranslationsForLanguage: jest.fn().mockResolvedValue(undefined),
+    };
     service = new LanguagesService(
       sequelize as never,
       languageModel as never,
       translationMetricsService as never,
+      categoryAutoTranslation as never,
     );
   });
 
@@ -163,6 +168,8 @@ describe('LanguagesService', () => {
     );
     expect(result.isDefault).toBe(true);
     expect(result.isActive).toBe(true);
+    expect(categoryAutoTranslation.createMissingTranslationsForLanguage)
+      .toHaveBeenCalledWith(created, transaction);
   });
 
   it('does not allow the default language to be disabled', async () => {

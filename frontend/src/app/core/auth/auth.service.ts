@@ -14,6 +14,8 @@ import {
 } from './auth.model';
 import { CurrentUser } from './current-user.model';
 
+import { BrandingService } from '../theme/branding.service';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -27,7 +29,10 @@ export class AuthService {
   private readonly currentUserSignal: WritableSignal<CurrentUser | null> = signal(null);
   readonly currentUser = this.currentUserSignal.asReadonly();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private brandingService: BrandingService,
+  ) {
     this.loadUserFromStorage();
   }
 
@@ -73,7 +78,7 @@ export class AuthService {
     displayName: string;
     username: string;
     bio: string;
-    avatarUrl?: string;
+    avatarMediaId?: string;
     accentColor?: string;
     backgroundColor?: string;
   }): Observable<CurrentUser> {
@@ -152,6 +157,11 @@ export class AuthService {
   private storeCurrentUser(user: CurrentUser): void {
     localStorage.setItem(this.userInfoKey, JSON.stringify(user));
     this.currentUserSignal.set(user);
+    if (user.accentColor) {
+      this.brandingService.setAccent(user.accentColor, true);
+    } else {
+      this.brandingService.resetToDefault();
+    }
   }
 
   private clearSession(): void {
@@ -159,6 +169,7 @@ export class AuthService {
     localStorage.removeItem(this.refreshTokenKey);
     localStorage.removeItem(this.userInfoKey);
     this.currentUserSignal.set(null);
+    this.brandingService.resetToDefault();
   }
 
   private loadUserFromStorage(): void {
@@ -167,9 +178,16 @@ export class AuthService {
       try {
         const user = JSON.parse(userJson) as CurrentUser;
         this.currentUserSignal.set(user);
+        if (user.accentColor) {
+          this.brandingService.setAccent(user.accentColor, true);
+        } else {
+          this.brandingService.resetToDefault();
+        }
       } catch {
         this.clearSession();
       }
+    } else {
+      this.brandingService.resetToDefault();
     }
   }
 

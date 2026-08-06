@@ -136,35 +136,32 @@ export class ExploreComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     this.route.queryParamMap.pipe(
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe(params => {
-      const urlQuery = params.get('query') || '';
-      if (urlQuery !== this.query) {
-        this.query = urlQuery;
-      }
-
-      const catSlug = params.get('category');
-      if (catSlug) {
-        if (!this.selectedCategory || this.selectedCategory.slug !== catSlug) {
-          this.categoryService.findBySlug(catSlug).subscribe({
-            next: found => {
-              if (found) {
-                this.selectedCategory = found;
-                this.tab = 'posts';
-                this.emitFilters(found.slug);
-              } else {
-                this.selectedCategory = undefined;
-                this.emitFilters();
-              }
-            },
-            error: () => {
-              this.selectedCategory = undefined;
-              this.emitFilters();
-            }
-          });
-        } else {
-          this.emitFilters(this.selectedCategory.slug);
+      takeUntilDestroyed(this.destroyRef),
+      switchMap(params => {
+        const urlQuery = params.get('query') || '';
+        if (urlQuery !== this.query) {
+          this.query = urlQuery;
         }
+
+        const catSlug = params.get('category');
+        if (catSlug) {
+          if (!this.selectedCategory || this.selectedCategory.slug !== catSlug) {
+            return this.categoryService.findBySlug(catSlug, this.localeService.current()).pipe(
+              map(found => ({ found, catSlug })),
+              catchError(() => of({ found: null, catSlug }))
+            );
+          } else {
+            return of({ found: this.selectedCategory, catSlug });
+          }
+        } else {
+          return of({ found: null, catSlug: null });
+        }
+      })
+    ).subscribe(({ found, catSlug }) => {
+      if (catSlug && found) {
+        this.selectedCategory = found as Category;
+        this.tab = 'posts';
+        this.emitFilters(this.selectedCategory.slug);
       } else {
         this.selectedCategory = undefined;
         this.emitFilters();

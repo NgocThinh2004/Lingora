@@ -10,7 +10,6 @@ import { EditorMediaType, UploadResponse } from '../models/editor-upload.model';
 export class EditorUploadsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
-  private readonly staticBaseUrl = environment.apiUrl.replace('/api/v1', '');
 
   uploadEditorMedia(mediaType: EditorMediaType, file: File): Observable<UploadResponse> {
     const formData = new FormData();
@@ -21,11 +20,30 @@ export class EditorUploadsService {
       .pipe(map((response) => response.data));
   }
 
-  toAbsoluteUrl(url: string): string {
-    if (/^https?:\/\//i.test(url)) {
-      return url;
-    }
+  uploadAvatar(file: File): Observable<UploadResponse> {
+    const formData = new FormData();
+    formData.append('image', file);
 
-    return `${this.staticBaseUrl}${url}`;
+    return this.http
+      .post<ApiItemResponse<UploadResponse>>(`${this.baseUrl}/uploads/avatar`, formData)
+      .pipe(map((response) => response.data));
+  }
+
+  importExternalImage(url: string): Observable<UploadResponse> {
+    return this.http
+      .post<ApiItemResponse<UploadResponse>>(`${this.baseUrl}/uploads/import-external`, { url })
+      .pipe(map((response) => response.data));
+  }
+
+  deleteEditorMedia(url: string): Observable<{ message: string }> {
+    return this.http
+      .request<ApiItemResponse<{ message: string }>>('delete', `${this.baseUrl}/uploads/editor-media`, {
+        body: { url },
+      })
+      .pipe(map((response) => response.data));
+  }
+
+  toAbsoluteUrl(url: string): string {
+    return url;
   }
 }

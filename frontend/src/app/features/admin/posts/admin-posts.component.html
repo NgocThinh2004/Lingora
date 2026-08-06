@@ -42,7 +42,7 @@
           @for (post of posts(); track post.id) {
             <tr class="post-row" tabindex="0" (click)="openReview(post)" (keydown)="openFromKeyboard($event, post)">
               <td data-label="Post">
-                <div class="post-title">{{ post.title }}</div>
+                <div class="post-title" [title]="post.title">{{ post.title }}</div>
                 <div class="post-id">#{{ postCode(post.id) }} · {{ post.originalLanguage?.code?.toUpperCase() || '--' }}</div>
               </td>
               <td data-label="Author">
@@ -55,7 +55,7 @@
                 <div class="category-cell">
                   <span class="category-cell-label">{{ post.category?.name || ('uncategorized' | t) }}</span>
                   @if (post.category?.status === 'inactive') {
-                    <span class="category-state category-state-hidden"><i class="bi bi-eye-slash" aria-hidden="true"></i>{{ 'hidden' | t }}</span>
+                    <span class="category-state category-state-hidden"><i class="bi bi-eye-slash" aria-hidden="true"></i>{{ 'hidden_category' | t }}</span>
                   }
                 </div>
               </td>
@@ -94,7 +94,7 @@
     <header class="panel-header"><h2 id="review-title">{{ 'review_post' | t }}</h2><button class="panel-close" type="button" (click)="closePanel($event)" [attr.aria-label]="'close' | t"><i class="bi bi-x-lg"></i></button></header>
     <div class="panel-body">
       @if (detailLoading()) {
-        <app-ui-state kind="loading" title="Loading post"></app-ui-state>
+        <app-ui-state kind="loading" [title]="'loading_post' | t"></app-ui-state>
       } @else {
         @if (selectedPost(); as post) {
         <span class="status-pill status-{{ post.status }}">{{ post.status | titlecase }}</span>
@@ -102,7 +102,7 @@
         <div class="review-meta">
           <div class="meta-box"><span>{{ 'author' | t }}</span><strong>{{ post.author.name }}</strong></div>
           <div class="meta-box"><span>{{ 'category' | t }}</span><strong>{{ post.category?.name || ('uncategorized' | t) }}</strong>
-            @if (post.category?.status === 'inactive') { <em class="category-state category-state-hidden"><i class="bi bi-eye-slash"></i>{{ 'hidden' | t }}</em> }
+            @if (post.category?.status === 'inactive') { <em class="category-state category-state-hidden"><i class="bi bi-eye-slash"></i>{{ 'hidden_category' | t }}</em> }
           </div>
           <div class="meta-box"><span>{{ 'submitted' | t }}</span><strong>{{ post.submittedAt | localizedDate:'dateTime' }}</strong></div>
           <div class="meta-box"><span>{{ 'original_language' | t }}</span><strong>{{ post.originalLanguage?.name || ('unknown' | t) }}</strong></div>

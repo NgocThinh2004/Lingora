@@ -12,6 +12,7 @@ import { RefreshToken } from './models/refresh-token.model';
 import { Subscription } from '../subscriptions/models/subscription.model';
 import { ChangePasswordDto, RegisterDto, LoginDto, ResetPasswordDto, UpdateProfileDto } from './dto/auth.dto';
 import { MailService } from '../mail/mail.service';
+import { UploadsService } from '../uploads/uploads.service';
 
 export interface SessionMetadata {
   deviceInfo?: string;
@@ -34,6 +35,7 @@ export class AuthService {
     private readonly refreshTokenModel: typeof RefreshToken,
     @InjectModel(Subscription)
     private readonly subscriptionModel: typeof Subscription,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -100,7 +102,7 @@ export class AuthService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    return this.sequelize.transaction(async transaction => {
+    const result = await this.sequelize.transaction(async transaction => {
       const user = await this.usersService.findByIdForUpdate(userId, transaction);
       if (!user || user.status !== 'active') {
         throw new UnauthorizedException('Account is not active');
@@ -114,12 +116,22 @@ export class AuthService {
         }
       }
 
+      const previousAvatarMediaId = user.avatar_media_id ? String(user.avatar_media_id) : null;
+      let avatarUrl = user.avatar;
+      let avatarMediaId = user.avatar_media_id;
+      if (dto.avatarMediaId !== undefined) {
+        const avatarAsset = await this.uploadsService.attachAvatar(userId, dto.avatarMediaId, transaction);
+        avatarUrl = this.uploadsService.publicUrlForObjectKey(avatarAsset.object_key);
+        avatarMediaId = avatarAsset.id;
+      }
+
       await user.update(
         {
           username: username ?? user.username,
           display_name: dto.displayName === undefined ? user.display_name : dto.displayName.trim(),
           bio: dto.bio === undefined ? user.bio : dto.bio.trim() || null,
-          avatar: dto.avatarUrl === undefined ? user.avatar : dto.avatarUrl,
+          avatar: avatarUrl,
+          avatar_media_id: avatarMediaId,
           accent_color: dto.accentColor === undefined ? user.accent_color : dto.accentColor.toUpperCase(),
           background_color: dto.backgroundColor === undefined
             ? user.background_color
@@ -130,8 +142,23 @@ export class AuthService {
       );
 
       const role = await this.usersService.getRoleById(user.role_id, transaction);
-      return this.toCurrentUser(user, role?.name);
+      return {
+        currentUser: this.toCurrentUser(user, role?.name),
+        previousAvatarMediaId,
+        currentAvatarMediaId: avatarMediaId ? String(avatarMediaId) : null,
+      };
     });
+
+    if (
+      result.previousAvatarMediaId
+      && result.previousAvatarMediaId !== result.currentAvatarMediaId
+    ) {
+      await this.uploadsService
+        .deleteDetachedAvatar(userId, result.previousAvatarMediaId)
+        .catch(error => this.logger.warn(`Unable to remove previous avatar: ${error instanceof Error ? error.message : String(error)}`));
+    }
+
+    return result.currentUser;
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {

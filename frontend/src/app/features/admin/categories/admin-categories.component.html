@@ -65,7 +65,7 @@
         <tbody>
           @for (category of categories(); track category.id) {
             @if (displayTranslation(category); as translation) {
-              <tr class="category-row" tabindex="0" (click)="openEditPanel(category)"
+              <tr class="category-row" tabindex="0" (click)="openCategory(category)"
                 (keydown)="openEditFromKeyboard($event, category)">
                 <td data-label="Category">
                   <div class="category-name-cell">
@@ -101,19 +101,26 @@
                 </td>
                 <td data-label="Status">
                   <span class="status-pill" [class.is-active]="category.isActive" [class.is-inactive]="!category.isActive">
-                    <i class="bi bi-circle-fill" aria-hidden="true"></i>{{ (category.isActive ? 'active' : 'inactive') | t }}
+                    <i class="bi bi-circle-fill" aria-hidden="true"></i>{{ (category.isSystem ? 'default_label' : (category.isActive ? 'active' : 'inactive')) | t }}
                   </span>
                 </td>
                 <td data-label="Actions">
                   <div class="category-actions">
-                    <button class="category-action" type="button" title="Edit category" aria-label="Edit category"
-                      (click)="$event.stopPropagation(); openEditPanel(category)">
+                    <button class="category-action" type="button"
+                      [title]="'edit_category' | t"
+                      [attr.aria-label]="'edit_category' | t"
+                      (click)="$event.stopPropagation(); openCategory(category)">
                       <i class="bi bi-pencil" aria-hidden="true"></i>
                     </button>
-                    <button class="category-action category-action--danger" type="button" title="Delete category" aria-label="Delete category"
-                      (click)="$event.stopPropagation(); requestDelete(category)">
-                      <i class="bi bi-trash" aria-hidden="true"></i>
-                    </button>
+                    @if (!category.isSystem) {
+                      <button class="category-action category-action--danger" type="button"
+                        [title]="'delete_category_action' | t" [attr.aria-label]="'delete_category_action' | t"
+                        (click)="$event.stopPropagation(); requestDelete(category)">
+                        <i class="bi bi-trash" aria-hidden="true"></i>
+                      </button>
+                    } @else {
+                      <span class="category-action category-action-placeholder" aria-hidden="true"></span>
+                    }
                   </div>
                 </td>
               </tr>
@@ -148,7 +155,7 @@
         </p>
 
         <div formArrayName="translations">
-          @for (language of activeLanguages(); track language.id; let index = $index) {
+          @for (language of editorLanguages(); track language.id; let index = $index) {
             <section class="translation-card" [formGroupName]="index">
               <div class="translation-heading">
                 <img [src]="flagUrl(language.flagCode)" width="28" height="20" alt="">
@@ -158,14 +165,15 @@
 
               <label [for]="'categoryName-' + language.id">{{ 'name' | t }}</label>
               <input class="form-control" [id]="'categoryName-' + language.id" type="text" maxlength="150"
-                formControlName="name" (input)="suggestSlug(index)" [placeholder]="'Category name in ' + language.name">
+                formControlName="name" (input)="suggestSlug(index)"
+                [placeholder]="'category_name_placeholder' | t:{ language: language.nativeName }">
               @if (translationForms.at(index).controls.name.touched && translationForms.at(index).controls.name.invalid) {
                 <div class="field-error">{{ 'name_validation' | t }}</div>
               }
 
               <label [for]="'categorySlug-' + language.id">{{ 'slug' | t }}</label>
               <input class="form-control" [id]="'categorySlug-' + language.id" type="text" maxlength="150"
-                formControlName="slug" [placeholder]="'category-slug-' + language.code">
+                formControlName="slug" [placeholder]="'category_slug_placeholder' | t:{ language: language.nativeName }">
               <div class="field-help">{{ 'slug_generated_help' | t }}</div>
               @if (translationForms.at(index).controls.slug.touched && translationForms.at(index).controls.slug.invalid) {
                 <div class="field-error">{{ 'slug_validation' | t }}</div>

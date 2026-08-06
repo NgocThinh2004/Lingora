@@ -112,7 +112,8 @@
                 <button
                   class="language-action"
                   type="button"
-                  title="Edit language"
+                  [title]="'edit_language' | t"
+                  [attr.aria-label]="'edit_language' | t"
                   [attr.aria-label]="'Edit ' + language.name"
                   (click)="$event.stopPropagation(); openEditDialog(language)">
                   <i class="bi bi-pencil" aria-hidden="true"></i>
@@ -149,7 +150,7 @@
         <div class="dialog-body">
           <label for="addLanguageCode">{{ 'language_code' | t }}</label>
           <input id="addLanguageCode" class="form-control" type="text" maxlength="10" [placeholder]="'language_code_example' | t" formControlName="code">
-          <span class="form-help">{{ 'ui_locale_bundle_required' | t }}</span>
+          <span class="form-help">{{ 'ui_locale_bundle_optional' | t:{ code: addForm.controls.code.value.trim().toLowerCase() || 'xx' } }}</span>
           @if (addForm.controls.code.touched && addForm.controls.code.invalid) {
             <span class="field-error">{{ 'language_code_hint' | t }}</span>
           }
@@ -227,6 +228,9 @@
               <div><strong>{{ 'language_status' | t }}</strong><span>{{ language.isDefault ? ('default_language_description' | t) : ('language_management_description' | t) }}</span></div>
               <label class="form-check form-switch"><input class="form-check-input" type="checkbox" formControlName="isActive" aria-label="Language active"></label>
             </div>
+            @if (selectedBundleAvailable() === false) {
+              <span class="field-error">{{ 'ui_locale_bundle_inactive_help' | t:{ code: language.code } }}</span>
+            }
             <div class="setting-card">
               <div><strong>{{ 'default_language' | t }}</strong><span>{{ 'default_language_description' | t }}</span></div>
               <label class="form-check form-switch"><input class="form-check-input" type="checkbox" formControlName="isDefault" aria-label="Default language"></label>
