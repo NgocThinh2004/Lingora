@@ -12,6 +12,8 @@ import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../shared/pipes/localized-date.pipe';
 import { AdminLanguage } from '../languages/models/admin-language.model';
 import { AdminLanguagesService } from '../languages/services/admin-languages.service';
+import { AdminPost } from '../posts/models/admin-post.model';
+import { AdminPostsService } from '../posts/services/admin-posts.service';
 import {
   AdminCategory,
   AdminCategoryPost,
@@ -35,11 +37,13 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly categoriesService = inject(AdminCategoriesService);
   private readonly languagesService = inject(AdminLanguagesService);
+  private readonly postsService = inject(AdminPostsService);
   private readonly localeService = inject(LocaleService);
   private readonly toastService = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private previewRequestVersion = 0;
 
   readonly categories = signal<AdminCategory[]>([]);
   readonly activeLanguages = signal<AdminLanguage[]>([]);
@@ -56,6 +60,10 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
   readonly postsLoading = signal(false);
   readonly postsError = signal('');
   readonly postsMeta = signal({ total: 0, shown: 0 });
+  readonly previewPostId = signal<string | null>(null);
+  readonly previewPost = signal<AdminPost | null>(null);
+  readonly previewLoading = signal(false);
+  readonly previewError = signal('');
   readonly pagination = signal<PaginationMeta>({ total: 0, page: 1, limit: 8, totalPages: 0 });
   readonly selectedLocale = this.localeService.selectedLocale;
   readonly editorLanguages = computed(() => {
@@ -263,6 +271,7 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
   }
 
   openPostsPanel(category: AdminCategory): void {
+    this.closePostPreview();
     this.postsCategory.set(category);
     this.categoryPosts.set([]);
     this.postsError.set('');
@@ -290,10 +299,41 @@ export class AdminCategoriesComponent implements OnInit, OnDestroy {
   }
 
   closePostsPanel(): void {
+    this.closePostPreview();
     this.postsCategory.set(null);
     this.categoryPosts.set([]);
     this.postsError.set('');
     this.postsLoading.set(false);
+  }
+
+  openPostPreview(post: AdminCategoryPost): void {
+    const requestVersion = ++this.previewRequestVersion;
+    this.previewPostId.set(post.id);
+    this.previewPost.set(null);
+    this.previewError.set('');
+    this.previewLoading.set(true);
+    this.postsService.getPost(post.id, this.selectedLocale(), true)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: response => {
+          if (requestVersion !== this.previewRequestVersion || this.previewPostId() !== post.id) return;
+          this.previewPost.set(response.data);
+          this.previewLoading.set(false);
+        },
+        error: () => {
+          if (requestVersion !== this.previewRequestVersion || this.previewPostId() !== post.id) return;
+          this.previewError.set(this.localeService.translate('unable_load_post'));
+          this.previewLoading.set(false);
+        },
+      });
+  }
+
+  closePostPreview(): void {
+    this.previewRequestVersion += 1;
+    this.previewPostId.set(null);
+    this.previewPost.set(null);
+    this.previewError.set('');
+    this.previewLoading.set(false);
   }
 
   cancelDelete(): void {

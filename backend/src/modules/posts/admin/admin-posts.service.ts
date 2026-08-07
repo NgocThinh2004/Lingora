@@ -48,8 +48,8 @@ export class AdminPostsService {
     };
   }
 
-  async findOne(postId: string, language?: string) {
-    const posts = await this.buildViews(language, [postId]);
+  async findOne(postId: string, language?: string, preferRequestedLanguage = false) {
+    const posts = await this.buildViews(language, [postId], preferRequestedLanguage);
     if (!posts[0]) {
       throw new NotFoundException('Post not found');
     }
@@ -194,7 +194,7 @@ export class AdminPostsService {
     };
   }
 
-  private async buildViews(languageCode?: string, postIds?: string[]) {
+  private async buildViews(languageCode?: string, postIds?: string[], preferRequestedLanguage = false) {
     const posts = await this.postModel.findAll({
       where: {
         deleted_at: null,
@@ -223,7 +223,12 @@ export class AdminPostsService {
 
     return posts.map(post => {
       const postTranslations = translations.filter(item => item.post_id === post.id);
-      const displayTranslation = postTranslations.find(item => item.language_id === post.original_language_id)
+      const requestedTranslation = postTranslations.find(item =>
+        item.language_id === requestedLanguage?.id && item.translation_status === 'completed',
+      );
+      const originalTranslation = postTranslations.find(item => item.language_id === post.original_language_id);
+      const displayTranslation = (preferRequestedLanguage ? requestedTranslation : originalTranslation)
+        ?? originalTranslation
         ?? postTranslations.find(item => item.language_id === defaultLanguage?.id)
         ?? postTranslations.find(item => item.title)
         ?? postTranslations[0];

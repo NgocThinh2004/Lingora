@@ -919,26 +919,48 @@ app-admin-categories .translation-chips .translation-primary { height: 28px; pad
 app-admin-categories .translation-chips .translation-flag { display: inline-grid; width: 20px; height: 16px; flex: 0 0 20px; place-items: center; font-style: normal; line-height: 0; }
 app-admin-categories .translation-chips img { display: block; width: 18px; height: 13px; margin: 0; border: 1px solid rgb(15 23 42 / 10%); border-radius: 3px; object-fit: cover; vertical-align: middle; }
 app-admin-categories .translation-chips .translation-code { display: block; margin: 0; color: var(--text-main); font-size: .64rem; font-weight: 750; line-height: 1; }
-app-admin-categories .translation-chips .translation-more { min-width: 30px; height: 27px; padding-inline: .5rem; justify-content: center; border-color: color-mix(in srgb, var(--primary-color) 22%, var(--border-color)); color: var(--primary-color); background: var(--accent-button-bg); cursor: help; }
+app-admin-categories .translation-chips .translation-more { min-width: 30px; height: 28px; padding-inline: .5rem; align-items: center; justify-content: center; line-height: 1; border-color: color-mix(in srgb, var(--primary-color) 22%, var(--border-color)); color: var(--primary-color); background: var(--accent-button-bg); cursor: help; }
 app-admin-categories .translation-chips .translation-more.is-complete { border-color: color-mix(in srgb, var(--primary-color) 22%, var(--border-color)); color: var(--primary-color); background: var(--accent-button-bg); }
 app-admin-categories .post-count { color: var(--text-main); background: var(--bg-body); cursor: pointer; }
 app-admin-categories .post-count:hover { border-color: var(--primary-color); }
 app-admin-categories .post-count > i { color: var(--text-muted); font-size: .7rem; }
 app-admin-categories .posts-backdrop { position: fixed; inset: 0; z-index: 1085; border: 0; background: rgb(0 0 0 / 58%); }
 app-admin-categories .posts-panel { position: fixed; inset: 0 0 0 auto; z-index: 1090; display: grid; width: min(450px, 92vw); grid-template-rows: auto auto minmax(0, 1fr); border-left: 1px solid var(--border-color); color: var(--text-main); background: var(--bg-panel); box-shadow: -12px 0 32px rgb(15 23 42 / 16%); }
+app-admin-categories .posts-panel.is-preview { grid-template-rows: auto minmax(0, 1fr); }
 app-admin-categories .posts-panel-header { display: flex; min-height: 72px; padding: 1rem 1.25rem; align-items: center; justify-content: space-between; gap: .75rem; border-bottom: 1px solid var(--border-color); }
-app-admin-categories .posts-panel-header h2 { display: flex; min-width: 0; margin: 0; align-items: center; gap: .6rem; font-size: 1.05rem; font-weight: 750; }
+app-admin-categories .posts-panel-header h2 { display: flex; min-width: 0; margin: 0; flex: 1; align-items: center; gap: .6rem; font-size: 1.05rem; font-weight: 750; }
 app-admin-categories .posts-panel-header h2 i { color: var(--primary-color); }
+app-admin-categories .posts-panel-back { display: grid; width: 36px; height: 36px; flex: 0 0 36px; padding: 0; place-items: center; border: 1px solid var(--border-color); border-radius: 9px; color: var(--text-main); background: var(--bg-body); }
+app-admin-categories .posts-panel-back:hover { border-color: var(--primary-color); color: var(--primary-color); }
 app-admin-categories .posts-panel-summary { display: flex; padding: .8rem 1.25rem; align-items: center; justify-content: space-between; gap: .75rem; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: .75rem; font-weight: 650; }
 app-admin-categories .posts-panel-summary span:last-child { padding: .2rem .55rem; border: 1px solid var(--border-color); border-radius: 999px; background: var(--bg-body); }
 app-admin-categories .posts-panel-body { min-height: 0; overflow-y: auto; }
 app-admin-categories .posts-panel-body app-ui-state { display: block; padding: 1rem; }
-app-admin-categories .category-post-item { padding: 1.25rem; border-bottom: 1px solid var(--border-color); }
+app-admin-categories .category-post-item { display: block; width: 100%; padding: 1.25rem; border: 0; border-bottom: 1px solid var(--border-color); color: inherit; background: transparent; text-align: left; text-decoration: none; transition: background-color .16s ease; }
+app-admin-categories .category-post-item:hover { background: var(--border-light); }
+app-admin-categories .category-post-item:focus-visible { outline: 2px solid var(--primary-color); outline-offset: -2px; background: var(--border-light); }
 app-admin-categories .category-post-item h3 { margin: 0 0 .65rem; font-size: .95rem; font-weight: 700; line-height: 1.45; }
 app-admin-categories .category-post-item > div { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; color: var(--text-muted); font-size: .72rem; }
 app-admin-categories .category-post-item > div span { display: inline-flex; align-items: center; gap: .3rem; }
+app-admin-categories .category-post-item .post-link-icon { margin-left: auto; color: var(--primary-color); }
 app-admin-categories .category-post-item .post-status { padding: .18rem .45rem; border-radius: 999px; color: #067647; background: #ecfdf3; text-transform: capitalize; }
 [data-bs-theme='dark'] app-admin-categories .category-post-item .post-status { border-color: #1f6b46; color: #75e0a7; background: #123525; }
+app-admin-categories .category-post-preview { padding: 1.35rem; }
+app-admin-categories .category-post-preview .preview-heading { display: flex; margin-bottom: .8rem; align-items: center; justify-content: space-between; gap: .75rem; }
+app-admin-categories .category-post-preview .post-status,
+app-admin-categories .category-post-preview .preview-language { display: inline-flex; padding: .24rem .55rem; border-radius: 999px; font-size: .7rem; font-weight: 700; line-height: 1; text-transform: capitalize; }
+app-admin-categories .category-post-preview .post-status { color: #067647; background: #ecfdf3; }
+app-admin-categories .category-post-preview .preview-language { border: 1px solid var(--border-color); color: var(--primary-color); background: var(--accent-button-bg); }
+app-admin-categories .category-post-preview > h3 { margin: 0 0 1rem; font-size: 1.2rem; font-weight: 750; line-height: 1.45; }
+app-admin-categories .category-post-preview .preview-meta { display: grid; margin-bottom: 1.25rem; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+app-admin-categories .category-post-preview .preview-meta > div { display: grid; padding: .75rem; gap: .2rem; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-body); }
+app-admin-categories .category-post-preview .preview-meta span { color: var(--text-muted); font-size: .68rem; }
+app-admin-categories .category-post-preview .preview-meta strong { overflow: hidden; font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
+app-admin-categories .category-post-preview > h4 { margin: 0 0 .65rem; color: var(--text-muted); font-size: .72rem; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+app-admin-categories .category-post-preview .preview-content { overflow-wrap: anywhere; color: var(--text-main); font-size: .9rem; line-height: 1.7; }
+app-admin-categories .category-post-preview .preview-content img,
+app-admin-categories .category-post-preview .preview-content video { max-width: 100%; height: auto; border-radius: 10px; }
+[data-bs-theme='dark'] app-admin-categories .category-post-preview .post-status { color: #75e0a7; background: #123525; }
 
 app-admin-categories .confirm-backdrop.confirm-backdrop { z-index: 1090; background: rgb(15 23 42 / 52%); backdrop-filter: blur(3px); }
 app-admin-categories .confirm-dialog { position: fixed; top: 50%; left: 50%; z-index: 1100; width: min(410px, calc(100vw - 2rem)); padding: 1.4rem; border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent); border-radius: 20px; color: var(--text-main); background: var(--bg-panel); box-shadow: 0 24px 64px rgb(15 23 42 / 28%); transform: translate(-50%, -50%); }
