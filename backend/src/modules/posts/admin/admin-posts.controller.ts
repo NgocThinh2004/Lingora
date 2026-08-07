@@ -20,8 +20,9 @@ export class AdminPostsController {
   findOne(
     @Param('id') postId: string,
     @Query('language') language?: string,
+    @Query('localized') localized?: string,
   ) {
-    return this.postsService.findOne(postId, language);
+    return this.postsService.findOne(postId, language, localized === 'true');
   }
 
   @Patch(':id/review')

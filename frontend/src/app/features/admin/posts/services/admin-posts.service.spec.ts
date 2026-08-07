@@ -35,4 +35,13 @@ describe('AdminPostsService', () => {
     expect(request.request.params.get('language')).toBe('en');
     request.flush({ data: {} });
   });
+
+  it('requests localized post content for read-only previews', () => {
+    service.getPost('12', 'vi', true).subscribe();
+
+    const request = httpTesting.expectOne(req => req.url === `${environment.apiUrl}/admin/posts/12`);
+    expect(request.request.params.get('language')).toBe('vi');
+    expect(request.request.params.get('localized')).toBe('true');
+    request.flush({ data: {} });
+  });
 });

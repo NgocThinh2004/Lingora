@@ -22,8 +22,9 @@ export class AdminPostsService {
     return this.http.get<ApiResponse<AdminPost[]>>(this.apiUrl, { params });
   }
 
-  getPost(postId: string, language: string): Observable<ApiResponse<AdminPost>> {
-    const params = new HttpParams().set('language', language);
+  getPost(postId: string, language: string, localized = false): Observable<ApiResponse<AdminPost>> {
+    let params = new HttpParams().set('language', language);
+    if (localized) params = params.set('localized', 'true');
     return this.http.get<ApiResponse<AdminPost>>(`${this.apiUrl}/${postId}`, { params });
   }
 

@@ -204,19 +204,52 @@
 
 @if (postsCategory(); as category) {
   <button class="posts-backdrop" type="button" aria-label="Close category posts" (click)="closePostsPanel()"></button>
-  <aside class="posts-panel" role="dialog" aria-modal="true" aria-labelledby="categoryPostsTitle">
+  <aside class="posts-panel" [class.is-preview]="previewPostId()" role="dialog" aria-modal="true" aria-labelledby="categoryPostsTitle">
     <header class="posts-panel-header">
-      <h2 id="categoryPostsTitle"><i class="bi bi-folder2-open" aria-hidden="true"></i>{{ displayName(category) }}</h2>
+      @if (previewPostId()) {
+        <button class="posts-panel-back" type="button" aria-label="Back to category posts" (click)="closePostPreview()">
+          <i class="bi bi-arrow-left" aria-hidden="true"></i>
+        </button>
+      }
+      <h2 id="categoryPostsTitle">
+        <i class="bi" [class.bi-file-earmark-text]="previewPostId()" [class.bi-folder2-open]="!previewPostId()" aria-hidden="true"></i>
+        {{ previewPost()?.title || displayName(category) }}
+      </h2>
       <button class="panel-close" type="button" aria-label="Close" (click)="closePostsPanel()">
         <i class="bi bi-x-lg" aria-hidden="true"></i>
       </button>
     </header>
-    <div class="posts-panel-summary">
-      <span>{{ 'post_list' | t }}</span>
-      <span>{{ postsMeta().shown }} / {{ postsMeta().total }}</span>
-    </div>
+    @if (!previewPostId()) {
+      <div class="posts-panel-summary">
+        <span>{{ 'post_list' | t }}</span>
+        <span>{{ postsMeta().shown }} / {{ postsMeta().total }}</span>
+      </div>
+    }
     <div class="posts-panel-body">
-      @if (postsLoading()) {
+      @if (previewPostId()) {
+        @if (previewLoading()) {
+          <app-ui-state kind="loading" [title]="'loading_post' | t"></app-ui-state>
+        } @else if (previewError()) {
+          <app-ui-state kind="error" [title]="'unable_load_post' | t" [description]="previewError()"></app-ui-state>
+        } @else {
+          @if (previewPost(); as post) {
+            <section class="category-post-preview" aria-label="Post preview">
+              <div class="preview-heading">
+                <span class="post-status">{{ postStatus(post.status) }}</span>
+                <span class="preview-language">{{ selectedLocale().toUpperCase() }}</span>
+              </div>
+              <h3>{{ post.title }}</h3>
+              <div class="preview-meta">
+                <div><span>{{ 'author' | t }}</span><strong>{{ post.author.name }}</strong></div>
+                <div><span>{{ 'category' | t }}</span><strong>{{ post.category?.name || ('uncategorized' | t) }}</strong></div>
+                <div><span>{{ 'submitted' | t }}</span><strong>{{ post.submittedAt | localizedDate:'dateTime' }}</strong></div>
+              </div>
+              <h4>{{ 'content_preview' | t }}</h4>
+              <div class="preview-content" [innerHTML]="post.content || '&mdash;'"></div>
+            </section>
+          }
+        }
+      } @else if (postsLoading()) {
         <app-ui-state kind="loading" [title]="'loading_articles' | t"></app-ui-state>
       } @else if (postsError()) {
         <app-ui-state kind="error" [title]="'unable_load_posts' | t" [description]="postsError()"
@@ -226,14 +259,16 @@
           [description]="'category_posts_empty_description' | t"></app-ui-state>
       } @else {
         @for (post of categoryPosts(); track post.id) {
-          <article class="category-post-item">
+          <button class="category-post-item" type="button" (click)="openPostPreview(post)"
+            [attr.aria-label]="'View post: ' + post.title">
             <h3>{{ post.title }}</h3>
             <div>
               <span><i class="bi bi-person" aria-hidden="true"></i>{{ post.authorName }}</span>
               <span><i class="bi bi-clock" aria-hidden="true"></i>{{ post.publishedAt | localizedDate:'dateTime' }}</span>
               <span class="post-status">{{ postStatus(post.status) }}</span>
+              <i class="bi bi-chevron-right post-link-icon" aria-hidden="true"></i>
             </div>
-          </article>
+          </button>
         }
       }
     </div>

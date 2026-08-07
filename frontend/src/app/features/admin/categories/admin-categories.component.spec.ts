@@ -7,6 +7,7 @@ import { LocaleService } from '../../../core/locale/locale.service';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { AdminLanguage } from '../languages/models/admin-language.model';
 import { AdminLanguagesService } from '../languages/services/admin-languages.service';
+import { AdminPostsService } from '../posts/services/admin-posts.service';
 import { AdminCategoriesComponent } from './admin-categories.component';
 import { AdminCategory } from './models/admin-category.model';
 import { AdminCategoriesService } from './services/admin-categories.service';
@@ -16,6 +17,7 @@ describe('AdminCategoriesComponent', () => {
   let component: AdminCategoriesComponent;
   let categoriesService: jasmine.SpyObj<AdminCategoriesService>;
   let toast: jasmine.SpyObj<ToastService>;
+  let postsService: jasmine.SpyObj<AdminPostsService>;
 
   const english: AdminLanguage = {
     id: 1, code: 'en', name: 'English', nativeName: 'English', flagCode: 'gb',
@@ -44,6 +46,7 @@ describe('AdminCategoriesComponent', () => {
       'getCategories', 'getCategoryPosts', 'createCategory', 'updateCategory', 'deleteCategory',
     ]);
     const languagesService = jasmine.createSpyObj<AdminLanguagesService>('AdminLanguagesService', ['getLanguages']);
+    postsService = jasmine.createSpyObj<AdminPostsService>('AdminPostsService', ['getPost']);
     toast = jasmine.createSpyObj<ToastService>('ToastService', ['showSuccess', 'showError']);
     categoriesService.getCategories.and.returnValue(of({
       success: true, status: 200, message: 'ok',
@@ -55,6 +58,17 @@ describe('AdminCategoriesComponent', () => {
       data: [english, vietnamese],
       meta: { total: 2, page: 1, limit: 100, totalPages: 1 },
     }));
+    postsService.getPost.and.returnValue(of({
+      success: true, status: 200, message: 'ok',
+      data: {
+        id: '21', title: 'A translated post', content: '<p>Translated content</p>',
+        author: { id: '3', name: 'An', avatarUrl: null },
+        category: { id: 9, name: 'Technology', status: 'inactive' },
+        submittedAt: '2026-07-22T08:00:00.000Z',
+        originalLanguage: { languageId: 2, code: 'vi', name: 'Vietnamese', nativeName: 'Vietnamese', flagCode: 'vn' },
+        translations: [], status: 'approved', workflowStatus: 'published', reviewNote: null,
+      },
+    }));
 
     await TestBed.configureTestingModule({
       imports: [AdminCategoriesComponent],
@@ -62,6 +76,7 @@ describe('AdminCategoriesComponent', () => {
         provideRouter([]),
         { provide: AdminCategoriesService, useValue: categoriesService },
         { provide: AdminLanguagesService, useValue: languagesService },
+        { provide: AdminPostsService, useValue: postsService },
         { provide: ToastService, useValue: toast },
         { provide: LocaleService, useValue: { selectedLocale: signal('en'), translate: (key: string) => key } },
       ],
@@ -166,6 +181,12 @@ describe('AdminCategoriesComponent', () => {
     expect(categoriesService.getCategoryPosts).toHaveBeenCalledWith(category.id, 'en');
     expect(fixture.nativeElement.querySelector('.posts-panel')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.category-post-item h3').textContent).toContain('A post');
+    (fixture.nativeElement.querySelector('.category-post-item') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(postsService.getPost).toHaveBeenCalledWith('21', 'en', true);
+    expect(fixture.nativeElement.querySelector('.category-post-preview h3').textContent).toContain('A translated post');
+    expect(fixture.nativeElement.querySelector('.preview-content').textContent).toContain('Translated content');
   });
 
   it('asks for confirmation before deleting a category', () => {

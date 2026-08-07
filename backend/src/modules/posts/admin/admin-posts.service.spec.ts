@@ -60,6 +60,15 @@ describe('AdminPostsService', () => {
       category: { id: 4, name: 'Công nghệ' },
       originalLanguage: { code: 'en' },
     });
+
+    const localizedResult = await service.findOne('12', 'vi', true);
+
+    expect(localizedResult).toMatchObject({
+      title: 'Tiêu đề tiếng Việt',
+      content: '<p>Nội dung</p>',
+      category: { id: 4, name: 'Công nghệ' },
+      originalLanguage: { code: 'en' },
+    });
   });
 
   it('publishes a post and queues only the target translations selected by its author', async () => {
