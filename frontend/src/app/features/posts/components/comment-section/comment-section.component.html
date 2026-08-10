@@ -4,7 +4,7 @@
   </div>
 
   <div class="mb-4">
-    <textarea id="newCommentInput" class="form-control mb-2" rows="1" appAutosize style="resize: none; overflow: hidden;"
+    <textarea id="newCommentInput" class="form-control mb-2" rows="1" appAutosize [appAutosizeReset]="resetCounter" style="resize: none; overflow: hidden;"
       [placeholder]="'write_comment' | t"
       [disabled]="isSubmitting()"
       maxlength="5000"
@@ -62,7 +62,7 @@
                 @if (isTranslating(comment)) {
                   <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> {{ 'translating' | t }}</span>
                 } @else if (isShowingTranslation(comment) && getTranslation(comment)) {
-                  <span style="white-space: pre-wrap;" [innerHTML]="getTranslation(comment).content"></span>
+                  <span style="white-space: pre-wrap;">{{ getTranslation(comment).content }}</span>
                 } @else {
                   <span style="white-space: pre-wrap;">{{ comment.content }}</span>
                 }
@@ -150,7 +150,7 @@
                         @if (isTranslating(reply)) {
                           <span class="text-muted"><i class="spinner-border spinner-border-sm"></i> {{ 'translating' | t }}</span>
                         } @else if (isShowingTranslation(reply) && getTranslation(reply)) {
-                          <span style="white-space: pre-wrap;" [innerHTML]="getTranslation(reply).content"></span>
+                          <span style="white-space: pre-wrap;">{{ getTranslation(reply).content }}</span>
                         } @else {
                           <span style="white-space: pre-wrap;">{{ reply.content }}</span>
                         }

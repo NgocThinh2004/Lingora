@@ -63,6 +63,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
   hasMore = signal<boolean>(false);
 
   newCommentText = '';
+  resetCounter = 0; // Tăng sau mỗi lần submit để trigger autosize reset
   isSubmitting = signal<boolean>(false);
 
   replyingStates = signal<Record<string, string>>({});
@@ -205,6 +206,7 @@ export class CommentSectionComponent implements OnInit, OnChanges {
       next: (newComment) => {
         this.isSubmitting.set(false);
         this.newCommentText = '';
+        this.resetCounter++; // Trigger autosize directive reset chiều cao textarea
         // Đẩy comment mới lên đầu mảng
         this.comments.update(prev => [newComment, ...prev]);
         this.totalComments.update(t => t + 1);
@@ -474,9 +476,19 @@ export class CommentSectionComponent implements OnInit, OnChanges {
 
   shouldShowTranslateButton(comment: Comment): boolean {
     const currentLangCode = this.localeService.selectedLocale();
-    if (comment.originalLanguage?.code) {
-      return comment.originalLanguage.code !== currentLangCode;
-    }
+
+    // Trường hợp 1: Backend đánh dấu đa ngôn ngữ (original_language_id = null)
+    // → Không xác định được ngôn ngữ thuần → luôn hiện nút Dịch
+    if (!comment.originalLanguage) return true;
+
+    // Trường hợp 2: Ngôn ngữ gốc khác ngôn ngữ hiện tại → hiện nút Dịch
+    if (comment.originalLanguage.code !== currentLangCode) return true;
+
+    // Trường hợp 3: Safety net — franc bảo cùng ngôn ngữ nhưng
+    // trong text vẫn có ký tự CJK hoặc Cyrillic → vẫn hiện nút Dịch
+    const hasNonLatinScript = /[\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF\u0400-\u04FF\u0600-\u06FF]/.test(comment.content);
+    if (hasNonLatinScript) return true;
+
     return false;
   }
 
