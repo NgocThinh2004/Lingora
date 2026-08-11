@@ -1,14 +1,13 @@
 import { Injectable, signal, WritableSignal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
+import { Observable, catchError, finalize, map, of, shareReplay, tap } from 'rxjs';
 import { ApiResponse } from '../http/api-response.model';
 import {
   AuthMessage,
   AuthSession,
   ForgotPasswordRequest,
   LoginRequest,
-  RefreshTokenRequest,
   RegisterRequest,
   ResetPasswordRequest,
 } from './auth.model';
@@ -24,6 +23,7 @@ export class AuthService {
   private readonly accessTokenKey = 'access_token';
   private readonly refreshTokenKey = 'refresh_token';
   private readonly userInfoKey = 'user_info';
+  private accessToken: string | null = null;
   private refreshRequest$?: Observable<AuthSession>;
   
   private readonly currentUserSignal: WritableSignal<CurrentUser | null> = signal(null);
@@ -33,15 +33,23 @@ export class AuthService {
     private http: HttpClient,
     private brandingService: BrandingService,
   ) {
+    // Remove tokens persisted by older versions. Authentication secrets now live
+    // only in memory (access token) and an HttpOnly cookie (refresh token).
+    localStorage.removeItem(this.accessTokenKey);
+    localStorage.removeItem(this.refreshTokenKey);
     this.loadUserFromStorage();
   }
 
   login(credentials: LoginRequest): Observable<AuthSession> {
-    return this.http.post<ApiResponse<AuthSession>>(`${this.apiUrl}/login`, credentials)
+    return this.http.post<ApiResponse<AuthSession>>(
+      `${this.apiUrl}/login`,
+      credentials,
+      { withCredentials: true },
+    )
       .pipe(
         map(response => response.data),
         tap(session => {
-          if (session?.accessToken && session.refreshToken) {
+          if (session?.accessToken) {
             this.setSession(session);
           }
         })
@@ -67,6 +75,7 @@ export class AuthService {
     return this.http.post<ApiResponse<AuthMessage>>(
       `${this.apiUrl}/reset-password`,
       payload,
+      { withCredentials: true },
     ).pipe(
       map(response => response.data),
       tap(() => this.clearSession())
@@ -96,21 +105,25 @@ export class AuthService {
 
   changePassword(payload: { currentPassword: string; newPassword: string }): Observable<{ message: string }> {
     return this.http
-      .post<ApiResponse<{ message: string }>>(`${this.apiUrl}/change-password`, payload)
-      .pipe(map(response => response.data));
+      .post<ApiResponse<{ message: string }>>(
+        `${this.apiUrl}/change-password`,
+        payload,
+        { withCredentials: true },
+      )
+      .pipe(
+        map(response => response.data),
+        tap(() => this.clearSession()),
+      );
   }
 
   refreshSession(): Observable<AuthSession> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      return throwError(() => new Error('No refresh token is available'));
-    }
-
     if (!this.refreshRequest$) {
-      const payload: RefreshTokenRequest = { refreshToken };
-
       this.refreshRequest$ = this.http
-        .post<ApiResponse<AuthSession>>(`${this.apiUrl}/refresh`, payload)
+        .post<ApiResponse<AuthSession>>(
+          `${this.apiUrl}/refresh`,
+          {},
+          { withCredentials: true },
+        )
         .pipe(
           map(response => response.data),
           tap(session => this.setSession(session)),
@@ -124,12 +137,22 @@ export class AuthService {
     return this.refreshRequest$;
   }
 
+  restoreSession(): Observable<void> {
+    return this.refreshSession().pipe(
+      map((): void => undefined),
+      catchError(() => {
+        this.clearSession();
+        return of(undefined);
+      }),
+    );
+  }
+
   logout(): Observable<void> {
-    const refreshToken = this.getRefreshToken();
-    const payload: RefreshTokenRequest | null = refreshToken ? { refreshToken } : null;
-    const request$: Observable<unknown> = refreshToken
-      ? this.http.post<unknown>(`${this.apiUrl}/logout`, payload)
-      : of(null);
+    const request$ = this.http.post<unknown>(
+      `${this.apiUrl}/logout`,
+      {},
+      { withCredentials: true },
+    );
 
     return request$.pipe(
       // Local logout must still succeed if the server/session is unavailable.
@@ -140,7 +163,11 @@ export class AuthService {
   }
 
   logoutAll(): Observable<void> {
-    return this.http.post(`${this.apiUrl}/logout-all`, {}).pipe(
+    return this.http.post(
+      `${this.apiUrl}/logout-all`,
+      {},
+      { withCredentials: true },
+    ).pipe(
       finalize(() => this.clearSession()),
       map((): void => undefined),
     );
@@ -151,10 +178,7 @@ export class AuthService {
   }
 
   private setSession(authResult: AuthSession): void {
-    localStorage.setItem(this.accessTokenKey, authResult.accessToken);
-    if (authResult.refreshToken) {
-      localStorage.setItem(this.refreshTokenKey, authResult.refreshToken);
-    }
+    this.accessToken = authResult.accessToken;
     if (authResult.user) {
       this.storeCurrentUser(authResult.user);
     }
@@ -171,6 +195,8 @@ export class AuthService {
   }
 
   private clearSession(): void {
+    this.accessToken = null;
+    // Keep removing legacy keys so upgrades cannot leave reusable tokens behind.
     localStorage.removeItem(this.accessTokenKey);
     localStorage.removeItem(this.refreshTokenKey);
     localStorage.removeItem(this.userInfoKey);
@@ -198,14 +224,10 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken() || !!this.currentUser();
+    return !!this.getToken() && !!this.currentUser();
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.accessTokenKey);
-  }
-
-  getRefreshToken(): string | null {
-    return localStorage.getItem(this.refreshTokenKey);
+    return this.accessToken;
   }
 }

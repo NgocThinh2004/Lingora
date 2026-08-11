@@ -26,8 +26,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     catchError((error: HttpErrorResponse) => {
       const canRefresh =
         error.status === 401 &&
-        !isPublicAuthRequest(request.url) &&
-        Boolean(authService.getRefreshToken());
+        !isPublicAuthRequest(request.url);
 
       if (!canRefresh) {
         if (error.status === 401 && !isPublicAuthRequest(request.url)) {

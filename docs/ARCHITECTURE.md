@@ -153,10 +153,10 @@ Các ràng buộc quan trọng của mô hình:
 ### Vòng đời phiên
 
 1. Người dùng đăng nhập bằng email hoặc username và mật khẩu.
-2. Backend trả access token ngắn hạn và refresh token dài hạn.
-3. Frontend gắn access token vào request cần xác thực.
-4. Khi access token hết hạn, frontend gọi `/auth/refresh` và thử lại request ban đầu.
-5. Logout thu hồi refresh token hiện tại; logout-all thu hồi mọi refresh token của người dùng.
+2. Backend trả access token ngắn hạn trong JSON và đặt refresh token dài hạn trong cookie `HttpOnly`, `Secure`, `SameSite=Lax`.
+3. Frontend giữ access token trong bộ nhớ Angular và gắn nó vào request cần xác thực.
+4. Khi tải lại trang hoặc access token hết hạn, frontend gọi `/auth/refresh`; trình duyệt tự gửi cookie, backend xoay refresh token rồi frontend thử lại request ban đầu.
+5. Logout thu hồi refresh token hiện tại và xóa cookie; logout-all thu hồi mọi refresh token của người dùng.
 
 Mật khẩu được băm bằng bcrypt. JWT strategy không chỉ kiểm tra chữ ký và thời hạn mà còn tải lại người dùng, từ chối tài khoản không tồn tại hoặc không ở trạng thái `active`.
 

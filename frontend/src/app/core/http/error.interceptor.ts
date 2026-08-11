@@ -19,8 +19,13 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
       
-      // We can also use a toast service here to display the error globally
-      console.error('API Error:', errorMessage);
+      // A missing refresh cookie is the normal anonymous-user startup path.
+      const isExpectedAnonymousSession =
+        error.status === 401 && req.url.endsWith('/auth/refresh');
+      if (!isExpectedAnonymousSession) {
+        // We can also use a toast service here to display the error globally
+        console.error('API Error:', errorMessage);
+      }
       return throwError(() => error);
     })
   );
