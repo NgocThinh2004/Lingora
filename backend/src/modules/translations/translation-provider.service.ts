@@ -362,7 +362,7 @@ export class TranslationProviderService {
         },
         body: JSON.stringify({
           text: request.texts,
-          source_lang: request.sourceLanguageCode.toUpperCase(),
+          ...(request.sourceLanguageCode.toLowerCase() !== 'auto' ? { source_lang: request.sourceLanguageCode.toUpperCase() } : {}),
           target_lang: request.targetLanguageCode.toUpperCase(),
           ...(request.format === 'html' ? { tag_handling: 'html' } : {}),
         }),

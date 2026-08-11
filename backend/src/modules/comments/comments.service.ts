@@ -99,16 +99,25 @@ export class CommentsService {
     }
 
     // AUTO DETECT LANGUAGE (Nhận diện ngôn ngữ)
-    // franc trả về mã ngôn ngữ chuẩn ISO 639-3 ('vie', 'eng', 'cmn')
-    const detected = franc(dto.content, { minLength: 1, only: ['eng', 'vie', 'cmn'] });
-    let langCode = dto.languageCode || 'en';
-    if (detected === 'vie') langCode = 'vi';
-    else if (detected === 'eng') langCode = 'en';
-    else if (detected === 'cmn') langCode = 'zh';
+    // Phương án D: Ưu tiên kiểm tra Unicode script trước franc.
+    // Nếu text chứa nhiều hơn 1 script (vd: Latin + CJK + Cyrillic) → đa ngôn ngữ
+    // → lưu original_language_id = null để Frontend biết luôn phải hiện nút Dịch.
+    let originalLanguageId: number | null = null;
+    if (!this.isMultilingual(dto.content)) {
+      // Text thuần 1 ngôn ngữ → giao cho franc xử lý bình thường
+      // franc trả về mã ngôn ngữ chuẩn ISO 639-3 ('vie', 'eng', 'cmn')
+      const detected = franc(dto.content, { minLength: 1, only: ['eng', 'vie', 'cmn'] });
+      let langCode = dto.languageCode || 'en';
+      if (detected === 'vie') langCode = 'vi';
+      else if (detected === 'eng') langCode = 'en';
+      else if (detected === 'cmn') langCode = 'zh';
 
-    // DB: SELECT id FROM languages WHERE code = langCode
-    const language = await this.languageModel.findOne({ where: { code: langCode } });
-    const originalLanguageId = language ? language.id : null;
+      // DB: SELECT id FROM languages WHERE code = langCode
+      const language = await this.languageModel.findOne({ where: { code: langCode } });
+      originalLanguageId = language ? language.id : null;
+    }
+    // Nếu isMultilingual = true → originalLanguageId giữ nguyên là null
+    // → Frontend sẽ đọc null này và hiển thị nút Dịch
 
     // DB TRANSACTION BẢO VỆ DỮ LIỆU
     // Transaction đảm bảo tính chất ACID cho hệ cơ sở dữ liệu
@@ -468,34 +477,54 @@ export class CommentsService {
     }
 
     // TIẾN HÀNH DỊCH (CALL API EXTERNAL)
-    // Nếu trạng thái chưa ổn thì sẽ cập nhật thành 'processing' và gọi API 
+    // Phát hiện bản dịch bị stale/không hoàn chỉnh bằng 2 heuristic:
+    // 1. Content bằng nội dung gốc → chưa được dịch gì cả
+    // 2. Target là ngôn ngữ Latin (vi, en, es...) nhưng bản dịch vẫn còn ký tự
+    //    CJK/Cyrillic/Arabic → bản dịch cũ bị thiếu (chỉ dịch một phần)
+    const isStaleTranslation = translation.translation_status === 'completed'
+      && (translation.content === comment.content
+        || this.isTranslationIncomplete(translation.content, languageCode));
+    if (isStaleTranslation) {
+      await translation.update({ translation_status: 'failed' });
+    }
+
+    // Nếu trạng thái chưa ổn thì sẽ cập nhật thành 'processing' và gọi API
     if (translation.translation_status === 'failed' || translation.translation_status === 'not_started' || translation.translation_status === 'queued') {
       await translation.update({ translation_status: 'processing' });
       try {
-        const sourceLanguage = comment.original_language_id 
-          ? await this.languageModel.findByPk(comment.original_language_id)
-          : null;
-        const sourceLanguageCode = sourceLanguage ? sourceLanguage.code : 'en';
-
         // Gọi service bên ngoài (Provider: Google/DeepL/Azure...)
-        const request = {
-          title: '', 
-          content: comment.content,
-          sourceLanguageCode: sourceLanguageCode,
-          targetLanguageCode: languageCode,
-        };
-
+        // sourceLanguageCode = 'auto' để API tự detect toàn bộ ngôn ngữ trong câu
         const result = await this.translationProvider.translateWithFallback({
-          texts: [request.content],
-          sourceLanguageCode: request.sourceLanguageCode,
-          targetLanguageCode: request.targetLanguageCode,
+          texts: [comment.content],
+          sourceLanguageCode: 'auto',
+          targetLanguageCode: languageCode,
           format: 'text',
         });
 
         // CẬP NHẬT KẾT QUẢ VÀO DB
         if (result.ok) {
-          // DB: UPDATE comment_translations SET content = result.texts[0], status = 'completed'
-          await translation.update({ content: result.texts[0], translation_status: 'completed' });
+          const translatedText = result.texts[0];
+          // Kiểm tra Google có thực sự dịch không, hay trả về y nguyên input
+          // (xảy ra khi Google auto-detect nhầm source = target language)
+          const isUnchanged = translatedText.trim() === comment.content.trim();
+          if (isUnchanged) {
+            // Google trả về nguyên text → thử lại với sl=zh (buộc dịch từ Trung)
+            // vì text đa ngôn ngữ thường có nhiều ký tự CJK mà Google bỏ qua
+            const retryResult = await this.translationProvider.translateWithFallback({
+              texts: [comment.content],
+              sourceLanguageCode: 'zh',
+              targetLanguageCode: languageCode,
+              format: 'text',
+            });
+            if (retryResult.ok && retryResult.texts[0].trim() !== comment.content.trim()) {
+              await translation.update({ content: retryResult.texts[0], translation_status: 'completed' });
+            } else {
+              await translation.update({ translation_status: 'failed' });
+            }
+          } else {
+            // DB: UPDATE comment_translations SET content = result.texts[0], status = 'completed'
+            await translation.update({ content: translatedText, translation_status: 'completed' });
+          }
         } else {
           await translation.update({ translation_status: 'failed' });
         }
@@ -530,5 +559,50 @@ export class CommentsService {
       byStatus[row.status] = Number(row.count);
     }
     return { total, byStatus };
+  }
+
+  /**
+   * Kiểm tra bản dịch có bị thiếu/không hoàn chỉnh không.
+   *
+   * Heuristic: Nếu ngôn ngữ đích là Latin-script (vi, en, es, fr...)
+   * mà bản dịch vẫn còn chứa ký tự CJK, Cyrillic, Arabic...
+   * → Bản dịch bị thiếu (dịch không hết) → cần dịch lại.
+   *
+   * Không áp dụng cho ngôn ngữ đích là CJK (zh, ja, ko) hay Cyrillic (ru)
+   * vì những ngôn ngữ đó dĩ nhiên có ký tự riêng của chúng.
+   */
+  private isTranslationIncomplete(translatedContent: string, targetLanguageCode: string): boolean {
+    const latinScriptLanguages = ['vi', 'en', 'es', 'fr', 'de', 'pt', 'it', 'nl', 'pl', 'ro', 'tr'];
+    if (!latinScriptLanguages.includes(targetLanguageCode)) return false;
+
+    // Nếu bản dịch (sang Latin) còn chứa CJK, Cyrillic, Arabic → bị thiếu
+    return /[\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF\u0400-\u04FF\u0600-\u06FF]/.test(translatedContent);
+  }
+
+  /**
+   * Kiểm tra xem đoạn text có chứa nhiều hơn một Unicode script hay không.
+   * Nếu có → đây là đoạn text đa ngôn ngữ.
+   *
+   * Các script được kiểm tra:
+   * - CJK (Trung/Nhật/Hàn): U+4E00–U+9FFF, U+3040–U+30FF, U+AC00–U+D7AF
+   * - Cyrillic (Nga, Ukraina...): U+0400–U+04FF
+   * - Arabic: U+0600–U+06FF
+   * - Devanagari (Hindi...): U+0900–U+097F
+   * - Latin (Anh, Việt, Tây Ban Nha...): A-Z, a-z, kèm dấu
+   *
+   * Logic: Đếm số lượng script khác nhau xuất hiện trong text.
+   * Nếu > 1 → đa ngôn ngữ → trả về true.
+   */
+  private isMultilingual(text: string): boolean {
+    const scripts: Record<string, RegExp> = {
+      latin:      /[A-Za-zÀ-ÖØ-öø-ÿ\u00C0-\u024F]/,
+      cjk:        /[\u4E00-\u9FFF\u3400-\u4DBF\u3040-\u30FF\uAC00-\uD7AF]/,
+      cyrillic:   /[\u0400-\u04FF]/,
+      arabic:     /[\u0600-\u06FF]/,
+      devanagari: /[\u0900-\u097F]/,
+    };
+
+    const detectedScripts = Object.values(scripts).filter(regex => regex.test(text));
+    return detectedScripts.length > 1;
   }
 }
