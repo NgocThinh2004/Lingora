@@ -20,7 +20,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copy file tĩnh đã build từ bước builder (Angular 17+ thường lưu ở dist/tên-project/browser)
-COPY --from=builder /app/dist/lingora/browser /usr/share/nginx/html/
+COPY --from=builder /app/dist/lingora-frontend/browser /usr/share/nginx/html/
 
 EXPOSE 80
 
