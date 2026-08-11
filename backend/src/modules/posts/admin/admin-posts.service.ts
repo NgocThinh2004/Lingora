@@ -95,7 +95,7 @@ export class AdminPostsService {
   async getDashboardMetrics(languageCode?: string) {
     const posts = await this.postModel.findAll({
       attributes: ['id', 'category_id', 'status', 'view_count'],
-      where: { deleted_at: null },
+      where: { deleted_at: null, status: 'published' },
     });
     const postIds = posts.map(post => post.id);
     const categoryIds = [...new Set(posts
@@ -148,8 +148,7 @@ export class AdminPostsService {
           && provider !== 'mock';
       })
       .map(translation => [String(translation.post_id), translation]));
-    const publicPosts = posts.filter(post => post.status === 'approved' || post.status === 'published');
-    const topArticles = [...publicPosts]
+    const topArticles = [...posts]
       .filter(post => rankedTranslations.has(String(post.id)))
       .sort((left, right) => right.view_count - left.view_count)
       .slice(0, 10)
@@ -160,7 +159,7 @@ export class AdminPostsService {
       }));
 
     const categoryCounts = new Map<number, number>();
-    for (const post of publicPosts) {
+    for (const post of posts) {
       if (post.category_id !== null) {
         categoryCounts.set(post.category_id, (categoryCounts.get(post.category_id) ?? 0) + 1);
       }

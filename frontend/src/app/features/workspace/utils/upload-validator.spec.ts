@@ -44,18 +44,18 @@ describe('upload-validator', () => {
     expect(result.params).toEqual({ maxSize: 25 });
   });
 
-  it('validates a valid video file under 100MB limit', () => {
+  it('validates a valid video file under 95MB limit', () => {
     const file = new File(['video content'], 'clip.mp4', { type: 'video/mp4' });
     const result = validateUploadFile(file, 'video');
     expect(result.valid).toBe(true);
   });
 
-  it('rejects a video file exceeding 100MB limit', () => {
+  it('rejects a video file exceeding 95MB limit', () => {
     const largeBuffer = new ArrayBuffer(UPLOAD_LIMITS.video.maxBytes + 1);
     const file = new File([largeBuffer], 'movie.mp4', { type: 'video/mp4' });
     const result = validateUploadFile(file, 'video');
     expect(result.valid).toBe(false);
     expect(result.errorKey).toBe('file_too_large');
-    expect(result.params).toEqual({ maxSize: 100 });
+    expect(result.params).toEqual({ maxSize: 95 });
   });
 });

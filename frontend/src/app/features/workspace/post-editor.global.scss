@@ -1410,17 +1410,53 @@ button {
 
 .editor-media-caption {
   display: block !important;
-  width: 100% !important;
-  margin-top: 6px !important;
   font-size: 14px !important;
   font-style: italic !important;
   color: #666666 !important;
+  line-height: 1.4 !important;
+}
+
+.rich-editor figcaption,
+.rich-editor figcaption *,
+.rich-editor .editor-media-wrapper .editor-media-caption,
+.rich-editor .editor-media-wrapper .editor-media-caption *,
+.rich-editor .editor-media-caption *,
+.preview-post-body figcaption,
+.preview-post-body figcaption *,
+.preview-post-body .editor-media-wrapper .editor-media-caption,
+.preview-post-body .editor-media-wrapper .editor-media-caption *,
+.preview-post-body .editor-media-caption,
+.preview-post-body .editor-media-caption *,
+.preview-modal .preview-stage figcaption *,
+.preview-modal .preview-stage .editor-media-caption * {
+  font-size: 14px !important;
+  font-style: italic !important;
+  color: #666666 !important;
+  line-height: 1.4 !important;
+}
+
+.editor-media-caption {
+  width: 100% !important;
+  margin-top: 6px !important;
   text-align: center;
   outline: none !important;
   border: none !important;
   min-height: 20px !important;
-  line-height: 1.4 !important;
   cursor: text !important;
+}
+
+.editor-media-caption > p,
+.editor-media-caption > div,
+.editor-media-caption > h1,
+.editor-media-caption > h2,
+.editor-media-caption > h3,
+.editor-media-caption > h4,
+.editor-media-caption > h5,
+.editor-media-caption > h6 {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-weight: inherit !important;
 }
 
 .editor-media-caption[data-placeholder]:empty::before,

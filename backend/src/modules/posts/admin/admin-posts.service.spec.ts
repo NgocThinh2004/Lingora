@@ -135,6 +135,9 @@ describe('AdminPostsService', () => {
 
     const result = await service.getDashboardMetrics('vi');
 
+    expect(postModel.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: { deleted_at: null, status: 'published' },
+    }));
     expect(result.topArticles).toEqual([
       { id: '2', title: 'BÃ i tiáº¿ng Viá»‡t', viewCount: 700 },
     ]);

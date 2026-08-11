@@ -28,16 +28,33 @@ app-admin-posts .review-content figure { margin: .9rem 0; }
 app-admin-posts .review-content img,
 app-admin-posts .review-content video { display: block; width: 100%; height: auto; max-height: 320px; object-fit: cover; border: 1px solid var(--border-color); border-radius: 10px; background: var(--border-light); }
 app-admin-posts .review-content figcaption,
+app-admin-posts .review-content figcaption *,
+app-admin-posts .review-content .editor-media-caption,
+app-admin-posts .review-content .editor-media-caption *,
+app-admin-categories .category-post-preview .preview-content figcaption,
+app-admin-categories .category-post-preview .preview-content figcaption *,
+app-admin-categories .category-post-preview .preview-content .editor-media-caption,
+app-admin-categories .category-post-preview .preview-content .editor-media-caption * {
+  color: var(--text-muted);
+  font-size: 14px !important;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.45 !important;
+}
+app-admin-posts .review-content figcaption,
 app-admin-posts .review-content .editor-media-caption,
 app-admin-categories .category-post-preview .preview-content figcaption,
 app-admin-categories .category-post-preview .preview-content .editor-media-caption {
   margin-top: .45rem;
-  color: var(--text-muted);
-  font-size: .72rem;
-  font-style: italic;
-  font-weight: 400;
-  line-height: 1.45;
   text-align: center;
+}
+app-admin-posts .review-content figcaption > p,
+app-admin-posts .review-content .editor-media-caption > p,
+app-admin-categories .category-post-preview .preview-content figcaption > p,
+app-admin-categories .category-post-preview .preview-content .editor-media-caption > p {
+  display: inline;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 app-admin-posts .review-content a,
 app-admin-posts .review-content a:visited,

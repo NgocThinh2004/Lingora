@@ -98,11 +98,38 @@ describe('preparePostDetailHtml', () => {
 
   it('keeps a real caption inside an editor media wrapper', () => {
     const result = preparePostDetailHtml(
-      '<div class="editor-media-wrapper"><div class="editor-media-container"><img src="https://media.example.com/image.jpg"></div><figcaption class="editor-media-caption">Image caption</figcaption></div>',
+      '<div class="editor-media-wrapper"><div class="editor-media-container"><img src="https://media.example.com/image.jpg"></div><figcaption class="editor-media-caption"><span style="font-size: 32px" size="7">Image caption</span></figcaption></div>',
     );
     const container = document.createElement('div');
     container.innerHTML = result;
 
     expect(container.querySelector('.editor-media-wrapper figcaption')?.textContent).toBe('Image caption');
+    expect(container.querySelector('.editor-media-wrapper figcaption span')?.hasAttribute('style')).toBeFalse();
+    expect(container.querySelector('.editor-media-wrapper figcaption span')?.hasAttribute('size')).toBeFalse();
+  });
+
+  it('removes a duplicate body paragraph after a media caption', () => {
+    const caption = 'A single consistent image caption';
+    const result = preparePostDetailHtml(
+      `<div class="editor-media-wrapper"><div class="editor-media-container"><img src="https://media.example.com/image.jpg"></div><figcaption class="editor-media-caption">${caption}</figcaption></div><p><br></p><p>${caption}</p><p>Real article paragraph</p>`,
+    );
+    const container = document.createElement('div');
+    container.innerHTML = result;
+
+    expect(container.querySelectorAll('.editor-media-caption')).toHaveSize(1);
+    expect(Array.from(container.querySelectorAll('p')).filter((node) => node.textContent === caption)).toHaveSize(0);
+    expect(container.textContent).toContain('Real article paragraph');
+  });
+
+  it('reattaches a detached figcaption to the preceding media wrapper', () => {
+    const result = preparePostDetailHtml(
+      '<div class="editor-media-wrapper"><div class="editor-media-container"><img src="https://media.example.com/image.jpg"></div></div><p><br></p><figcaption style="font-size: 30px">Detached caption</figcaption>',
+    );
+    const container = document.createElement('div');
+    container.innerHTML = result;
+
+    const caption = container.querySelector('.editor-media-wrapper > .editor-media-caption');
+    expect(caption?.textContent).toBe('Detached caption');
+    expect(caption?.hasAttribute('style')).toBeFalse();
   });
 });
