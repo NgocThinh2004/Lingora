@@ -1,57 +1,102 @@
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
     container_name: lingora-mysql
-    restart: always
+    restart: unless-stopped
     environment:
-      MYSQL_DATABASE: lingora_db
-      MYSQL_ROOT_PASSWORD: 123456_root_password # Đặt mk root an toàn cho DB
-      MYSQL_USER: lingora_app
-      MYSQL_PASSWORD: 123456
-    ports:
-      - "3306:3306"
+      MYSQL_DATABASE: ${DB_NAME:?DB_NAME must be set in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set in .env}
+      MYSQL_USER: ${DB_USER:?DB_USER must be set in .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
     container_name: lingora-redis
-    restart: always
-    ports:
-      - "6379:6379"
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  backend:
-    build: 
+  migrate:
+    build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: lingora-backend
-    restart: always
+      target: migration
+    container_name: lingora-migrate
+    restart: "no"
     depends_on:
-      - mysql
-      - redis
-    ports:
-      - "3000:3000"
+      mysql:
+        condition: service_healthy
     env_file:
-      - ./backend/.env # Lấy các key như JWT, Mail, R2 từ file .env
+      - ${APP_ENV_FILE:-.env}
     environment:
-      # Ghi đè 2 biến này để kết nối đúng vào tên container trong Docker Network
-      - DB_HOST=mysql
-      - REDIS_HOST=redis
-    
+      NODE_ENV: production
+      DB_HOST: mysql
+      DB_PORT: 3306
+    command: ["npm", "run", "db:migrate"]
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: lingora-backend
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    env_file:
+      - ${APP_ENV_FILE:-.env}
+    environment:
+      NODE_ENV: production
+      DB_HOST: mysql
+      DB_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/v1/languages').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: lingora-frontend
-    restart: always
+    restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
-      - "80:80"
+      - "127.0.0.1:8080:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 volumes:
   mysql_data:

@@ -1,26 +1,37 @@
-# Build stage
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS dependencies
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
+
+FROM dependencies AS builder
 
 COPY . .
-
-# Build ứng dụng NestJS
 RUN npm run build
 
-# Production stage
-FROM node:20-alpine
+FROM dependencies AS migration
 
+ENV NODE_ENV=production
+
+COPY .sequelizerc ./
+COPY src ./src
+
+USER node
+
+CMD ["npm", "run", "db:migrate"]
+
+FROM node:20-alpine AS production
+
+ENV NODE_ENV=production
 WORKDIR /app
 
-COPY --from=builder /app/node_modules ./node_modules
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/.sequelizerc ./.sequelizerc
-COPY --from=builder /app/src ./src
+
+USER node
 
 EXPOSE 3000
 
