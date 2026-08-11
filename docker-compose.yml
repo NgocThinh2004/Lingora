@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: lingora-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: lingora_db
+      MYSQL_ROOT_PASSWORD: 123456_root_password # Đặt mk root an toàn cho DB
+      MYSQL_USER: lingora_app
+      MYSQL_PASSWORD: 123456
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    container_name: lingora-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lingora-backend
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env # Lấy các key như JWT, Mail, R2 từ file .env
+    environment:
+      # Ghi đè 2 biến này để kết nối đúng vào tên container trong Docker Network
+      - DB_HOST=mysql
+      - REDIS_HOST=redis
+    
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lingora-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  mysql_data:
+  redis_data:
