@@ -19,6 +19,8 @@ WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/.sequelizerc ./.sequelizerc
+COPY --from=builder /app/src/database ./src/database
 
 EXPOSE 3000
 
