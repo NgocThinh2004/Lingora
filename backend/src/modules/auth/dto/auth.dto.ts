@@ -33,12 +33,6 @@ export class LoginDto {
   password!: string;
 }
 
-export class RefreshTokenDto {
-  @IsString()
-  @IsNotEmpty()
-  refreshToken!: string;
-}
-
 export class ForgotPasswordDto {
   @Transform(({ value }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
   @IsEmail()

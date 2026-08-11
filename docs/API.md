@@ -29,7 +29,7 @@ Gửi access token trong header:
 Authorization: Bearer <access-token>
 ```
 
-Access token hết hạn có thể được cấp lại bằng `POST /auth/refresh`. Refresh token được gửi trong request body và được xoay vòng khi làm mới phiên.
+Access token hết hạn có thể được cấp lại bằng `POST /auth/refresh`. Refresh token nằm trong cookie `HttpOnly`, được trình duyệt gửi tự động và được xoay vòng khi làm mới phiên. Frontend không đọc hoặc lưu refresh token bằng JavaScript.
 
 ### Định dạng phản hồi
 
@@ -94,8 +94,8 @@ Backend loại bỏ các thuộc tính không khai báo trong DTO, chuyển đ�
 |---|---|---|---|---|
 | `POST` | `/auth/register` | Công khai | `RegisterDto` | Đăng ký tài khoản |
 | `POST` | `/auth/login` | Công khai | `LoginDto` | Đăng nhập và tạo phiên |
-| `POST` | `/auth/refresh` | Công khai | `RefreshTokenDto` | Đổi refresh token lấy cặp token mới |
-| `POST` | `/auth/logout` | Công khai | `RefreshTokenDto` | Thu hồi một refresh token |
+| `POST` | `/auth/refresh` | Cookie phiên | Không có | Xoay refresh cookie và cấp access token mới |
+| `POST` | `/auth/logout` | Cookie phiên | Không có | Thu hồi phiên hiện tại và xóa refresh cookie |
 | `POST` | `/auth/forgot-password` | Công khai | `{ email }` | Gửi OTP đặt lại mật khẩu |
 | `POST` | `/auth/reset-password` | Công khai | `ResetPasswordDto` | Đặt mật khẩu mới bằng OTP |
 | `POST` | `/auth/change-password` | JWT | `ChangePasswordDto` | Đổi mật khẩu tài khoản hiện tại |
@@ -115,10 +115,6 @@ type RegisterDto = {
 type LoginDto = {
   emailOrUsername: string;
   password: string;
-};
-
-type RefreshTokenDto = {
-  refreshToken: string;
 };
 
 type ResetPasswordDto = {

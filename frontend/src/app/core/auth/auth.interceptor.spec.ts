@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { authInterceptor } from './auth.interceptor';
+import { AuthService } from './auth.service';
 
 describe('authInterceptor', () => {
   let http: HttpClient;
@@ -28,8 +29,23 @@ describe('authInterceptor', () => {
   });
 
   it('refreshes once after 401 and retries with the new access token', () => {
-    localStorage.setItem('access_token', 'expired-access');
-    localStorage.setItem('refresh_token', 'old-refresh');
+    const authService = TestBed.inject(AuthService);
+    authService.login({
+      emailOrUsername: 'member@example.com',
+      password: 'password123',
+    }).subscribe();
+    httpTesting.expectOne(`${environment.apiUrl}/auth/login`).flush({
+      data: {
+        accessToken: 'expired-access',
+        user: {
+          id: '1',
+          email: 'member@example.com',
+          username: 'member',
+          displayName: 'Member',
+          role: 'member',
+        },
+      },
+    });
 
     let response: unknown;
     http.get(`${environment.apiUrl}/protected`).subscribe(value => response = value);
@@ -40,10 +56,10 @@ describe('authInterceptor', () => {
 
     const refreshRequest = httpTesting.expectOne(`${environment.apiUrl}/auth/refresh`);
     expect(refreshRequest.request.headers.has('Authorization')).toBeFalse();
+    expect(refreshRequest.request.withCredentials).toBeTrue();
     refreshRequest.flush({
       data: {
         accessToken: 'new-access',
-        refreshToken: 'new-refresh',
         user: {
           id: '1',
           email: 'member@example.com',

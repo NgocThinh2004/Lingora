@@ -21,13 +21,8 @@ export interface ResetPasswordRequest {
   newPassword: string;
 }
 
-export interface RefreshTokenRequest {
-  refreshToken: string;
-}
-
 export interface AuthSession {
   accessToken: string;
-  refreshToken?: string;
   user: CurrentUser;
 }
 
