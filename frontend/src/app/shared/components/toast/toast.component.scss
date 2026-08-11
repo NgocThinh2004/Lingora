@@ -49,6 +49,10 @@
   border-left-color: #dc3545;
 }
 
+.app-toast--loading {
+  border-left-color: #0d6efd;
+}
+
 .app-toast__icon {
   color: #198754;
   font-size: 1.1rem;
@@ -58,7 +62,34 @@
   color: #dc3545;
 }
 
+.app-toast--loading .app-toast__icon {
+  color: #0d6efd;
+  animation: toast-spin 900ms linear infinite;
+}
+
+.app-toast__content {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.app-toast__title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
 .app-toast__message {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+}
+
+.app-toast__message:only-child {
+  color: var(--text-main);
   font-size: 0.86rem;
   font-weight: 600;
 }
@@ -79,4 +110,8 @@
 .app-toast__close:hover {
   background: color-mix(in srgb, var(--text-main) 6%, transparent);
   color: var(--text-main);
+}
+
+@keyframes toast-spin {
+  to { transform: rotate(360deg); }
 }

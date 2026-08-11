@@ -52,13 +52,29 @@
 }
 
 :host ::ng-deep .article-content figcaption,
+:host ::ng-deep .article-content figcaption *,
+:host ::ng-deep .article-content .editor-media-caption,
+:host ::ng-deep .article-content .editor-media-caption * {
+  color: var(--text-muted, #6c757d);
+  font-size: 14px !important;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.5 !important;
+}
+
+:host ::ng-deep .article-content figcaption,
 :host ::ng-deep .article-content .editor-media-caption {
   margin-top: 0.65rem;
-  color: var(--text-muted, #6c757d);
-  font-size: 0.875rem;
-  font-style: italic;
-  line-height: 1.5;
   text-align: center;
+}
+
+:host ::ng-deep .article-content figcaption > p,
+:host ::ng-deep .article-content figcaption > div,
+:host ::ng-deep .article-content .editor-media-caption > p,
+:host ::ng-deep .article-content .editor-media-caption > div {
+  display: inline;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 :host ::ng-deep .article-content .editor-code-block {

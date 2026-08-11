@@ -625,15 +625,28 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.uploadingType = mediaType;
+    this.toast.showLoading(
+      this.localeService.translate('upload_in_progress_message'),
+      this.localeService.translate('upload_in_progress_title'),
+    );
     this.uploadsService.uploadEditorMedia(mediaType, file).subscribe({
       next: (upload) => {
         const url = this.uploadsService.toAbsoluteUrl(upload.url);
-        this.insertHtml(this.buildMediaHtml(mediaType, url, upload.filename, upload.assetId, upload.objectKey), true);
-        this.toast.showSuccess(this.localeService.translate('upload_success', { filename: upload.filename }));
+        this.insertMediaHtml(
+          this.buildMediaHtml(mediaType, url, upload.filename, upload.assetId, upload.objectKey),
+          true,
+        );
+        this.toast.showSuccess(
+          this.localeService.translate(`upload_${mediaType}_success_message`),
+          this.localeService.translate('upload_success_title'),
+        );
         this.uploadingType = null;
       },
       error: (error: unknown) => {
-        this.toast.showError(this.formatError(error));
+        this.toast.showError(
+          this.formatError(error),
+          this.localeService.translate('upload_failed_title'),
+        );
         this.uploadingType = null;
       },
     });
@@ -859,6 +872,18 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    const activeCaption = this.getActiveMediaCaption();
+    if (activeCaption) {
+      event.preventDefault();
+      const captionText = clipboardData
+        .getData('text/plain')
+        .replace(/\s*[\r\n]+\s*/g, ' ');
+      this.insertPlainTextAtSelection(captionText);
+      this.syncContentFromEditor();
+      this.saveEditorSelection();
+      return;
+    }
+
     const items = Array.from(clipboardData.items ?? []);
     const imageItem = items.find((item) => item.type.startsWith('image/'));
     if (imageItem) {
@@ -877,15 +902,28 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         }
 
         this.uploadingType = 'image';
+        this.toast.showLoading(
+          this.localeService.translate('upload_in_progress_message'),
+          this.localeService.translate('upload_in_progress_title'),
+        );
         this.uploadsService.uploadEditorMedia('image', file).subscribe({
           next: (upload) => {
             const url = this.uploadsService.toAbsoluteUrl(upload.url);
-            this.insertHtml(this.buildMediaHtml('image', url, upload.filename, upload.assetId, upload.objectKey), true);
-            this.toast.showSuccess(this.localeService.translate('upload_success', { filename: upload.filename }));
+            this.insertMediaHtml(
+              this.buildMediaHtml('image', url, upload.filename, upload.assetId, upload.objectKey),
+              true,
+            );
+            this.toast.showSuccess(
+              this.localeService.translate('upload_image_success_message'),
+              this.localeService.translate('upload_success_title'),
+            );
             this.uploadingType = null;
           },
           error: (error: unknown) => {
-            this.toast.showError(this.formatError(error));
+            this.toast.showError(
+              this.formatError(error),
+              this.localeService.translate('upload_failed_title'),
+            );
             this.uploadingType = null;
           },
         });
@@ -910,7 +948,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       event.preventDefault();
       const imageUrl = pastedText.trim();
       const filename = imageUrl.split('/').pop()?.split('?')[0] || 'image';
-      this.insertHtml(this.buildMediaHtml('image', imageUrl, filename), false);
+      this.insertMediaHtml(this.buildMediaHtml('image', imageUrl, filename), false);
       const editor = this.editorElement();
       if (editor) {
         this.normalizeGeneratedBlockPlaceholders(editor);
@@ -918,6 +956,37 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       this.syncContentFromEditor();
     }
+  }
+
+  private getActiveMediaCaption(): HTMLElement | null {
+    const editor = this.editorElement();
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0) {
+      return null;
+    }
+
+    const node = selection.anchorNode;
+    const element = node?.nodeType === Node.ELEMENT_NODE
+      ? node as HTMLElement
+      : node?.parentElement;
+    const caption = element?.closest<HTMLElement>('.editor-media-caption, figcaption') ?? null;
+    return caption && editor.contains(caption) ? caption : null;
+  }
+
+  private insertPlainTextAtSelection(text: string): void {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
+    const textNode = document.createTextNode(text);
+    range.insertNode(textNode);
+    range.setStartAfter(textNode);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
   }
 
   private cleanPastedHtml(html: string): string {
@@ -1506,6 +1575,8 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
+    this.removeDuplicateMediaCaptionParagraphs(container);
+
     container.querySelectorAll<HTMLElement>('.editor-after-block-placeholder').forEach(node => {
       const hasVisibleContent = Boolean(node.textContent?.replace(/\u00a0/g, ' ').trim());
       const hasEmbeddedContent = Boolean(node.querySelector('img, audio, video, iframe'));
@@ -1620,11 +1691,11 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.escapeAttribute(value).replace(/'/g, '&#39;');
   }
 
-  private insertHtml(html: string, preferSavedRange = false): void {
+  private insertHtml(html: string, preferSavedRange = false): Node | null {
     const editor = this.editorElement();
     if (!editor) {
       this.draft.content = this.draft.content.trim() ? `${this.draft.content}${html}` : html;
-      return;
+      return null;
     }
 
     const selection = window.getSelection();
@@ -1637,11 +1708,13 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    let insertedNode: Node | null = null;
     if (range && this.rangeBelongsToEditor(range, editor)) {
       range.deleteContents();
       const fragment = range.createContextualFragment(html);
       const lastNode = fragment.lastChild;
       range.insertNode(fragment);
+      insertedNode = lastNode;
       if (lastNode) {
         if (
           lastNode instanceof HTMLElement &&
@@ -1653,10 +1726,42 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     } else {
-      editor.insertAdjacentHTML('beforeend', html);
+      const template = document.createElement('template');
+      template.innerHTML = html;
+      insertedNode = template.content.lastChild;
+      editor.appendChild(template.content);
     }
     this.syncContentFromEditor();
     this.saveEditorSelection();
+    this.updateToolbarState();
+    return insertedNode;
+  }
+
+  /**
+   * A newly inserted image/video must put the caret inside its caption.
+   * Otherwise the first text typed after the upload becomes a normal 21px
+   * article paragraph and only looks like an oversized caption.
+   */
+  private insertMediaHtml(html: string, preferSavedRange: boolean): void {
+    const insertedNode = this.insertHtml(html, preferSavedRange);
+    const wrapper = insertedNode instanceof HTMLElement
+      ? insertedNode.matches('.editor-media-wrapper')
+        ? insertedNode
+        : insertedNode.closest<HTMLElement>('.editor-media-wrapper')
+      : null;
+    const caption = wrapper?.querySelector<HTMLElement>('.editor-media-caption, figcaption');
+    if (!caption) {
+      return;
+    }
+
+    caption.focus({ preventScroll: true });
+    const range = document.createRange();
+    range.selectNodeContents(caption);
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    this.savedRange = range.cloneRange();
     this.updateToolbarState();
   }
 
@@ -2018,6 +2123,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private normalizeGeneratedBlockPlaceholders(editor: HTMLElement): void {
+    this.hoistNestedMediaWrappers(editor);
     this.ensureEditorMediaDeleteButtons(editor);
 
     const paragraphs = Array.from(editor.querySelectorAll<HTMLElement>('p, div'));
@@ -2142,6 +2248,78 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     });
+
+    this.removeDuplicateMediaCaptionParagraphs(editor);
+  }
+
+  /**
+   * Range.insertNode can place a block-level media wrapper inside the current
+   * paragraph/heading. Besides producing invalid article markup, that makes
+   * the paragraph's 21px inherited font override the 14px caption style.
+   */
+  private hoistNestedMediaWrappers(editor: HTMLElement): void {
+    editor.querySelectorAll<HTMLElement>('.editor-media-wrapper').forEach((wrapper) => {
+      let topLevel: HTMLElement = wrapper;
+      while (topLevel.parentElement && topLevel.parentElement !== editor) {
+        topLevel = topLevel.parentElement;
+      }
+
+      if (
+        topLevel === wrapper ||
+        topLevel.parentElement !== editor ||
+        !topLevel.matches('p, div, h1, h2, h3, h4, h5, h6, blockquote')
+      ) {
+        return;
+      }
+
+      const afterRange = document.createRange();
+      afterRange.setStartAfter(wrapper);
+      afterRange.setEnd(topLevel, topLevel.childNodes.length);
+      const afterContent = afterRange.extractContents();
+      const afterBlock = topLevel.cloneNode(false) as HTMLElement;
+      afterBlock.appendChild(afterContent);
+
+      wrapper.remove();
+      topLevel.after(wrapper);
+
+      if (!this.isVisuallyEmptyEditorNode(afterBlock)) {
+        wrapper.after(afterBlock);
+      }
+      if (this.isVisuallyEmptyEditorNode(topLevel)) {
+        topLevel.remove();
+      }
+    });
+  }
+
+  /** Remove a legacy body paragraph only when it exactly duplicates a caption. */
+  private removeDuplicateMediaCaptionParagraphs(root: HTMLElement): void {
+    root.querySelectorAll<HTMLElement>('.editor-media-wrapper').forEach((wrapper) => {
+      const caption = wrapper.querySelector<HTMLElement>('.editor-media-caption, figcaption');
+      const captionText = this.normalizeCaptionText(caption?.textContent ?? '');
+      if (!captionText) {
+        return;
+      }
+
+      let sibling = wrapper.nextElementSibling as HTMLElement | null;
+      let emptyNodesSeen = 0;
+      while (sibling && emptyNodesSeen < 2 && this.isVisuallyEmptyEditorNode(sibling)) {
+        emptyNodesSeen++;
+        sibling = sibling.nextElementSibling as HTMLElement | null;
+      }
+
+      if (
+        sibling &&
+        ['P', 'DIV'].includes(sibling.tagName) &&
+        !sibling.querySelector('img, audio, video, iframe') &&
+        this.normalizeCaptionText(sibling.textContent ?? '') === captionText
+      ) {
+        sibling.remove();
+      }
+    });
+  }
+
+  private normalizeCaptionText(value: string): string {
+    return value.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
   private replaceStandaloneCaptionWithContent(caption: HTMLElement): void {

@@ -3,7 +3,7 @@ import { EditorMediaType } from '../models/editor-upload.model';
 export const UPLOAD_LIMITS = {
   image: { maxBytes: 5 * 1024 * 1024, maxMb: 5 },
   audio: { maxBytes: 25 * 1024 * 1024, maxMb: 25 },
-  video: { maxBytes: 100 * 1024 * 1024, maxMb: 100 },
+  video: { maxBytes: 95 * 1024 * 1024, maxMb: 95 },
 } as const;
 
 export const ALLOWED_MIME_TYPES: Record<EditorMediaType, readonly string[]> = {

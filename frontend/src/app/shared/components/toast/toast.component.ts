@@ -40,7 +40,9 @@ export class ToastComponent implements OnInit, OnDestroy {
       clearTimeout(this.removalTimer);
       
       // Đặt timer tự động gọi hàm ẩn toast sau 4000 ms (4 giây)
-      this.dismissTimer = setTimeout(() => this.dismiss(), 4000);
+      if (toast.type !== 'loading') {
+        this.dismissTimer = setTimeout(() => this.dismiss(), 4000);
+      }
     });
   }
 

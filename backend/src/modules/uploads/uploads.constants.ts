@@ -4,7 +4,8 @@ export const EDITOR_VIDEO_FIELD = 'video';
 export const EDITOR_MEDIA_FIELD = 'media';
 export const MAX_EDITOR_IMAGE_BYTES = 5 * 1024 * 1024;
 export const MAX_EDITOR_AUDIO_BYTES = 25 * 1024 * 1024;
-export const MAX_EDITOR_VIDEO_BYTES = 100 * 1024 * 1024;
+// Keep the multipart request safely below Cloudflare Free's 100 MB request limit.
+export const MAX_EDITOR_VIDEO_BYTES = 95 * 1024 * 1024;
 export const MAX_EDITOR_MEDIA_BYTES = MAX_EDITOR_VIDEO_BYTES;
 
 export const ALLOWED_EDITOR_IMAGE_MIME_TYPES = [

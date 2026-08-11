@@ -130,7 +130,7 @@ describe('UploadsService', () => {
     ).toThrow(BadRequestException);
   });
 
-  it('rejects video files exceeding maximum size limit of 100MB', () => {
+  it('rejects video files exceeding maximum size limit of 95MB', () => {
     const mp4Header = Buffer.from([
       0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d,
     ]);

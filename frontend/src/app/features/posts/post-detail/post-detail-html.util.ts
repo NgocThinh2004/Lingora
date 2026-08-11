@@ -39,6 +39,8 @@ export function preparePostDetailHtml(html: string): string {
     )
     .forEach((element) => element.remove());
 
+  attachAdjacentStandaloneCaptions(container);
+
   // Chuẩn hóa chú thích media (figcaption)
   container.querySelectorAll<HTMLElement>('.editor-media-caption, figcaption').forEach((caption) => {
     caption.removeAttribute('contenteditable');
@@ -52,6 +54,7 @@ export function preparePostDetailHtml(html: string): string {
         replaceStandaloneCaptionWithContent(caption);
         return;
       }
+      stripCaptionPresentationMarkup(caption);
       const blockTags = new Set(['P', 'DIV', 'BLOCKQUOTE', 'PRE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL']);
       let curr = caption.firstChild;
       let foundBlock = false;
@@ -132,6 +135,8 @@ export function preparePostDetailHtml(html: string): string {
     }
   });
 
+  removeDuplicateMediaCaptionParagraphs(container);
+
   // Xử lý từng khối mã (code block)
   container.querySelectorAll<HTMLElement>('.editor-code-body').forEach((codeBody) => {
     removeLegacyCodeControls(codeBody);
@@ -175,6 +180,72 @@ export function preparePostDetailHtml(html: string): string {
 
   // Trả về chuỗi HTML đã được làm sạch và chuẩn hóa
   return container.innerHTML;
+}
+
+function stripCaptionPresentationMarkup(caption: HTMLElement): void {
+  caption.removeAttribute('style');
+  caption.removeAttribute('size');
+  caption.removeAttribute('fontsize');
+  caption.removeAttribute('face');
+  caption.querySelectorAll<HTMLElement>('*').forEach((element) => {
+    element.removeAttribute('style');
+    element.removeAttribute('size');
+    element.removeAttribute('fontsize');
+    element.removeAttribute('face');
+  });
+}
+
+function attachAdjacentStandaloneCaptions(container: HTMLElement): void {
+  container.querySelectorAll<HTMLElement>('figcaption').forEach((caption) => {
+    if (caption.closest('.editor-media-wrapper, figure')) {
+      return;
+    }
+
+    let previous = caption.previousElementSibling as HTMLElement | null;
+    while (previous && isEmptyElement(previous)) {
+      previous = previous.previousElementSibling as HTMLElement | null;
+    }
+
+    if (previous?.matches('.editor-media-wrapper, figure') && previous.querySelector('img, video, audio')) {
+      caption.className = 'editor-media-caption';
+      previous.appendChild(caption);
+    }
+  });
+}
+
+function removeDuplicateMediaCaptionParagraphs(container: HTMLElement): void {
+  container.querySelectorAll<HTMLElement>('.editor-media-wrapper, figure').forEach((wrapper) => {
+    const caption = wrapper.querySelector<HTMLElement>(':scope > .editor-media-caption, :scope > figcaption');
+    const captionText = normalizeCaptionText(caption?.textContent ?? '');
+    if (!captionText) {
+      return;
+    }
+
+    let sibling = wrapper.nextElementSibling as HTMLElement | null;
+    let emptyNodesSeen = 0;
+    while (sibling && emptyNodesSeen < 2 && isEmptyElement(sibling)) {
+      emptyNodesSeen++;
+      sibling = sibling.nextElementSibling as HTMLElement | null;
+    }
+
+    if (
+      sibling &&
+      ['P', 'DIV'].includes(sibling.tagName) &&
+      !sibling.querySelector('img, audio, video, iframe') &&
+      normalizeCaptionText(sibling.textContent ?? '') === captionText
+    ) {
+      sibling.remove();
+    }
+  });
+}
+
+function isEmptyElement(element: HTMLElement): boolean {
+  return !normalizeCaptionText(element.textContent ?? '') &&
+    !element.querySelector('img, audio, video, iframe, hr');
+}
+
+function normalizeCaptionText(value: string): string {
+  return value.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function replaceStandaloneCaptionWithContent(caption: HTMLElement): void {

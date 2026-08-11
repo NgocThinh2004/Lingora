@@ -72,6 +72,13 @@ describe('AdminCategoriesService', () => {
     expect(result.data).toHaveLength(1);
     expect(result.data[0]).toMatchObject({ slug: 'backend', postCount: 3, isActive: true });
     expect(result.meta.total).toBe(1);
+    expect(postModel.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: {
+        category_id: { [Op.in]: [1, 2] },
+        deleted_at: null,
+        status: 'published',
+      },
+    }));
   });
 
   it('creates the category and every active-language translation in one transaction', async () => {
@@ -150,6 +157,20 @@ describe('AdminCategoriesService', () => {
 
     expect(result.data[0]).toMatchObject({ title: 'Công nghệ', authorName: 'An' });
     expect(result.meta).toEqual({ total: 1, shown: 1 });
+    expect(postModel.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        category_id: 7,
+        deleted_at: null,
+        status: 'published',
+      }),
+    }));
+    expect(postModel.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        category_id: 7,
+        deleted_at: null,
+        status: 'published',
+      }),
+    });
     expect(postTranslationModel.findAll).toHaveBeenCalledWith({
       where: {
         language_id: 2,

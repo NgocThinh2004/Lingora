@@ -134,6 +134,7 @@ export class AdminCategoriesService {
     const where = {
       category_id: categoryId,
       deleted_at: null,
+      status: 'published',
       id: { [Op.in]: translatedPostIds },
     };
     const [posts, total] = await Promise.all([
@@ -361,7 +362,7 @@ export class AdminCategoriesService {
       this.languageModel.findAll(),
       this.postModel.findAll({
         attributes: ['category_id', [fn('COUNT', '*'), 'count']],
-        where: { category_id: { [Op.in]: ids }, deleted_at: null },
+        where: { category_id: { [Op.in]: ids }, deleted_at: null, status: 'published' },
         group: ['category_id'],
         raw: true,
       }) as unknown as Promise<Array<{ category_id: number; count: string | number }>>,
