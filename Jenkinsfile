@@ -2,28 +2,25 @@ pipeline {
     agent any
 
     environment {
-        // Đường dẫn thư mục chứa code trên VPS
-        APP_DIR = '/home/hung/Lingora'
+        // File .env chứa mật khẩu được giữ an toàn ở thư mục cũ
+        ENV_FILE = '/home/hung/Lingora/.env'
     }
 
     stages {
-        stage('Pull Code') {
+        stage('Prepare') {
             steps {
-                echo '>>> [1/3] Kéo code mới nhất từ Github về...'
-                sh """
-                    cd ${APP_DIR}
-                    git fetch
-                    git checkout develop
-                    git pull origin develop
-                """
+                echo '>>> [1/3] Chuẩn bị môi trường...'
+                // Copy file .env vào workspace của Jenkins để docker compose đọc được
+                sh "cp ${ENV_FILE} ${WORKSPACE}/.env"
             }
         }
 
         stage('Build & Deploy Docker') {
             steps {
                 echo '>>> [2/3] Tắt hệ thống cũ và build lại image mới...'
+                // Dùng thẳng WORKSPACE (Jenkins tự clone code vào đây rồi)
                 sh """
-                    cd ${APP_DIR}
+                    cd ${WORKSPACE}
                     docker compose down
                     docker compose up --build -d
                 """
@@ -33,9 +30,8 @@ pipeline {
         stage('Verify') {
             steps {
                 echo '>>> [3/3] Kiểm tra hệ thống đã sống chưa...'
-                // Chờ 30 giây để hệ thống khởi động xong rồi mới kiểm tra
                 sh 'sleep 30'
-                sh 'docker compose -f ${APP_DIR}/docker-compose.yml ps'
+                sh "docker compose -f ${WORKSPACE}/docker-compose.yml ps"
                 echo '>>> DEPLOY THÀNH CÔNG! Web đã được cập nhật.'
             }
         }
