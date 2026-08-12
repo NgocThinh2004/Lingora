@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // File .env chứa mật khẩu được giữ an toàn ở thư mục cũ
-        ENV_FILE = '/home/hung/Lingora/.env'
+        ENV_FILE = '/var/lib/jenkins/.env'
     }
 
     stages {
