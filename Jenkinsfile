@@ -21,8 +21,8 @@ pipeline {
                 // Dùng thẳng WORKSPACE (Jenkins tự clone code vào đây rồi)
                 sh """
                     cd ${WORKSPACE}
-                    docker compose down
-                    docker compose up --build -d
+                    docker compose --project-name lingora down
+                    docker compose --project-name lingora up --build -d
                 """
             }
         }
@@ -31,7 +31,7 @@ pipeline {
             steps {
                 echo '>>> [3/3] Kiểm tra hệ thống đã sống chưa...'
                 sh 'sleep 30'
-                sh "docker compose -f ${WORKSPACE}/docker-compose.yml ps"
+                sh "docker compose --project-name lingora -f ${WORKSPACE}/docker-compose.yml ps"
                 echo '>>> DEPLOY THÀNH CÔNG! Web đã được cập nhật.'
             }
         }
