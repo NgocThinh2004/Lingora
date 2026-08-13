@@ -29,23 +29,11 @@
   transform: translateY(-1px);
 }
 
-/* Following state: outlined pill */
-.btn-subscribe.subscribed {
-  background: transparent !important;
-  color: var(--text-main) !important;
-  border: 1.5px solid var(--border-color, #ced4da) !important;
-  box-shadow: none !important;
-}
-
-[data-bs-theme="dark"] .btn-subscribe.subscribed {
-  border-color: #495057 !important;
-}
-
 /* Hover on subscribed → red unfollow hint */
 .btn-subscribe.subscribed:hover:not(:disabled) {
-  background: rgba(220, 38, 38, 0.08) !important;
+  background: #dc2626 !important;
   border-color: #dc2626 !important;
-  color: #dc2626 !important;
+  color: #fff !important;
   transform: none;
 }
 
