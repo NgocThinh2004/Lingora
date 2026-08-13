@@ -14,6 +14,12 @@ export class PublicUsersService {
 
   async getRecommended(userId?: string | number, q?: string, limit?: number, page?: number) {
     const whereClause: any = { status: 'active', deleted_at: null };
+    
+    // Loại trừ chính người dùng hiện tại khỏi danh sách
+    if (userId) {
+      whereClause.id = { [Op.ne]: userId };
+    }
+
     if (q && q.trim()) {
       const rawQ = q.trim();
       const qWithoutAt = rawQ.startsWith('@') ? rawQ.substring(1) : rawQ;

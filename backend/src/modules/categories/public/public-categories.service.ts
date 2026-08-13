@@ -107,7 +107,7 @@ export class PublicCategoriesService {
             slug: t.slug,
           })),
       }))
-      .filter(category => !requestedLanguage || category.translations.length > 0);
+      .filter(category => (!requestedLanguage || category.translations.length > 0) && category.postCount > 0);
   }
 
   async findBySlug(slug: string, lang?: string) {
