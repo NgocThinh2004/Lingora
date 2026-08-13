@@ -21,8 +21,8 @@ pipeline {
                 // Dùng thẳng WORKSPACE (Jenkins tự clone code vào đây rồi)
                 sh """
                     cd ${WORKSPACE}
-                    docker compose --project-name lingora down
-                    docker compose --project-name lingora up --build -d
+                    docker compose --project-name lingora build
+                    docker compose --project-name lingora up -d
                 """
             }
         }
