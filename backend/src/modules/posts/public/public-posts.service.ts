@@ -579,9 +579,8 @@ export class PublicPostsService {
           category: String(post.category_id),
           limit: 4,
           lang,
-          ...(isAuthor ? { authorId: Number(post.author_id) } : {}),
         }
-      : { limit: 4, lang, ...(isAuthor ? { authorId: Number(post.author_id) } : {}) };
+      : { limit: 4, lang };
 
     const feed = await this.listFeed(query, undefined, userId);
     // 2. Lọc bỏ bài viết đang xem hiện tại và chỉ lấy tối đa 3 bài
