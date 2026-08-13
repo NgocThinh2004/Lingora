@@ -27,6 +27,7 @@ import { Language } from '../../languages/models/language.model';
 import { removeAccents } from '../../../utils/string.util';
 import { PostLike } from '../../likes/models/post-like.model';
 import { PublicPostsQueryDto } from './dto/public-posts.dto';
+import { extractPostExcerpt } from './post-excerpt.util';
 
 @Injectable()
 export class PublicPostsService {
@@ -315,13 +316,8 @@ export class PublicPostsService {
           // posts.original_language_id → tra trong languageMap để biết ngôn ngữ gốc
           const origLangCode = languageMap.get(post.original_language_id) || 'en';
 
-          // Trích xuất đoạn trích ngắn (excerpt) từ nội dung HTML
-          let excerpt = '';
-          if (t.content) { // post_translations.content → parse HTML lấy excerpt, tìm coverImageUrl
-            // Xóa hết thẻ HTML, xóa khoảng trắng thừa, cắt lấy 200 ký tự đầu.
-            const stripped = t.content.replace(/<[^>]*>?/gm, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-            excerpt = stripped.length > 200 ? stripped.substring(0, 200) + '...' : stripped;
-          }
+          // Giữ ranh giới đoạn văn nhưng loại caption media khỏi phần xem trước.
+          const excerpt = extractPostExcerpt(t.content || '');
 
           return {
             id: Number(t.id),
