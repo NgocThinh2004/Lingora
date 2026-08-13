@@ -119,15 +119,16 @@ export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
   onLanguageChange(): void {
     if (this.authorPreview()) return;
     const currentPost = this.post();
-    if (!currentPost) return;
-
     const language = this.localeService.current();
-    if (!currentPost.availableLanguages?.includes(language)) {
+    if (currentPost && !currentPost.availableLanguages?.includes(language)) {
       this.toast.showError(this.localeService.translate('post_translation_unavailable'));
       void this.router.navigate(['/home']);
       return;
     }
 
+    // The locale bundle can finish loading while the initial post request is
+    // still in flight. Emit even when `post()` is not populated yet so switchMap
+    // cancels the request made with the stale locale and reloads the requested one.
     this.languageChangeReload = true;
     this.cleanupVideoObservers();
     this.cleanupScrollTracker();

@@ -28,7 +28,11 @@ export class LocaleService {
 
   readonly bundles = signal<Record<string, UiLocaleBundle>>({});
   readonly options = signal<readonly LocaleOption[]>(FALLBACK_OPTIONS);
-  readonly selectedLocale = signal('en');
+  // Expose the persisted choice immediately. Routed components can issue API
+  // requests before the asynchronous language catalog/static bundle finishes
+  // loading; starting at a hard-coded `en` made those first requests fetch the
+  // English post after F5 even though the interface later switched to Vietnamese.
+  readonly selectedLocale = signal(this.requestedLocaleCode ?? 'en');
   readonly current = this.selectedLocale.asReadonly();
 
   constructor() {
