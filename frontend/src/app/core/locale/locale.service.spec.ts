@@ -69,6 +69,10 @@ describe('LocaleService', () => {
     service = TestBed.inject(LocaleService);
     httpTesting = TestBed.inject(HttpTestingController);
 
+    // Content APIs may run before the catalog and static bundle responses arrive.
+    // They must already see the persisted locale instead of briefly using English.
+    expect(service.selectedLocale()).toBe('ja');
+
     service.load();
     httpTesting.expectOne(`${environment.apiUrl}/languages`).flush({
       data: [
