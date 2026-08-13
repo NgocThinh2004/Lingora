@@ -3,6 +3,8 @@ services:
     image: mysql:8.0
     container_name: lingora-mysql
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:3306:3306"
     environment:
       MYSQL_DATABASE: ${DB_NAME:?DB_NAME must be set in .env}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set in .env}
