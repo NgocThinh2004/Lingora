@@ -17,7 +17,7 @@ Lingora là nền tảng blog đa ngôn ngữ dành cho độc giả, tác giả
 | Backend | NestJS 11, TypeScript, REST API |
 | Database | MySQL 8+, Sequelize, `sequelize-typescript` |
 | Cache | Redis (chống ghi nhận trùng lượt view) |
-| Media storage | Cloudflare R2 (ảnh, audio và video tải lên) |
+| Lưu trữ media | Cloudflare R2 (ảnh, audio và video tải lên) |
 | Xác thực | JWT access token, refresh token, phân quyền theo vai trò |
 | Kiểm thử | Jasmine/Karma, Jest/Supertest |
 
@@ -27,15 +27,17 @@ Lingora là nền tảng blog đa ngôn ngữ dành cho độc giả, tác giả
 Lingora/
 ├─ frontend/        # Ứng dụng Angular
 ├─ backend/         # REST API NestJS, migration và seeder
-├─ prototype/       # Giao diện HTML tham khảo
 ├─ docs/            # Tài liệu kỹ thuật
+├─ docker-compose.yml
+├─ .env.example     # Mẫu cấu hình cho Docker production
 └─ README.md
 ```
 
-Tài liệu chi tiết:
+## Tài liệu
 
 - [Tài liệu API](docs/API.md)
 - [Thiết kế kiến trúc](docs/ARCHITECTURE.md)
+- [Triển khai bằng Docker](docs/DOCKER_DEPLOYMENT.md)
 - [Sơ đồ cơ sở dữ liệu](backend/database-schema.dbml)
 
 ## Yêu cầu môi trường
@@ -45,9 +47,9 @@ Tài liệu chi tiết:
 - Redis 7 trở lên.
 - Chrome hoặc Chromium nếu chạy frontend unit test.
 
-## Cài đặt
+## Cài đặt môi trường phát triển
 
-Clone dự án và cài thư viện cho hai ứng dụng:
+Sao chép repository và cài đặt dependency cho hai ứng dụng:
 
 ```bash
 git clone <repository-url>
@@ -91,13 +93,9 @@ npm run db:migrate
 npm run db:seed
 ```
 
-Không commit `.env`, mật khẩu, JWT secret hoặc API key lên Git.
+Không commit `.env`, mật khẩu, JWT secret hoặc API key lên Git. `backend/.env` được sử dụng khi chạy NestJS trực tiếp trong môi trường phát triển; Docker Compose đọc `.env` tại thư mục gốc repository. Quy trình cấu hình production được trình bày trong [hướng dẫn triển khai](docs/DOCKER_DEPLOYMENT.md).
 
-Media vừa tải lên được lưu ở trạng thái `temporary`. Khi avatar được cập nhật hoặc bài viết
-được lưu, media chuyển sang `attached`; media tạm không được sử dụng sẽ tự bị xóa khỏi R2
-sau thời hạn `TEMP_MEDIA_TTL_HOURS` (mặc định 24 giờ).
-
-## Chạy dự án
+## Khởi chạy môi trường phát triển
 
 Chạy backend:
 
@@ -116,6 +114,10 @@ npm start
 ```
 
 Ứng dụng web mặc định có địa chỉ `http://localhost:4200`.
+
+## Lưu trữ media
+
+Media tải lên được lưu trên Cloudflare R2 và được ghi nhận ở trạng thái `temporary`. Khi avatar hoặc bài viết được lưu, media liên quan chuyển sang trạng thái `attached`. Worker dọn dẹp xóa media tạm không được sử dụng sau thời hạn `TEMP_MEDIA_TTL_HOURS`, mặc định là 24 giờ.
 
 ## Kiểm tra chất lượng
 

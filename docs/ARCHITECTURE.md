@@ -13,7 +13,7 @@ Lingora được thiết kế như một ứng dụng web đa ngôn ngữ có ba
 
 ## 2. Tổng quan hệ thống
 
-Lingora hiện là một modular monolith gồm Angular SPA và NestJS REST API. Backend kết nối MySQL, lưu file upload trên filesystem và gọi các dịch vụ ngoài cho email và dịch nội dung.
+Lingora sử dụng kiến trúc modular monolith gồm Angular SPA và NestJS REST API. Backend kết nối MySQL, sử dụng Redis cho cache và chống ghi nhận lượt xem trùng, lưu media trên Cloudflare R2, đồng thời tích hợp SMTP và các nhà cung cấp dịch nội dung.
 
 ```mermaid
 flowchart LR
@@ -21,10 +21,11 @@ flowchart LR
     SPA -->|"HTTPS / REST + JWT"| API["NestJS API"]
     SPA -->|"Tải gói locale JSON"| LOCALE["Frontend static assets"]
     API --> DB[("MySQL")]
-    API --> FILES["Upload filesystem"]
+    API --> REDIS[("Redis")]
+    API --> R2["Cloudflare R2"]
     API --> SMTP["SMTP server"]
     API --> TP["Translation providers"]
-    API -->|"/uploads/*"| SPA
+    R2 -->|"Public media URL"| SPA
 ```
 
 Trong môi trường phát triển, frontend chạy ở cổng `4200`, backend ở cổng `3000` và API có tiền tố `/api/v1`. Trong production, frontend sử dụng URL tương đối `/api/v1`, phù hợp với mô hình reverse proxy phục vụ web và API trên cùng domain.
@@ -111,7 +112,7 @@ sequenceDiagram
     S->>DB: Query hoặc transaction
     DB-->>S: Model/data
     S-->>CT: Kết quả nghiệp vụ
-    CT-->>C: ResponseInterceptor bọc { data, meta? }
+    CT-->>C: ResponseInterceptor bọc { success, data, meta?, status, message }
 ```
 
 Nếu phát sinh exception, `GlobalExceptionFilter` chuyển lỗi về một error envelope thống nhất. Lỗi validation, xác thực, quyền, không tìm thấy và xung đột nghiệp vụ vì vậy có cùng cấu trúc ở frontend.
@@ -137,6 +138,8 @@ erDiagram
     COMMENTS ||--o{ COMMENT_LIKES : receives
     USERS ||--o{ SUBSCRIPTIONS : participates
     USERS ||--o{ REFRESH_TOKENS : owns
+    USERS ||--o{ MEDIA_ASSETS : owns
+    POSTS ||--o{ MEDIA_ASSETS : attaches
 ```
 
 Các ràng buộc quan trọng của mô hình:
@@ -146,6 +149,7 @@ Các ràng buộc quan trọng của mô hình:
 - Bình luận hỗ trợ cây trả lời qua `parent_id` và lưu ngôn ngữ gốc để dịch khi cần.
 - Lượt thích bài, lượt thích bình luận và subscription là các bảng nối có ràng buộc duy nhất để tránh tương tác trùng.
 - Refresh token được lưu riêng theo người dùng để có thể thu hồi một phiên hoặc toàn bộ phiên.
+- `media_assets` theo dõi object R2 theo chủ sở hữu, mục đích, bài viết và trạng thái `temporary`/`attached`/`deleted`.
 - Bài viết và một số nội dung dùng soft delete; truy vấn công khai phải loại các bản ghi đã xóa.
 
 ## 7. Xác thực và bảo mật
@@ -188,11 +192,11 @@ Gói locale là static asset của frontend; backend không tạo hoặc tự d�
 
 ### Danh mục
 
-Danh mục có bảng dịch riêng. Quản trị viên nhập tên và slug theo từng ngôn ngữ; hệ thống không gửi danh mục tới translation provider. Cách này giữ taxonomy ổn định và cho phép biên tập tên phù hợp với từng thị trường.
+Danh mục có bảng dịch riêng. Quản trị viên gửi đúng một bản nguồn; backend dịch tên sang các ngôn ngữ đang hoạt động bằng chuỗi provider và sinh slug tương ứng trong transaction. Khi cập nhật, ngôn ngữ được gửi là nguồn mới và các bản dịch còn lại được đồng bộ lại. Danh mục hệ thống `uncategorized` được migration đảm bảo tồn tại và không thể xóa như danh mục thường.
 
 ### Bài viết và bình luận
 
-Nội dung gốc và bản dịch được lưu riêng. Bài viết có danh sách ngôn ngữ đích và trạng thái dịch độc lập; bình luận có thể được dịch theo yêu cầu. Translation provider chỉ xử lý nội dung nghiệp vụ, không xử lý chuỗi giao diện hoặc danh mục.
+Nội dung gốc và bản dịch được lưu riêng. Bài viết có danh sách ngôn ngữ đích và trạng thái dịch độc lập; bình luận có thể được dịch theo yêu cầu. Translation provider xử lý nội dung bài viết, bình luận và bản dịch danh mục; không xử lý gói locale giao diện tĩnh.
 
 ## 9. Worker dịch nội dung
 
@@ -220,7 +224,7 @@ Luồng xử lý:
 
 Các adapter hiện hỗ trợ DeepL, Azure Translator, Google Cloud Translation, Google Free và LibreTranslate tùy theo biến môi trường. Timeout provider được giới hạn bởi `TRANSLATION_PROVIDER_TIMEOUT_MS`.
 
-Worker hiện chạy trong cùng tiến trình API và cache hiện là cache trong bộ nhớ. Mô hình này phù hợp triển khai một instance. Nếu scale ngang nhiều instance, cần chuyển claim job sang cơ chế khóa phân tán hoặc queue chuyên dụng, đồng thời cân nhắc shared cache và object storage.
+Worker hiện chạy trong cùng tiến trình API. Cache dùng Redis dùng chung, nhưng việc claim translation job vẫn cần được xem xét kỹ trước khi scale ngang nhiều backend instance; khi đó nên dùng cơ chế khóa phân tán hoặc queue chuyên dụng. Media đã nằm trên object storage R2 nên không phụ thuộc filesystem của container.
 
 ## 10. Vòng đời bài viết
 
@@ -239,17 +243,17 @@ stateDiagram-v2
     archived --> draft: restore
 ```
 
-Luồng kiểm duyệt hiện tại đưa bài được chấp thuận trực tiếp từ `pending_review` sang `published`; `approved` vẫn được mô hình hỗ trợ như một trạng thái công khai trung gian. Tác giả được chỉnh sửa bài ở trạng thái `draft`, `pending_review` và `rejected`. Chỉ nội dung công khai và chưa bị xóa mềm xuất hiện trong feed/search. Kiểm duyệt bản dịch có thể sử dụng ngôn ngữ được chọn độc lập với nội dung gốc.
+Luồng kiểm duyệt hiện tại đưa bài được chấp thuận trực tiếp từ `pending_review` sang `published`; `approved` vẫn tồn tại để tương thích dữ liệu cũ. Tác giả được chỉnh sửa bài ở trạng thái `draft`, `pending_review` và `rejected`. Feed/search hiện chấp nhận nội dung công khai `approved` hoặc `published`, còn thống kê dashboard quản trị và số bài trong trang quản trị danh mục chỉ tính `published` chưa bị xóa mềm. Kiểm duyệt bản dịch có thể sử dụng ngôn ngữ được chọn độc lập với nội dung gốc.
 
 ## 11. Upload và lưu trữ
 
-Upload đi vào bộ nhớ qua Multer để service kiểm tra loại file và kích thước trước khi ghi xuống `backend/storage/uploads`. Backend phục vụ thư mục này dưới `/uploads/`.
+Upload đi vào bộ nhớ qua Multer để service kiểm tra MIME, chữ ký nội dung và kích thước rồi ghi object vào Cloudflare R2. Object key có dạng `media/{ownerId}/{uuid}.{ext}` và URL công khai được tạo từ `R2_PUBLIC_BASE_URL`.
 
-Giới hạn hiện tại là 5 MB cho ảnh, 25 MB cho audio và 100 MB cho video. File runtime không được commit vào Git. Khi triển khai nhiều instance hoặc môi trường container không có volume bền vững, nên thay filesystem cục bộ bằng object storage và CDN.
+Giới hạn hiện tại là 5 MiB cho ảnh, 25 MiB cho audio và 95 MiB cho video. Bản ghi `media_assets` quản lý ownership và vòng đời: upload mới là `temporary`, media có trong avatar/bài đã lưu chuyển sang `attached`, media bị bỏ khỏi nội dung trở lại tạm và được xóa ngay hoặc qua cleanup theo TTL. R2 nằm ngoài vòng đời container và Docker volume.
 
 ## 12. Cấu hình và triển khai
 
-Các nhóm cấu hình chính trong `backend/.env`:
+Khi chạy local, backend đọc `backend/.env`; khi chạy Docker Compose, toàn bộ service đọc `.env` ở gốc repository:
 
 | Nhóm | Biến tiêu biểu |
 |---|---|
@@ -257,10 +261,11 @@ Các nhóm cấu hình chính trong `backend/.env`:
 | Database | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` |
 | JWT | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, TTL token |
 | Email | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` |
-| Upload | `UPLOAD_DIR`, `MAX_UPLOAD_MB` |
+| Redis | `REDIS_HOST`, `REDIS_PORT` |
+| Media R2 | `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`, `TEMP_MEDIA_*` |
 | Translation | Provider order, worker interval, timeout và API key của từng provider |
 
-Một topology production tối thiểu gồm reverse proxy, static Angular build, một NestJS process, MySQL và volume bền vững cho uploads. TLS nên kết thúc tại reverse proxy; `/api/v1` chuyển tới backend và `/uploads` được backend hoặc storage layer phục vụ.
+Hồ sơ production sử dụng Docker Compose cho MySQL, Redis, migration, backend và frontend Nginx. Chỉ frontend bind vào `127.0.0.1:8080`; Nginx container phục vụ Angular và proxy `/api/` sang backend. Dịch vụ `cloudflared` trên Ubuntu ánh xạ `https://lingoraapp.id.vn` tới địa chỉ loopback này. MySQL, Redis, backend và cổng 8080 vì vậy không được công khai trực tiếp. Xem [hướng dẫn triển khai Docker](DOCKER_DEPLOYMENT.md).
 
 ## 13. Kiểm thử và khả năng bảo trì
 
@@ -269,4 +274,4 @@ Một topology production tối thiểu gồm reverse proxy, static Angular buil
 - Service nghiệp vụ được kiểm thử với dependency giả lập; guard, interceptor và các use case quan trọng có spec riêng.
 - TypeScript strictness và DTO validation tạo ranh giới kiểu dữ liệu ở cả client lẫn server.
 
-Khi thêm một miền mới, nên tạo module riêng, giữ controller mỏng, đặt quy tắc trong service, khai báo DTO cho mọi input và bổ sung migration nếu schema thay đổi. Nếu thêm endpoint, cập nhật đồng thời [tài liệu API](API.md).
+Mỗi miền nghiệp vụ mới phải được tổ chức thành module riêng, giữ controller mỏng, đặt quy tắc nghiệp vụ trong service, khai báo DTO cho toàn bộ input và bổ sung migration khi schema thay đổi. Mọi thay đổi endpoint phải được cập nhật đồng thời trong [tài liệu API](API.md).
