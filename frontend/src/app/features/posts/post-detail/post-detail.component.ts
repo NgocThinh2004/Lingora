@@ -407,16 +407,15 @@ export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
         }
       },
       error: () => {
-        if (this.languageChangeReload) {
-          this.languageChangeReload = false;
-          this.toast.showError(this.localeService.translate('post_translation_unavailable'));
-          void this.router.navigate(['/home']);
+        if (this.authorPreview()) {
+          this.error.set(this.localeService.translate('article_unavailable'));
+          this.loading.set(false);
           return;
         }
-        this.error.set(this.localeService.translate(
-          this.authorPreview() ? 'article_unavailable' : 'post_details_load_failed'
-        ));
-        this.loading.set(false);
+
+        this.languageChangeReload = false;
+        this.toast.showError(this.localeService.translate('post_translation_unavailable'));
+        void this.router.navigate(['/home']);
       }
     });
   }
