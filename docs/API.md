@@ -1,6 +1,6 @@
 # Tài liệu API Lingora
 
-Tài liệu này mô tả REST API đang được triển khai trong `backend/src`. Danh sách endpoint được đối chiếu từ các NestJS controller và DTO tại thời điểm cập nhật tài liệu.
+Tài liệu này là đặc tả tham chiếu cho REST API được triển khai trong `backend/src`. Endpoint, quyền truy cập và cấu trúc dữ liệu được đối chiếu từ NestJS controller, DTO, interceptor và exception filter của repository.
 
 ## 1. Quy ước chung
 
@@ -10,7 +10,7 @@ Tài liệu này mô tả REST API đang được triển khai trong `backend/sr
 http://localhost:3000/api/v1
 ```
 
-Tiền tố `/api/v1` được cấu hình bằng biến `API_PREFIX`. File upload được phục vụ trực tiếp qua `/uploads/{fileName}`, không nằm dưới tiền tố API.
+Tiền tố `/api/v1` được cấu hình bằng biến `API_PREFIX`. Media được lưu trên Cloudflare R2 và API upload trả về URL công khai tuyệt đối theo `R2_PUBLIC_BASE_URL`; backend không phục vụ thư mục `/uploads` cục bộ.
 
 ### Xác thực và phân quyền
 
@@ -33,14 +33,17 @@ Access token hết hạn có thể được cấp lại bằng `POST /auth/refre
 
 ### Định dạng phản hồi
 
-Phản hồi thành công sử dụng trường `data` và có thể có `meta`:
+Phản hồi thành công luôn có envelope chuẩn:
 
 ```json
 {
+  "success": true,
   "data": {
     "id": "123",
     "title": "Example"
-  }
+  },
+  "status": 200,
+  "message": "ok"
 }
 ```
 
@@ -48,6 +51,7 @@ Danh sách phân trang có metadata do từng module cung cấp. Dạng thườn
 
 ```json
 {
+  "success": true,
   "data": [],
   "meta": {
     "pagination": {
@@ -56,39 +60,29 @@ Danh sách phân trang có metadata do từng module cung cấp. Dạng thườn
       "total": 0,
       "totalPages": 0
     }
-  }
+  },
+  "status": 200,
+  "message": "ok"
 }
 ```
 
-Một số feed trả `items` và metadata bên trong `data`:
-
-```json
-{
-  "data": {
-    "items": [],
-    "meta": {}
-  }
-}
-```
+Khi controller trả `{ items, meta }` hoặc `{ data, meta }`, interceptor đưa mảng vào `data` và giữ `meta` ở cấp trên như ví dụ trên.
 
 Phản hồi lỗi có cấu trúc:
 
 ```json
 {
+  "success": false,
   "data": null,
-  "meta": {
-    "error": {
-      "statusCode": 400,
-      "message": "Validation failed",
-      "details": []
-    }
-  }
+  "status": 400,
+  "message": "Validation failed",
+  "details": []
 }
 ```
 
 Backend loại bỏ các thuộc tính không khai báo trong DTO, chuyển đổi kiểu dữ liệu phù hợp và áp dụng giới hạn mặc định 60 request/phút.
 
-## 2. Xác thực và hồ sơ hiện tại
+## 2. Xác thực và tài khoản
 
 | Method | Endpoint | Truy cập | Body/query | Mục đích |
 |---|---|---|---|---|
@@ -103,7 +97,7 @@ Backend loại bỏ các thuộc tính không khai báo trong DTO, chuyển đ�
 | `GET` | `/auth/me` | JWT | Không có | Lấy hồ sơ và thông tin phiên hiện tại |
 | `PATCH` | `/auth/me` | JWT | `UpdateProfileDto` | Cập nhật hồ sơ cá nhân |
 
-Các body chính:
+Các schema request tiêu biểu:
 
 ```ts
 type RegisterDto = {
@@ -132,7 +126,7 @@ type UpdateProfileDto = {
   displayName?: string;
   username?: string;      // 3-30 chữ, số hoặc dấu gạch dưới
   bio?: string;
-  avatarUrl?: string;     // đường dẫn /uploads/...
+  avatarUrl?: string;     // URL R2 công khai
   accentColor?: string;   // màu hex 6 chữ số
   backgroundColor?: string;
 };
@@ -149,12 +143,12 @@ type UpdateProfileDto = {
 | `GET` | `/users/:id/following` | Công khai | Không có | Tài khoản được người dùng theo dõi |
 | `GET` | `/users/:id` | JWT tùy chọn | Không có | Hồ sơ công khai; có trạng thái theo dõi nếu đã đăng nhập |
 
-### Subscription của người dùng hiện tại
+### Quan hệ theo dõi của tài khoản xác thực
 
 | Method | Endpoint | Truy cập | Query | Mục đích |
 |---|---|---|---|---|
-| `GET` | `/subscriptions/followers` | JWT | Không có | Danh sách người theo dõi mình |
-| `GET` | `/subscriptions/following` | JWT | `q`, `page`, `limit` | Danh sách mình đang theo dõi |
+| `GET` | `/subscriptions/followers` | JWT | Không có | Danh sách người theo dõi tài khoản hiện tại |
+| `GET` | `/subscriptions/following` | JWT | `q`, `page`, `limit` | Danh sách tài khoản hiện tại đang theo dõi |
 | `GET` | `/subscriptions/feed` | JWT | `author`, `lang`, `page`, `limit` | Feed từ các tác giả đang theo dõi |
 | `POST` | `/subscriptions/:authorId` | JWT | Không có | Theo dõi tác giả |
 | `DELETE` | `/subscriptions/:authorId` | JWT | Không có | Bỏ theo dõi tác giả |
@@ -214,8 +208,8 @@ Mỗi ngôn ngữ trả về ở trang quản trị có thể chứa `translatio
 | `GET` | `/admin/categories` | Admin | Bộ lọc bên dưới | Danh sách quản trị |
 | `GET` | `/admin/categories/:id` | Admin | Không có | Chi tiết danh mục |
 | `GET` | `/admin/categories/:id/posts` | Admin | `language` | Bài viết thuộc danh mục |
-| `POST` | `/admin/categories` | Admin | `CreateAdminCategoryDto` | Tạo danh mục và các bản dịch |
-| `PATCH` | `/admin/categories/:id` | Admin | `UpdateAdminCategoryDto` | Cập nhật danh mục |
+| `POST` | `/admin/categories` | Admin | `CreateAdminCategoryDto` | Tạo danh mục từ một ngôn ngữ nguồn và tự dịch sang các ngôn ngữ active |
+| `PATCH` | `/admin/categories/:id` | Admin | `UpdateAdminCategoryDto` | Cập nhật từ một ngôn ngữ nguồn và đồng bộ bản dịch |
 | `DELETE` | `/admin/categories/:id` | Admin | Không có | Xóa danh mục; thành công trả `204` |
 
 Bộ lọc quản trị gồm:
@@ -236,15 +230,17 @@ type CategoryTranslationInput = {
 type CreateAdminCategoryDto = {
   slug?: string;
   isActive?: boolean;
-  translations: CategoryTranslationInput[];
+  translations: [CategoryTranslationInput]; // đúng một bản nguồn
 };
 
 type UpdateAdminCategoryDto = {
   slug?: string;
   isActive?: boolean;
-  translations?: CategoryTranslationInput[];
+  translations?: [CategoryTranslationInput]; // đúng một bản nguồn nếu có
 };
 ```
+
+Các bản dịch còn lại được backend tạo qua chuỗi provider đã cấu hình. Số bài trong danh sách quản trị và endpoint `/admin/categories/:id/posts` chỉ tính/trả bài `published` chưa bị xóa mềm.
 
 ## 6. Bài viết
 
@@ -256,21 +252,25 @@ type UpdateAdminCategoryDto = {
 | `GET` | `/posts` | JWT tùy chọn | `lang`, `category`, `q`, `sort`, `authorId`, `page`, `limit` | Feed bài viết công khai |
 | `GET` | `/posts/:id/related` | JWT tùy chọn | `lang` | Bài viết liên quan |
 | `GET` | `/posts/:id` | JWT tùy chọn | `lang` | Chi tiết bài viết và trạng thái tương tác |
+| `POST` | `/posts/:id/view` | JWT tùy chọn | Không có | Ghi nhận lượt xem sau khi frontend xác định người đọc đã ở trang ít nhất 3 giây và đi qua mốc 50% nội dung; Redis chống tính trùng trong 24 giờ |
 
 ### Không gian tác giả
 
 | Method | Endpoint | Truy cập | Body/query | Mục đích |
 |---|---|---|---|---|
 | `POST` | `/author/posts` | JWT | `CreateAuthorPostDto` | Tạo bài nháp |
+| `POST` | `/author/posts/autosave` | JWT | `AutosaveAuthorPostDto` | Tự lưu một bài mới chưa có ID |
 | `GET` | `/author/posts` | JWT | Bộ lọc bên dưới | Danh sách bài của tác giả |
 | `GET` | `/author/posts/options/filters` | JWT | Không có | Tùy chọn cho bộ lọc workspace |
 | `GET` | `/author/posts/:id` | JWT | `trash=true` nếu cần | Lấy bài để chỉnh sửa |
 | `PATCH` | `/author/posts/:id` | JWT | `UpdateAuthorPostDto` | Cập nhật bài |
+| `PATCH` | `/author/posts/:id/autosave` | JWT | `AutosaveAuthorPostDto` | Tự lưu bài đã tồn tại |
 | `POST` | `/author/posts/:id/submit` | JWT | Không có | Gửi bài để duyệt |
 | `POST` | `/author/posts/:id/archive` | JWT | Không có | Lưu trữ bài |
 | `POST` | `/author/posts/:id/restore` | JWT | Không có | Khôi phục bài lưu trữ về nháp |
 | `POST` | `/author/posts/:id/trash` | JWT | Không có | Đưa bài vào thùng rác |
 | `POST` | `/author/posts/:id/restore-trash` | JWT | Không có | Khôi phục bài từ thùng rác |
+| `DELETE` | `/author/posts/:id/draft` | JWT | Không có | Hủy bản nháp/autosave trong phạm vi được phép |
 | `DELETE` | `/author/posts/:id` | JWT | Không có | Xóa vĩnh viễn bài trong phạm vi được phép |
 | `GET` | `/author/posts/:id/preview` | JWT | `trash=true` nếu cần | Xem trước bài của tác giả |
 
@@ -315,7 +315,7 @@ type ReviewAdminPostDto = {
 |---|---|---|---|---|
 | `POST` | `/posts/:postId/comments` | JWT | `CreateCommentDto` | Tạo bình luận hoặc trả lời |
 | `GET` | `/posts/:postId/comments` | JWT tùy chọn | `page`, `limit` | Danh sách bình luận |
-| `PUT` | `/posts/:postId/comments/:commentId` | JWT | `{ content }` | Sửa bình luận của mình |
+| `PUT` | `/posts/:postId/comments/:commentId` | JWT | `{ content }` | Sửa bình luận thuộc tài khoản hiện tại |
 | `DELETE` | `/posts/:postId/comments/:commentId` | JWT | Không có | Xóa bình luận; admin có thể xóa theo quyền |
 | `POST` | `/posts/:postId/comments/:commentId/translate` | Công khai | `{ languageCode }` | Dịch bình luận sang ngôn ngữ đích |
 | `POST` | `/posts/:postId/like` | JWT | Không có | Bật/tắt thích bài viết |
@@ -337,7 +337,7 @@ type CreateCommentDto = {
 
 ## 9. Dịch bài viết
 
-Tất cả endpoint trong nhóm này yêu cầu JWT. Người dùng chỉ truy cập được bài do mình sở hữu, trừ quản trị viên.
+Tất cả endpoint trong nhóm này yêu cầu JWT. Người dùng chỉ có quyền truy cập bài viết do tài khoản đó sở hữu; quản trị viên được áp dụng quyền truy cập riêng theo guard và policy tương ứng.
 
 | Method | Endpoint | Truy cập | Body/path | Mục đích |
 |---|---|---|---|---|
@@ -372,14 +372,17 @@ Trạng thái bản dịch gồm `not_started`, `queued`, `processing`, `complet
 
 ## 10. Upload nội dung
 
-Các endpoint nhận `multipart/form-data`, yêu cầu JWT và chỉ sử dụng file đầu tiên trong request.
+Các endpoint upload file nhận `multipart/form-data`, yêu cầu JWT và chỉ sử dụng file đầu tiên trong request. Hai endpoint import/xóa media nhận JSON như mô tả trong bảng.
 
 | Method | Endpoint | Truy cập | Loại file | Giới hạn |
 |---|---|---|---|---|
-| `POST` | `/uploads/editor-image` | JWT | JPEG, PNG, WebP, GIF | 5 MB |
-| `POST` | `/uploads/editor-audio` | JWT | AAC, MP3/MPEG, MP4 audio, OGG, WAV, WebM | 25 MB |
-| `POST` | `/uploads/editor-video` | JWT | MP4, OGG, QuickTime, WebM | 100 MB |
-| `POST` | `/uploads/editor-media` | JWT | Ảnh, âm thanh hoặc video hợp lệ | Theo giới hạn từng loại, tối đa 100 MB |
+| `POST` | `/uploads/editor-image` | JWT | JPEG, PNG, WebP, GIF | 5 MiB |
+| `POST` | `/uploads/avatar` | JWT | JPEG, PNG, WebP, GIF | 5 MiB |
+| `POST` | `/uploads/editor-audio` | JWT | AAC, MP3/MPEG, MP4 audio, OGG, WAV, WebM | 25 MiB |
+| `POST` | `/uploads/editor-video` | JWT | MP4, OGG, QuickTime, WebM | 95 MiB |
+| `POST` | `/uploads/editor-media` | JWT | Ảnh, âm thanh hoặc video hợp lệ | Theo giới hạn từng loại, tối đa 95 MiB |
+| `POST` | `/uploads/import-external` | JWT | JSON `{ url }` trỏ tới ảnh HTTP(S) | 5 MiB sau khi tải về |
+| `DELETE` | `/uploads/editor-media` | JWT | JSON `{ url }` hoặc object key R2 | Xóa media bài viết còn tạm và thuộc người gọi |
 
 Ví dụ:
 
@@ -389,13 +392,27 @@ curl -X POST http://localhost:3000/api/v1/uploads/editor-image \
   -F "image=@cover.png"
 ```
 
-Phản hồi upload chứa đường dẫn công khai dạng `/uploads/{generated-file-name}`.
+Phản hồi upload nằm trong envelope chuẩn; `data` có dạng:
+
+```json
+{
+  "assetId": "42",
+  "objectKey": "media/7/f0d3....jpg",
+  "url": "https://<r2-public-domain>/media/7/f0d3....jpg",
+  "filename": "f0d3....jpg",
+  "mimeType": "image/jpeg",
+  "mediaType": "image",
+  "size": 62137
+}
+```
+
+Backend kiểm tra MIME lẫn chữ ký nội dung file. Media mới mang trạng thái `temporary`; khi avatar hoặc bài viết được lưu, media được gắn (`attached`). Media tạm quá hạn được worker dọn khỏi R2.
 
 ## 11. Dashboard quản trị
 
 | Method | Endpoint | Truy cập | Query | Mục đích |
 |---|---|---|---|---|
-| `GET` | `/admin/dashboard` | Admin | `lang` | Số liệu tổng quan, hoạt động và xếp hạng cho dashboard |
+| `GET` | `/admin/dashboard` | Admin | `lang` | Số liệu tổng quan; tổng bài và xếp hạng bài chỉ tính bài `published` chưa bị xóa mềm |
 
 ## 12. Mã trạng thái thường gặp
 
@@ -412,7 +429,7 @@ Phản hồi upload chứa đường dẫn công khai dạng `/uploads/{generate
 | `429` | Vượt giới hạn request |
 | `500` | Lỗi máy chủ chưa được xử lý |
 
-## 13. Nguồn cần cập nhật cùng tài liệu
+## 13. Bảo trì tài liệu
 
 Khi API thay đổi, cần đối chiếu các vị trí sau:
 
@@ -420,4 +437,5 @@ Khi API thay đổi, cần đối chiếu các vị trí sau:
 - DTO và validation: `backend/src/modules/**/dto/*.ts`.
 - Response envelope: `backend/src/common/interceptors/response.interceptor.ts`.
 - Error envelope: `backend/src/common/filters/global-exception.filter.ts`.
-- Prefix, CORS, static upload và middleware: `backend/src/main.ts`.
+- Prefix, CORS và middleware: `backend/src/main.ts`.
+- Lưu trữ R2 và vòng đời media: `backend/src/modules/uploads`.
