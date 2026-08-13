@@ -370,6 +370,14 @@ export class PostDetailComponent implements OnDestroy, CanComponentDeactivate {
           this.relatedPosts.set([]);
         } else {
           const { post, related } = result as any;
+
+          const language = this.localeService.selectedLocale();
+          if (!post.availableLanguages?.includes(language)) {
+            this.toast.showError(this.localeService.translate('post_translation_unavailable'));
+            void this.router.navigate(['/home']);
+            return;
+          }
+
           this.post.set(post);
           this.relatedPosts.set(related);
         }
