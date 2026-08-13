@@ -1606,6 +1606,8 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     const container = document.createElement('div');
     container.innerHTML = html;
 
+    this.normalizeCodeBlockPresentation(container);
+
     container
       .querySelectorAll(
         '.editor-media-delete, .editor-media-alignment-bar, [data-remove-media], [data-media-align]',
@@ -1651,33 +1653,32 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       const existingLines = Array.from(pre.querySelectorAll<HTMLElement>('.code-line'));
       const outsideNumberedLines = pre.cloneNode(true) as HTMLElement;
       outsideNumberedLines.querySelectorAll('.code-line').forEach((line) => line.remove());
-      outsideNumberedLines.querySelectorAll('code').forEach((code) => {
-        if (code.textContent?.trim()) {
-          code.replaceWith(...Array.from(code.childNodes));
-        } else {
-          code.remove();
-        }
-      });
 
       const hasContentOutsideNumberedLines = Boolean(outsideNumberedLines.textContent?.trim());
-      if (existingLines.length && !hasContentOutsideNumberedLines) {
-        existingLines.forEach((line, index) => this.normalizePreviewCodeLine(line, index));
-        return;
-      }
-
       const code = pre.querySelector('code');
       const hasCodeContent = Boolean(code?.textContent?.trim());
-      const source = hasContentOutsideNumberedLines
-        ? outsideNumberedLines
-        : hasCodeContent && code
-          ? code
-          : outsideNumberedLines;
-      let sourceHtml = source.innerHTML;
-      sourceHtml = sourceHtml.replace(/<br\s*[/]?>/gi, '\n');
-      sourceHtml = sourceHtml.replace(/<div>/gi, '\n').replace(/<\/div>/gi, '');
-      sourceHtml = sourceHtml.replace(/\r\n/g, '\n');
+      const sourceText = existingLines.length && !hasContentOutsideNumberedLines
+        ? existingLines
+          .map(line => {
+            const content = line.querySelector<HTMLElement>('.line-content');
+            if (content) {
+              return this.extractCodeText(content).replace(/\n$/, '');
+            }
 
-      const lines = sourceHtml.split('\n');
+            const clone = line.cloneNode(true) as HTMLElement;
+            clone.querySelector('.line-number')?.remove();
+            return this.extractCodeText(clone).replace(/\n$/, '');
+          })
+          .join('\n')
+        : this.extractCodeText(
+          hasContentOutsideNumberedLines
+            ? outsideNumberedLines
+            : hasCodeContent && code
+              ? code
+              : outsideNumberedLines,
+        );
+
+      const lines = sourceText.replace(/\r\n?/g, '\n').split('\n');
       while (lines.length > 1 && this.isVisuallyEmptyCodeLine(lines[lines.length - 1])) {
         lines.pop();
       }
@@ -1686,44 +1687,57 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         .map(
           (line, index) =>
             `<span class="code-line"><span class="line-number" aria-hidden="true">${index + 1}</span>` +
-            `<span class="line-content">${line || '&nbsp;'}</span></span>`,
+            `<span class="line-content">${line ? this.escapeHtml(line) : '&nbsp;'}</span></span>`,
         )
         .join('');
     });
   }
 
-  private isVisuallyEmptyCodeLine(line: string): boolean {
-    return line
-      .replace(/<[^>]*>/g, '')
-      .replace(/&nbsp;|&#160;|\u00a0/gi, '')
-      .trim() === '';
+  private extractCodeText(root: HTMLElement): string {
+    let result = '';
+    const blockTags = new Set(['DIV', 'P']);
+    const appendLineBreak = (): void => {
+      if (!result.endsWith('\n')) {
+        result += '\n';
+      }
+    };
+
+    const visit = (node: Node): void => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        result += node.textContent ?? '';
+        return;
+      }
+
+      if (!(node instanceof HTMLElement)) {
+        return;
+      }
+
+      if (node.tagName === 'BR') {
+        // A BR inside an otherwise empty contenteditable DIV represents a real
+        // blank code line, so consecutive line breaks must not be collapsed.
+        result += '\n';
+        return;
+      }
+
+      const isBlock = blockTags.has(node.tagName);
+      if (isBlock && result && !result.endsWith('\n')) {
+        result += '\n';
+      }
+
+      Array.from(node.childNodes).forEach(visit);
+      if (isBlock) {
+        appendLineBreak();
+      }
+    };
+
+    Array.from(root.childNodes).forEach(visit);
+    return result.replace(/\u00a0/g, ' ').replace(/\u200b/g, '');
   }
 
-  private normalizePreviewCodeLine(line: HTMLElement, index: number): void {
-    let lineNumber = Array.from(line.children).find((child) => child.classList.contains('line-number')) as
-      | HTMLElement
-      | undefined;
-    if (!lineNumber) {
-      lineNumber = document.createElement('span');
-      lineNumber.className = 'line-number';
-      line.prepend(lineNumber);
-    }
-
-    lineNumber.textContent = String(index + 1);
-    lineNumber.setAttribute('aria-hidden', 'true');
-
-    if (Array.from(line.children).some((child) => child.classList.contains('line-content'))) {
-      return;
-    }
-
-    const lineContent = document.createElement('span');
-    lineContent.className = 'line-content';
-    Array.from(line.childNodes).forEach((child) => {
-      if (child !== lineNumber) {
-        lineContent.appendChild(child);
-      }
-    });
-    line.appendChild(lineContent);
+  private isVisuallyEmptyCodeLine(line: string): boolean {
+    return line
+      .replace(/\u00a0/g, ' ')
+      .trim() === '';
   }
 
   private escapeAttribute(value: string): string {
@@ -1954,9 +1968,30 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     const editor = this.editorElement();
     if (editor) {
       this.normalizeGeneratedBlockPlaceholders(editor);
+      this.normalizeCodeBlockPresentation(editor);
       this.draft.content = editor.innerHTML;
       this.scheduleAutosave();
     }
+  }
+
+  /**
+   * Text alignment is meaningful for article paragraphs but not for source code.
+   * Browser editing commands and pasted HTML can leave alignment styles on code
+   * descendants; preview line wrappers then inherit them and stretch code tokens.
+   */
+  private normalizeCodeBlockPresentation(root: HTMLElement): void {
+    root
+      .querySelectorAll<HTMLElement>(
+        '.editor-code-block, .editor-code-body, .editor-code-body code, .editor-code-body div, ' +
+        '.editor-code-body span, .code-line, .line-content',
+      )
+      .forEach(node => {
+        node.removeAttribute('align');
+        node.style.removeProperty('text-align');
+        node.style.removeProperty('text-align-last');
+        node.style.removeProperty('direction');
+        node.style.removeProperty('word-spacing');
+      });
   }
 
   private editorElement(): HTMLElement | null {

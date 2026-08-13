@@ -1140,6 +1140,10 @@ app-admin-categories .confirm-dialog .confirm-delete { box-shadow: 0 8px 18px co
   tab-size: 2;
   white-space: pre-wrap;
   position: relative;
+  direction: ltr;
+  text-align: left !important;
+  text-align-last: auto !important;
+  word-spacing: normal;
 }
 
 .editor-code-body code {
@@ -1159,8 +1163,10 @@ app-admin-categories .confirm-dialog .confirm-delete { box-shadow: 0 8px 18px co
 .code-line {
   display: flex;
   align-items: baseline;
+  justify-content: flex-start;
   min-width: max-content;
   position: relative;
+  text-align: left !important;
 }
 
 .code-line::before {
@@ -1181,6 +1187,16 @@ app-admin-categories .confirm-dialog .confirm-delete { box-shadow: 0 8px 18px co
   min-width: 0;
   padding-left: 14px;
   white-space: pre-wrap;
+  text-align: left !important;
+  text-align-last: auto !important;
+  word-spacing: normal;
+}
+
+.editor-code-body :where(code, div, span) {
+  direction: ltr;
+  text-align: left !important;
+  text-align-last: auto !important;
+  word-spacing: normal;
 }
 
 .post-content .editor-code-toolbar,

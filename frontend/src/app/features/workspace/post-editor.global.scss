@@ -1999,6 +1999,10 @@ button {
   white-space: pre-wrap;
   counter-reset: line;
   position: relative;
+  direction: ltr;
+  text-align: left !important;
+  text-align-last: auto !important;
+  word-spacing: normal;
 }
 
 .editor-code-body code {
@@ -2014,7 +2018,9 @@ button {
 .code-line {
   display: flex;
   align-items: baseline;
+  justify-content: flex-start;
   min-width: max-content;
+  text-align: left !important;
 }
 
 .line-number {
@@ -2031,6 +2037,9 @@ button {
   min-width: 0;
   padding-left: 14px;
   white-space: pre-wrap;
+  text-align: left !important;
+  text-align-last: auto !important;
+  word-spacing: normal;
 }
 
 .rich-editor img,
@@ -3757,6 +3766,10 @@ html[data-accent-tone="light"] .preview-topbar-actions [data-preview-close],
   box-sizing: border-box;
   overflow-x: hidden;
   white-space: pre-wrap;
+  direction: ltr;
+  text-align: left !important;
+  text-align-last: auto !important;
+  word-spacing: normal;
 }
 
 .preview-post-body .editor-code-body code {
@@ -3769,6 +3782,8 @@ html[data-accent-tone="light"] .preview-topbar-actions [data-preview-close],
   width: 100%;
   min-width: 0;
   align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left !important;
 }
 
 .preview-post-body .line-number {
@@ -3780,6 +3795,9 @@ html[data-accent-tone="light"] .preview-topbar-actions [data-preview-close],
   overflow-wrap: anywhere;
   word-break: break-word;
   white-space: pre-wrap;
+  text-align: left !important;
+  text-align-last: auto !important;
+  word-spacing: normal;
 }
 
 .preview-post-body .editor-code-toolbar,
