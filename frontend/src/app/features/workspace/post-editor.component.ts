@@ -850,9 +850,56 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           this.setCursorAtStartOf(nextP);
           this.syncContentFromEditor();
           this.saveEditorSelection();
+          return;
+        }
+
+        // Chromium cannot reliably split a root-level text block when the
+        // following sibling is a non-editable media wrapper. Create the new
+        // paragraph explicitly so Enter above an image/video always works.
+        const currentBlock = parentEl?.closest(
+          'p, div:not(.editor-media-wrapper):not(.editor-media-container), h1, h2, h3, h4, h5, h6, blockquote',
+        ) as HTMLElement | null;
+        const editor = this.editorElement();
+        const nextNode = currentBlock ? this.nextMeaningfulSibling(currentBlock) : null;
+        if (
+          editor &&
+          currentBlock &&
+          editor.contains(currentBlock) &&
+          nextNode instanceof HTMLElement &&
+          nextNode.matches('.editor-media-wrapper') &&
+          this.isCaretAtEndOf(currentBlock, selection)
+        ) {
+          event.preventDefault();
+          const paragraph = document.createElement('p');
+          paragraph.innerHTML = '<br>';
+          nextNode.parentNode?.insertBefore(paragraph, nextNode);
+          this.setCursorAtStartOf(paragraph);
+          this.syncContentFromEditor();
+          this.saveEditorSelection();
         }
       }
     }
+  }
+
+  private isCaretAtEndOf(element: HTMLElement, selection: Selection): boolean {
+    if (!selection.isCollapsed || selection.rangeCount === 0 || !element.contains(selection.anchorNode)) {
+      return false;
+    }
+
+    const caretRange = selection.getRangeAt(0);
+    const trailingRange = document.createRange();
+    trailingRange.selectNodeContents(element);
+    try {
+      trailingRange.setStart(caretRange.endContainer, caretRange.endOffset);
+    } catch {
+      return false;
+    }
+
+    const trailingContent = trailingRange.cloneContents();
+    const trailingText = (trailingContent.textContent ?? '')
+      .replace(/\u00a0|\u200b/g, ' ')
+      .trim();
+    return !trailingText && !trailingContent.querySelector('img, audio, video, iframe, hr');
   }
 
   private setCursorAtStartOf(element: HTMLElement): void {
@@ -2123,6 +2170,7 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private normalizeGeneratedBlockPlaceholders(editor: HTMLElement): void {
+    this.wrapTopLevelInlineContent(editor);
     this.hoistNestedMediaWrappers(editor);
     this.ensureEditorMediaDeleteButtons(editor);
 
@@ -2148,11 +2196,6 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         const pBefore = document.createElement('p');
         pBefore.innerHTML = '<br>';
         block.parentNode?.insertBefore(pBefore, block);
-      } else if (prevNode instanceof HTMLElement && this.isVisuallyEmptyEditorNode(prevNode)) {
-        const prevPrev = this.previousMeaningfulSibling(prevNode);
-        if (prevPrev instanceof HTMLElement && !this.isVisuallyEmptyEditorNode(prevPrev)) {
-          prevNode.remove();
-        }
       }
 
       const nextNode = this.nextMeaningfulSibling(block);
@@ -2250,6 +2293,42 @@ export class PostEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     this.removeDuplicateMediaCaptionParagraphs(editor);
+  }
+
+  /**
+   * An empty contenteditable can create text nodes directly under the editor.
+   * Wrapping consecutive inline nodes in a paragraph gives the caret a stable
+   * editable block before non-editable media and code blocks.
+   */
+  private wrapTopLevelInlineContent(editor: HTMLElement): void {
+    const blockSelector = [
+      'p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'blockquote', 'pre', 'ul', 'ol', 'table', 'figure', 'hr',
+    ].join(',');
+    let paragraph: HTMLParagraphElement | null = null;
+
+    Array.from(editor.childNodes).forEach((node) => {
+      const isWhitespaceText = node.nodeType === Node.TEXT_NODE && !node.textContent?.trim();
+      if (isWhitespaceText) {
+        if (paragraph) {
+          paragraph.appendChild(node);
+        } else {
+          node.remove();
+        }
+        return;
+      }
+
+      if (node instanceof HTMLElement && node.matches(blockSelector)) {
+        paragraph = null;
+        return;
+      }
+
+      if (!paragraph) {
+        paragraph = document.createElement('p');
+        editor.insertBefore(paragraph, node);
+      }
+      paragraph.appendChild(node);
+    });
   }
 
   /**
